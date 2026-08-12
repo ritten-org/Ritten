@@ -24,6 +24,35 @@ public class DotNetClientRunTests
     }
 
     [Fact]
+    public async Task Restore_ComposesTheCommandAndThrowsOnFailure()
+    {
+        await _client.Restore(new RestoreArgs { Project = "My.slnx" }, TestContext.Current.CancellationToken);
+
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["restore", "My.slnx"]);
+        command.ThrowsOnError.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Pack_ComposesTheCommandAndReturnsThePackages()
+    {
+        var package = Substitute.For<IFile>();
+        var output = Substitute.For<IDirectory>();
+        output.AbsolutePath.Returns("/repo/artifacts");
+        output.GetFiles("*.nupkg").Returns([package]);
+
+        var result = await _client.Pack(
+            new PackArgs { Project = "src/My.csproj", Configuration = "Release", NoBuild = true, Output = output },
+            TestContext.Current.CancellationToken);
+
+        output.Received().Create();
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["pack", "src/My.csproj", "--no-build", "--configuration", "Release", "--output", "/repo/artifacts"]);
+        command.ThrowsOnError.ShouldBeTrue();
+        result.Packages.ShouldBe([package]);
+    }
+
+    [Fact]
     public async Task Build_ComposesTheCommandAndParsesDiagnostics()
     {
         _commands.Respond(

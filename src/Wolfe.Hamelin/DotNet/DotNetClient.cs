@@ -41,6 +41,43 @@ internal class DotNetClient(ICommandRunner commands, IPipelineContext context) :
         };
     }
 
+    public async Task Restore(RestoreArgs args, CancellationToken cancellationToken = default)
+    {
+        var command = Command.Create("dotnet").WithArguments("restore");
+        if (args.Project is not null)
+        {
+            command = command.AndArguments(args.Project);
+        }
+
+        await commands.Run(command.ThrowOnError(), cancellationToken);
+    }
+
+    public async Task<PackResult> Pack(PackArgs args, CancellationToken cancellationToken = default)
+    {
+        args.Output.Create();
+
+        var command = Command.Create("dotnet").WithArguments("pack");
+        if (args.Project is not null)
+        {
+            command = command.AndArguments(args.Project);
+        }
+
+        if (args.NoBuild)
+        {
+            command = command.AndArguments("--no-build");
+        }
+
+        if (args.Configuration is not null)
+        {
+            command = command.AndArguments("--configuration", args.Configuration);
+        }
+
+        command = command.AndArguments("--output", args.Output.AbsolutePath);
+        await commands.Run(command.ThrowOnError(), cancellationToken);
+
+        return new PackResult { Packages = [.. args.Output.GetFiles("*.nupkg")] };
+    }
+
     public async Task<BuildResult> Build(BuildArgs args, CancellationToken cancellationToken = default)
     {
         var command = Command.Create("dotnet").WithArguments("build");

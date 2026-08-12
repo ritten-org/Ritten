@@ -1,15 +1,12 @@
 using System.ComponentModel;
 using Hamelin;
-using Wolfe.Hamelin.Commands;
+using Wolfe.Hamelin.DotNet;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
 [DisplayName("Restore Dependencies")]
-public class Restore(ICommandRunner commands) : IPipelineStep
+public class Restore(IDotNet dotnet) : IPipelineStep
 {
-    public async Task Run(CancellationToken cancellationToken = default)
-    {
-        var dotnetRestore = Command.Create("dotnet").WithArguments("restore").ThrowOnError();
-        await commands.Run(dotnetRestore, cancellationToken);
-    }
+    public Task Run(CancellationToken cancellationToken = default) =>
+        dotnet.Restore(new RestoreArgs(), cancellationToken);
 }

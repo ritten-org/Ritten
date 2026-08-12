@@ -2,42 +2,34 @@ using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Commands;
 using Wolfe.Hamelin.DotNet;
+using Wolfe.Hamelin.NuGet;
 using Wolfe.Hamelin.Reporting;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
 [DisplayName("Publish NuGet Package")]
 public class Publish(
-    IOptions<BuildOptions> options,
-    IOptions<NuGetOptions> nuget,
+    IOptions<NuGetOptions> options,
     IPipelineContext context,
-    ICommandRunner commands,
+    INuGet nuget,
     IBuildReport report
 ) : IPipelineStep
 {
     public async Task Run(CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrEmpty(nuget.Value.ApiKey))
+        if (string.IsNullOrEmpty(options.Value.ApiKey))
         {
             throw new Exception("The NuGet API key is not configured; set NuGet__ApiKey for the deploy pipeline.");
         }
 
-        var packageFile = context.FileSystem.CurrentDirectory
-            .GetDirectory(options.Value.ArtifactsDirectory)
-            .GetFiles("*.nupkg")
-            .Single();
+        var packed = context.State.Get<PackResult>() ?? throw new Exception("Pack result not found in state.");
+        var feed = new NuGetFeed(options.Value.Feed).WithApiKey(options.Value.ApiKey);
 
-        var dotnetPublish = Command
-            .Create("dotnet")
-            .WithArguments("nuget", "push", packageFile.AbsolutePath)
-            .AndArguments("--source", nuget.Value.Feed)
-            .AndArguments("--api-key", nuget.Value.ApiKey)
-            .AndArguments("--skip-duplicate")
-            .RedactArguments()
-            .ThrowOnError();
-        await commands.Run(dotnetPublish, cancellationToken);
+        foreach (var package in packed.Packages)
+        {
+            await nuget.Push(feed, package, cancellationToken);
+        }
 
         if (context.State.Get<Project>() is { } project)
         {

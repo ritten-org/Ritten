@@ -65,6 +65,7 @@ public static class ServiceCollectionExtensions
         /// </summary>
         public IServiceCollection AddNuGet()
         {
+            services.AddCommandRunner();
             services.TryAddSingleton<INuGet, NuGetClient>();
             return services;
         }

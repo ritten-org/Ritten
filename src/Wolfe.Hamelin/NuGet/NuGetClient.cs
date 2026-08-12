@@ -1,13 +1,15 @@
+using Hamelin.FileSystem;
 using Microsoft.Extensions.Logging;
 using NuGet.Configuration;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
+using Wolfe.Hamelin.Commands;
 using Wolfe.Hamelin.Extensions;
 
 namespace Wolfe.Hamelin.NuGet;
 
-internal class NuGetClient(ILogger<NuGetClient> logger) : INuGet
+internal class NuGetClient(ILogger<NuGetClient> logger, ICommandRunner commands) : INuGet
 {
     public async Task<IReadOnlyList<NuGetVersion>> GetPublishedVersions(NuGetFeed feed, string packageId, CancellationToken cancellationToken = default)
     {
@@ -26,5 +28,21 @@ internal class NuGetClient(ILogger<NuGetClient> logger) : INuGet
         using var cache = new SourceCacheContext { NoCache = true };
         var versions = await resource.GetAllVersionsAsync(packageId, cache, logger.ForNuGet(), cancellationToken);
         return [.. versions.OrderBy(v => v)];
+    }
+
+    public async Task Push(NuGetFeed feed, IFile package, CancellationToken cancellationToken = default)
+    {
+        var command = Command
+            .Create("dotnet")
+            .WithArguments("nuget", "push", package.AbsolutePath)
+            .AndArguments("--source", feed.Url)
+            .AndArguments("--skip-duplicate");
+
+        if (feed.ApiKey is not null)
+        {
+            command = command.AndArguments("--api-key", feed.ApiKey).RedactArguments();
+        }
+
+        await commands.Run(command.ThrowOnError(), cancellationToken);
     }
 }

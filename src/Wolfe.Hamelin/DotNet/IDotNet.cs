@@ -13,9 +13,20 @@ public interface IDotNet
     Task<Project> ReadProject(IFile file, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Runs <c>dotnet restore</c>, throwing a <see cref="Commands.CommandFailedException"/> on failure.
+    /// </summary>
+    Task Restore(RestoreArgs args, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Runs <c>dotnet build</c> and returns the outcome, with any compiler output.
     /// </summary>
     Task<BuildResult> Build(BuildArgs args, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs <c>dotnet pack</c> and returns the packages it produced, throwing a
+    /// <see cref="Commands.CommandFailedException"/> on failure.
+    /// </summary>
+    Task<PackResult> Pack(PackArgs args, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Runs <c>dotnet test</c> with a TRX logger and returns the outcome.

@@ -1,13 +1,55 @@
+using Hamelin.FileSystem;
 using Microsoft.Extensions.Logging.Abstractions;
 using NuGet.Packaging;
 using NuGet.Versioning;
+using Wolfe.Hamelin.Commands;
 using Wolfe.Hamelin.NuGet;
+using Wolfe.Hamelin.Tests.Support;
 
 namespace Wolfe.Hamelin.Tests.NuGet;
 
 public class NuGetClientTests
 {
-    private readonly NuGetClient _client = new(NullLogger<NuGetClient>.Instance);
+    private readonly FakeCommandRunner _commands = new();
+    private readonly NuGetClient _client;
+
+    public NuGetClientTests()
+    {
+        _client = new NuGetClient(NullLogger<NuGetClient>.Instance, _commands);
+    }
+
+    [Fact]
+    public async Task Push_ComposesARedactedIdempotentCommand()
+    {
+        var package = Substitute.For<IFile>();
+        package.AbsolutePath.Returns("/repo/artifacts/My.Package.1.0.0.nupkg");
+        var feed = new NuGetFeed("https://feed.example/index.json").WithApiKey("secret-key");
+
+        await _client.Push(feed, package, TestContext.Current.CancellationToken);
+
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe([
+            "nuget", "push", "/repo/artifacts/My.Package.1.0.0.nupkg",
+            "--source", "https://feed.example/index.json",
+            "--skip-duplicate",
+            "--api-key", "secret-key"
+        ]);
+        command.ArgumentsRedacted.ShouldBeTrue();
+        command.ThrowsOnError.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Push_OmitsTheApiKeyWhenTheFeedHasNone()
+    {
+        var package = Substitute.For<IFile>();
+        package.AbsolutePath.Returns("/repo/artifacts/My.Package.1.0.0.nupkg");
+
+        await _client.Push(new NuGetFeed("https://feed.example/index.json"), package, TestContext.Current.CancellationToken);
+
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldNotContain("--api-key");
+        command.ArgumentsRedacted.ShouldBeFalse();
+    }
 
     [Fact]
     public async Task GetPublishedVersions_ReturnsVersionsInAscendingOrder()
