@@ -3,8 +3,8 @@ using System.Text.Json;
 using Hamelin;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Reporting;
 using Wolfe.Hamelin.Commands;
+using Wolfe.Hamelin.Reporting;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -23,7 +23,7 @@ public class Format(
         var reportDirectory = Path.Combine(context.CurrentDirectory, options.Value.TempDirectory, "format");
         Directory.CreateDirectory(reportDirectory);
 
-        var dotnetFormat = Command.Run("dotnet").WithArguments("format", "--verify-no-changes", "--report", reportDirectory);
+        var dotnetFormat = Command.Create("dotnet").WithArguments("format", "--verify-no-changes", "--report", reportDirectory);
         var result = await commands.Run(dotnetFormat, cancellationToken);
         if (result.IsSuccess)
         {

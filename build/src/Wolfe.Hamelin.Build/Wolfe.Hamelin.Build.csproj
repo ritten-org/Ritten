@@ -17,7 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CliWrap" />
     <PackageReference Include="Hamelin.Runtimes.GitHubActions" />
     <PackageReference Include="NuGet.Packaging"/>
     <PackageReference Include="NuGet.Protocol"/>

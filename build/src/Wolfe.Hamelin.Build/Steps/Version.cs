@@ -5,10 +5,10 @@ using Microsoft.Extensions.Options;
 using NuGet.Configuration;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
-using NuGet.Versioning;
-using Wolfe.Hamelin.Build.Helpers;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Reporting;
+using Wolfe.Hamelin.DotNet;
+using Wolfe.Hamelin.Extensions;
+using Wolfe.Hamelin.Reporting;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -28,8 +28,8 @@ public class Version(
             return;
         }
 
-        var projectInfo = context.State.Get<ProjectInfo>();
-        if (projectInfo == null)
+        var project = context.State.Get<Project>();
+        if (project == null)
         {
             throw new Exception("Project info not found in state.");
         }
@@ -39,31 +39,31 @@ public class Version(
         var repository = Repository.Factory.GetCoreV3(packageSource);
         var resource = await repository.GetResourceAsync<FindPackageByIdResource>(cancellationToken);
         var versions = (await resource!.GetAllVersionsAsync(
-            projectInfo.Name,
+            project.Name,
             new SourceCacheContext(),
-            new NuGetLoggerAdapter(logger),
+            logger.ForNuGet(),
             cancellationToken
         )).ToList();
 
-        if (versions.Any(v => v == projectInfo.Version))
+        if (versions.Any(v => v == project.Version))
         {
             report.Section("Release").Failure(
-                $"Version **{projectInfo.Version}** is already published on the feed — bump `<Version>` in `{options.Value.ProjectFile}`.");
-            throw new Exception($"Package version {projectInfo.Version} already exists on the feed.");
+                $"Version **{project.Version}** is already published on the feed — bump `<Version>` in `{options.Value.ProjectFile}`.");
+            throw new Exception($"Package version {project.Version} already exists on the feed.");
         }
 
         var latestVersion = versions.DefaultIfEmpty().Max();
-        if (latestVersion != null && projectInfo.Version <= latestVersion)
+        if (latestVersion != null && project.Version <= latestVersion)
         {
             report.Section("Release").Failure(
-                $"Version **{projectInfo.Version}** isn't greater than the latest published version **{latestVersion}** — bump `<Version>` in `{options.Value.ProjectFile}`.");
-            throw new Exception($"Project version {projectInfo.Version} is not greater than the latest version {latestVersion}.");
+                $"Version **{project.Version}** isn't greater than the latest published version **{latestVersion}** — bump `<Version>` in `{options.Value.ProjectFile}`.");
+            throw new Exception($"Project version {project.Version} is not greater than the latest version {latestVersion}.");
         }
 
         report.Section("Release").Success(
             latestVersion == null
-                ? $"Version **{projectInfo.Version}** will be the first published version of {projectInfo.Name}."
-                : $"Version **{projectInfo.Version}** is valid (latest published: **{latestVersion}**).");
-        logger.LogInformation("Version {Version} is valid and can be used for package {PackageName}.", projectInfo.Version, projectInfo.Name);
+                ? $"Version **{project.Version}** will be the first published version of {project.Name}."
+                : $"Version **{project.Version}** is valid (latest published: **{latestVersion}**).");
+        logger.LogInformation("Version {Version} is valid and can be used for package {PackageName}.", project.Version, project.Name);
     }
 }

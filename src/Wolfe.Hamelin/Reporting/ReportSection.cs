@@ -1,4 +1,4 @@
-namespace Wolfe.Hamelin.Build.Reporting;
+namespace Wolfe.Hamelin.Reporting;
 
 /// <summary>
 /// A titled section of the build report.
@@ -7,8 +7,14 @@ public class ReportSection(string title)
 {
     private readonly List<ReportEntry> _entries = [];
 
+    /// <summary>
+    /// The title of the section.
+    /// </summary>
     public string Title { get; } = title;
 
+    /// <summary>
+    /// The entries added to the section, in the order they were added.
+    /// </summary>
     public IReadOnlyList<ReportEntry> Entries => _entries;
 
     /// <summary>
@@ -40,9 +46,8 @@ public class ReportSection(string title)
     /// Adds a detail block to the section.
     /// </summary>
     /// <param name="summary">A title for the detail block.</param>
-    /// <param name="markdown">The content/detail of the block</param>
+    /// <param name="markdown">The content/detail of the block.</param>
     /// <param name="tone">The tone of the block.</param>
-    /// <returns></returns>
     public ReportSection Details(string summary, string markdown, ReportTone tone = ReportTone.Note) =>
         Add(new ReportDetailsBlock(tone, summary, markdown));
 

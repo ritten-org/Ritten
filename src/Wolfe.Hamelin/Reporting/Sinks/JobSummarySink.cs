@@ -1,10 +1,9 @@
-namespace Wolfe.Hamelin.Build.Reporting.Sinks;
+namespace Wolfe.Hamelin.Reporting.Sinks;
 
 /// <summary>
-/// Publishes the report to the GitHub Actions job summary. Works on every run — pull requests,
-/// pushes, and deploys — and no-ops outside of GitHub Actions.
+/// Publishes the report to the GitHub Actions job summary.
 /// </summary>
-public class JobSummarySink : IReportSink
+internal class JobSummarySink : IReportSink
 {
     // Writes the file directly rather than going through IGitHubActionsCommands.AppendJobSummary:
     // Hamelin 3.0.0 reads GITHUB_JOB_SUMMARY, but the variable GitHub Actions provides is

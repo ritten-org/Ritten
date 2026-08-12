@@ -1,16 +1,15 @@
 using Hamelin.Hooks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Wolfe.Hamelin.Build.Reporting.GitHub;
-using Wolfe.Hamelin.Build.Reporting.Sinks;
+using Wolfe.Hamelin.GitHub;
+using Wolfe.Hamelin.Reporting.Sinks;
 
-namespace Wolfe.Hamelin.Build.Reporting.Hooks;
+namespace Wolfe.Hamelin.Reporting.Hooks;
 
 /// <summary>
-/// Renders the accumulated report once the pipeline has finished and publishes it to every
-/// registered sink.
+/// Renders the accumulated report once the pipeline has finished and publishes it to every registered sink.
 /// </summary>
-public class PublishReportHook(
+internal class PublishReportHook(
     ILogger<PublishReportHook> logger,
     IOptions<GitHubOptions> options,
     IBuildReport report,

@@ -1,4 +1,4 @@
-namespace Wolfe.Hamelin.Build.Reporting.Sinks;
+namespace Wolfe.Hamelin.Reporting.Sinks;
 
 /// <summary>
 /// A destination the rendered report is published to.

@@ -1,9 +1,12 @@
 using Microsoft.Extensions.Options;
-using Wolfe.Hamelin.Build.Reporting.GitHub;
+using Wolfe.Hamelin.GitHub;
 
-namespace Wolfe.Hamelin.Build.Reporting.Sinks;
+namespace Wolfe.Hamelin.Reporting.Sinks;
 
-public class PullRequestCommentSink(IOptions<GitHubOptions> options, IPullRequestCommentService comments) : IReportSink
+/// <summary>
+/// Publishes the report to a GitHub comment.
+/// </summary>
+internal class PullRequestCommentSink(IOptions<GitHubOptions> options, IPullRequestCommentService comments) : IReportSink
 {
     public Task Publish(string markdown, CancellationToken cancellationToken = default) =>
         options.Value.IsPullRequest

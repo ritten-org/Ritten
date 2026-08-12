@@ -2,8 +2,9 @@ using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Reporting;
 using Wolfe.Hamelin.Commands;
+using Wolfe.Hamelin.DotNet;
+using Wolfe.Hamelin.Reporting;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -23,17 +24,18 @@ public class Publish(
             .Single();
 
         var dotnetPublish = Command
-            .Run("dotnet")
+            .Create("dotnet")
             .WithArguments("nuget", "push", packageFile.AbsolutePath)
             .AndArguments("--source", options.Value.NuGetFeed)
             .AndArguments("--api-key", options.Value.NuGetApiKey)
             .AndArguments("--skip-duplicate")
-            .Sensitive();
+            .RedactArguments()
+            .ThrowOnError();
         await commands.Run(dotnetPublish, cancellationToken);
 
-        if (context.State.Get<ProjectInfo>() is { } projectInfo)
+        if (context.State.Get<Project>() is { } project)
         {
-            report.Section("Release").Success($"Published **{projectInfo.Name} {projectInfo.Version}** to NuGet.");
+            report.Section("Release").Success($"Published **{project.Name} {project.Version}** to NuGet.");
         }
     }
 }

@@ -1,9 +1,9 @@
-namespace Wolfe.Hamelin.Build.Reporting;
+namespace Wolfe.Hamelin.Reporting;
 
-public class MarkdownReportRenderer
+internal class MarkdownReportRenderer
 {
     /// <summary>
-    /// Renders the report as GitHub-flavoured markdown.
+    /// Renders the report as GitHub-flavored Markdown.
     /// </summary>
     public string Render(string title, bool succeeded, IReadOnlyList<ReportSection> sections)
     {

@@ -1,6 +1,6 @@
-namespace Wolfe.Hamelin.Build.Reporting;
+namespace Wolfe.Hamelin.Reporting;
 
-public static class ReportToneExtensions
+internal static class ReportToneExtensions
 {
     public static string Icon(this ReportTone tone) => tone switch
     {

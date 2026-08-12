@@ -1,4 +1,4 @@
-namespace Wolfe.Hamelin.Build.Reporting;
+namespace Wolfe.Hamelin.Reporting;
 
 /// <summary>
 /// Accumulates authored feedback from pipeline steps for publication at the end of the run.

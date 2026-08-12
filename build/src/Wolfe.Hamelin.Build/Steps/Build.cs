@@ -3,8 +3,8 @@ using System.Text.RegularExpressions;
 using Hamelin;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Reporting;
 using Wolfe.Hamelin.Commands;
+using Wolfe.Hamelin.Reporting;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -16,7 +16,7 @@ public partial class Build(IOptions<BuildOptions> options, ICommandRunner comman
     public async Task Run(CancellationToken cancellationToken = default)
     {
         var dotnetBuild = Command
-            .Run("dotnet")
+            .Create("dotnet")
             .WithArguments("build", "--no-restore")
             .AndArguments("--configuration", options.Value.Configuration);
         var result = await commands.Run(dotnetBuild, cancellationToken);

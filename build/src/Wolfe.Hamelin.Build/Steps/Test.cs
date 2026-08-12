@@ -3,8 +3,8 @@ using System.Xml.Linq;
 using Hamelin;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Reporting;
 using Wolfe.Hamelin.Commands;
+using Wolfe.Hamelin.Reporting;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -24,8 +24,8 @@ public class Test(
         Directory.CreateDirectory(resultsDirectory);
 
         var dotnetTest = Command
-            .Run("dotnet")
-            .WithArguments("test","--no-build")
+            .Create("dotnet")
+            .WithArguments("test", "--no-build")
             .AndArguments("--configuration", options.Value.Configuration)
             .AndArguments("--logger", "trx")
             .AndArguments("--results-directory", resultsDirectory);

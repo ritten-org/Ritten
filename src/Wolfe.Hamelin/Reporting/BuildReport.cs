@@ -1,6 +1,6 @@
-namespace Wolfe.Hamelin.Build.Reporting;
+namespace Wolfe.Hamelin.Reporting;
 
-public class BuildReport : IBuildReport
+internal class BuildReport : IBuildReport
 {
     private readonly List<ReportSection> _sections = [];
 

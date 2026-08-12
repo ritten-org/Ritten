@@ -1,19 +1,14 @@
 using Hamelin.Hooks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Wolfe.Hamelin.Build.Reporting.GitHub;
+using Wolfe.Hamelin.GitHub;
 
-namespace Wolfe.Hamelin.Build.Reporting.Hooks;
+namespace Wolfe.Hamelin.Reporting.Hooks;
 
 /// <summary>
-/// Posts a placeholder comment as soon as a pull request run starts, so the reader sees the
-/// pipeline is underway; the final report replaces it in place.
+/// Posts a placeholder comment as soon as a pull request run starts.
 /// </summary>
-public class PendingCommentHook(
-    ILogger<PendingCommentHook> logger,
-    IOptions<GitHubOptions> options,
-    IPullRequestCommentService comments
-) : IPrePipelineHook
+internal class PendingCommentHook(ILogger<PendingCommentHook> logger, IOptions<GitHubOptions> options, IPullRequestCommentService comments) : IPrePipelineHook
 {
     public async Task PrePipeline(PrePipelineHookArgs args, CancellationToken cancellationToken = default)
     {

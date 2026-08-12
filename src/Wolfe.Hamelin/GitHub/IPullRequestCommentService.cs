@@ -1,5 +1,8 @@
-namespace Wolfe.Hamelin.Build.Reporting.GitHub;
+namespace Wolfe.Hamelin.GitHub;
 
+/// <summary>
+/// Maintains a single, updatable comment on the pull request that triggered the current run.
+/// </summary>
 public interface IPullRequestCommentService
 {
     /// <summary>

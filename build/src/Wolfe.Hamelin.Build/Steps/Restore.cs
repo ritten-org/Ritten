@@ -9,7 +9,7 @@ public class Restore(ICommandRunner commands) : IPipelineStep
 {
     public async Task Run(CancellationToken cancellationToken = default)
     {
-        var dotnetRestore = Command.Run("dotnet").WithArguments("restore");
+        var dotnetRestore = Command.Create("dotnet").WithArguments("restore").ThrowOnError();
         await commands.Run(dotnetRestore, cancellationToken);
     }
 }

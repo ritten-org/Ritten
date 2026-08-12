@@ -12,10 +12,11 @@ public class Pack(IOptions<BuildOptions> options, ICommandRunner commands) : IPi
     public async Task Run(CancellationToken cancellationToken = default)
     {
         var dotnetPack = Command
-            .Run("dotnet")
+            .Create("dotnet")
             .WithArguments("pack", options.Value.ProjectFile, "--no-build")
             .AndArguments("--configuration", options.Value.Configuration)
-            .AndArguments("--output", options.Value.ArtifactsDirectory);
+            .AndArguments("--output", options.Value.ArtifactsDirectory)
+            .ThrowOnError();
 
         await commands.Run(dotnetPack, cancellationToken);
     }

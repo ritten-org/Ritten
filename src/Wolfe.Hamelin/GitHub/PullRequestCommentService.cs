@@ -2,13 +2,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Octokit;
 
-namespace Wolfe.Hamelin.Build.Reporting.GitHub;
+namespace Wolfe.Hamelin.GitHub;
 
-public class PullRequestCommentService(
-    ILogger<PullRequestCommentService> logger,
-    IOptions<GitHubOptions> options,
-    IGitHubClient client
-) : IPullRequestCommentService
+internal class PullRequestCommentService(ILogger<PullRequestCommentService> logger, IOptions<GitHubOptions> options, IGitHubClient client) : IPullRequestCommentService
 {
     public async Task CreateOrUpdate(string body, CancellationToken cancellationToken = default)
     {
