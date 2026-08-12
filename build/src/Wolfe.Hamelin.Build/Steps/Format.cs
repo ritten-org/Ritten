@@ -1,10 +1,11 @@
 using System.ComponentModel;
 using System.Text.Json;
 using Hamelin;
+using Hamelin.FileSystem;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Reporting;
-using Wolfe.Hamelin.Build.Services;
+using Wolfe.Hamelin.Commands;
+using Wolfe.Hamelin.Reporting;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -20,22 +21,19 @@ public class Format(
 
     public async Task Run(CancellationToken cancellationToken = default)
     {
-        var reportDirectory = Path.Combine(context.CurrentDirectory, options.Value.TempDirectory, "format");
-        Directory.CreateDirectory(reportDirectory);
+        var reportDirectory = context.FileSystem.CurrentDirectory
+            .GetDirectory(options.Value.TempDirectory)
+            .GetDirectory("format");
+        reportDirectory.Create();
 
-        var result = await commands.Run(
-            command: "dotnet",
-            arguments: ["format", "--verify-no-changes", "--report", reportDirectory],
-            cancellationToken,
-            throwOnNonZeroExit: false
-        );
-
-        if (result.Success)
+        var dotnetFormat = Command.Create("dotnet").WithArguments("format", "--verify-no-changes", "--report", reportDirectory.AbsolutePath);
+        var result = await commands.Run(dotnetFormat, cancellationToken);
+        if (result.IsSuccess)
         {
             return;
         }
 
-        var files = await ReadUnformattedFiles(Path.Combine(reportDirectory, "format-report.json"), cancellationToken);
+        var files = await ReadUnformattedFiles(reportDirectory.GetFile("format-report.json"), cancellationToken);
         if (files.Count > 0)
         {
             report.Section("Formatting").Failure(
@@ -50,14 +48,14 @@ public class Format(
         throw new Exception("Code formatting check failed.");
     }
 
-    private async Task<IReadOnlyList<string>> ReadUnformattedFiles(string reportFile, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<string>> ReadUnformattedFiles(IFile reportFile, CancellationToken cancellationToken)
     {
-        if (!File.Exists(reportFile))
+        if (!reportFile.Exists)
         {
             return [];
         }
 
-        await using var stream = File.OpenRead(reportFile);
+        await using var stream = reportFile.OpenRead();
         var documents = await JsonSerializer.DeserializeAsync<List<FormatReportDocument>>(stream, JsonOptions, cancellationToken) ?? [];
         return documents
             .Where(d => d.FilePath != null)

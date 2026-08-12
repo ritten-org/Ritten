@@ -1,0 +1,15 @@
+﻿The big release.
+
+### Added
+
+- New feature.
+- Another feature with
+  a continuation line.
+
+### Fixed
+
+- A bug.
+
+### Notes
+
+- Not a standard Keep a Changelog section.

@@ -1,0 +1,11 @@
+﻿{
+  Body:
+### Added
+
+- A thing.,
+  Preamble: ,
+  Added: [
+    A thing.
+  ],
+  IsEmpty: false
+}

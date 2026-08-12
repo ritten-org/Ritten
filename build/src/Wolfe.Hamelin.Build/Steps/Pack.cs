@@ -2,7 +2,7 @@ using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Services;
+using Wolfe.Hamelin.Commands;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -11,15 +11,13 @@ public class Pack(IOptions<BuildOptions> options, ICommandRunner commands) : IPi
 {
     public async Task Run(CancellationToken cancellationToken = default)
     {
-        await commands.Run(
-            command: "dotnet",
-            arguments: [
-                "pack", options.Value.ProjectFile,
-                "--no-build",
-                "--configuration", options.Value.Configuration,
-                "--output", options.Value.ArtifactsDirectory
-            ],
-            cancellationToken
-        );
+        var dotnetPack = Command
+            .Create("dotnet")
+            .WithArguments("pack", options.Value.ProjectFile, "--no-build")
+            .AndArguments("--configuration", options.Value.Configuration)
+            .AndArguments("--output", options.Value.ArtifactsDirectory)
+            .ThrowOnError();
+
+        await commands.Run(dotnetPack, cancellationToken);
     }
 }

@@ -2,18 +2,20 @@
 using Hamelin.Runtimes.GitHubActions;
 using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Reporting;
-using Wolfe.Hamelin.Build.Services;
 using Wolfe.Hamelin.Build.Steps;
+using Wolfe.Hamelin.Extensions;
 using Version = Wolfe.Hamelin.Build.Steps.Version;
 
 var builder = PipelineApplication.CreateBuilder(args);
 
 builder.Services
-    .AddScoped<ICommandRunner, CliWrapCommandRunner>()
+    .AddCommandRunner()
+    .AddChangelogs()
+    .AddDotNet()
+    .AddNuGet()
     .AddGitHubActionsRuntime()
     .AddStepsFromAssemblyContaining<Program>()
-    .AddBuildReporting();
+    .AddBuildReporting("Wolfe.Hamelin.Build");
 
 builder.Services.AddOptions<BuildOptions>()
     .BindConfiguration("Build")

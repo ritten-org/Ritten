@@ -4,7 +4,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Reporting;
+using Wolfe.Hamelin.Changelogs;
+using Wolfe.Hamelin.DotNet;
+using Wolfe.Hamelin.Reporting;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -13,7 +15,8 @@ public class Changelog(
     ILogger<Changelog> logger,
     IOptions<BuildOptions> options,
     IPipelineContext context,
-    IBuildReport report
+    IBuildReport report,
+    IChangelog changelogs
 ) : IPipelineStep
 {
     public async Task Run(CancellationToken cancellationToken = default)
@@ -24,54 +27,49 @@ public class Changelog(
             return;
         }
 
-        var projectInfo = context.State.Get<ProjectInfo>();
-        if (projectInfo == null)
+        var project = context.State.Get<Project>();
+        if (project == null)
         {
             throw new Exception("Project info not found in state.");
         }
 
-        var changelog = context.FileSystem.CurrentDirectory.GetFile(options.Value.ChangelogFile);
-        if (!changelog.Exists)
+        var changelogFile = context.FileSystem.CurrentDirectory.GetFile(options.Value.ChangelogFile);
+        if (!changelogFile.Exists)
         {
             report.Section("Release").Failure($"The changelog file `{options.Value.ChangelogFile}` does not exist.");
-            throw new FileNotFoundException("Could not find changelog file", changelog.AbsolutePath);
+            throw new FileNotFoundException("Could not find changelog file", changelogFile.AbsolutePath);
         }
 
-        var lines = await File.ReadAllLinesAsync(changelog.AbsolutePath, cancellationToken);
+        var changelog = await changelogs.Read(changelogFile, cancellationToken);
 
-        string[] candidateHeadings = projectInfo.Version.IsPrerelease || projectInfo.Version < NuGetVersion.Parse("1.0.0")
-            ? [$"## [{projectInfo.Version}]", "## [Unreleased]"]
-            : [$"## [{projectInfo.Version}]"];
-
-        var headingIndex = -1;
-        foreach (var candidate in candidateHeadings)
+        var isPrerelease = project.Version.IsPrerelease || project.Version < NuGetVersion.Parse("1.0.0");
+        var entry = isPrerelease ? changelog.Unreleased : changelog.Entry(project.Version);
+        if (entry is null)
         {
-            headingIndex = Array.FindIndex(lines, l => l.StartsWith(candidate, StringComparison.Ordinal));
-            if (headingIndex >= 0)
+            report.Section("Release").Failure($"There's no changelog entry for **{project.Version}** in `{options.Value.ChangelogFile}`.");
+            throw new Exception($"No changelog entry found for version {project.Version} in {options.Value.ChangelogFile}.");
+        }
+
+        if (entry.IsEmpty)
+        {
+            report.Section("Release").Failure($"The changelog entry for **{project.Version}** is empty.");
+            throw new Exception($"Changelog entry for version {project.Version} is empty.");
+        }
+
+        if (!string.IsNullOrEmpty(options.Value.RepositoryUrl))
+        {
+            var expected = changelogs.GenerateLinks(changelog, new ChangelogRepository(options.Value.RepositoryUrl));
+            if (!changelog.Links.SequenceEqual(expected))
             {
-                break;
+                var block = string.Join('\n', expected.Select(l => l.ToMarkdown()));
+                report.Section("Release").Failure(
+                    $"The version links in `{options.Value.ChangelogFile}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
+                throw new Exception($"Changelog version links in {options.Value.ChangelogFile} are missing or out of date.");
             }
         }
 
-        if (headingIndex < 0)
-        {
-            report.Section("Release").Failure($"There's no changelog entry for **{projectInfo.Version}** in `{options.Value.ChangelogFile}`.");
-            throw new Exception($"No changelog entry found for version {projectInfo.Version} in {options.Value.ChangelogFile}.");
-        }
-
-        var nextHeadingIndex = Array.FindIndex(lines, headingIndex + 1, l => l.StartsWith("## [", StringComparison.Ordinal));
-        var endIndex = nextHeadingIndex < 0 ? lines.Length : nextHeadingIndex;
-        var body = string.Join('\n', lines[(headingIndex + 1)..endIndex]).Trim();
-
-        if (string.IsNullOrWhiteSpace(body))
-        {
-            report.Section("Release").Failure(
-                $"The changelog entry for **{projectInfo.Version}** is empty.");
-            throw new Exception($"Changelog entry for version {projectInfo.Version} is empty.");
-        }
-
-        context.State.Set(new ChangelogEntry { Version = projectInfo.Version, Body = body });
-        report.Section("Release").Success($"Changelog entry for **{projectInfo.Version}** is present.");
-        logger.LogInformation("Found changelog entry for {Version} ({Length} chars).", projectInfo.Version, body.Length);
+        context.State.Set(entry);
+        report.Section("Release").Success($"Changelog entry for **{project.Version}** is present.");
+        logger.LogInformation("Found changelog entry for {Version}.", project.Version);
     }
 }

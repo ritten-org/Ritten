@@ -43,7 +43,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Wolfe.Hamelin.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hamelin" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+    <PackageReference Include="NuGet.Common" />
+    <PackageReference Include="NuGet.Protocol" />
+    <PackageReference Include="NuGet.Versioning" />
+    <PackageReference Include="Octokit" />
   </ItemGroup>
   
 </Project>

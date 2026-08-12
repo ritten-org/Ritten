@@ -1,0 +1,13 @@
+﻿# Changelog
+
+## [Unreleased]
+
+### Added
+
+- Upcoming.
+
+## [1.0.0] - 2026-08-12
+
+### Added
+
+- Initial release.

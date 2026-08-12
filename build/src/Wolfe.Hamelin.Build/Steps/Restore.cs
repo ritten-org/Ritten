@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using Hamelin;
-using Wolfe.Hamelin.Build.Services;
+using Wolfe.Hamelin.Commands;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -9,10 +9,7 @@ public class Restore(ICommandRunner commands) : IPipelineStep
 {
     public async Task Run(CancellationToken cancellationToken = default)
     {
-        await commands.Run(
-            command: "dotnet",
-            arguments: ["restore"],
-            cancellationToken
-        );
+        var dotnetRestore = Command.Create("dotnet").WithArguments("restore").ThrowOnError();
+        await commands.Run(dotnetRestore, cancellationToken);
     }
 }

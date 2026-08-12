@@ -1,15 +1,14 @@
 using System.ComponentModel;
-using System.Xml;
 using Hamelin;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NuGet.Versioning;
 using Wolfe.Hamelin.Build.Models;
+using Wolfe.Hamelin.DotNet;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
 [DisplayName("Extract Project Information")]
-public class ExtractProject(ILogger<ExtractProject> logger, IOptions<BuildOptions> options, IPipelineContext context) : IPipelineStep
+public class ExtractProject(ILogger<ExtractProject> logger, IOptions<BuildOptions> options, IPipelineContext context, IDotNet dotnet) : IPipelineStep
 {
     public async Task Run(CancellationToken cancellationToken = default)
     {
@@ -19,34 +18,9 @@ public class ExtractProject(ILogger<ExtractProject> logger, IOptions<BuildOption
             throw new FileNotFoundException("Could not find project file", csproj.AbsolutePath);
         }
 
-        await using var projectStream = csproj.OpenRead();
-        var report = new XmlDocument();
-        report.Load(projectStream);
-        if (report.DocumentElement == null)
-        {
-            throw new Exception("Could not parse csproj");
-        }
+        var project = await dotnet.ReadProject(csproj, cancellationToken);
+        context.State.Set(project);
 
-        var packageName = report.SelectSingleNode("Project/PropertyGroup/PackageId")?.FirstChild?.Value;
-        if (packageName == null)
-        {
-            throw new Exception("Unable to find PackageId in project file.");
-        }
-
-        var packageVersion = report.SelectSingleNode("Project/PropertyGroup/Version")?.FirstChild?.Value;
-        if (packageVersion == null)
-        {
-            throw new Exception("Unable to find Version in project file.");
-        }
-
-        var projectInfo = new ProjectInfo
-        {
-            Name = packageName,
-            Version = NuGetVersion.Parse(packageVersion)
-        };
-
-        logger.LogInformation("Extracted project info: {ProjectName} (v{Version})", projectInfo.Name, projectInfo.Version);
-
-        context.State.Set(projectInfo);
+        logger.LogInformation("Extracted project info: {ProjectName} (v{Version})", project.Name, project.Version);
     }
 }

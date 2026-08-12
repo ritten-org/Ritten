@@ -17,11 +17,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CliWrap" />
     <PackageReference Include="Hamelin.Runtimes.GitHubActions" />
-    <PackageReference Include="NuGet.Packaging"/>
-    <PackageReference Include="NuGet.Protocol"/>
+    <PackageReference Include="NuGet.Versioning" />
     <PackageReference Include="Octokit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Wolfe.Hamelin\Wolfe.Hamelin.csproj" />
   </ItemGroup>
 
 </Project>

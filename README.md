@@ -1,4 +1,4 @@
-[![Wolfe.Hamelin](https://github.com/tom-wolfe/Wolfe.Hamelin/actions/workflows/cicd.yml/badge.svg)](https://github.com/tom-wolfe/Wolfe.Hamelin/actions/workflows/cicd.yml)
+[![Wolfe.Hamelin](https://github.com/tom-wolfe/Wolfe.Hamelin/actions/workflows/wolfe.hamelin.yml/badge.svg)](https://github.com/tom-wolfe/Wolfe.Hamelin/actions/workflows/wolfe.hamelin.yml)
 
 This library provides utilities and helpers for building [Hamelin](https://github.com/hamelin-org/Hamelin) pipelines.
 
