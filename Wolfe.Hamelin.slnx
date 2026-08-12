@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/build/">
+    <File Path=".editorconfig" />
+    <File Path=".github\workflows\cicd.yml" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Project Path="src\Wolfe.Hamelin\Wolfe.Hamelin.csproj" />
+  <Project Path="tests\Wolfe.Hamelin.Tests\Wolfe.Hamelin.Tests.csproj" />
+</Solution>
