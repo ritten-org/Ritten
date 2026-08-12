@@ -1,0 +1,13 @@
+﻿{
+  Version: 2.0.0,
+  Date: 2026-01-02,
+  Body:
+### Removed
+
+- Old thing.,
+  Preamble: ,
+  Removed: [
+    Old thing.
+  ],
+  IsEmpty: false
+}

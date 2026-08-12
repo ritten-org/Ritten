@@ -1,0 +1,65 @@
+﻿{
+  Preamble:
+# Changelog
+
+All notable changes to this project will be documented in this file.,
+  Entries: [
+    {
+      Body:
+### Added
+
+- Something upcoming.,
+      Preamble: ,
+      Added: [
+        Something upcoming.
+      ],
+      IsEmpty: false
+    },
+    {
+      Version: 1.2.0,
+      Date: 2026-08-01,
+      Body:
+The big release.
+
+### Added
+
+- New feature.
+- Another feature with
+  a continuation line.
+
+### Fixed
+
+- A bug.
+
+### Notes
+
+- Not a standard Keep a Changelog section.,
+      Preamble: The big release.,
+      Added: [
+        New feature.,
+        Another feature with
+  a continuation line.
+      ],
+      Fixed: [
+        A bug.
+      ],
+      IsEmpty: false
+    },
+    {
+      Version: 1.1.0-beta.1,
+      Date: 2026-07-01,
+      Body:
+### Changed
+
+- Existing behaviour.,
+      Preamble: ,
+      Changed: [
+        Existing behaviour.
+      ],
+      IsEmpty: false
+    }
+  ],
+  LinkReferences:
+[Unreleased]: https://github.com/example/repo/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/example/repo/compare/v1.1.0...v1.2.0
+}
