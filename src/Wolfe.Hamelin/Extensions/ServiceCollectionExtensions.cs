@@ -47,7 +47,10 @@ public static class ServiceCollectionExtensions
         /// <param name="clientName">The product name used to identify this pipeline to the GitHub API.</param>
         public IServiceCollection AddBuildReporting(string clientName)
         {
-            services.AddOptions<GitHubOptions>().BindConfiguration("GitHub");
+            // Environment defaults first, so the `GitHub` configuration section wins.
+            services.AddOptions<GitHubOptions>()
+                .Configure(o => GitHubEnvironmentDefaults.Apply(o, Environment.GetEnvironmentVariable))
+                .BindConfiguration("GitHub");
             services.AddSingleton<IGitHubClient>(provider =>
             {
                 var options = provider.GetRequiredService<IOptions<GitHubOptions>>().Value;

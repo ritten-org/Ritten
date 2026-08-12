@@ -2,6 +2,8 @@ name: Wolfe.Hamelin
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -12,7 +14,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -22,6 +24,10 @@ jobs:
         shell: bash
         env:
           Build__ProjectFile: 'src/Wolfe.Hamelin/Wolfe.Hamelin.csproj'
+          # Dependabot can't bump versions or write changelog entries, so its PRs skip those checks.
+          # Pushes to main always run them, so the badge reflects real releasability.
+          Build__SkipVersion: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
+          Build__SkipChangelog: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:

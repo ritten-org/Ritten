@@ -28,9 +28,20 @@ public class CreateRelease(
             return;
         }
 
+        var tag = $"v{projectInfo.Version}";
+
+        // A failed deploy may have already created the release; rerunning should carry on, not crash.
+        var existingRelease = await commands.Run(
+            Command.Create("gh").WithArguments("release", "view", tag, "--json", "name").ReportStandardError(LogLevel.Debug),
+            cancellationToken);
+        if (existingRelease.IsSuccess)
+        {
+            logger.LogInformation("GitHub Release {Tag} already exists; skipping.", tag);
+            return;
+        }
+
         var entry = context.State.Get<ChangelogEntry>() ?? throw new Exception("Changelog entry not found in state.");
 
-        var tag = $"v{projectInfo.Version}";
         var tempDirectory = context.FileSystem.CurrentDirectory.GetDirectory(options.Value.TempDirectory);
         tempDirectory.Create();
 
