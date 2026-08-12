@@ -10,7 +10,7 @@ internal static class GitHubEnvironmentDefaults
         options.Token = environment("GH_TOKEN") ?? environment("GITHUB_TOKEN") ?? options.Token;
         options.RepositoryId = ParseRepositoryId(environment("GITHUB_REPOSITORY_ID")) ?? options.RepositoryId;
         options.PullRequestNumber = ParsePullRequestNumber(environment("GITHUB_REF")) ?? options.PullRequestNumber;
-        options.WorkflowName = environment("GITHUB_WORKFLOW") ?? "Pipeline";
+        options.WorkflowName = environment("GITHUB_WORKFLOW") ?? options.WorkflowName;
     }
 
     private static long? ParseRepositoryId(string? value) =>

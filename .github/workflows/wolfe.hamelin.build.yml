@@ -23,5 +23,5 @@ jobs:
         run: dotnet run --project build/src/Wolfe.Hamelin.Build/Wolfe.Hamelin.Build.csproj -- verify
         shell: bash
         env:
-          Build__ProjectFile: 'build/src/Wolfe.Hamelin.Build/Wolfe.Hamelin.Build.csproj'
+          DotNet__ProjectFile: 'build/src/Wolfe.Hamelin.Build/Wolfe.Hamelin.Build.csproj'
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

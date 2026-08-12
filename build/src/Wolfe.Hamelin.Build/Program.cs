@@ -1,69 +1,28 @@
-﻿using Hamelin;
+using System.CommandLine;
+using Hamelin;
 using Hamelin.Runtimes.GitHubActions;
-using Microsoft.Extensions.DependencyInjection;
-using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Steps;
 using Wolfe.Hamelin.Extensions;
-using Version = Wolfe.Hamelin.Build.Steps.Version;
 
-var builder = PipelineApplication.CreateBuilder(args);
+var build = new Command("build", "Validates a pull request: formatting, version, changelog, compile, and tests.");
+build.SetAction((_, cancellationToken) => RunPipeline(p => p.UseDotNetPackageBuild(), cancellationToken));
 
-builder.Services
-    .AddCommandRunner()
-    .AddChangelogs()
-    .AddDotNet()
-    .AddNuGet()
-    .AddGitHubActionsRuntime()
-    .AddStepsFromAssemblyContaining<Program>()
-    .AddBuildReporting("Wolfe.Hamelin.Build");
+var verify = new Command("verify", "Compiles and tests, without any release validation.");
+verify.SetAction((_, cancellationToken) => RunPipeline(p => p.UseDotNetPackageVerify(), cancellationToken));
 
-builder.Services.AddOptions<BuildOptions>()
-    .BindConfiguration("Build")
-    .Validate(b => !string.IsNullOrEmpty(b.ArtifactsDirectory))
-    .Validate(b => !string.IsNullOrEmpty(b.TempDirectory))
-    .Validate(b => !string.IsNullOrEmpty(b.Configuration))
-    .Validate(b => !string.IsNullOrEmpty(b.ProjectFile))
-    .Validate(b => !string.IsNullOrEmpty(b.ChangelogFile))
-    .ValidateOnStart();
+var deploy = new Command("deploy", "Validates, packs, tags, creates the GitHub release, and publishes to NuGet.");
+deploy.SetAction((_, cancellationToken) => RunPipeline(p => p.UseDotNetPackageDeploy(), cancellationToken));
 
-var pipeline = builder.Build();
-return args switch
+var root = new RootCommand("The Wolfe.Hamelin build pipeline.") { build, verify, deploy };
+return await root.Parse(args).InvokeAsync();
+
+static Task<int> RunPipeline(Func<PipelineApplication, PipelineApplication> compose, CancellationToken cancellationToken)
 {
-    ["build"] => pipeline
-        .UseStep<Clean>()
-        .UseStep<Format>()
-        .UseStep<ExtractProject>()
-        .UseStep<Version>()
-        .UseStep<Changelog>()
-        .UseStep<Restore>()
-        .UseStep<Build>()
-        .UseStep<Test>()
-        .RunWithExitCode(),
-    ["verify"] => pipeline
-        .UseStep<Clean>()
-        .UseStep<Format>()
-        .UseStep<Restore>()
-        .UseStep<Build>()
-        .UseStep<Test>()
-        .RunWithExitCode(),
-    ["deploy"] => pipeline
-        .UseStep<Clean>()
-        .UseStep<ExtractProject>()
-        .UseStep<Version>()
-        .UseStep<Changelog>()
-        .UseStep<Restore>()
-        .UseStep<Build>()
-        .UseStep<Test>()
-        .UseStep<Pack>()
-        .UseStep<CreateTag>()
-        .UseStep<CreateRelease>()
-        .UseStep<Publish>()
-        .RunWithExitCode(),
-    _ => Help()
-};
+    var builder = PipelineApplication.CreateBuilder();
 
-static int Help()
-{
-    Console.Error.WriteLine("Usage: <build|verify|deploy>");
-    return 1;
+    builder.Services
+        .AddGitHub("Wolfe.Hamelin.Build")
+        .AddGitHubActionsRuntime()
+        .AddDotNetPackagePipeline();
+
+    return compose(builder.Build()).RunWithExitCodeAsync(cancellationToken);
 }
