@@ -70,6 +70,46 @@ public class GitHubEnvironmentDefaultsTests
         options.RepositoryId.ShouldBeNull();
     }
 
+    [Fact]
+    public void Apply_PreservesConfiguredValuesWhenTheEnvironmentIsEmpty()
+    {
+        var options = ConfiguredOptions();
+
+        GitHubEnvironmentDefaults.Apply(options, _ => null);
+
+        options.Token.ShouldBe("configured-token");
+        options.RepositoryId.ShouldBe(99);
+        options.PullRequestNumber.ShouldBe(7);
+        options.WorkflowName.ShouldBe("Configured Workflow");
+    }
+
+    [Fact]
+    public void Apply_PrefersTheEnvironmentOverConfiguredValues()
+    {
+        var options = ConfiguredOptions();
+
+        GitHubEnvironmentDefaults.Apply(options, new Dictionary<string, string>
+        {
+            ["GH_TOKEN"] = "env-token",
+            ["GITHUB_REPOSITORY_ID"] = "12345",
+            ["GITHUB_REF"] = "refs/pull/42/merge",
+            ["GITHUB_WORKFLOW"] = "Env Workflow"
+        }.GetValueOrDefault);
+
+        options.Token.ShouldBe("env-token");
+        options.RepositoryId.ShouldBe(12345);
+        options.PullRequestNumber.ShouldBe(42);
+        options.WorkflowName.ShouldBe("Env Workflow");
+    }
+
+    private static GitHubOptions ConfiguredOptions() => new()
+    {
+        Token = "configured-token",
+        RepositoryId = 99,
+        PullRequestNumber = 7,
+        WorkflowName = "Configured Workflow"
+    };
+
     private static GitHubOptions Apply(Dictionary<string, string> environment)
     {
         var options = new GitHubOptions();
