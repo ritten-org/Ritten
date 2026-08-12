@@ -1,0 +1,45 @@
+name: Wolfe.Hamelin
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run Build Pipeline
+        run: dotnet run --project build/src/Wolfe.Hamelin.Build/Wolfe.Hamelin.Build.csproj -- build
+        shell: bash
+        env:
+          Build__ProjectFile: 'src/Wolfe.Hamelin/Wolfe.Hamelin.csproj'
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: Development
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run Deploy Pipeline
+        run: dotnet run --project build/src/Wolfe.Hamelin.Build/Wolfe.Hamelin.Build.csproj -- deploy
+        shell: bash
+        env:
+          Build__NuGetApiKey: ${{ secrets.NUGET_API_KEY }}
+          Build__ProjectFile: 'src/Wolfe.Hamelin/Wolfe.Hamelin.csproj'
+          Build__CommitSha: ${{ github.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
