@@ -8,6 +8,11 @@ namespace Wolfe.Hamelin.GitHub;
 public class GitHubOptions
 {
     /// <summary>
+    /// The product name used to identify the pipeline to the GitHub API.
+    /// </summary>
+    public string ClientName { get; set; } = "Wolfe.Hamelin";
+
+    /// <summary>
     /// The token used to authenticate with the GitHub API.
     /// </summary>
     public string? Token { get; set; }
