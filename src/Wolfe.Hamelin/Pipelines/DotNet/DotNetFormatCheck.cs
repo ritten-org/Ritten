@@ -1,20 +1,27 @@
 using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Options;
-using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.Reporting;
 
-namespace Wolfe.Hamelin.Build.Steps;
+namespace Wolfe.Hamelin.Pipelines.DotNet;
 
-[DisplayName("Validate Code Formatting")]
-public class Format(
-    IOptions<BuildOptions> options,
+/// <summary>
+/// Fails the pipeline when <c>dotnet format</c> would make changes, reporting the unformatted files.
+/// </summary>
+/// <param name="options">The pipeline's build options.</param>
+/// <param name="context">The pipeline context.</param>
+/// <param name="dotnet">The dotnet client.</param>
+/// <param name="report">The build report.</param>
+[DisplayName("Check .NET Formatting")]
+public class DotNetFormatCheck(
+    IOptions<PipelineOptions> options,
     IPipelineContext context,
     IDotNet dotnet,
     IBuildReport report
 ) : IPipelineStep
 {
+    /// <inheritdoc />
     public async Task Run(CancellationToken cancellationToken = default)
     {
         var reportDirectory = context.FileSystem.CurrentDirectory

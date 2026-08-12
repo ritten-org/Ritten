@@ -9,6 +9,10 @@ using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.Git;
 using Wolfe.Hamelin.GitHub;
 using Wolfe.Hamelin.NuGet;
+using Wolfe.Hamelin.Pipelines;
+using Wolfe.Hamelin.Pipelines.DotNet;
+using Wolfe.Hamelin.Pipelines.Git;
+using Wolfe.Hamelin.Pipelines.NuGet;
 using Wolfe.Hamelin.Reporting;
 using Wolfe.Hamelin.Reporting.Hooks;
 using Wolfe.Hamelin.Reporting.Sinks;
@@ -103,6 +107,54 @@ public static class ServiceCollectionExtensions
                 services.PostConfigure<GitHubOptions>(o => o.ClientName = clientName);
             }
 
+            return services;
+        }
+
+        /// <summary>
+        /// Adds everything the standard .NET package pipelines need.
+        /// </summary>
+        public IServiceCollection AddDotNetPackagePipeline()
+        {
+            services
+                .AddCommandRunner()
+                .AddChangelogs()
+                .AddDotNet()
+                .AddGit()
+                .AddNuGet()
+                .AddGitHub()
+                .AddBuildReporting();
+
+            if (services.Any(d => d.ServiceType == typeof(IConfigureOptions<PipelineOptions>)))
+            {
+                return services;
+            }
+
+            services.AddOptions<PipelineOptions>()
+                .BindConfiguration("Pipeline")
+                .Validate(p => !string.IsNullOrEmpty(p.ArtifactsDirectory))
+                .Validate(p => !string.IsNullOrEmpty(p.TempDirectory))
+                .ValidateOnStart();
+
+            services.AddOptions<DotNetOptions>()
+                .BindConfiguration("DotNet")
+                .Validate(d => !string.IsNullOrEmpty(d.Configuration))
+                .Validate(d => !string.IsNullOrEmpty(d.ProjectFile))
+                .ValidateOnStart();
+
+            services.AddOptions<ChangelogOptions>()
+                .BindConfiguration("Changelog")
+                .Validate(c => !string.IsNullOrEmpty(c.File))
+                .ValidateOnStart();
+
+            services.AddOptions<NuGetOptions>()
+                .BindConfiguration("NuGet")
+                .Validate(n => !string.IsNullOrEmpty(n.Feed))
+                .ValidateOnStart();
+
+            services.AddOptions<GitOptions>()
+                .BindConfiguration("Git");
+
+            services.AddStepsFromAssemblyContaining<CleanDirectories>();
             return services;
         }
 

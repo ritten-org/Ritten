@@ -2,22 +2,34 @@ using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.Changelogs;
 using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.GitHub;
+using Wolfe.Hamelin.Pipelines.DotNet;
+using Wolfe.Hamelin.Pipelines.Git;
 
-namespace Wolfe.Hamelin.Build.Steps;
+namespace Wolfe.Hamelin.Pipelines.GitHub;
 
+/// <summary>
+/// Creates the GitHub release for the version being shipped, with the changelog entry as its notes.
+/// Prereleases are skipped, and so is a release a previous run already created.
+/// Requires <see cref="Project"/> and <see cref="ChangelogEntry"/> in pipeline state (see <see cref="ExtractDotNetProject"/> and <see cref="ValidateChangelog"/>).
+/// </summary>
+/// <param name="logger">The step's logger.</param>
+/// <param name="options">The pipeline's release options.</param>
+/// <param name="context">The pipeline context.</param>
+/// <param name="releases">The GitHub release service.</param>
+/// <param name="changelogs">The changelog client.</param>
 [DisplayName("Create GitHub Release")]
-public class CreateRelease(
-    ILogger<CreateRelease> logger,
-    IOptions<ReleaseOptions> options,
+public class CreateGitHubRelease(
+    ILogger<CreateGitHubRelease> logger,
+    IOptions<GitOptions> options,
     IPipelineContext context,
     IReleaseService releases,
     IChangelog changelogs
 ) : IPipelineStep
 {
+    /// <inheritdoc />
     public async Task Run(CancellationToken cancellationToken = default)
     {
         var project = context.State.Get<Project>() ?? throw new Exception("Project info not found in state.");

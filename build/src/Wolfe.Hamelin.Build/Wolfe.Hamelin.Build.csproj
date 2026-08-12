@@ -18,8 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="Hamelin.Runtimes.GitHubActions" />
-    <PackageReference Include="NuGet.Versioning" />
-    <PackageReference Include="Octokit" />
+    <PackageReference Include="System.CommandLine" />
   </ItemGroup>
 
   <ItemGroup>

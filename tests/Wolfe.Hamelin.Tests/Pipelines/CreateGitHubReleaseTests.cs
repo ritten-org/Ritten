@@ -2,22 +2,22 @@ using Hamelin;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
-using Wolfe.Hamelin.Build.Steps;
-using Wolfe.Hamelin.Build.Tests.Support;
 using Wolfe.Hamelin.Changelogs;
 using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.GitHub;
+using Wolfe.Hamelin.Pipelines.GitHub;
+using Wolfe.Hamelin.Tests.Support;
 
-namespace Wolfe.Hamelin.Build.Tests.Steps;
+namespace Wolfe.Hamelin.Tests.Pipelines;
 
-public class CreateReleaseTests
+public class CreateGitHubReleaseTests
 {
     private readonly IReleaseService _releases = Substitute.For<IReleaseService>();
     private readonly IChangelog _changelogs = Substitute.For<IChangelog>();
     private readonly IPipelineContext _context = Substitute.For<IPipelineContext>();
     private readonly ChangelogEntry _entry = new() { Version = NuGetVersion.Parse("1.2.0"), Added = ["A thing."] };
 
-    public CreateReleaseTests()
+    public CreateGitHubReleaseTests()
     {
         SetVersion("1.2.0");
         _context.State.Get<ChangelogEntry>(Arg.Any<string>()).Returns(_entry);
@@ -57,6 +57,6 @@ public class CreateReleaseTests
         _context.State.Get<Project>(Arg.Any<string>())
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse(version) });
 
-    private CreateRelease Step() =>
-        new(NullLogger<CreateRelease>.Instance, Options.Create(TestOptions.Release()), _context, _releases, _changelogs);
+    private CreateGitHubRelease Step() =>
+        new(NullLogger<CreateGitHubRelease>.Instance, Options.Create(TestOptions.Git()), _context, _releases, _changelogs);
 }

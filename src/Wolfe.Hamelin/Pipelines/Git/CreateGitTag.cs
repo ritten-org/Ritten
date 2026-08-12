@@ -2,15 +2,25 @@ using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.Git;
+using Wolfe.Hamelin.Pipelines.DotNet;
 
-namespace Wolfe.Hamelin.Build.Steps;
+namespace Wolfe.Hamelin.Pipelines.Git;
 
+/// <summary>
+/// Creates and pushes the release tag, skipping whatever a previous run already did so failed
+/// deploys can be rerun. Requires <see cref="Project"/> in pipeline state
+/// (see <see cref="ExtractDotNetProject"/>).
+/// </summary>
+/// <param name="logger">The step's logger.</param>
+/// <param name="options">The pipeline's release options.</param>
+/// <param name="context">The pipeline context.</param>
+/// <param name="git">The git client.</param>
 [DisplayName("Create Git Tag")]
-public class CreateTag(ILogger<CreateTag> logger, IOptions<ReleaseOptions> options, IPipelineContext context, IGit git) : IPipelineStep
+public class CreateGitTag(ILogger<CreateGitTag> logger, IOptions<GitOptions> options, IPipelineContext context, IGit git) : IPipelineStep
 {
+    /// <inheritdoc />
     public async Task Run(CancellationToken cancellationToken = default)
     {
         var project = context.State.Get<Project>() ?? throw new Exception("Project info not found in state.");

@@ -3,23 +3,33 @@ using Hamelin;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
-using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.Changelogs;
 using Wolfe.Hamelin.DotNet;
+using Wolfe.Hamelin.Pipelines.Git;
 using Wolfe.Hamelin.Reporting;
 
-namespace Wolfe.Hamelin.Build.Steps;
+namespace Wolfe.Hamelin.Pipelines;
 
+/// <summary>
+/// Fails the pipeline when the changelog has no entry for the version being shipped.
+/// </summary>
+/// <param name="logger">The step's logger.</param>
+/// <param name="options">The pipeline's changelog options.</param>
+/// <param name="release">The pipeline's release options.</param>
+/// <param name="context">The pipeline context.</param>
+/// <param name="report">The build report.</param>
+/// <param name="changelogs">The changelog client.</param>
 [DisplayName("Validate Changelog Entry")]
-public class Changelog(
-    ILogger<Changelog> logger,
+public class ValidateChangelog(
+    ILogger<ValidateChangelog> logger,
     IOptions<ChangelogOptions> options,
-    IOptions<ReleaseOptions> release,
+    IOptions<GitOptions> release,
     IPipelineContext context,
     IBuildReport report,
     IChangelog changelogs
 ) : IPipelineStep
 {
+    /// <inheritdoc />
     public async Task Run(CancellationToken cancellationToken = default)
     {
         if (options.Value.Skip)
@@ -64,8 +74,8 @@ public class Changelog(
             if (!changelog.Links.SequenceEqual(expected))
             {
                 var block = string.Join('\n', expected.Select(l => l.ToMarkdown()));
-                report.Section("Release").Failure(
-                    $"The version links in `{options.Value.File}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
+                report.Section("Release")
+                    .Failure($"The version links in `{options.Value.File}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
                 throw new Exception($"Changelog version links in {options.Value.File} are missing or out of date.");
             }
         }

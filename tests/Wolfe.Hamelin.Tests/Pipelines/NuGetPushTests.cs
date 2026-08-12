@@ -2,16 +2,15 @@ using Hamelin;
 using Hamelin.FileSystem;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
-using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Steps;
-using Wolfe.Hamelin.Build.Tests.Support;
 using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.NuGet;
+using Wolfe.Hamelin.Pipelines.NuGet;
 using Wolfe.Hamelin.Reporting;
+using Wolfe.Hamelin.Tests.Support;
 
-namespace Wolfe.Hamelin.Build.Tests.Steps;
+namespace Wolfe.Hamelin.Tests.Pipelines;
 
-public class PublishTests
+public class NuGetPushTests
 {
     private readonly INuGet _nuget = Substitute.For<INuGet>();
     private readonly IPipelineContext _context = Substitute.For<IPipelineContext>();
@@ -20,7 +19,7 @@ public class PublishTests
     private readonly NuGetOptions _options = TestOptions.NuGet();
     private readonly IFile _package = Substitute.For<IFile>();
 
-    public PublishTests()
+    public NuGetPushTests()
     {
         _report.Section("Release").Returns(_releaseSection);
         _context.State.Get<PackResult>(Arg.Any<string>()).Returns(new PackResult { Packages = [_package] });
@@ -51,6 +50,6 @@ public class PublishTests
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
     }
 
-    private Publish Step() =>
+    private NuGetPush Step() =>
         new(Options.Create(_options), _context, _nuget, _report);
 }

@@ -1,15 +1,23 @@
 using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Options;
-using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.Reporting;
 
-namespace Wolfe.Hamelin.Build.Steps;
+namespace Wolfe.Hamelin.Pipelines.DotNet;
 
-[DisplayName("Run Tests")]
-public class Test(
-    IOptions<BuildOptions> options,
+/// <summary>
+/// Runs the tests, reporting the aggregated counts on success and the individual failures otherwise.
+/// </summary>
+/// <param name="options">The pipeline's .NET options.</param>
+/// <param name="pipeline">The pipeline's directory layout options.</param>
+/// <param name="context">The pipeline context.</param>
+/// <param name="dotnet">The dotnet client.</param>
+/// <param name="report">The build report.</param>
+[DisplayName("Run .NET Tests")]
+public class DotNetTest(
+    IOptions<DotNetOptions> options,
+    IOptions<PipelineOptions> pipeline,
     IPipelineContext context,
     IDotNet dotnet,
     IBuildReport report
@@ -17,10 +25,11 @@ public class Test(
 {
     private const int MaxFailures = 20;
 
+    /// <inheritdoc />
     public async Task Run(CancellationToken cancellationToken = default)
     {
         var resultsDirectory = context.FileSystem.CurrentDirectory
-            .GetDirectory(options.Value.TempDirectory)
+            .GetDirectory(pipeline.Value.TempDirectory)
             .GetDirectory("test-results");
 
         var result = await dotnet.Test(

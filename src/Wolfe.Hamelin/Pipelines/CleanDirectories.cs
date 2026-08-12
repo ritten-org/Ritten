@@ -2,13 +2,19 @@ using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Wolfe.Hamelin.Build.Models;
 
-namespace Wolfe.Hamelin.Build.Steps;
+namespace Wolfe.Hamelin.Pipelines;
 
+/// <summary>
+/// Deletes the artifacts and temp directories so the pipeline starts from a clean slate.
+/// </summary>
+/// <param name="logger">The step's logger.</param>
+/// <param name="options">The pipeline's build options.</param>
+/// <param name="context">The pipeline context.</param>
 [DisplayName("Clean Directories")]
-public class Clean(ILogger<Clean> logger, IOptions<BuildOptions> options, IPipelineContext context) : IPipelineStep
+public class CleanDirectories(ILogger<CleanDirectories> logger, IOptions<PipelineOptions> options, IPipelineContext context) : IPipelineStep
 {
+    /// <inheritdoc />
     public Task Run(CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Cleaning temp and artifact directories.");

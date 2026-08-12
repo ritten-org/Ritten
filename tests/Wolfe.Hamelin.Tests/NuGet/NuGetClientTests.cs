@@ -2,7 +2,6 @@ using Hamelin.FileSystem;
 using Microsoft.Extensions.Logging.Abstractions;
 using NuGet.Packaging;
 using NuGet.Versioning;
-using Wolfe.Hamelin.Commands;
 using Wolfe.Hamelin.NuGet;
 using Wolfe.Hamelin.Tests.Support;
 

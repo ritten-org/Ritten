@@ -5,17 +5,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
-using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Tests.Support;
 using Wolfe.Hamelin.Changelogs;
 using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.Extensions;
+using Wolfe.Hamelin.Pipelines;
 using Wolfe.Hamelin.Reporting;
-using ChangelogStep = Wolfe.Hamelin.Build.Steps.Changelog;
+using Wolfe.Hamelin.Tests.Support;
 
-namespace Wolfe.Hamelin.Build.Tests.Steps;
+namespace Wolfe.Hamelin.Tests.Pipelines;
 
-public class ChangelogTests
+public class ValidateChangelogTests
 {
     // The real client, so these tests exercise the actual parser and link generator.
     private static readonly IChangelog Changelogs = new ServiceCollection()
@@ -28,7 +27,7 @@ public class ChangelogTests
     private readonly ReportSection _releaseSection = new("Release");
     private readonly ChangelogOptions _options = TestOptions.Changelog();
 
-    public ChangelogTests()
+    public ValidateChangelogTests()
     {
         _options.RepositoryUrl = "https://github.com/example/repo";
         _context.State.Get<Project>(Arg.Any<string>())
@@ -104,6 +103,6 @@ public class ChangelogTests
         _context.FileSystem.CurrentDirectory.GetFile(_options.File).Returns(file);
     }
 
-    private ChangelogStep Step() =>
-        new(NullLogger<ChangelogStep>.Instance, Options.Create(_options), Options.Create(TestOptions.Release()), _context, _report, Changelogs);
+    private ValidateChangelog Step() =>
+        new(NullLogger<ValidateChangelog>.Instance, Options.Create(_options), Options.Create(TestOptions.Git()), _context, _report, Changelogs);
 }

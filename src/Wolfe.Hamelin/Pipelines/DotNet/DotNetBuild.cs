@@ -1,17 +1,23 @@
 using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Options;
-using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.Reporting;
 
-namespace Wolfe.Hamelin.Build.Steps;
+namespace Wolfe.Hamelin.Pipelines.DotNet;
 
-[DisplayName("Build Solution")]
-public class Build(IOptions<BuildOptions> options, IDotNet dotnet, IBuildReport report) : IPipelineStep
+/// <summary>
+/// Builds the solution, reporting compiler diagnostics when the build fails.
+/// </summary>
+/// <param name="options">The pipeline's build options.</param>
+/// <param name="dotnet">The dotnet client.</param>
+/// <param name="report">The build report.</param>
+[DisplayName("Build .NET Solution")]
+public class DotNetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuildReport report) : IPipelineStep
 {
     private const int MaxDiagnostics = 30;
 
+    /// <inheritdoc />
     public async Task Run(CancellationToken cancellationToken = default)
     {
         var result = await dotnet.Build(

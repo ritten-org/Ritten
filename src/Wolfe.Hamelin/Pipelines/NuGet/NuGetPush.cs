@@ -1,21 +1,31 @@
 using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Options;
-using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.NuGet;
+using Wolfe.Hamelin.Pipelines.DotNet;
 using Wolfe.Hamelin.Reporting;
 
-namespace Wolfe.Hamelin.Build.Steps;
+namespace Wolfe.Hamelin.Pipelines.NuGet;
 
-[DisplayName("Publish NuGet Package")]
-public class Publish(
+/// <summary>
+/// Pushes the packed packages to the configured feed. Requires <see cref="PackResult"/> in
+/// pipeline state (see <see cref="DotNetPack"/>); uses <see cref="Project"/> for the report
+/// when present.
+/// </summary>
+/// <param name="options">The pipeline's NuGet options.</param>
+/// <param name="context">The pipeline context.</param>
+/// <param name="nuget">The NuGet client.</param>
+/// <param name="report">The build report.</param>
+[DisplayName("Push NuGet Package")]
+public class NuGetPush(
     IOptions<NuGetOptions> options,
     IPipelineContext context,
     INuGet nuget,
     IBuildReport report
 ) : IPipelineStep
 {
+    /// <inheritdoc />
     public async Task Run(CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(options.Value.ApiKey))

@@ -2,14 +2,22 @@ using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.DotNet;
 
-namespace Wolfe.Hamelin.Build.Steps;
+namespace Wolfe.Hamelin.Pipelines.DotNet;
 
-[DisplayName("Extract Project Information")]
-public class ExtractProject(ILogger<ExtractProject> logger, IOptions<BuildOptions> options, IPipelineContext context, IDotNet dotnet) : IPipelineStep
+/// <summary>
+/// Reads the package name and version from the configured project file.
+/// Sets <see cref="Project"/> in pipeline state for later steps.
+/// </summary>
+/// <param name="logger">The step's logger.</param>
+/// <param name="options">The pipeline's build options.</param>
+/// <param name="context">The pipeline context.</param>
+/// <param name="dotnet">The dotnet client.</param>
+[DisplayName("Extract .NET Project")]
+public class ExtractDotNetProject(ILogger<ExtractDotNetProject> logger, IOptions<DotNetOptions> options, IPipelineContext context, IDotNet dotnet) : IPipelineStep
 {
+    /// <inheritdoc />
     public async Task Run(CancellationToken cancellationToken = default)
     {
         var csproj = context.FileSystem.CurrentDirectory.GetFile(options.Value.ProjectFile);

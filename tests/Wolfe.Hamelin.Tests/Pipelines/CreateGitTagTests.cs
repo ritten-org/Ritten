@@ -2,21 +2,20 @@ using Hamelin;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
-using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Steps;
-using Wolfe.Hamelin.Build.Tests.Support;
 using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.Git;
+using Wolfe.Hamelin.Pipelines.Git;
+using Wolfe.Hamelin.Tests.Support;
 
-namespace Wolfe.Hamelin.Build.Tests.Steps;
+namespace Wolfe.Hamelin.Tests.Pipelines;
 
-public class CreateTagTests
+public class CreateGitTagTests
 {
     private readonly IGit _git = Substitute.For<IGit>();
     private readonly IPipelineContext _context = Substitute.For<IPipelineContext>();
-    private readonly ReleaseOptions _options = TestOptions.Release();
+    private readonly GitOptions _options = TestOptions.Git();
 
-    public CreateTagTests()
+    public CreateGitTagTests()
     {
         _context.State.Get<Project>(Arg.Any<string>())
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
@@ -73,6 +72,6 @@ public class CreateTagTests
         await _git.Received().CreateTag("release/1.2.0", null, Arg.Any<CancellationToken>());
     }
 
-    private CreateTag Step() =>
-        new(NullLogger<CreateTag>.Instance, Options.Create(_options), _context, _git);
+    private CreateGitTag Step() =>
+        new(NullLogger<CreateGitTag>.Instance, Options.Create(_options), _context, _git);
 }
