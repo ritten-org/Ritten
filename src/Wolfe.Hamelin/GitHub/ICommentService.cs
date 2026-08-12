@@ -3,7 +3,7 @@ namespace Wolfe.Hamelin.GitHub;
 /// <summary>
 /// Maintains a single, updatable comment on the pull request that triggered the current run.
 /// </summary>
-public interface IPullRequestCommentService
+public interface ICommentService
 {
     /// <summary>
     /// Creates the pipeline's comment on the current pull request, or updates it in place.

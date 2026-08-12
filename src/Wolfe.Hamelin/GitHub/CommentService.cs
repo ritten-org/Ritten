@@ -4,7 +4,7 @@ using Octokit;
 
 namespace Wolfe.Hamelin.GitHub;
 
-internal class PullRequestCommentService(ILogger<PullRequestCommentService> logger, IOptions<GitHubOptions> options, IGitHubClient client) : IPullRequestCommentService
+internal class CommentService(ILogger<CommentService> logger, IOptions<GitHubOptions> options, IGitHubClient client) : ICommentService
 {
     public async Task CreateOrUpdate(string body, CancellationToken cancellationToken = default)
     {

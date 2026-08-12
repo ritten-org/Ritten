@@ -48,7 +48,7 @@ public static class ServiceCollectionExtensions
 
         /// <summary>
         /// Adds the GitHub API client and services to the service collection:
-        /// <see cref="IPullRequestCommentService"/> and <see cref="IReleaseService"/>.
+        /// <see cref="ICommentService"/> and <see cref="IReleaseService"/>.
         /// </summary>
         /// <param name="clientName">The product name used to identify this pipeline to the GitHub API.</param>
         public IServiceCollection AddGitHub(string clientName)
@@ -68,7 +68,7 @@ public static class ServiceCollectionExtensions
                 return client;
             });
 
-            services.AddSingleton<IPullRequestCommentService, PullRequestCommentService>();
+            services.AddSingleton<ICommentService, CommentService>();
             services.AddSingleton<IReleaseService, ReleaseService>();
             return services;
         }

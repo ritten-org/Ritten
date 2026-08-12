@@ -8,7 +8,7 @@ namespace Wolfe.Hamelin.Reporting.Hooks;
 /// <summary>
 /// Posts a placeholder comment as soon as a pull request run starts.
 /// </summary>
-internal class PendingCommentHook(ILogger<PendingCommentHook> logger, IOptions<GitHubOptions> options, IPullRequestCommentService comments) : IPrePipelineHook
+internal class PendingCommentHook(ILogger<PendingCommentHook> logger, IOptions<GitHubOptions> options, ICommentService comments) : IPrePipelineHook
 {
     public async Task PrePipeline(PrePipelineHookArgs args, CancellationToken cancellationToken = default)
     {
