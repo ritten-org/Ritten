@@ -38,6 +38,10 @@ internal class ChangelogClient : IChangelog
     /// <inheritdoc />
     public string RenderEntry(ChangelogEntry entry) => ChangelogRenderer.RenderEntry(entry);
 
+    /// <inheritdoc />
+    public IReadOnlyCollection<ChangelogLink> GenerateLinks(Changelog changelog, ChangelogRepository repository) =>
+        ChangelogLinkGenerator.Generate(changelog, repository);
+
     private static async Task WriteText(IFile file, string text, CancellationToken cancellationToken)
     {
         var stream = file.OpenWrite();

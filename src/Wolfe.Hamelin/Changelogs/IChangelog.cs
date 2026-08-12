@@ -46,4 +46,9 @@ public interface IChangelog
     /// Renders the given changelog entry.
     /// </summary>
     public string RenderEntry(ChangelogEntry entry);
+
+    /// <summary>
+    /// Computes the reference-style version links the changelog should have for the given repository.
+    /// </summary>
+    public IReadOnlyCollection<ChangelogLink> GenerateLinks(Changelog changelog, ChangelogRepository repository);
 }

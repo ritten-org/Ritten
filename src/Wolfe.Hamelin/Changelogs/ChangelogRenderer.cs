@@ -27,9 +27,9 @@ internal static class ChangelogRenderer
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(changelog.LinkReferences))
+        if (changelog.Links.Count > 0)
         {
-            blocks.Add(changelog.LinkReferences.Trim('\n'));
+            blocks.Add(string.Join('\n', changelog.Links.Select(l => l.ToMarkdown())));
         }
 
         return string.Join("\n\n", blocks) + "\n";

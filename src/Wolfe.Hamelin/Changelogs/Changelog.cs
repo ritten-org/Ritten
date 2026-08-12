@@ -18,9 +18,9 @@ public class Changelog
     public IReadOnlyCollection<ChangelogEntry> Entries { get; init; } = [];
 
     /// <summary>
-    /// Gets the block of reference-style link definitions from the end of the file.
+    /// Gets the reference-style version links from the end of the file.
     /// </summary>
-    public string LinkReferences { get; init; } = "";
+    public IReadOnlyCollection<ChangelogLink> Links { get; init; } = [];
 
     /// <summary>
     /// Gets the unreleased section if there is one.

@@ -59,7 +59,14 @@ The big release.
       IsEmpty: false
     }
   ],
-  LinkReferences:
-[Unreleased]: https://github.com/example/repo/compare/v1.2.0...HEAD
-[1.2.0]: https://github.com/example/repo/compare/v1.1.0...v1.2.0
+  Links: [
+    {
+      Label: Unreleased,
+      Url: https://github.com/example/repo/compare/v1.2.0...HEAD
+    },
+    {
+      Label: 1.2.0,
+      Url: https://github.com/example/repo/compare/v1.1.0...v1.2.0
+    }
+  ]
 }

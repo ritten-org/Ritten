@@ -17,7 +17,7 @@ internal static partial class ChangelogParser
     public static Changelog Parse(string changelog)
     {
         var lines = SplitLines(changelog);
-        var linkReferences = ExtractTrailingLinkReferences(lines, out var contentLength);
+        var links = ExtractTrailingLinks(lines, out var contentLength);
 
         var headings = new List<int>();
         for (var i = 0; i < contentLength; i++)
@@ -39,7 +39,7 @@ internal static partial class ChangelogParser
         {
             Preamble = Join(lines, 0, headings.Count > 0 ? headings[0] : contentLength),
             Entries = entries,
-            LinkReferences = linkReferences
+            Links = links
         };
     }
 
@@ -146,7 +146,7 @@ internal static partial class ChangelogParser
     /// Splits off the block of reference-style link definitions at the end of the file, so they
     /// don't end up in the last entry's body.
     /// </summary>
-    private static string ExtractTrailingLinkReferences(string[] lines, out int contentLength)
+    private static List<ChangelogLink> ExtractTrailingLinks(string[] lines, out int contentLength)
     {
         var first = lines.Length;
         for (var i = lines.Length - 1; i >= 0; i--)
@@ -165,7 +165,11 @@ internal static partial class ChangelogParser
         }
 
         contentLength = first;
-        return first == lines.Length ? "" : string.Join('\n', lines[first..]).Trim('\n');
+        return lines[first..]
+            .Select(l => LinkReferenceLine().Match(l))
+            .Where(m => m.Success)
+            .Select(m => new ChangelogLink(m.Groups["label"].Value, m.Groups["url"].Value))
+            .ToList();
     }
 
     private static string[] SplitLines(string text) => text.Replace("\r\n", "\n").Split('\n');
@@ -182,6 +186,6 @@ internal static partial class ChangelogParser
     [GeneratedRegex(@"^[-*+]\s+(?<text>.*)$")]
     private static partial Regex ItemLine();
 
-    [GeneratedRegex(@"^\[[^\]]+\]:\s*\S+")]
+    [GeneratedRegex(@"^\[(?<label>[^\]]+)\]:\s*(?<url>\S+)\s*$")]
     private static partial Regex LinkReferenceLine();
 }

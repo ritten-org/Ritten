@@ -56,6 +56,18 @@ public class Changelog(
             throw new Exception($"Changelog entry for version {project.Version} is empty.");
         }
 
+        if (!string.IsNullOrEmpty(options.Value.RepositoryUrl))
+        {
+            var expected = changelogs.GenerateLinks(changelog, new ChangelogRepository(options.Value.RepositoryUrl));
+            if (!changelog.Links.SequenceEqual(expected))
+            {
+                var block = string.Join('\n', expected.Select(l => l.ToMarkdown()));
+                report.Section("Release").Failure(
+                    $"The version links in `{options.Value.ChangelogFile}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
+                throw new Exception($"Changelog version links in {options.Value.ChangelogFile} are missing or out of date.");
+            }
+        }
+
         context.State.Set(entry);
         report.Section("Release").Success($"Changelog entry for **{project.Version}** is present.");
         logger.LogInformation("Found changelog entry for {Version}.", project.Version);
