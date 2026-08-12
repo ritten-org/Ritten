@@ -17,12 +17,4 @@ public record CommandResult(int ExitCode, string StandardOutput, string Standard
     /// True if the command exited non-zero, otherwise false.
     /// </summary>
     public bool IsError => ExitCode != 0;
-
-    /// <summary>
-    /// Throws an exception if <see cref="IsError"/> is true.
-    /// </summary>
-    public void ThrowOnError()
-    {
-        // TODO: implement.
-    }
 }

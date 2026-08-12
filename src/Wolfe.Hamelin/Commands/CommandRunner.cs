@@ -14,7 +14,7 @@ internal class CommandRunner(ILogger<CommandRunner> logger, IPipelineContext con
         process.StartInfo = new ProcessStartInfo
         {
             FileName = command.Path,
-            WorkingDirectory = context.CurrentDirectory,
+            WorkingDirectory = Path.Combine(context.CurrentDirectory, command.WorkingDirectory ?? string.Empty),
             RedirectStandardInput = command.StandardInput is not null,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -36,18 +36,18 @@ internal class CommandRunner(ILogger<CommandRunner> logger, IPipelineContext con
 
         var stdOut = new StringBuilder();
         var stdOutDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        process.OutputDataReceived += LogStandard(stdOut, !command.IsSensitive, LogLevel.Information, stdOutDone);
+        process.OutputDataReceived += LogStandard(stdOut, command.OutputRedacted, LogLevel.Information, stdOutDone);
 
         var stdErr = new StringBuilder();
         var stdErrDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        process.ErrorDataReceived += LogStandard(stdErr, !command.IsSensitive, command.StandardErrorLogLevel, stdErrDone);
+        process.ErrorDataReceived += LogStandard(stdErr, command.OutputRedacted, command.StandardErrorLogLevel, stdErrDone);
 
         var exitTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         process.Exited += (_, _) => exitTcs.TrySetResult();
 
         if (logger.IsEnabled(LogLevel.Information))
         {
-            var args = command.IsSensitive ? "[REDACTED]" : string.Join(" ", command.Arguments);
+            var args = command.ArgumentsRedacted ? "[REDACTED]" : string.Join(" ", command.Arguments);
             logger.LogInformation("Running command: {Command} {Arguments}", command.Path, args);
         }
 
@@ -89,10 +89,31 @@ internal class CommandRunner(ILogger<CommandRunner> logger, IPipelineContext con
         );
 
         logger.LogInformation("Exit code: {ExitCode}", process.ExitCode);
-        return new CommandResult(process.ExitCode, stdOut.ToString(), stdErr.ToString());
+        var result = new CommandResult(process.ExitCode, stdOut.ToString(), stdErr.ToString());
+        if (command.ThrowsOnError && result.IsError)
+        {
+            throw new CommandFailedException(FailureMessage(command, result), result);
+        }
+
+        return result;
     }
 
-    private DataReceivedEventHandler LogStandard(StringBuilder sb, bool logOutput, LogLevel logLevel, TaskCompletionSource tcs) => (_, e) =>
+    private static string FailureMessage(Command command, CommandResult result)
+    {
+        var message = $"Command '{command.Path}' exited with code {result.ExitCode}.";
+        if (command.OutputRedacted)
+        {
+            return message;
+        }
+
+        var tail = result.StandardError
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .TakeLast(10)
+            .ToList();
+        return tail.Count == 0 ? message : $"{message}\n{string.Join('\n', tail)}";
+    }
+
+    private DataReceivedEventHandler LogStandard(StringBuilder sb, bool hide, LogLevel logLevel, TaskCompletionSource tcs) => (_, e) =>
     {
         if (e.Data is null)
         {
@@ -101,7 +122,7 @@ internal class CommandRunner(ILogger<CommandRunner> logger, IPipelineContext con
         }
 
         sb.AppendLine(e.Data);
-        if (logOutput && logger.IsEnabled(logLevel))
+        if (!hide && logger.IsEnabled(logLevel))
         {
             logger.Log(logLevel, "{Value}", e.Data);
         }

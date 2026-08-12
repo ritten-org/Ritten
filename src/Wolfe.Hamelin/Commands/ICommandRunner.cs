@@ -12,7 +12,8 @@ public interface ICommandRunner
     /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
     /// <returns>The result of the command.</returns>
     /// <remarks>
-    /// This method doesn't throw if the command exits non-zero, so check the result or call <see cref="CommandResult.ThrowOnError"/>.
+    /// A non-zero exit doesn't throw unless the command was built with <see cref="Command.ThrowOnError"/>;
+    /// otherwise check <see cref="CommandResult.IsSuccess"/> on the result.
     /// </remarks>
     Task<CommandResult> Run(Command command, CancellationToken cancellationToken = default);
 }
