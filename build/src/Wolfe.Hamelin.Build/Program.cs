@@ -14,9 +14,10 @@ builder.Services
     .AddDotNet()
     .AddGit()
     .AddNuGet()
+    .AddGitHub("Wolfe.Hamelin.Build")
     .AddGitHubActionsRuntime()
     .AddStepsFromAssemblyContaining<Program>()
-    .AddBuildReporting("Wolfe.Hamelin.Build");
+    .AddBuildReporting();
 
 builder.Services.AddOptions<BuildOptions>()
     .BindConfiguration("Build")

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Xml;
 using Hamelin;
 using Hamelin.FileSystem;
 using NuGet.Versioning;
@@ -13,30 +12,32 @@ internal class DotNetClient(ICommandRunner commands, IPipelineContext context) :
 
     public async Task<Project> ReadProject(IFile file, CancellationToken cancellationToken = default)
     {
-        await using var stream = file.OpenRead();
-        var document = new XmlDocument();
-        document.Load(stream);
-        if (document.DocumentElement == null)
+        // MSBuild evaluates the project for real, so properties inherited from
+        // Directory.Build.props, conditions, and SDK defaults are all resolved.
+        var command = Command
+            .Create("dotnet")
+            .WithArguments("msbuild", file.AbsolutePath, "-getProperty:PackageId", "-getProperty:Version")
+            .ThrowOnError();
+        var result = await commands.Run(command, cancellationToken);
+
+        var properties = JsonDocument.Parse(result.StandardOutput).RootElement.GetProperty("Properties");
+        var packageId = properties.GetProperty("PackageId").GetString();
+        var version = properties.GetProperty("Version").GetString();
+
+        if (string.IsNullOrEmpty(packageId))
         {
-            throw new Exception("Could not parse project file.");
+            throw new Exception($"The project '{file.Name}' did not evaluate a PackageId.");
         }
 
-        var packageName = document.SelectSingleNode("Project/PropertyGroup/PackageId")?.FirstChild?.Value;
-        if (packageName == null)
+        if (string.IsNullOrEmpty(version))
         {
-            throw new Exception("Unable to find PackageId in project file.");
-        }
-
-        var packageVersion = document.SelectSingleNode("Project/PropertyGroup/Version")?.FirstChild?.Value;
-        if (packageVersion == null)
-        {
-            throw new Exception("Unable to find Version in project file.");
+            throw new Exception($"The project '{file.Name}' did not evaluate a Version.");
         }
 
         return new Project
         {
-            Name = packageName,
-            Version = NuGetVersion.Parse(packageVersion)
+            Name = packageId,
+            Version = NuGetVersion.Parse(version)
         };
     }
 

@@ -47,11 +47,11 @@ public static class ServiceCollectionExtensions
         public IServiceCollection AddNuGet() => services.AddSingleton<INuGet, NuGetClient>();
 
         /// <summary>
-        /// Adds <see cref="IBuildReport"/> to the service collection and configures hooks that
-        /// publish it to the job summary and pull request when the pipeline finishes.
+        /// Adds the GitHub API client and services to the service collection:
+        /// <see cref="IPullRequestCommentService"/> and <see cref="IReleaseService"/>.
         /// </summary>
         /// <param name="clientName">The product name used to identify this pipeline to the GitHub API.</param>
-        public IServiceCollection AddBuildReporting(string clientName)
+        public IServiceCollection AddGitHub(string clientName)
         {
             services.AddOptions<GitHubOptions>()
                 .BindConfiguration("GitHub")
@@ -69,6 +69,17 @@ public static class ServiceCollectionExtensions
             });
 
             services.AddSingleton<IPullRequestCommentService, PullRequestCommentService>();
+            services.AddSingleton<IReleaseService, ReleaseService>();
+            return services;
+        }
+
+        /// <summary>
+        /// Adds <see cref="IBuildReport"/> to the service collection and configures hooks that
+        /// publish it to the job summary and pull request when the pipeline finishes.
+        /// Requires <see cref="AddGitHub"/>.
+        /// </summary>
+        public IServiceCollection AddBuildReporting()
+        {
             services.AddSingleton<IBuildReport, BuildReport>();
             services.AddSingleton<MarkdownReportRenderer>();
             services.AddSingleton<IReportSink, JobSummarySink>();
