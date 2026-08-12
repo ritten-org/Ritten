@@ -32,8 +32,7 @@ public class Changelog(
         var changelog = context.FileSystem.CurrentDirectory.GetFile(options.Value.ChangelogFile);
         if (!changelog.Exists)
         {
-            report.Section("Release").Failure(
-                $"The changelog file `{options.Value.ChangelogFile}` doesn't exist — create it with a `## [{projectInfo.Version}]` entry describing the release.");
+            report.Section("Release").Failure($"The changelog file `{options.Value.ChangelogFile}` does not exist.");
             throw new FileNotFoundException("Could not find changelog file", changelog.AbsolutePath);
         }
 
@@ -55,11 +54,8 @@ public class Changelog(
 
         if (headingIndex < 0)
         {
-            report.Section("Release").Failure(
-                $"There's no changelog entry for **{projectInfo.Version}** in `{options.Value.ChangelogFile}` — I looked for a heading starting with " +
-                $"{string.Join(" or ", candidateHeadings.Select(h => $"`{h}`"))}. Add one describing the release and push again.");
-            throw new Exception(
-                $"No changelog entry found for version {projectInfo.Version} in {options.Value.ChangelogFile}. Expected a heading starting with one of: {string.Join(", ", candidateHeadings.Select(h => $"'{h}'"))}.");
+            report.Section("Release").Failure($"There's no changelog entry for **{projectInfo.Version}** in `{options.Value.ChangelogFile}`.");
+            throw new Exception($"No changelog entry found for version {projectInfo.Version} in {options.Value.ChangelogFile}.");
         }
 
         var nextHeadingIndex = Array.FindIndex(lines, headingIndex + 1, l => l.StartsWith("## [", StringComparison.Ordinal));
@@ -69,7 +65,7 @@ public class Changelog(
         if (string.IsNullOrWhiteSpace(body))
         {
             report.Section("Release").Failure(
-                $"The changelog entry for **{projectInfo.Version}** is empty — add at least one line describing the release.");
+                $"The changelog entry for **{projectInfo.Version}** is empty.");
             throw new Exception($"Changelog entry for version {projectInfo.Version} is empty.");
         }
 
