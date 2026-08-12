@@ -3,7 +3,7 @@ using Hamelin;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.Build.Reporting;
-using Wolfe.Hamelin.Build.Services;
+using Wolfe.Hamelin.Commands;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -22,17 +22,14 @@ public class Publish(
             .GetFiles("*.nupkg")
             .Single();
 
-        await commands.Run(
-            command: "dotnet",
-            arguments: [
-                "nuget", "push",
-                packageFile.AbsolutePath,
-                "--source", options.Value.NuGetFeed,
-                "--api-key", options.Value.NuGetApiKey,
-                "--skip-duplicate"
-            ],
-            cancellationToken
-        );
+        var dotnetPublish = Command
+            .Run("dotnet")
+            .WithArguments("nuget", "push", packageFile.AbsolutePath)
+            .AndArguments("--source", options.Value.NuGetFeed)
+            .AndArguments("--api-key", options.Value.NuGetApiKey)
+            .AndArguments("--skip-duplicate")
+            .Sensitive();
+        await commands.Run(dotnetPublish, cancellationToken);
 
         if (context.State.Get<ProjectInfo>() is { } projectInfo)
         {

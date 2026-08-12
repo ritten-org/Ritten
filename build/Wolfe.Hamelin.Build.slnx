@@ -3,6 +3,8 @@
     <File Path="../.github\workflows\wolfe.hamelin.build.yml" />
     <File Path="../Directory.Packages.props" />
   </Folder>
+  <Project Path="../src/Wolfe.Hamelin/Wolfe.Hamelin.csproj" />
+  <Project Path="../tests/Wolfe.Hamelin.Tests/Wolfe.Hamelin.Tests.csproj" />
   <Project Path="src\Wolfe.Hamelin.Build\Wolfe.Hamelin.Build.csproj" />
   <Project Path="tests\Wolfe.Hamelin.Build.Tests\Wolfe.Hamelin.Build.Tests.csproj" />
 </Solution>

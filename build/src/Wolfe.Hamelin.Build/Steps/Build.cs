@@ -4,7 +4,7 @@ using Hamelin;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.Build.Reporting;
-using Wolfe.Hamelin.Build.Services;
+using Wolfe.Hamelin.Commands;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -15,14 +15,12 @@ public partial class Build(IOptions<BuildOptions> options, ICommandRunner comman
 
     public async Task Run(CancellationToken cancellationToken = default)
     {
-        var result = await commands.Run(
-            command: "dotnet",
-            arguments: ["build", "--no-restore", "--configuration", options.Value.Configuration],
-            cancellationToken,
-            throwOnNonZeroExit: false
-        );
-
-        if (result.Success)
+        var dotnetBuild = Command
+            .Run("dotnet")
+            .WithArguments("build", "--no-restore")
+            .AndArguments("--configuration", options.Value.Configuration);
+        var result = await commands.Run(dotnetBuild, cancellationToken);
+        if (result.IsSuccess)
         {
             return;
         }

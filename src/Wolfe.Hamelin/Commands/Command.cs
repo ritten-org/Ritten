@@ -48,6 +48,11 @@ public record Command
     public Command WithArguments(params string[] arguments) => this with { Arguments = arguments };
 
     /// <summary>
+    /// Runs the command with the given arguments.
+    /// </summary>
+    public Command AndArguments(params string[] arguments) => this with { Arguments = [..Arguments, ..arguments] };
+
+    /// <summary>
     /// Runs the command with the given environment variables.
     /// </summary>
     public Command WithEnvironmentVariables(IReadOnlyDictionary<string, string> envVars) => this with { EnvironmentVariables = envVars };

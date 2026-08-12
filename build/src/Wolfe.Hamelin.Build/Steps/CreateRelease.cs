@@ -3,7 +3,7 @@ using Hamelin;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Build.Services;
+using Wolfe.Hamelin.Commands;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -31,14 +31,17 @@ public class CreateRelease(
         var notesFile = context.FileSystem.CurrentDirectory
             .GetDirectory(options.Value.TempDirectory)
             .GetFile($"release-notes-{projectInfo.Version}.md");
+
         Directory.CreateDirectory(Path.GetDirectoryName(notesFile.AbsolutePath)!);
         await File.WriteAllTextAsync(notesFile.AbsolutePath, changelog.Body, cancellationToken);
 
         logger.LogInformation("Creating GitHub Release {Tag}.", tag);
-        await commands.Run(
-            "gh",
-            ["release", "create", tag, "--title", tag, "--notes-file", notesFile.AbsolutePath],
-            cancellationToken
-        );
+
+        var ghRelease = Command
+            .Run("gh")
+            .WithArguments("release", "create", tag)
+            .AndArguments("--tag", tag)
+            .AndArguments("--notes-file", notesFile.AbsolutePath);
+        await commands.Run(ghRelease, cancellationToken);
     }
 }

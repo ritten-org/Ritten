@@ -4,7 +4,7 @@ using Hamelin;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.Build.Reporting;
-using Wolfe.Hamelin.Build.Services;
+using Wolfe.Hamelin.Commands;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -23,15 +23,13 @@ public class Test(
         var resultsDirectory = Path.Combine(context.CurrentDirectory, options.Value.TempDirectory, "test-results");
         Directory.CreateDirectory(resultsDirectory);
 
-        var result = await commands.Run(
-            command: "dotnet",
-            arguments: [
-                "test", "--no-build", "--configuration", options.Value.Configuration,
-                "--logger", "trx", "--results-directory", resultsDirectory
-            ],
-            cancellationToken,
-            throwOnNonZeroExit: false
-        );
+        var dotnetTest = Command
+            .Run("dotnet")
+            .WithArguments("test","--no-build")
+            .AndArguments("--configuration", options.Value.Configuration)
+            .AndArguments("--logger", "trx")
+            .AndArguments("--results-directory", resultsDirectory);
+        var result = await commands.Run(dotnetTest, cancellationToken);
 
         var runs = Directory.EnumerateFiles(resultsDirectory, "*.trx").Select(ParseTrx).ToList();
         var passed = runs.Sum(r => r.Passed);
@@ -39,7 +37,7 @@ public class Test(
         var skipped = runs.Sum(r => r.Skipped);
         var failures = runs.SelectMany(r => r.Failures).ToList();
 
-        if (result.Success)
+        if (result.IsSuccess)
         {
             if (passed + failed + skipped > 0)
             {

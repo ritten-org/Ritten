@@ -24,4 +24,8 @@
     <PackageReference Include="Octokit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Wolfe.Hamelin\Wolfe.Hamelin.csproj" />
+  </ItemGroup>
+
 </Project>

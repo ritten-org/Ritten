@@ -4,7 +4,7 @@ using Hamelin;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.Build.Reporting;
-using Wolfe.Hamelin.Build.Services;
+using Wolfe.Hamelin.Commands;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
@@ -23,14 +23,9 @@ public class Format(
         var reportDirectory = Path.Combine(context.CurrentDirectory, options.Value.TempDirectory, "format");
         Directory.CreateDirectory(reportDirectory);
 
-        var result = await commands.Run(
-            command: "dotnet",
-            arguments: ["format", "--verify-no-changes", "--report", reportDirectory],
-            cancellationToken,
-            throwOnNonZeroExit: false
-        );
-
-        if (result.Success)
+        var dotnetFormat = Command.Run("dotnet").WithArguments("format", "--verify-no-changes", "--report", reportDirectory);
+        var result = await commands.Run(dotnetFormat, cancellationToken);
+        if (result.IsSuccess)
         {
             return;
         }
