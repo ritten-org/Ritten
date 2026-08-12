@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NuGet.Versioning;
 using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.Build.Reporting;
 
@@ -38,7 +39,7 @@ public class Changelog(
 
         var lines = await File.ReadAllLinesAsync(changelog.AbsolutePath, cancellationToken);
 
-        string[] candidateHeadings = projectInfo.Version.IsPrerelease
+        string[] candidateHeadings = projectInfo.Version.IsPrerelease || projectInfo.Version < NuGetVersion.Parse("1.0.0")
             ? [$"## [{projectInfo.Version}]", "## [Unreleased]"]
             : [$"## [{projectInfo.Version}]"];
 
