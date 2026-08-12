@@ -38,21 +38,21 @@ public class Version(
 
         if (versions.Any(v => v == project.Version))
         {
-            report.Section("Release").Failure(
-                $"Version **{project.Version}** is already published on the feed — bump `<Version>` in `{build.Value.ProjectFile}`.");
+            report.Section("Release")
+                .Failure($"Version **{project.Version}** is already published on the feed — bump `<Version>` in `{build.Value.ProjectFile}`.");
             throw new Exception($"Package version {project.Version} already exists on the feed.");
         }
 
         var latestVersion = versions.DefaultIfEmpty().Max();
         if (latestVersion != null && project.Version <= latestVersion)
         {
-            report.Section("Release").Failure(
-                $"Version **{project.Version}** isn't greater than the latest published version **{latestVersion}** — bump `<Version>` in `{build.Value.ProjectFile}`.");
+            report.Section("Release")
+                .Failure($"Version **{project.Version}** isn't greater than the latest published version **{latestVersion}** — bump `<Version>` in `{build.Value.ProjectFile}`.");
             throw new Exception($"Project version {project.Version} is not greater than the latest version {latestVersion}.");
         }
 
-        report.Section("Release").Success(
-            latestVersion == null
+        report.Section("Release")
+            .Success(latestVersion == null
                 ? $"Version **{project.Version}** will be the first published version of {project.Name}."
                 : $"Version **{project.Version}** is valid (latest published: **{latestVersion}**).");
         logger.LogInformation("Version {Version} is valid and can be used for package {PackageName}.", project.Version, project.Name);
