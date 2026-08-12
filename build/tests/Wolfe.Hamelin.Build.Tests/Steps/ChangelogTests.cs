@@ -26,7 +26,7 @@ public class ChangelogTests
     private readonly IPipelineContext _context = Substitute.For<IPipelineContext>();
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
     private readonly ReportSection _releaseSection = new("Release");
-    private readonly BuildOptions _options = TestOptions.Build();
+    private readonly ChangelogOptions _options = TestOptions.Changelog();
 
     public ChangelogTests()
     {
@@ -101,9 +101,9 @@ public class ChangelogTests
         var file = Substitute.For<IFile>();
         file.Exists.Returns(true);
         file.OpenRead().Returns(_ => new MemoryStream(Encoding.UTF8.GetBytes(content)));
-        _context.FileSystem.CurrentDirectory.GetFile(_options.ChangelogFile).Returns(file);
+        _context.FileSystem.CurrentDirectory.GetFile(_options.File).Returns(file);
     }
 
     private ChangelogStep Step() =>
-        new(NullLogger<ChangelogStep>.Instance, Options.Create(_options), _context, _report, Changelogs);
+        new(NullLogger<ChangelogStep>.Instance, Options.Create(_options), Options.Create(TestOptions.Release()), _context, _report, Changelogs);
 }

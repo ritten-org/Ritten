@@ -11,6 +11,7 @@ namespace Wolfe.Hamelin.Build.Steps;
 [DisplayName("Publish NuGet Package")]
 public class Publish(
     IOptions<BuildOptions> options,
+    IOptions<NuGetOptions> nuget,
     IPipelineContext context,
     ICommandRunner commands,
     IBuildReport report
@@ -18,6 +19,11 @@ public class Publish(
 {
     public async Task Run(CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrEmpty(nuget.Value.ApiKey))
+        {
+            throw new Exception("The NuGet API key is not configured; set NuGet__ApiKey for the deploy pipeline.");
+        }
+
         var packageFile = context.FileSystem.CurrentDirectory
             .GetDirectory(options.Value.ArtifactsDirectory)
             .GetFiles("*.nupkg")
@@ -26,8 +32,8 @@ public class Publish(
         var dotnetPublish = Command
             .Create("dotnet")
             .WithArguments("nuget", "push", packageFile.AbsolutePath)
-            .AndArguments("--source", options.Value.NuGetFeed)
-            .AndArguments("--api-key", options.Value.NuGetApiKey)
+            .AndArguments("--source", nuget.Value.Feed)
+            .AndArguments("--api-key", nuget.Value.ApiKey)
             .AndArguments("--skip-duplicate")
             .RedactArguments()
             .ThrowOnError();

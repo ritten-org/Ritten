@@ -13,6 +13,7 @@ namespace Wolfe.Hamelin.Build.Steps;
 public class CreateRelease(
     ILogger<CreateRelease> logger,
     IOptions<BuildOptions> options,
+    IOptions<ReleaseOptions> release,
     IPipelineContext context,
     ICommandRunner commands,
     IChangelog changelogs
@@ -20,15 +21,15 @@ public class CreateRelease(
 {
     public async Task Run(CancellationToken cancellationToken = default)
     {
-        var projectInfo = context.State.Get<Project>() ?? throw new Exception("Project info not found in state.");
+        var project = context.State.Get<Project>() ?? throw new Exception("Project info not found in state.");
 
-        if (projectInfo.Version.IsPrerelease)
+        if (project.Version.IsPrerelease)
         {
-            logger.LogInformation("Skipping GitHub Release for prerelease version {Version}; tag has still been pushed.", projectInfo.Version);
+            logger.LogInformation("Skipping GitHub Release for prerelease version {Version}; tag has still been pushed.", project.Version);
             return;
         }
 
-        var tag = $"v{projectInfo.Version}";
+        var tag = $"{release.Value.TagPrefix}{project.Version}";
 
         // A failed deploy may have already created the release; rerunning should carry on, not crash.
         var existingRelease = await commands.Run(
@@ -45,7 +46,7 @@ public class CreateRelease(
         var tempDirectory = context.FileSystem.CurrentDirectory.GetDirectory(options.Value.TempDirectory);
         tempDirectory.Create();
 
-        var notesFile = tempDirectory.GetFile($"release-notes-{projectInfo.Version}.md");
+        var notesFile = tempDirectory.GetFile($"release-notes-{project.Version}.md");
         await changelogs.WriteEntry(notesFile, entry, cancellationToken);
 
         logger.LogInformation("Creating GitHub Release {Tag}.", tag);

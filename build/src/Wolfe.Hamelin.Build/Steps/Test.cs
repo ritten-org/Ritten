@@ -1,10 +1,9 @@
 using System.ComponentModel;
-using System.Xml.Linq;
 using Hamelin;
-using Hamelin.FileSystem;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.Commands;
+using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.Reporting;
 
 namespace Wolfe.Hamelin.Build.Steps;
@@ -14,6 +13,7 @@ public class Test(
     IOptions<BuildOptions> options,
     IPipelineContext context,
     ICommandRunner commands,
+    IDotNet dotnet,
     IBuildReport report
 ) : IPipelineStep
 {
@@ -34,7 +34,12 @@ public class Test(
             .AndArguments("--results-directory", resultsDirectory.AbsolutePath);
         var result = await commands.Run(dotnetTest, cancellationToken);
 
-        var runs = resultsDirectory.GetFiles("*.trx").Select(ParseTrx).ToList();
+        var runs = new List<TestRun>();
+        foreach (var trxFile in resultsDirectory.GetFiles("*.trx"))
+        {
+            runs.Add(await dotnet.ReadTestResults(trxFile, cancellationToken));
+        }
+
         var passed = runs.Sum(r => r.Passed);
         var failed = runs.Sum(r => r.Failed);
         var skipped = runs.Sum(r => r.Skipped);
@@ -71,7 +76,7 @@ public class Test(
     {
         var described = failures
             .Take(MaxFailures)
-            .Select(f => f.Message.Length > 0 ? $"**`{f.Name}`**\n```\n{f.Message}\n```" : $"**`{f.Name}`**")
+            .Select(f => f.Message.Length > 0 ? $"**`{f.TestName}`**\n```\n{f.Message}\n```" : $"**`{f.TestName}`**")
             .ToList();
 
         if (failures.Count > MaxFailures)
@@ -81,25 +86,4 @@ public class Test(
 
         return string.Join("\n\n", described);
     }
-
-    private static TestRunSummary ParseTrx(IFile file)
-    {
-        using var stream = file.OpenRead();
-        var document = XDocument.Load(stream);
-        var counters = document.Descendants().FirstOrDefault(e => e.Name.LocalName == "Counters");
-        int Count(string attribute) => (int?)counters?.Attribute(attribute) ?? 0;
-
-        var failures = document.Descendants()
-            .Where(e => e.Name.LocalName == "UnitTestResult" && (string?)e.Attribute("outcome") == "Failed")
-            .Select(e => new TestFailure(
-                (string?)e.Attribute("testName") ?? "(unknown test)",
-                e.Descendants().FirstOrDefault(m => m.Name.LocalName == "Message")?.Value.Trim() ?? ""))
-            .ToList();
-
-        return new TestRunSummary(Count("passed"), Count("failed"), Count("notExecuted"), failures);
-    }
-
-    private sealed record TestRunSummary(int Passed, int Failed, int Skipped, IReadOnlyList<TestFailure> Failures);
-
-    private sealed record TestFailure(string Name, string Message);
 }

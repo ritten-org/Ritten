@@ -26,8 +26,8 @@ jobs:
           Build__ProjectFile: 'src/Wolfe.Hamelin/Wolfe.Hamelin.csproj'
           # Dependabot can't bump versions or write changelog entries, so its PRs skip those checks.
           # Pushes to main always run them, so the badge reflects real releasability.
-          Build__SkipVersion: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
-          Build__SkipChangelog: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
+          NuGet__SkipVersionCheck: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
+          Changelog__Skip: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
@@ -45,7 +45,7 @@ jobs:
         run: dotnet run --project build/src/Wolfe.Hamelin.Build/Wolfe.Hamelin.Build.csproj -- deploy
         shell: bash
         env:
-          Build__NuGetApiKey: ${{ secrets.NUGET_API_KEY }}
+          NuGet__ApiKey: ${{ secrets.NUGET_API_KEY }}
           Build__ProjectFile: 'src/Wolfe.Hamelin/Wolfe.Hamelin.csproj'
-          Build__CommitSha: ${{ github.sha }}
+          Release__CommitSha: ${{ github.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

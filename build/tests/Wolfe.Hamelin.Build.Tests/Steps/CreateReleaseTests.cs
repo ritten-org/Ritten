@@ -69,5 +69,5 @@ public class CreateReleaseTests
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse(version) });
 
     private CreateRelease Step() =>
-        new(NullLogger<CreateRelease>.Instance, Options.Create(TestOptions.Build()), _context, _commands, _changelogs);
+        new(NullLogger<CreateRelease>.Instance, Options.Create(TestOptions.Build()), Options.Create(TestOptions.Release()), _context, _commands, _changelogs);
 }

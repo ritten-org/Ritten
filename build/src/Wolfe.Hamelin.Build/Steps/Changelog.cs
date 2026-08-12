@@ -13,7 +13,8 @@ namespace Wolfe.Hamelin.Build.Steps;
 [DisplayName("Validate Changelog Entry")]
 public class Changelog(
     ILogger<Changelog> logger,
-    IOptions<BuildOptions> options,
+    IOptions<ChangelogOptions> options,
+    IOptions<ReleaseOptions> release,
     IPipelineContext context,
     IBuildReport report,
     IChangelog changelogs
@@ -21,7 +22,7 @@ public class Changelog(
 {
     public async Task Run(CancellationToken cancellationToken = default)
     {
-        if (options.Value.SkipChangelog)
+        if (options.Value.Skip)
         {
             logger.LogInformation("Skipping changelog check.");
             return;
@@ -33,10 +34,10 @@ public class Changelog(
             throw new Exception("Project info not found in state.");
         }
 
-        var changelogFile = context.FileSystem.CurrentDirectory.GetFile(options.Value.ChangelogFile);
+        var changelogFile = context.FileSystem.CurrentDirectory.GetFile(options.Value.File);
         if (!changelogFile.Exists)
         {
-            report.Section("Release").Failure($"The changelog file `{options.Value.ChangelogFile}` does not exist.");
+            report.Section("Release").Failure($"The changelog file `{options.Value.File}` does not exist.");
             throw new FileNotFoundException("Could not find changelog file", changelogFile.AbsolutePath);
         }
 
@@ -46,8 +47,8 @@ public class Changelog(
         var entry = isPrerelease ? changelog.Unreleased : changelog.Entry(project.Version);
         if (entry is null)
         {
-            report.Section("Release").Failure($"There's no changelog entry for **{project.Version}** in `{options.Value.ChangelogFile}`.");
-            throw new Exception($"No changelog entry found for version {project.Version} in {options.Value.ChangelogFile}.");
+            report.Section("Release").Failure($"There's no changelog entry for **{project.Version}** in `{options.Value.File}`.");
+            throw new Exception($"No changelog entry found for version {project.Version} in {options.Value.File}.");
         }
 
         if (entry.IsEmpty)
@@ -58,13 +59,14 @@ public class Changelog(
 
         if (!string.IsNullOrEmpty(options.Value.RepositoryUrl))
         {
-            var expected = changelogs.GenerateLinks(changelog, new ChangelogRepository(options.Value.RepositoryUrl));
+            var repository = new ChangelogRepository(options.Value.RepositoryUrl) { TagPrefix = release.Value.TagPrefix };
+            var expected = changelogs.GenerateLinks(changelog, repository);
             if (!changelog.Links.SequenceEqual(expected))
             {
                 var block = string.Join('\n', expected.Select(l => l.ToMarkdown()));
                 report.Section("Release").Failure(
-                    $"The version links in `{options.Value.ChangelogFile}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
-                throw new Exception($"Changelog version links in {options.Value.ChangelogFile} are missing or out of date.");
+                    $"The version links in `{options.Value.File}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
+                throw new Exception($"Changelog version links in {options.Value.File} are missing or out of date.");
             }
         }
 

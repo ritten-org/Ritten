@@ -12,7 +12,8 @@ namespace Wolfe.Hamelin.Build.Steps;
 [DisplayName("Validate Package Version")]
 public class Version(
     ILogger<Version> logger,
-    IOptions<BuildOptions> options,
+    IOptions<NuGetOptions> options,
+    IOptions<BuildOptions> build,
     IPipelineContext context,
     IBuildReport report,
     INuGet nuget
@@ -20,7 +21,7 @@ public class Version(
 {
     public async Task Run(CancellationToken cancellationToken = default)
     {
-        if (options.Value.SkipVersion)
+        if (options.Value.SkipVersionCheck)
         {
             logger.LogInformation("Skipping version check.");
             return;
@@ -32,13 +33,13 @@ public class Version(
             throw new Exception("Project info not found in state.");
         }
 
-        var feed = new NuGetFeed(options.Value.NuGetFeed);
+        var feed = new NuGetFeed(options.Value.Feed);
         var versions = await nuget.GetPublishedVersions(feed, project.Name, cancellationToken);
 
         if (versions.Any(v => v == project.Version))
         {
             report.Section("Release").Failure(
-                $"Version **{project.Version}** is already published on the feed — bump `<Version>` in `{options.Value.ProjectFile}`.");
+                $"Version **{project.Version}** is already published on the feed — bump `<Version>` in `{build.Value.ProjectFile}`.");
             throw new Exception($"Package version {project.Version} already exists on the feed.");
         }
 
@@ -46,7 +47,7 @@ public class Version(
         if (latestVersion != null && project.Version <= latestVersion)
         {
             report.Section("Release").Failure(
-                $"Version **{project.Version}** isn't greater than the latest published version **{latestVersion}** — bump `<Version>` in `{options.Value.ProjectFile}`.");
+                $"Version **{project.Version}** isn't greater than the latest published version **{latestVersion}** — bump `<Version>` in `{build.Value.ProjectFile}`.");
             throw new Exception($"Project version {project.Version} is not greater than the latest version {latestVersion}.");
         }
 

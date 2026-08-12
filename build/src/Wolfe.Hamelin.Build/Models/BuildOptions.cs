@@ -1,18 +1,10 @@
 namespace Wolfe.Hamelin.Build.Models;
 
+// Bound from the "Build" section: the core layout every step shares.
 public class BuildOptions
 {
-    public required string ArtifactsDirectory { get; set; }
-    public required string TempDirectory { get; set; }
-    public required string Configuration { get; set; }
-    public required string ProjectFile { get; set; }
-    public required string ChangelogFile { get; set; }
-    public required string NuGetFeed { get; set; }
-    public required string NuGetApiKey { get; set; }
-
-    // The repository's web URL; when set, the changelog's version links are validated against it.
-    public string? RepositoryUrl { get; set; }
-    public string? CommitSha { get; set; }
-    public bool SkipChangelog { get; set; } = false;
-    public bool SkipVersion { get; set; } = false;
+    public string ArtifactsDirectory { get; set; } = "artifacts";
+    public string TempDirectory { get; set; } = "temp";
+    public string Configuration { get; set; } = "Release";
+    public string ProjectFile { get; set; } = "";
 }

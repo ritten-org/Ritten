@@ -5,6 +5,7 @@ using Octokit;
 using Wolfe.Hamelin.Changelogs;
 using Wolfe.Hamelin.Commands;
 using Wolfe.Hamelin.DotNet;
+using Wolfe.Hamelin.Git;
 using Wolfe.Hamelin.GitHub;
 using Wolfe.Hamelin.NuGet;
 using Wolfe.Hamelin.Reporting;
@@ -34,6 +35,11 @@ public static class ServiceCollectionExtensions
         /// Adds <see cref="IDotNet"/> to the service collection.
         /// </summary>
         public IServiceCollection AddDotNet() => services.AddSingleton<IDotNet, DotNetClient>();
+
+        /// <summary>
+        /// Adds <see cref="IGit"/> to the service collection. Requires <see cref="AddCommandRunner"/>.
+        /// </summary>
+        public IServiceCollection AddGit() => services.AddSingleton<IGit, GitClient>();
 
         /// <summary>
         /// Adds <see cref="INuGet"/> to the service collection.

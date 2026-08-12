@@ -34,4 +34,13 @@ internal class DotNetClient : IDotNet
             Version = NuGetVersion.Parse(packageVersion)
         };
     }
+
+    public async Task<TestRun> ReadTestResults(IFile file, CancellationToken cancellationToken = default)
+    {
+        await using var stream = file.OpenRead();
+        return await TrxParser.Parse(stream, cancellationToken);
+    }
+
+    public IReadOnlyList<DotNetDiagnostic> ParseDiagnostics(string buildOutput) =>
+        DotNetOutputParser.ParseDiagnostics(buildOutput);
 }

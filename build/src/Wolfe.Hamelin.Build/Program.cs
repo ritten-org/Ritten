@@ -12,6 +12,7 @@ builder.Services
     .AddCommandRunner()
     .AddChangelogs()
     .AddDotNet()
+    .AddGit()
     .AddNuGet()
     .AddGitHubActionsRuntime()
     .AddStepsFromAssemblyContaining<Program>()
@@ -23,8 +24,20 @@ builder.Services.AddOptions<BuildOptions>()
     .Validate(b => !string.IsNullOrEmpty(b.TempDirectory))
     .Validate(b => !string.IsNullOrEmpty(b.Configuration))
     .Validate(b => !string.IsNullOrEmpty(b.ProjectFile))
-    .Validate(b => !string.IsNullOrEmpty(b.ChangelogFile))
     .ValidateOnStart();
+
+builder.Services.AddOptions<ChangelogOptions>()
+    .BindConfiguration("Changelog")
+    .Validate(c => !string.IsNullOrEmpty(c.File))
+    .ValidateOnStart();
+
+builder.Services.AddOptions<NuGetOptions>()
+    .BindConfiguration("NuGet")
+    .Validate(n => !string.IsNullOrEmpty(n.Feed))
+    .ValidateOnStart();
+
+builder.Services.AddOptions<ReleaseOptions>()
+    .BindConfiguration("Release");
 
 var pipeline = builder.Build();
 return args switch

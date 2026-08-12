@@ -5,16 +5,16 @@ using NuGet.Versioning;
 using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.Build.Steps;
 using Wolfe.Hamelin.Build.Tests.Support;
-using Wolfe.Hamelin.Commands;
 using Wolfe.Hamelin.DotNet;
+using Wolfe.Hamelin.Git;
 
 namespace Wolfe.Hamelin.Build.Tests.Steps;
 
 public class CreateTagTests
 {
-    private readonly FakeCommandRunner _commands = new();
+    private readonly IGit _git = Substitute.For<IGit>();
     private readonly IPipelineContext _context = Substitute.For<IPipelineContext>();
-    private readonly BuildOptions _options = TestOptions.Build();
+    private readonly ReleaseOptions _options = TestOptions.Release();
 
     public CreateTagTests()
     {
@@ -25,48 +25,54 @@ public class CreateTagTests
     [Fact]
     public async Task SkipsWhenTheTagAlreadyExistsOnOrigin()
     {
-        _commands.Respond(
-            c => c.Arguments.Contains("ls-remote"),
-            new CommandResult(0, "abc123\trefs/tags/v1.2.0\n", ""));
+        _git.RemoteTagExists("origin", "v1.2.0", Arg.Any<CancellationToken>()).Returns(true);
 
         await Step().Run(TestContext.Current.CancellationToken);
 
-        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldContain("ls-remote");
+        await _git.DidNotReceiveWithAnyArgs().CreateTag(default!, default, TestContext.Current.CancellationToken);
+        await _git.DidNotReceiveWithAnyArgs().PushTag(default!, default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]
     public async Task CreatesAndPushesTheTagWhenItDoesNotExist()
     {
-        _commands.Respond(c => c.Arguments.Contains("rev-parse"), new CommandResult(1, "", ""));
-
         await Step().Run(TestContext.Current.CancellationToken);
 
-        _commands.Executed.Single(c => c.Arguments is ["tag", ..]).Arguments.ShouldBe(["tag", "v1.2.0"]);
-        _commands.Executed.Single(c => c.Arguments is ["push", ..]).Arguments.ShouldBe(["push", "origin", "v1.2.0"]);
+        await _git.Received().CreateTag("v1.2.0", null, Arg.Any<CancellationToken>());
+        await _git.Received().PushTag("origin", "v1.2.0", Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task TagsTheConfiguredCommitSha()
     {
         _options.CommitSha = "abc123";
-        _commands.Respond(c => c.Arguments.Contains("rev-parse"), new CommandResult(1, "", ""));
 
         await Step().Run(TestContext.Current.CancellationToken);
 
-        _commands.Executed.Single(c => c.Arguments is ["tag", ..]).Arguments.ShouldBe(["tag", "v1.2.0", "abc123"]);
+        await _git.Received().CreateTag("v1.2.0", "abc123", Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task PushesAnExistingLocalTagWithoutRecreatingIt()
     {
-        _commands.Respond(c => c.Arguments.Contains("rev-parse"), new CommandResult(0, "abc123\n", ""));
+        _git.TagExists("v1.2.0", Arg.Any<CancellationToken>()).Returns(true);
 
         await Step().Run(TestContext.Current.CancellationToken);
 
-        _commands.Executed.Any(c => c.Arguments is ["tag", ..]).ShouldBeFalse();
-        _commands.Executed.Count(c => c.Arguments is ["push", ..]).ShouldBe(1);
+        await _git.DidNotReceiveWithAnyArgs().CreateTag(default!, default, TestContext.Current.CancellationToken);
+        await _git.Received().PushTag("origin", "v1.2.0", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HonoursTheTagPrefix()
+    {
+        _options.TagPrefix = "release/";
+
+        await Step().Run(TestContext.Current.CancellationToken);
+
+        await _git.Received().CreateTag("release/1.2.0", null, Arg.Any<CancellationToken>());
     }
 
     private CreateTag Step() =>
-        new(NullLogger<CreateTag>.Instance, Options.Create(_options), _context, _commands);
+        new(NullLogger<CreateTag>.Instance, Options.Create(_options), _context, _git);
 }

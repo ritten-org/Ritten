@@ -1,15 +1,15 @@
 using System.ComponentModel;
-using System.Text.RegularExpressions;
 using Hamelin;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.Commands;
+using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.Reporting;
 
 namespace Wolfe.Hamelin.Build.Steps;
 
 [DisplayName("Build Solution")]
-public partial class Build(IOptions<BuildOptions> options, ICommandRunner commands, IBuildReport report) : IPipelineStep
+public class Build(IOptions<BuildOptions> options, ICommandRunner commands, IDotNet dotnet, IBuildReport report) : IPipelineStep
 {
     private const int MaxDiagnostics = 30;
 
@@ -26,33 +26,18 @@ public partial class Build(IOptions<BuildOptions> options, ICommandRunner comman
         }
 
         var section = report.Section("Build").Failure("The solution failed to build.");
-        var diagnostics = ExtractDiagnostics(result.StandardOutput);
+        var diagnostics = dotnet.ParseDiagnostics(result.StandardOutput).Select(d => d.ToString()).ToList();
         if (diagnostics.Count > 0)
         {
+            if (diagnostics.Count > MaxDiagnostics)
+            {
+                var omitted = diagnostics.Count - MaxDiagnostics;
+                diagnostics = [.. diagnostics.Take(MaxDiagnostics), $"…and {omitted} more"];
+            }
+
             section.Details("Compiler output", $"```\n{string.Join('\n', diagnostics)}\n```");
         }
 
         throw new Exception("Build failed.");
     }
-
-    private static IReadOnlyList<string> ExtractDiagnostics(string output)
-    {
-        var diagnostics = output
-            .Split('\n')
-            .Select(l => l.Trim())
-            .Where(l => DiagnosticLine().IsMatch(l))
-            .Distinct()
-            .ToList();
-
-        if (diagnostics.Count > MaxDiagnostics)
-        {
-            var omitted = diagnostics.Count - MaxDiagnostics;
-            diagnostics = [.. diagnostics.Take(MaxDiagnostics), $"…and {omitted} more"];
-        }
-
-        return diagnostics;
-    }
-
-    [GeneratedRegex(@":\s(?:error|warning)\s\w+\d*:")]
-    private static partial Regex DiagnosticLine();
 }
