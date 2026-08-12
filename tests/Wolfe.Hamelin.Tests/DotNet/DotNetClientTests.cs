@@ -1,13 +1,15 @@
 using System.Text;
+using Hamelin;
 using Hamelin.FileSystem;
 using NuGet.Versioning;
 using Wolfe.Hamelin.DotNet;
+using Wolfe.Hamelin.Tests.Support;
 
 namespace Wolfe.Hamelin.Tests.DotNet;
 
 public class DotNetClientTests
 {
-    private readonly DotNetClient _client = new();
+    private readonly DotNetClient _client = new(new FakeCommandRunner(), Substitute.For<IPipelineContext>());
 
     [Fact]
     public async Task ReadProject_ExtractsThePackageIdAndVersion()

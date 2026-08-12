@@ -2,7 +2,6 @@ using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Commands;
 using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.Reporting;
 
@@ -12,7 +11,6 @@ namespace Wolfe.Hamelin.Build.Steps;
 public class Test(
     IOptions<BuildOptions> options,
     IPipelineContext context,
-    ICommandRunner commands,
     IDotNet dotnet,
     IBuildReport report
 ) : IPipelineStep
@@ -24,49 +22,38 @@ public class Test(
         var resultsDirectory = context.FileSystem.CurrentDirectory
             .GetDirectory(options.Value.TempDirectory)
             .GetDirectory("test-results");
-        resultsDirectory.Create();
 
-        var dotnetTest = Command
-            .Create("dotnet")
-            .WithArguments("test", "--no-build")
-            .AndArguments("--configuration", options.Value.Configuration)
-            .AndArguments("--logger", "trx")
-            .AndArguments("--results-directory", resultsDirectory.AbsolutePath);
-        var result = await commands.Run(dotnetTest, cancellationToken);
+        var result = await dotnet.Test(
+            new TestArgs
+            {
+                Configuration = options.Value.Configuration,
+                NoBuild = true,
+                ResultsDirectory = resultsDirectory
+            },
+            cancellationToken);
 
-        var runs = new List<TestRun>();
-        foreach (var trxFile in resultsDirectory.GetFiles("*.trx"))
+        if (result.Succeeded)
         {
-            runs.Add(await dotnet.ReadTestResults(trxFile, cancellationToken));
-        }
-
-        var passed = runs.Sum(r => r.Passed);
-        var failed = runs.Sum(r => r.Failed);
-        var skipped = runs.Sum(r => r.Skipped);
-        var failures = runs.SelectMany(r => r.Failures).ToList();
-
-        if (result.IsSuccess)
-        {
-            if (passed + failed + skipped > 0)
+            if (result.Total > 0)
             {
                 report.Section("Tests").Success(
-                    skipped > 0
-                        ? $"**{passed}** tests passed, {skipped} skipped."
-                        : $"All **{passed}** tests passed.");
+                    result.Skipped > 0
+                        ? $"**{result.Passed}** tests passed, {result.Skipped} skipped."
+                        : $"All **{result.Passed}** tests passed.");
             }
 
             return;
         }
 
-        if (failures.Count == 0)
+        if (result.Failures.Count == 0)
         {
             report.Section("Tests").Failure("`dotnet test` failed — check the build logs for details.");
         }
         else
         {
             report.Section("Tests")
-                .Failure($"**{failed}** {(failed == 1 ? "test" : "tests")} failed ({passed} passed, {skipped} skipped).")
-                .Details("Failed tests", DescribeFailures(failures));
+                .Failure($"**{result.Failed}** {(result.Failed == 1 ? "test" : "tests")} failed ({result.Passed} passed, {result.Skipped} skipped).")
+                .Details("Failed tests", DescribeFailures(result.Failures));
         }
 
         throw new Exception("Tests failed.");

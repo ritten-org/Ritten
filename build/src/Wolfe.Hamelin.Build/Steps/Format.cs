@@ -1,10 +1,8 @@
 using System.ComponentModel;
-using System.Text.Json;
 using Hamelin;
-using Hamelin.FileSystem;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
-using Wolfe.Hamelin.Commands;
+using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.Reporting;
 
 namespace Wolfe.Hamelin.Build.Steps;
@@ -13,32 +11,27 @@ namespace Wolfe.Hamelin.Build.Steps;
 public class Format(
     IOptions<BuildOptions> options,
     IPipelineContext context,
-    ICommandRunner commands,
+    IDotNet dotnet,
     IBuildReport report
 ) : IPipelineStep
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
-
     public async Task Run(CancellationToken cancellationToken = default)
     {
         var reportDirectory = context.FileSystem.CurrentDirectory
             .GetDirectory(options.Value.TempDirectory)
             .GetDirectory("format");
-        reportDirectory.Create();
 
-        var dotnetFormat = Command.Create("dotnet").WithArguments("format", "--verify-no-changes", "--report", reportDirectory.AbsolutePath);
-        var result = await commands.Run(dotnetFormat, cancellationToken);
-        if (result.IsSuccess)
+        var result = await dotnet.CheckFormat(new FormatArgs { ReportDirectory = reportDirectory }, cancellationToken);
+        if (result.Succeeded)
         {
             return;
         }
 
-        var files = await ReadUnformattedFiles(reportDirectory.GetFile("format-report.json"), cancellationToken);
-        if (files.Count > 0)
+        if (result.UnformattedFiles.Count > 0)
         {
             report.Section("Formatting").Failure(
-                $"{files.Count} {(files.Count == 1 ? "file isn't" : "files aren't")} formatted — run `dotnet format` and commit the result:\n" +
-                string.Join('\n', files.Select(f => $"- `{f}`")));
+                $"{result.UnformattedFiles.Count} {(result.UnformattedFiles.Count == 1 ? "file isn't" : "files aren't")} formatted — run `dotnet format` and commit the result:\n" +
+                string.Join('\n', result.UnformattedFiles.Select(f => $"- `{f}`")));
         }
         else
         {
@@ -47,23 +40,4 @@ public class Format(
 
         throw new Exception("Code formatting check failed.");
     }
-
-    private async Task<IReadOnlyList<string>> ReadUnformattedFiles(IFile reportFile, CancellationToken cancellationToken)
-    {
-        if (!reportFile.Exists)
-        {
-            return [];
-        }
-
-        await using var stream = reportFile.OpenRead();
-        var documents = await JsonSerializer.DeserializeAsync<List<FormatReportDocument>>(stream, JsonOptions, cancellationToken) ?? [];
-        return documents
-            .Where(d => d.FilePath != null)
-            .Select(d => Path.GetRelativePath(context.CurrentDirectory, d.FilePath!))
-            .Distinct()
-            .Order()
-            .ToList();
-    }
-
-    private sealed record FormatReportDocument(string? FilePath);
 }

@@ -1,6 +1,8 @@
 using System.Text;
+using Hamelin;
 using Hamelin.FileSystem;
 using Wolfe.Hamelin.DotNet;
+using Wolfe.Hamelin.Tests.Support;
 
 namespace Wolfe.Hamelin.Tests.DotNet;
 
@@ -30,7 +32,7 @@ public class TrxParserTests
     [Fact]
     public async Task ReadTestResults_ReadsTheCountersAndFailures()
     {
-        var client = new DotNetClient();
+        var client = new DotNetClient(new FakeCommandRunner(), Substitute.For<IPipelineContext>());
         var file = Substitute.For<IFile>();
         file.OpenRead().Returns(_ => new MemoryStream(Encoding.UTF8.GetBytes(SampleTrx)));
 
