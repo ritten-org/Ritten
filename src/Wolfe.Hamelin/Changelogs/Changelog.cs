@@ -8,7 +8,7 @@ namespace Wolfe.Hamelin.Changelogs;
 public class Changelog
 {
     /// <summary>
-    /// Gets any preamble between the main header and the first version header.
+    /// Gets everything before the first version heading, verbatim.
     /// </summary>
     public string Preamble { get; init; } = "";
 
@@ -16,6 +16,11 @@ public class Changelog
     /// Gets each version entry in the changelog.
     /// </summary>
     public IReadOnlyCollection<ChangelogEntry> Entries { get; init; } = [];
+
+    /// <summary>
+    /// Gets the block of reference-style link definitions from the end of the file.
+    /// </summary>
+    public string LinkReferences { get; init; } = "";
 
     /// <summary>
     /// Gets the unreleased section if there is one.

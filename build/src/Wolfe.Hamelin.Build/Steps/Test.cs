@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Xml.Linq;
 using Hamelin;
+using Hamelin.FileSystem;
 using Microsoft.Extensions.Options;
 using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.Commands;
@@ -20,18 +21,20 @@ public class Test(
 
     public async Task Run(CancellationToken cancellationToken = default)
     {
-        var resultsDirectory = Path.Combine(context.CurrentDirectory, options.Value.TempDirectory, "test-results");
-        Directory.CreateDirectory(resultsDirectory);
+        var resultsDirectory = context.FileSystem.CurrentDirectory
+            .GetDirectory(options.Value.TempDirectory)
+            .GetDirectory("test-results");
+        resultsDirectory.Create();
 
         var dotnetTest = Command
             .Create("dotnet")
             .WithArguments("test", "--no-build")
             .AndArguments("--configuration", options.Value.Configuration)
             .AndArguments("--logger", "trx")
-            .AndArguments("--results-directory", resultsDirectory);
+            .AndArguments("--results-directory", resultsDirectory.AbsolutePath);
         var result = await commands.Run(dotnetTest, cancellationToken);
 
-        var runs = Directory.EnumerateFiles(resultsDirectory, "*.trx").Select(ParseTrx).ToList();
+        var runs = resultsDirectory.GetFiles("*.trx").Select(ParseTrx).ToList();
         var passed = runs.Sum(r => r.Passed);
         var failed = runs.Sum(r => r.Failed);
         var skipped = runs.Sum(r => r.Skipped);
@@ -79,9 +82,10 @@ public class Test(
         return string.Join("\n\n", described);
     }
 
-    private static TestRunSummary ParseTrx(string file)
+    private static TestRunSummary ParseTrx(IFile file)
     {
-        var document = XDocument.Load(file);
+        using var stream = file.OpenRead();
+        var document = XDocument.Load(stream);
         var counters = document.Descendants().FirstOrDefault(e => e.Name.LocalName == "Counters");
         int Count(string attribute) => (int?)counters?.Attribute(attribute) ?? 0;
 

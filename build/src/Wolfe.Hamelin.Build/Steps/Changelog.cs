@@ -40,7 +40,7 @@ public class Changelog(
             throw new FileNotFoundException("Could not find changelog file", changelogFile.AbsolutePath);
         }
 
-        var changelog = await changelogs.Read(changelogFile.AbsolutePath, cancellationToken);
+        var changelog = await changelogs.Read(changelogFile, cancellationToken);
 
         var isPrerelease = project.Version.IsPrerelease || project.Version < NuGetVersion.Parse("1.0.0");
         var entry = isPrerelease ? changelog.Unreleased : changelog.Entry(project.Version);

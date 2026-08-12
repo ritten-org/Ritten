@@ -1,3 +1,5 @@
+using Hamelin.FileSystem;
+
 namespace Wolfe.Hamelin.Changelogs;
 
 /// <summary>
@@ -8,22 +10,22 @@ public interface IChangelog
     /// <summary>
     /// Reads the changelog from the given file.
     /// </summary>
-    public Task<Changelog> Read(string file, CancellationToken cancellationToken = default);
+    public Task<Changelog> Read(IFile file, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Reads the changelog entry from the given file.
+    /// Reads a single changelog entry from the given file.
     /// </summary>
-    public Task<ChangelogEntry> ReadEntry(string file, CancellationToken cancellationToken = default);
+    public Task<ChangelogEntry> ReadEntry(IFile file, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Writes the changelog to the given file.
+    /// Writes the changelog to the given file, replacing its contents.
     /// </summary>
-    public Task Write(string path, Changelog changelog, CancellationToken cancellationToken = default);
+    public Task Write(IFile file, Changelog changelog, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Writes the changelog entry to the given file.
+    /// Writes the changelog entry to the given file, replacing its contents.
     /// </summary>
-    public Task WriteEntry(string path, ChangelogEntry entry, CancellationToken cancellationToken = default);
+    public Task WriteEntry(IFile file, ChangelogEntry entry, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Parses the given changelog.
@@ -31,7 +33,7 @@ public interface IChangelog
     public Changelog Parse(string changelog);
 
     /// <summary>
-    /// Parses the given changelog.
+    /// Parses the given changelog entry.
     /// </summary>
     public ChangelogEntry ParseEntry(string changelog);
 

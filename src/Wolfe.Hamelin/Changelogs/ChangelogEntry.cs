@@ -18,7 +18,12 @@ public class ChangelogEntry
     public DateOnly? Date { get; init; }
 
     /// <summary>
-    /// A summary description of this entry..
+    /// The raw markdown content of the entry, exactly as authored.
+    /// </summary>
+    public string Body { get; init; } = "";
+
+    /// <summary>
+    /// Any markdown between the version heading and the first section heading.
     /// </summary>
     public string Preamble { get; init; } = "";
 
@@ -55,5 +60,13 @@ public class ChangelogEntry
     /// <summary>
     /// True if the entry contains no notes. Otherwise, false.
     /// </summary>
-    public bool IsEmpty => Added.Count == 0 && Changed.Count == 0 && Removed.Count == 0 && Fixed.Count == 0 && Deprecated.Count == 0 && Security.Count == 0 && string.IsNullOrWhiteSpace(Preamble);
+    public bool IsEmpty =>
+        Added.Count == 0
+        && Changed.Count == 0
+        && Removed.Count == 0
+        && Fixed.Count == 0
+        && Deprecated.Count == 0
+        && Security.Count == 0
+        && string.IsNullOrWhiteSpace(Preamble)
+        && string.IsNullOrWhiteSpace(Body);
 }

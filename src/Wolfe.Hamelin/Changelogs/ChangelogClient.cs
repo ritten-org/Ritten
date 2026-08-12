@@ -1,34 +1,30 @@
+using Hamelin.FileSystem;
+
 namespace Wolfe.Hamelin.Changelogs;
 
 internal class ChangelogClient : IChangelog
 {
     /// <inheritdoc />
-    public async Task<Changelog> Read(string file, CancellationToken cancellationToken = default)
+    public async Task<Changelog> Read(IFile file, CancellationToken cancellationToken = default)
     {
-        var changelog = await File.ReadAllTextAsync(file, cancellationToken);
-        return Parse(changelog);
+        using var reader = new StreamReader(file.OpenRead());
+        return Parse(await reader.ReadToEndAsync(cancellationToken));
     }
 
     /// <inheritdoc />
-    public async Task<ChangelogEntry> ReadEntry(string file, CancellationToken cancellationToken = default)
+    public async Task<ChangelogEntry> ReadEntry(IFile file, CancellationToken cancellationToken = default)
     {
-        var entry = await File.ReadAllTextAsync(file, cancellationToken);
-        return ParseEntry(entry);
+        using var reader = new StreamReader(file.OpenRead());
+        return ParseEntry(await reader.ReadToEndAsync(cancellationToken));
     }
 
     /// <inheritdoc />
-    public Task Write(string path, Changelog changelog, CancellationToken cancellationToken = default)
-    {
-        var text = Render(changelog);
-        return File.WriteAllTextAsync(path, text, cancellationToken);
-    }
+    public Task Write(IFile file, Changelog changelog, CancellationToken cancellationToken = default) =>
+        WriteText(file, Render(changelog), cancellationToken);
 
     /// <inheritdoc />
-    public Task WriteEntry(string path, ChangelogEntry entry, CancellationToken cancellationToken = default)
-    {
-        var text = RenderEntry(entry);
-        return File.WriteAllTextAsync(path, text, cancellationToken);
-    }
+    public Task WriteEntry(IFile file, ChangelogEntry entry, CancellationToken cancellationToken = default) =>
+        WriteText(file, RenderEntry(entry), cancellationToken);
 
     /// <inheritdoc />
     public Changelog Parse(string changelog) => ChangelogParser.Parse(changelog);
@@ -41,4 +37,12 @@ internal class ChangelogClient : IChangelog
 
     /// <inheritdoc />
     public string RenderEntry(ChangelogEntry entry) => ChangelogRenderer.RenderEntry(entry);
+
+    private static async Task WriteText(IFile file, string text, CancellationToken cancellationToken)
+    {
+        var stream = file.OpenWrite();
+        stream.SetLength(0); // OpenWrite isn't guaranteed to truncate an existing file.
+        await using var writer = new StreamWriter(stream);
+        await writer.WriteAsync(text.AsMemory(), cancellationToken);
+    }
 }

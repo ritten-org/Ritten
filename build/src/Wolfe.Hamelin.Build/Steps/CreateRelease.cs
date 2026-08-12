@@ -31,12 +31,11 @@ public class CreateRelease(
         var entry = context.State.Get<ChangelogEntry>() ?? throw new Exception("Changelog entry not found in state.");
 
         var tag = $"v{projectInfo.Version}";
-        var notesFile = context.FileSystem.CurrentDirectory
-            .GetDirectory(options.Value.TempDirectory)
-            .GetFile($"release-notes-{projectInfo.Version}.md");
+        var tempDirectory = context.FileSystem.CurrentDirectory.GetDirectory(options.Value.TempDirectory);
+        tempDirectory.Create();
 
-        Directory.CreateDirectory(Path.GetDirectoryName(notesFile.AbsolutePath)!);
-        await File.WriteAllTextAsync(notesFile.AbsolutePath, changelogs.RenderEntry(entry), cancellationToken);
+        var notesFile = tempDirectory.GetFile($"release-notes-{projectInfo.Version}.md");
+        await changelogs.WriteEntry(notesFile, entry, cancellationToken);
 
         logger.LogInformation("Creating GitHub Release {Tag}.", tag);
 
