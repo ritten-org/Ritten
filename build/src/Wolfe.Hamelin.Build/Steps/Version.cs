@@ -2,12 +2,9 @@ using System.ComponentModel;
 using Hamelin;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NuGet.Configuration;
-using NuGet.Protocol;
-using NuGet.Protocol.Core.Types;
 using Wolfe.Hamelin.Build.Models;
 using Wolfe.Hamelin.DotNet;
-using Wolfe.Hamelin.Extensions;
+using Wolfe.Hamelin.NuGet;
 using Wolfe.Hamelin.Reporting;
 
 namespace Wolfe.Hamelin.Build.Steps;
@@ -17,7 +14,8 @@ public class Version(
     ILogger<Version> logger,
     IOptions<BuildOptions> options,
     IPipelineContext context,
-    IBuildReport report
+    IBuildReport report,
+    INuGet nuget
 ) : IPipelineStep
 {
     public async Task Run(CancellationToken cancellationToken = default)
@@ -34,16 +32,8 @@ public class Version(
             throw new Exception("Project info not found in state.");
         }
 
-        PackageSourceCredential credentials = new(options.Value.NuGetFeed, "dummy", "", true, null);
-        var packageSource = new PackageSource(options.Value.NuGetFeed) { Credentials = credentials };
-        var repository = Repository.Factory.GetCoreV3(packageSource);
-        var resource = await repository.GetResourceAsync<FindPackageByIdResource>(cancellationToken);
-        var versions = (await resource!.GetAllVersionsAsync(
-            project.Name,
-            new SourceCacheContext(),
-            logger.ForNuGet(),
-            cancellationToken
-        )).ToList();
+        var feed = new NuGetFeed(options.Value.NuGetFeed);
+        var versions = await nuget.GetPublishedVersions(feed, project.Name, cancellationToken);
 
         if (versions.Any(v => v == project.Version))
         {

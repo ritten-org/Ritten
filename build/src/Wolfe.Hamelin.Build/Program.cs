@@ -12,6 +12,7 @@ builder.Services
     .AddCommandRunner()
     .AddChangelogs()
     .AddDotNet()
+    .AddNuGet()
     .AddGitHubActionsRuntime()
     .AddStepsFromAssemblyContaining<Program>()
     .AddBuildReporting("Wolfe.Hamelin.Build");

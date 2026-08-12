@@ -6,6 +6,7 @@ using Wolfe.Hamelin.Changelogs;
 using Wolfe.Hamelin.Commands;
 using Wolfe.Hamelin.DotNet;
 using Wolfe.Hamelin.GitHub;
+using Wolfe.Hamelin.NuGet;
 using Wolfe.Hamelin.Reporting;
 using Wolfe.Hamelin.Reporting.Hooks;
 using Wolfe.Hamelin.Reporting.Sinks;
@@ -27,12 +28,17 @@ public static class ServiceCollectionExtensions
         /// <summary>
         /// Adds <see cref="IChangelog"/> to the service collection.
         /// </summary>
-        public IServiceCollection AddChangelogs() => services.AddSingleton<IChangelog, Changelogs.ChangelogClient>();
+        public IServiceCollection AddChangelogs() => services.AddSingleton<IChangelog, ChangelogClient>();
 
         /// <summary>
         /// Adds <see cref="IDotNet"/> to the service collection.
         /// </summary>
         public IServiceCollection AddDotNet() => services.AddSingleton<IDotNet, DotNetClient>();
+
+        /// <summary>
+        /// Adds <see cref="INuGet"/> to the service collection.
+        /// </summary>
+        public IServiceCollection AddNuGet() => services.AddSingleton<INuGet, NuGetClient>();
 
         /// <summary>
         /// Adds <see cref="IBuildReport"/> to the service collection and configures hooks that
