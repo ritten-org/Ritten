@@ -11,19 +11,16 @@ internal static class DefaultPipelineRunnerHelpers
     public static DefaultPipelineRunner CreateRunner(
         IPipelineStep[]? steps = null,
         IProgressReporter[]? reporters = null,
-        IPipelineContext? context = null,
         ILogger<DefaultPipelineRunner>? logger = null
     )
     {
         logger ??= Substitute.For<ILogger<DefaultPipelineRunner>>();
-        context ??= Substitute.For<IPipelineContext>();
 
         var stepProvider = Substitute.For<IPipelineStepProvider>();
         stepProvider.GetSteps().Returns(steps ?? []);
 
         var services = new ServiceCollection()
-            .AddSingleton(stepProvider)
-            .AddSingleton(context);
+            .AddSingleton(stepProvider);
 
         foreach (var reporter in reporters ?? [])
         {

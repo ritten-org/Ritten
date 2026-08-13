@@ -86,44 +86,6 @@ public class DefaultPipelineRunnerTests
     }
 
     [Fact]
-    public async Task RunPipeline_CustomExitCode_SetsExitCodeToCustomExitCode()
-    {
-        // Arrange
-        var context = Substitute.For<IPipelineContext>();
-        var step1 = PipelineStepHelpers.CreateMock();
-        step1.When(s => s.Run(Arg.Any<CancellationToken>())).Do(_ => context.ExitCode = 1234);
-
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step1], context: context);
-
-        // Act
-        var summary = await sut.RunPipeline(CancellationToken.None);
-
-        // Assert
-        summary.ExitCode.ShouldBe(1234);
-    }
-
-    [Fact]
-    public async Task RunPipeline_CustomExitCode_DoesNotOverrideAutomaticCode()
-    {
-        // Arrange
-        var context = Substitute.For<IPipelineContext>();
-
-        var step1 = PipelineStepHelpers.CreateMock();
-        step1.When(s => s.Run(Arg.Any<CancellationToken>())).Do(_ => context.ExitCode = 1234);
-
-        var step2 = PipelineStepHelpers.CreateMock();
-        step2.Run(Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
-
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step1, step2], context: context);
-
-        // Act
-        var summary = await sut.RunPipeline(CancellationToken.None);
-
-        // Assert
-        summary.ExitCode.ShouldBe(PipelineExitCodes.StoppedOnError);
-    }
-
-    [Fact]
     public async Task RunPipeline_WithReporters_CallsOnPipelineStartedBeforeSteps()
     {
         // Arrange

@@ -13,19 +13,32 @@ internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, ISer
         logger.LogInformation("Running pipeline...");
 
         await using var scope = scopeFactory.CreateAsyncScope();
-        var context = scope.ServiceProvider.GetRequiredService<IPipelineContext>();
         var reporters = scope.ServiceProvider.GetServices<IProgressReporter>().ToList();
 
         await NotifyReporters(reporters, r => r.OnPipelineStarted(cancellationToken));
         var steps = await RunSteps(scope, reporters, cancellationToken);
-        var result = new PipelineResult(context, steps, cancellationToken);
+
+        int exitCode;
+        if (cancellationToken.IsCancellationRequested)
+        {
+            exitCode = PipelineExitCodes.StoppedAfterCancel;
+        }
+        else if (steps.Count == 0)
+        {
+            exitCode = PipelineExitCodes.Success;
+        }
+        else
+        {
+            exitCode = steps[^1].ExitCode;
+        }
+        var result = new PipelineResult(exitCode, steps);
         await NotifyReporters(reporters, r => r.OnPipelineCompleted(result.ExitCode, result, cancellationToken));
 
         logger.LogInformation("Pipeline finished with exit code {ExitCode}", result.ExitCode);
         return result;
     }
 
-    private async Task<IEnumerable<StepResult>> RunSteps(AsyncServiceScope scope, List<IProgressReporter> reporters, CancellationToken cancellationToken)
+    private async Task<List<StepResult>> RunSteps(AsyncServiceScope scope, List<IProgressReporter> reporters, CancellationToken cancellationToken)
     {
         List<StepResult> results = [];
         var stepProvider = scope.ServiceProvider.GetRequiredService<IPipelineStepProvider>();
@@ -53,7 +66,7 @@ internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, ISer
             }
         }
 
-        return results.ToArray();
+        return results;
     }
 
     private async Task<StepResult> RunStep(IPipelineStep step, CancellationToken cancellationToken)
