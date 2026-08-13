@@ -10,6 +10,9 @@ namespace Ritten.Pipelines.DotNet;
 /// </summary>
 public class DotNetPackageVerify : Pipeline
 {
+    /// <inheritdoc/>>
+    public override string Name => "DotNet Package Verify";
+
     /// <inheritdoc />
     public override void Configure(IPipelineBuilder builder)
     {

@@ -14,7 +14,6 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="context">The pipeline context.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
-[DisplayName("Run .NET Tests")]
 public class DotNetTest(
     IOptions<DotNetOptions> options,
     IOptions<PipelineOptions> pipeline,
@@ -26,7 +25,7 @@ public class DotNetTest(
     private const int MaxFailures = 20;
 
     /// <inheritdoc />
-    public async Task Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var resultsDirectory = context.FileSystem.CurrentDirectory
             .GetDirectory(pipeline.Value.TempDirectory)
@@ -51,7 +50,7 @@ public class DotNetTest(
                         : $"All **{result.Passed}** tests passed.");
             }
 
-            return;
+            return StepResult.Successful;
         }
 
         if (result.Failures.Count == 0)

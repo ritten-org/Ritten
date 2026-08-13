@@ -19,7 +19,6 @@ namespace Ritten.Pipelines;
 /// <param name="context">The pipeline context.</param>
 /// <param name="report">The build report.</param>
 /// <param name="changelogs">The changelog client.</param>
-[DisplayName("Validate Changelog Entry")]
 public class ValidateChangelog(
     ILogger<ValidateChangelog> logger,
     IOptions<ChangelogOptions> options,
@@ -30,12 +29,12 @@ public class ValidateChangelog(
 ) : IPipelineStep
 {
     /// <inheritdoc />
-    public async Task Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         if (options.Value.Skip)
         {
             logger.LogInformation("Skipping changelog check.");
-            return;
+            return StepResult.Successful;
         }
 
         var project = context.State.Get<Project>();
@@ -83,5 +82,6 @@ public class ValidateChangelog(
         context.State.Set(entry);
         report.Section("Release").Success($"Changelog entry for **{project.Version}** is present.");
         logger.LogInformation("Found changelog entry for {Version}.", project.Version);
+        return StepResult.Successful;
     }
 }

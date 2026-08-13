@@ -13,7 +13,6 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="context">The pipeline context.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
-[DisplayName("Check .NET Formatting")]
 public class DotNetFormatCheck(
     IOptions<PipelineOptions> options,
     IPipelineContext context,
@@ -22,7 +21,7 @@ public class DotNetFormatCheck(
 ) : IPipelineStep
 {
     /// <inheritdoc />
-    public async Task Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var reportDirectory = context.FileSystem.CurrentDirectory
             .GetDirectory(options.Value.TempDirectory)
@@ -31,7 +30,7 @@ public class DotNetFormatCheck(
         var result = await dotnet.CheckFormat(new FormatArgs { ReportDirectory = reportDirectory }, cancellationToken);
         if (result.Succeeded)
         {
-            return;
+            return StepResult.Successful;
         }
 
         if (result.UnformattedFiles.Count > 0)

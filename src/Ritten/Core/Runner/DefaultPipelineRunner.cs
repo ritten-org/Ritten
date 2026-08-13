@@ -1,12 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Ritten.Contracts;
-using Ritten.Core.Extensions;
 using Ritten.Core.Steps;
 
 namespace Ritten.Core.Runner;
 
-internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, IServiceScopeFactory scopeFactory) : IPipelineRunner
+internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, IServiceScopeFactory scopeFactory, Pipeline pipeline) : IPipelineRunner
 {
     public async Task<PipelineResult> RunPipeline(CancellationToken cancellationToken)
     {
@@ -15,7 +14,7 @@ internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, ISer
         await using var scope = scopeFactory.CreateAsyncScope();
         var reporters = scope.ServiceProvider.GetServices<IProgressReporter>().ToList();
 
-        await NotifyReporters(reporters, r => r.OnPipelineStarted(cancellationToken));
+        await NotifyReporters(reporters, r => r.OnPipelineStarted(pipeline, cancellationToken));
         var steps = await RunSteps(scope, reporters, cancellationToken);
 
         int exitCode;
@@ -32,7 +31,7 @@ internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, ISer
             exitCode = steps[^1].ExitCode;
         }
         var result = new PipelineResult(exitCode, steps);
-        await NotifyReporters(reporters, r => r.OnPipelineCompleted(result.ExitCode, result, cancellationToken));
+        await NotifyReporters(reporters, r => r.OnPipelineCompleted(result, cancellationToken));
 
         logger.LogInformation("Pipeline finished with exit code {ExitCode}", result.ExitCode);
         return result;
@@ -51,8 +50,7 @@ internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, ISer
                 break;
             }
 
-            var displayName = step.GetDisplayName();
-            await NotifyReporters(reporters, r => r.OnStepStarted(displayName, cancellationToken));
+            await NotifyReporters(reporters, r => r.OnStepStarted(step, cancellationToken));
 
             var result = await RunStep(step, cancellationToken);
             results.Add(result);
@@ -71,16 +69,14 @@ internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, ISer
 
     private async Task<StepResult> RunStep(IPipelineStep step, CancellationToken cancellationToken)
     {
-        var displayName = step.GetDisplayName();
         try
         {
-            await step.Run(cancellationToken);
-            return StepResult.Successful;
+            return await step.Run(cancellationToken);
         }
         catch (Exception ex)
         {
             logger.LogCritical(ex, "Unhandled error during step. Exiting.");
-            return StepResult.StoppedOnError(ex);
+            return StepResult.StoppedOnError;
         }
     }
 

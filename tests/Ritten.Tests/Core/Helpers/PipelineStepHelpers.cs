@@ -7,7 +7,7 @@ public static class PipelineStepHelpers
     public static IPipelineStep CreateMock()
     {
         var step = Substitute.For<IPipelineStep>();
-        step.Run(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        step.Run(Arg.Any<CancellationToken>()).Returns(StepResult.Successful);
         return step;
     }
 }

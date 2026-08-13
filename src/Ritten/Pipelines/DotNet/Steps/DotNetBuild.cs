@@ -12,20 +12,19 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="options">The pipeline's build options.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
-[DisplayName("Build .NET Solution")]
 public class DotNetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuildReport report) : IPipelineStep
 {
     private const int MaxDiagnostics = 30;
 
     /// <inheritdoc />
-    public async Task Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var result = await dotnet.Build(
             new BuildArgs { Configuration = options.Value.Configuration, NoRestore = true },
             cancellationToken);
         if (result.Succeeded)
         {
-            return;
+            return StepResult.Successful;
         }
 
         var section = report.Section("Build").Failure("The solution failed to build.");

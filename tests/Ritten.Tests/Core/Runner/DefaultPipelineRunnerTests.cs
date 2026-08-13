@@ -103,7 +103,7 @@ public class DefaultPipelineRunnerTests
         // Assert
         Received.InOrder(() =>
         {
-            reporter.OnPipelineStarted(Arg.Any<CancellationToken>());
+            reporter.OnPipelineStarted(Arg.Any<Pipeline>(), Arg.Any<CancellationToken>());
             step.Run(Arg.Any<CancellationToken>());
         });
     }
@@ -127,7 +127,7 @@ public class DefaultPipelineRunnerTests
         Received.InOrder(() =>
         {
             step.Run(Arg.Any<CancellationToken>());
-            reporter.OnPipelineCompleted(Arg.Any<int>(), Arg.Any<PipelineResult>(), Arg.Any<CancellationToken>());
+            reporter.OnPipelineCompleted(Arg.Any<PipelineResult>(), Arg.Any<CancellationToken>());
         });
     }
 
@@ -149,7 +149,7 @@ public class DefaultPipelineRunnerTests
         // Assert
         Received.InOrder(() =>
         {
-            reporter.OnStepStarted(Arg.Any<string>(), Arg.Any<CancellationToken>());
+            reporter.OnStepStarted(Arg.Any<IPipelineStep>(), Arg.Any<CancellationToken>());
             step.Run(Arg.Any<CancellationToken>());
             reporter.OnStepCompleted(Arg.Any<StepResult>(), Arg.Any<CancellationToken>());
         });
@@ -160,7 +160,7 @@ public class DefaultPipelineRunnerTests
     {
         // Arrange
         var reporter = Substitute.For<IProgressReporter>();
-        reporter.OnPipelineStarted(Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
+        reporter.OnPipelineStarted(Arg.Any<Pipeline>(), Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
 
         var step = PipelineStepHelpers.CreateMock();
 

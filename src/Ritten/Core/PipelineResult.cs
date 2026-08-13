@@ -16,4 +16,9 @@ public class PipelineResult(int exitCode, IEnumerable<StepResult> steps)
     /// Gets the results of each step in the pipeline execution.
     /// </summary>
     public IReadOnlyCollection<StepResult> Steps { get; init; } = steps.ToList().AsReadOnly();
+
+    /// <summary>
+    /// Gets whether the pipeline was successful.
+    /// </summary>
+    public bool IsSuccess => ExitCode == 0;
 }

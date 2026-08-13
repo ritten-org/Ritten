@@ -28,11 +28,11 @@ public class PipelineStepProviderTests
 
     private class DummyStep1 : IPipelineStep
     {
-        public Task Run(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<StepResult> Run(CancellationToken cancellationToken = default) => Task.FromResult(StepResult.Successful);
     }
 
     private class DummyStep2 : IPipelineStep
     {
-        public Task Run(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<StepResult> Run(CancellationToken cancellationToken = default) => Task.FromResult(StepResult.Successful);
     }
 }

@@ -8,10 +8,12 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// Runs <c>dotnet restore</c>.
 /// </summary>
 /// <param name="dotnet">The dotnet client.</param>
-[DisplayName("Restore .NET Dependencies")]
 public class DotNetRestore(IDotNet dotnet) : IPipelineStep
 {
     /// <inheritdoc />
-    public Task Run(CancellationToken cancellationToken = default) =>
-        dotnet.Restore(new RestoreArgs(), cancellationToken);
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
+    {
+        await dotnet.Restore(new RestoreArgs(), cancellationToken);
+        return StepResult.Successful;
+    }
 }

@@ -20,7 +20,6 @@ namespace Ritten.Pipelines.GitHub;
 /// <param name="context">The pipeline context.</param>
 /// <param name="releases">The GitHub release service.</param>
 /// <param name="changelogs">The changelog client.</param>
-[DisplayName("Create GitHub Release")]
 public class CreateGitHubRelease(
     ILogger<CreateGitHubRelease> logger,
     IOptions<GitOptions> options,
@@ -30,14 +29,14 @@ public class CreateGitHubRelease(
 ) : IPipelineStep
 {
     /// <inheritdoc />
-    public async Task Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var project = context.State.Get<Project>() ?? throw new Exception("Project info not found in state.");
 
         if (project.Version.IsPrerelease)
         {
             logger.LogInformation("Skipping GitHub Release for prerelease version {Version}; tag has still been pushed.", project.Version);
-            return;
+            return StepResult.Successful;
         }
 
         var tag = $"{options.Value.TagPrefix}{project.Version}";
@@ -46,12 +45,13 @@ public class CreateGitHubRelease(
         if (await releases.Exists(tag, cancellationToken))
         {
             logger.LogInformation("GitHub Release {Tag} already exists; skipping.", tag);
-            return;
+            return StepResult.Successful;
         }
 
         var entry = context.State.Get<ChangelogEntry>() ?? throw new Exception("Changelog entry not found in state.");
 
         logger.LogInformation("Creating GitHub Release {Tag}.", tag);
         await releases.Create(tag, tag, changelogs.RenderEntry(entry), cancellationToken);
+        return StepResult.Successful;
     }
 }

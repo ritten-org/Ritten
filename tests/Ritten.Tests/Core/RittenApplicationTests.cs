@@ -19,6 +19,9 @@ public class RittenApplicationTests
 class TestPipeline : Pipeline
 {
     /// <inheritdoc />
+    public override string Name => "Test";
+
+    /// <inheritdoc />
     public override void Configure(IPipelineBuilder builder)
     {
         builder.UseStep<TestPipelineStep>();
@@ -27,8 +30,8 @@ class TestPipeline : Pipeline
 
 class TestPipelineStep : IPipelineStep
 {
-    public Task Run(CancellationToken cancellationToken = default)
+    public Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        return Task.FromResult(StepResult.Successful);
     }
 }

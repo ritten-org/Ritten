@@ -21,7 +21,6 @@ namespace Ritten.Pipelines.NuGet;
 /// <param name="context">The pipeline context.</param>
 /// <param name="report">The build report.</param>
 /// <param name="nuget">The NuGet client.</param>
-[DisplayName("Validate NuGet Version")]
 public class ValidateNuGetVersion(
     ILogger<ValidateNuGetVersion> logger,
     IOptions<NuGetOptions> options,
@@ -32,12 +31,12 @@ public class ValidateNuGetVersion(
 ) : IPipelineStep
 {
     /// <inheritdoc />
-    public async Task Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         if (options.Value.SkipVersionCheck)
         {
             logger.LogInformation("Skipping version check.");
-            return;
+            return StepResult.Successful;
         }
 
         var project = context.State.Get<Project>();
@@ -69,5 +68,6 @@ public class ValidateNuGetVersion(
                 ? $"Version **{project.Version}** will be the first published version of {project.Name}."
                 : $"Version **{project.Version}** is valid (latest published: **{latestVersion}**).");
         logger.LogInformation("Version {Version} is valid and can be used for package {PackageName}.", project.Version, project.Name);
+        return StepResult.Successful;
     }
 }

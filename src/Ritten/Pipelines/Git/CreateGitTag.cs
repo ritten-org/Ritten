@@ -17,11 +17,10 @@ namespace Ritten.Pipelines.Git;
 /// <param name="options">The pipeline's release options.</param>
 /// <param name="context">The pipeline context.</param>
 /// <param name="git">The git client.</param>
-[DisplayName("Create Git Tag")]
 public class CreateGitTag(ILogger<CreateGitTag> logger, IOptions<GitOptions> options, IPipelineContext context, IGit git) : IPipelineStep
 {
     /// <inheritdoc />
-    public async Task Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var project = context.State.Get<Project>() ?? throw new Exception("Project info not found in state.");
         var tag = $"{options.Value.TagPrefix}{project.Version}";
@@ -30,7 +29,7 @@ public class CreateGitTag(ILogger<CreateGitTag> logger, IOptions<GitOptions> opt
         if (await git.RemoteTagExists("origin", tag, cancellationToken))
         {
             logger.LogInformation("Tag {Tag} already exists on origin; skipping.", tag);
-            return;
+            return StepResult.Successful;
         }
 
         if (await git.TagExists(tag, cancellationToken))
@@ -44,5 +43,6 @@ public class CreateGitTag(ILogger<CreateGitTag> logger, IOptions<GitOptions> opt
         }
 
         await git.PushTag("origin", tag, cancellationToken);
+        return StepResult.Successful;
     }
 }

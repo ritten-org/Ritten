@@ -31,7 +31,9 @@ public class RittenApplication : IDisposable
     public static async Task<int> Run<TPipeline>(CancellationToken cancellationToken = default) where TPipeline : Pipeline, new()
     {
         var builder = new RittenApplicationBuilder(new RittenApplicationOptions());
-        new TPipeline().Configure(builder);
+        var pipeline = new TPipeline();
+        pipeline.Configure(builder);
+        builder.Services.AddSingleton<Pipeline>(pipeline);
 
         using var app = builder.Build();
         var runner = app._host.Services.GetRequiredService<IPipelineRunner>();

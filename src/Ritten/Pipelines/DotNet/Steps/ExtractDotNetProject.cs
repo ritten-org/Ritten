@@ -14,11 +14,10 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="options">The pipeline's build options.</param>
 /// <param name="context">The pipeline context.</param>
 /// <param name="dotnet">The dotnet client.</param>
-[DisplayName("Extract .NET Project")]
 public class ExtractDotNetProject(ILogger<ExtractDotNetProject> logger, IOptions<DotNetOptions> options, IPipelineContext context, IDotNet dotnet) : IPipelineStep
 {
     /// <inheritdoc />
-    public async Task Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var csproj = context.FileSystem.CurrentDirectory.GetFile(options.Value.ProjectFile);
         if (!csproj.Exists)
@@ -30,5 +29,6 @@ public class ExtractDotNetProject(ILogger<ExtractDotNetProject> logger, IOptions
         context.State.Set(project);
 
         logger.LogInformation("Extracted project info: {ProjectName} (v{Version})", project.Name, project.Version);
+        return StepResult.Successful;
     }
 }

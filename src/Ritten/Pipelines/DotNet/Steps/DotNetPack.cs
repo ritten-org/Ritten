@@ -14,11 +14,10 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="pipeline">The pipeline's directory layout options.</param>
 /// <param name="context">The pipeline context.</param>
 /// <param name="dotnet">The dotnet client.</param>
-[DisplayName("Pack NuGet Package")]
 public class DotNetPack(IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IPipelineContext context, IDotNet dotnet) : IPipelineStep
 {
     /// <inheritdoc />
-    public async Task Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var result = await dotnet.Pack(
             new PackArgs
@@ -31,5 +30,6 @@ public class DotNetPack(IOptions<DotNetOptions> options, IOptions<PipelineOption
             cancellationToken);
 
         context.State.Set(result);
+        return StepResult.Successful;
     }
 }

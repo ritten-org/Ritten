@@ -6,9 +6,14 @@ namespace Ritten.Contracts;
 public interface IPipelineStep
 {
     /// <summary>
+    /// Gets the name of the pipeline step.
+    /// </summary>
+    string Name { get => GetType().Name; }
+
+    /// <summary>
     /// Runs the step in the pipeline.
     /// </summary>
     /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
-    /// <returns>A task that completes when the step has finished running.</returns>
-    Task Run(CancellationToken cancellationToken = default);
+    /// <returns>The result of the step execution.</returns>
+    Task<StepResult> Run(CancellationToken cancellationToken = default);
 }

@@ -11,16 +11,15 @@ namespace Ritten.Pipelines;
 /// <param name="logger">The step's logger.</param>
 /// <param name="options">The pipeline's build options.</param>
 /// <param name="context">The pipeline context.</param>
-[DisplayName("Clean Directories")]
 public class CleanDirectories(ILogger<CleanDirectories> logger, IOptions<PipelineOptions> options, IPipelineContext context) : IPipelineStep
 {
     /// <inheritdoc />
-    public Task Run(CancellationToken cancellationToken = default)
+    public Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Cleaning temp and artifact directories.");
         var cd = context.FileSystem.CurrentDirectory;
         cd.GetDirectory(options.Value.ArtifactsDirectory).Delete();
         cd.GetDirectory(options.Value.TempDirectory).Delete();
-        return Task.CompletedTask;
+        return Task.FromResult(StepResult.Successful);
     }
 }

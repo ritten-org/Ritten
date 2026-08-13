@@ -21,7 +21,7 @@ internal class BuildReportPublisher(
 ) : IProgressReporter
 {
     /// <inheritdoc />
-    public async Task OnPipelineStarted(CancellationToken cancellationToken)
+    public async Task OnPipelineStarted(Pipeline pipeline, CancellationToken cancellationToken)
     {
         if (!options.Value.IsPullRequest)
         {
@@ -30,7 +30,7 @@ internal class BuildReportPublisher(
 
         try
         {
-            await comments.CreateOrUpdate($"## ⏳ {options.Value.WorkflowName}\n\nRun in progress…", cancellationToken);
+            await comments.CreateOrUpdate($"## ⏳ {options.Value.WorkflowName}\n\n{pipeline.Name} pipeline in progress…", cancellationToken);
         }
         catch (Exception ex)
         {
@@ -39,17 +39,15 @@ internal class BuildReportPublisher(
     }
 
     /// <inheritdoc />
-    public Task OnStepStarted(string stepName, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task OnStepStarted(IPipelineStep step, CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc />
     public Task OnStepCompleted(StepResult result, CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc />
-    public async Task OnPipelineCompleted(int exitCode, PipelineResult result, CancellationToken cancellationToken)
+    public async Task OnPipelineCompleted(PipelineResult result, CancellationToken cancellationToken)
     {
-        var succeeded = exitCode == 0;
-        var markdown = renderer.Render(options.Value.WorkflowName, succeeded, report.Sections);
-
+        var markdown = renderer.Render(options.Value.WorkflowName, result.IsSuccess, report.Sections);
         foreach (var sink in sinks)
         {
             try

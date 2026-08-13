@@ -14,6 +14,9 @@ namespace Ritten.Pipelines.DotNet;
 /// </summary>
 public class DotNetPackageDeploy : Pipeline
 {
+    /// <inheritdoc/>>
+    public override string Name => "DotNet Package Deploy";
+
     /// <inheritdoc />
     public override void Configure(IPipelineBuilder builder)
     {

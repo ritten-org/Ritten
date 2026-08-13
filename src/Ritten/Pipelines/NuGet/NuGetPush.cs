@@ -17,7 +17,6 @@ namespace Ritten.Pipelines.NuGet;
 /// <param name="context">The pipeline context.</param>
 /// <param name="nuget">The NuGet client.</param>
 /// <param name="report">The build report.</param>
-[DisplayName("Push NuGet Package")]
 public class NuGetPush(
     IOptions<NuGetOptions> options,
     IPipelineContext context,
@@ -26,7 +25,7 @@ public class NuGetPush(
 ) : IPipelineStep
 {
     /// <inheritdoc />
-    public async Task Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(options.Value.ApiKey))
         {
@@ -45,5 +44,7 @@ public class NuGetPush(
         {
             report.Section("Release").Success($"Published **{project.Name} {project.Version}** to NuGet.");
         }
+
+        return StepResult.Successful;
     }
 }
