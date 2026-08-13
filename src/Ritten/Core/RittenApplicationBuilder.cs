@@ -1,22 +1,22 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Diagnostics.Metrics;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core.FileSystem;
 using Ritten.Core.Runner;
+using Ritten.Core.Steps;
 
 namespace Ritten.Core;
 
 /// <summary>
 /// Provides functionality to configure and build a pipeline application.
 /// </summary>
-public class RittenApplicationBuilder : IHostApplicationBuilder
+public class RittenApplicationBuilder : IPipelineBuilder
 {
     private readonly HostApplicationBuilder _innerBuilder;
+    private readonly List<Type> _stepTypes = [];
 
     /// <summary>
     /// Creates a new instance of the <see cref="RittenApplicationBuilder"/> with the given options.
@@ -24,41 +24,26 @@ public class RittenApplicationBuilder : IHostApplicationBuilder
     /// <param name="options">The options to configure the pipeline application.</param>
     internal RittenApplicationBuilder(RittenApplicationOptions options)
     {
-        var configuration = new ConfigurationManager();
-        configuration.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            { "Logging:LogLevel:Microsoft.Hosting.Lifetime", nameof(LogLevel.Warning) }
-        });
-
-        var contentRoot = options.ContentRootPath ?? AppContext.BaseDirectory;
-
         _innerBuilder = new HostApplicationBuilder(new HostApplicationBuilderSettings
         {
             Args = options.Args,
             ApplicationName = options.ApplicationName,
             EnvironmentName = options.EnvironmentName,
-            ContentRootPath = contentRoot,
-            Configuration = configuration,
+            ContentRootPath = options.ContentRootPath ?? AppContext.BaseDirectory,
+            Configuration = new ConfigurationManager(),
         });
     }
 
     /// <inheritdoc />
-    public IDictionary<object, object> Properties => ((IHostApplicationBuilder)_innerBuilder).Properties;
-
-    /// <inheritdoc />
-    public IConfigurationManager Configuration => _innerBuilder.Configuration;
-
-    /// <inheritdoc />
-    public IHostEnvironment Environment => _innerBuilder.Environment;
-
-    /// <inheritdoc />
-    public ILoggingBuilder Logging => _innerBuilder.Logging;
-
-    /// <inheritdoc />
-    public IMetricsBuilder Metrics => _innerBuilder.Metrics;
-
-    /// <inheritdoc />
     public IServiceCollection Services => _innerBuilder.Services;
+
+    /// <inheritdoc />
+    public IPipelineBuilder UseStep<TStep>() where TStep : class, IPipelineStep
+    {
+        _stepTypes.Add(typeof(TStep));
+        Services.AddTransient<TStep>();
+        return this;
+    }
 
     /// <summary>
     /// Builds the <see cref="RittenApplication" />.
@@ -66,27 +51,19 @@ public class RittenApplicationBuilder : IHostApplicationBuilder
     /// <returns>The configured pipeline application.</returns>
     public RittenApplication Build()
     {
-        ApplyServices(Services);
+        Services.AddSingleton(TimeProvider.System);
+
+        Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
+        Services.TryAddSingleton<IPipelineStepRunner, DefaultPipelineStepRunner>();
+
+        Services.TryAddScoped<IFileSystem>(_ => new PhysicalFileSystem(Environment.CurrentDirectory));
+        Services.TryAddScoped<IPipelineState, DefaultPipelineState>();
+        Services.TryAddScoped<IPipelineContext, DefaultPipelineContext>();
+
+        Services.AddSingleton(new PipelineStepTypes(_stepTypes));
+        Services.AddScoped<IPipelineStepProvider, PipelineStepProvider>();
 
         var host = _innerBuilder.Build();
         return new RittenApplication(host);
-    }
-
-    /// <inheritdoc />
-    public void ConfigureContainer<TContainerBuilder>(
-        IServiceProviderFactory<TContainerBuilder> factory,
-        Action<TContainerBuilder>? configure = null
-    ) where TContainerBuilder : notnull => _innerBuilder.ConfigureContainer(factory, configure);
-
-    private static void ApplyServices(IServiceCollection services)
-    {
-        services.AddSingleton(TimeProvider.System);
-
-        services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
-        services.TryAddSingleton<IPipelineStepRunner, DefaultPipelineStepRunner>();
-
-        services.TryAddScoped<IFileSystem>(_ => new PhysicalFileSystem(System.Environment.CurrentDirectory));
-        services.TryAddScoped<IPipelineState, DefaultPipelineState>();
-        services.TryAddScoped<IPipelineContext, DefaultPipelineContext>();
     }
 }
