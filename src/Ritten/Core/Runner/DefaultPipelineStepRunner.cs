@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Ritten.Contracts;
 using Ritten.Contracts.Hooks;
 using Ritten.Core.Extensions;
-using Ritten.Core.Logging;
 
 namespace Ritten.Core.Runner;
 
@@ -15,16 +14,13 @@ internal class DefaultPipelineStepRunner(
     {
         var displayName = step.GetDisplayName();
 
-        var attribs = new LogAttributes { StepName = displayName };
-        using var loggingScope = logger.BeginScope(attribs);
-
         if (cancellationToken.IsCancellationRequested)
         {
             logger.LogInformation("Aborting pipeline step due to cancellation request.");
             return new StepExecutionSummary(displayName, PipelineStepResult.StoppedAfterCancel);
         }
 
-        await RunPreStepHooks(scope, attribs);
+        await RunPreStepHooks(scope, displayName);
 
         var result = await RunStepCore(step, cancellationToken);
         var summary = new StepExecutionSummary(displayName, result);
@@ -34,7 +30,7 @@ internal class DefaultPipelineStepRunner(
         return summary;
     }
 
-    private async Task RunPreStepHooks(AsyncServiceScope scope, LogAttributes attributes)
+    private async Task RunPreStepHooks(AsyncServiceScope scope, string stepName)
     {
         var hooks = scope.ServiceProvider.GetServices<IPreStepHook>().ToList();
         if (hooks.Count == 0)
@@ -45,7 +41,7 @@ internal class DefaultPipelineStepRunner(
 
         var args = new PreStepHookArgs
         {
-            StepName = attributes.StepName,
+            StepName = stepName,
         };
 
         logger.LogDebug("Running pre-step hooks...");

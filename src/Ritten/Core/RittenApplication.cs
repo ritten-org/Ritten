@@ -66,30 +66,17 @@ public class RittenApplication : IDisposable
     /// <returns>The exit code from the pipeline execution.</returns>
     public async Task<int> Run(CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var runner = Services.GetRequiredService<IPipelineRunner>();
-            var summary = await runner.RunPipeline(cancellationToken);
-            return summary.ExitCode;
-        }
-        finally
-        {
-            Dispose();
-        }
+        var runner = Services.GetRequiredService<IPipelineRunner>();
+        var summary = await runner.RunPipeline(cancellationToken);
+        return summary.ExitCode;
     }
-
-    /// <summary>
-    /// Creates a new <see cref="RittenApplicationBuilder"/> with default settings.
-    /// </summary>
-    /// <returns>The created builder.</returns>
-    public static RittenApplicationBuilder CreateBuilder() => new(new RittenApplicationOptions());
 
     /// <summary>
     /// Creates a new <see cref="RittenApplicationBuilder"/> with default settings.
     /// </summary>
     /// <param name="args">The command-line arguments passed to the application.</param>
     /// <returns>The created builder.</returns>
-    public static RittenApplicationBuilder CreateBuilder(string[] args) => new(new RittenApplicationOptions { Args = args });
+    public static RittenApplicationBuilder CreateBuilder(string[]? args = null) => new(new RittenApplicationOptions { Args = args });
 
     /// <summary>
     /// Creates a new <see cref="RittenApplicationBuilder"/> with default settings.

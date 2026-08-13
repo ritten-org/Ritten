@@ -14,9 +14,12 @@ deploy.SetAction((_, cancellationToken) => RunPipeline(p => p.UseDotNetPackageDe
 var root = new RootCommand("The Ritten build pipeline.") { build, verify, deploy };
 return await root.Parse(args).InvokeAsync();
 
-static Task<int> RunPipeline(Func<RittenApplication, RittenApplication> compose, CancellationToken cancellationToken)
+static async Task<int> RunPipeline(Action<RittenApplication> addSteps, CancellationToken cancellationToken)
 {
     var builder = RittenApplication.CreateBuilder();
     builder.Services.AddDotNetPackagePipeline();
-    return compose(builder.Build()).Run(cancellationToken);
+    using var application = builder.Build();
+    addSteps(application);
+    var result = await application.Run(cancellationToken);
+    return result;
 }

@@ -6,7 +6,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
-using Ritten.Core.Extensions;
 using Ritten.Core.FileSystem;
 using Ritten.Core.Runner;
 using Ritten.Core.Steps;
@@ -43,8 +42,6 @@ public class RittenApplicationBuilder : IHostApplicationBuilder
             ContentRootPath = contentRoot,
             Configuration = configuration,
         });
-
-        Logging.AddPipelineConsoleFormatter();
     }
 
     /// <inheritdoc />

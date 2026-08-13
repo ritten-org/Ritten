@@ -11,11 +11,7 @@ public class PipelineExecutionSummary
     /// <summary>
     /// Creates a new instance of <see cref="PipelineExecutionSummary"/>.
     /// </summary>
-    public PipelineExecutionSummary(
-        IPipelineContext context,
-        IEnumerable<StepExecutionSummary> steps,
-        CancellationToken cancellationToken
-    )
+    public PipelineExecutionSummary(IPipelineContext context, IEnumerable<StepExecutionSummary> steps, CancellationToken cancellationToken)
     {
         var stepList = steps.ToList().AsReadOnly();
         ExitCode = CalculateExitCode(context, stepList, cancellationToken);
