@@ -21,6 +21,4 @@ internal static class PipelineExitCodes
     /// Indicates the pipeline stopped due to outside cancellation.
     /// </summary>
     public const int StoppedAfterCancel = -3;
-
-    public const int MissingSummary = -4;
 }

@@ -6,11 +6,6 @@ namespace Ritten.Core;
 public class PipelineExecutionOptions
 {
     /// <summary>
-    /// If <c>true</c> then application termination will be requested when the pipeline run is completed.
-    /// </summary>
-    public bool StopApplicationOnCompletion { get; set; } = true;
-
-    /// <summary>
     /// Controls what causes the pipeline to terminate early.
     /// </summary>
     public PipelineTerminationMode TerminationMode { get; set; } = PipelineTerminationMode.StopOnUnhandledException;
@@ -19,9 +14,4 @@ public class PipelineExecutionOptions
     /// If <c>true</c> then the pipeline will set the exit code automatically on failure.
     /// </summary>
     public bool EnableAutomaticExitCodes { get; set; } = true;
-
-    /// <summary>
-    /// Controls whether <see cref="Environment.ExitCode"/> is set after the pipeline has run.
-    /// </summary>
-    public bool SetEnvironmentExitCodeOnCompletion { get; set; } = true;
 }

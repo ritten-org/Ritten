@@ -45,9 +45,6 @@ public class RittenApplicationBuilder : IHostApplicationBuilder
         });
 
         _innerBuilder.Services
-            .Configure<HostOptions>(o => o.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
-
-        _innerBuilder.Services
             .AddOptions<PipelineExecutionOptions>();
 
         Logging.AddPipelineConsoleFormatter();
@@ -95,7 +92,6 @@ public class RittenApplicationBuilder : IHostApplicationBuilder
 
         services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
         services.TryAddSingleton<IPipelineStepRunner, DefaultPipelineStepRunner>();
-        services.TryAddSingleton<PipelineExecutionSummaryStore>();
 
         services.TryAddScoped<IFileSystem>(_ => new PhysicalFileSystem(System.Environment.CurrentDirectory));
         services.TryAddScoped<IPipelineState, DefaultPipelineState>();
@@ -109,6 +105,5 @@ public class RittenApplicationBuilder : IHostApplicationBuilder
         }
 
         services.AddGitHubActionsRuntime();
-        services.AddHostedService<PipelineHost>();
     }
 }

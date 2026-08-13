@@ -9,36 +9,23 @@ namespace Ritten.Core;
 /// <summary>
 /// Represents a pipeline application that can be run.
 /// </summary>
-public class RittenApplication : IHost
+public class RittenApplication : IDisposable
 {
-    private bool _hasRun;
     private readonly IHost _host;
 
     /// <summary>
     /// Creates a new instance of the <see cref="RittenApplication"/> class with the specified host.
     /// </summary>
-    /// <param name="host">The host that will run the pipeline.</param>
+    /// <param name="host">The host whose service container powers the pipeline.</param>
     internal RittenApplication(IHost host)
     {
         _host = host;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// The service provider for the pipeline application.
+    /// </summary>
     public IServiceProvider Services => _host.Services;
-
-    /// <inheritdoc />
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        if (_hasRun)
-        {
-            throw new InvalidOperationException("The pipeline application can only be started once.");
-        }
-        _hasRun = true;
-        return _host.StartAsync(cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public Task StopAsync(CancellationToken cancellationToken) => _host.StopAsync(cancellationToken);
 
     /// <summary>
     /// Registers a step with the pipeline that will be run when the application is executed.
@@ -90,11 +77,9 @@ public class RittenApplication : IHost
     {
         try
         {
-            await StartAsync(cancellationToken).ConfigureAwait(false);
-            await this.WaitForShutdownAsync(cancellationToken).ConfigureAwait(false);
-
-            var store = Services.GetRequiredService<PipelineExecutionSummaryStore>();
-            return store.Summary?.ExitCode ?? PipelineExitCodes.MissingSummary;
+            var runner = Services.GetRequiredService<IPipelineRunner>();
+            var summary = await runner.RunPipeline(cancellationToken);
+            return summary.ExitCode;
         }
         finally
         {
