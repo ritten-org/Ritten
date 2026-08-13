@@ -1,10 +1,10 @@
 using System.ComponentModel;
-using Ritten.Contracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Ritten.Contracts;
 using Ritten.DotNet;
 
-namespace Ritten.Pipelines.DotNet;
+namespace Ritten.Pipelines.DotNet.Steps;
 
 /// <summary>
 /// Reads the package name and version from the configured project file.

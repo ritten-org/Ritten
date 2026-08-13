@@ -2,7 +2,7 @@ using System.ComponentModel;
 using Ritten.Contracts;
 using Ritten.DotNet;
 
-namespace Ritten.Pipelines.DotNet;
+namespace Ritten.Pipelines.DotNet.Steps;
 
 /// <summary>
 /// Runs <c>dotnet restore</c>.

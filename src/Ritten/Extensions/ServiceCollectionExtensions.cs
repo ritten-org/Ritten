@@ -3,8 +3,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Changelogs;
-using Ritten.Core.Extensions;
 using Ritten.Commands;
+using Ritten.Core.Extensions;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.GitHub;
@@ -112,9 +112,9 @@ public static class ServiceCollectionExtensions
         }
 
         /// <summary>
-        /// Adds everything the standard .NET package pipelines need.
+        /// Registers the services and options that the standard .NET package pipelines need.
         /// </summary>
-        public IServiceCollection AddDotNetPackagePipeline()
+        public IServiceCollection AddDotNetPackageServices()
         {
             services
                 .AddCommandRunner()
@@ -156,7 +156,6 @@ public static class ServiceCollectionExtensions
             services.AddOptions<GitOptions>()
                 .BindConfiguration("Git");
 
-            services.AddStepsFromAssemblyContaining<CleanDirectories>();
             return services;
         }
 

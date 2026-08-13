@@ -1,10 +1,10 @@
 using System.ComponentModel;
-using Ritten.Contracts;
 using Microsoft.Extensions.Options;
+using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Reporting;
 
-namespace Ritten.Pipelines.DotNet;
+namespace Ritten.Pipelines.DotNet.Steps;
 
 /// <summary>
 /// Builds the solution, reporting compiler diagnostics when the build fails.

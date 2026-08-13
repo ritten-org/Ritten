@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using Ritten.Changelogs;
 using Ritten.DotNet;
 using Ritten.GitHub;
-using Ritten.Pipelines.DotNet;
+using Ritten.Pipelines.DotNet.Steps;
 using Ritten.Pipelines.Git;
 
 namespace Ritten.Pipelines.GitHub;

@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
-using Ritten.Core.Extensions;
 using Ritten.Core.Steps;
 
 namespace Ritten.Tests.Core.Steps;
@@ -11,16 +10,14 @@ public class PipelineStepProviderTests
     public void GetSteps_WithSteps_ReturnsCorrectSteps()
     {
         // Arrange
-        var services = new ServiceCollection()
-            .AddStep<DummyStep1>()
-            .AddStep<DummyStep2>()
-            .BuildServiceProvider();
+        var services = new ServiceCollection();
+        services.AddTransient<DummyStep1>();
+        services.AddTransient<DummyStep2>();
+        var serviceProvider = services.BuildServiceProvider();
 
-        var collection = new PipelineStepCollection();
-        collection.AddStep(typeof(DummyStep1));
-        collection.AddStep(typeof(DummyStep2));
+        var stepTypes = new PipelineStepTypes([typeof(DummyStep1), typeof(DummyStep2)]);
 
-        var provider = new PipelineStepProvider(services, collection);
+        var provider = new PipelineStepProvider(serviceProvider, stepTypes);
 
         // Act
         var steps = provider.GetSteps().ToList();

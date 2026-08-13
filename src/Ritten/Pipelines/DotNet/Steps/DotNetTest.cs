@@ -1,10 +1,10 @@
 using System.ComponentModel;
-using Ritten.Contracts;
 using Microsoft.Extensions.Options;
+using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Reporting;
 
-namespace Ritten.Pipelines.DotNet;
+namespace Ritten.Pipelines.DotNet.Steps;
 
 /// <summary>
 /// Runs the tests, reporting the aggregated counts on success and the individual failures otherwise.

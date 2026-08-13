@@ -1,10 +1,10 @@
 using System.ComponentModel;
-using Ritten.Contracts;
 using Microsoft.Extensions.Options;
+using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Pipelines.NuGet;
 
-namespace Ritten.Pipelines.DotNet;
+namespace Ritten.Pipelines.DotNet.Steps;
 
 /// <summary>
 /// Packs the configured project into the artifacts directory.

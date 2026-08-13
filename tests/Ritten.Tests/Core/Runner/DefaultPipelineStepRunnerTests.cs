@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Contracts.Hooks;
-using Ritten.Core.Runner;
 using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Core.Runner;

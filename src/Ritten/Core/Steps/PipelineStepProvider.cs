@@ -3,10 +3,8 @@ using Ritten.Contracts;
 
 namespace Ritten.Core.Steps;
 
-internal class PipelineStepProvider(IServiceProvider serviceProvider, IPipelineStepCollection steps) : IPipelineStepProvider
+internal class PipelineStepProvider(IServiceProvider serviceProvider, PipelineStepTypes stepTypes) : IPipelineStepProvider
 {
-    public IEnumerable<IPipelineStep> GetSteps()
-    {
-        return steps.Steps.Select(t => (IPipelineStep)serviceProvider.GetRequiredService(t));
-    }
+    public IEnumerable<IPipelineStep> GetSteps() =>
+        stepTypes.Steps.Select(t => (IPipelineStep)serviceProvider.GetRequiredService(t));
 }

@@ -3,7 +3,7 @@ using Ritten.Contracts;
 using Microsoft.Extensions.Options;
 using Ritten.DotNet;
 using Ritten.NuGet;
-using Ritten.Pipelines.DotNet;
+using Ritten.Pipelines.DotNet.Steps;
 using Ritten.Reporting;
 
 namespace Ritten.Pipelines.NuGet;

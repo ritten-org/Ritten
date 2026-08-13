@@ -8,7 +8,6 @@ using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core.FileSystem;
 using Ritten.Core.Runner;
-using Ritten.Core.Steps;
 
 namespace Ritten.Core;
 
@@ -89,12 +88,5 @@ public class RittenApplicationBuilder : IHostApplicationBuilder
         services.TryAddScoped<IFileSystem>(_ => new PhysicalFileSystem(System.Environment.CurrentDirectory));
         services.TryAddScoped<IPipelineState, DefaultPipelineState>();
         services.TryAddScoped<IPipelineContext, DefaultPipelineContext>();
-
-        var hasProvider = services.Any(d => d.ServiceType == typeof(IPipelineStepProvider));
-        if (!hasProvider)
-        {
-            services.TryAddSingleton<IPipelineStepCollection, PipelineStepCollection>();
-            services.TryAddScoped<IPipelineStepProvider, PipelineStepProvider>();
-        }
     }
 }

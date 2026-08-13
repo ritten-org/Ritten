@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Ritten.DotNet;
 using Ritten.Git;
-using Ritten.Pipelines.DotNet;
+using Ritten.Pipelines.DotNet.Steps;
 
 namespace Ritten.Pipelines.Git;
 

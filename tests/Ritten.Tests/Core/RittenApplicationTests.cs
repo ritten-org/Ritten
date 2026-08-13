@@ -1,83 +1,46 @@
-using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Core;
-using Ritten.Core.Extensions;
-using Ritten.Core.Steps;
 
 namespace Ritten.Tests.Core;
 
 public class RittenApplicationTests
 {
     [Fact]
-    public async Task RunWithExitCodeAsync_EmptyApplication_DoesNotThrowOrHang()
+    public async Task Run_WithPassingStep_ReturnsZero()
     {
-        // Arrange
-        var builder = RittenApplication.CreateBuilder();
-        builder.Services.AddStep<TestPipelineStep>();
-
-        var pipeline = builder.Build();
-
-        pipeline.UseStep<TestPipelineStep>();
-
         // Act
-        var exitCode = await pipeline.Run(TestContext.Current.CancellationToken);
+        var exitCode = await RittenApplication.Run<TestPipeline>(TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(0);
     }
 
     [Fact]
-    public async Task RunWithExitCodeAsync_WithCustomExitCode_ReturnsExitCode()
+    public async Task Run_WithCustomExitCode_ReturnsExitCode()
     {
-        // Arrange
-        var builder = RittenApplication.CreateBuilder();
-        builder.Services.AddStep<SetExitCodeTestPipelineStep>();
-
-        var pipeline = builder.Build();
-
-        pipeline.UseStep<SetExitCodeTestPipelineStep>();
-
         // Act
-        var exitCode = await pipeline.Run(TestContext.Current.CancellationToken);
+        var exitCode = await RittenApplication.Run<ExitCodePipeline>(TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(1234);
     }
+}
 
-    [Fact]
-    public void UseStep_AddsStepToCollector()
+class TestPipeline : Pipeline
+{
+    /// <inheritdoc />
+    public override void Configure(IPipelineBuilder builder)
     {
-        // Arrange
-        var collector = Substitute.For<IPipelineStepCollection>();
-
-        var builder = RittenApplication.CreateBuilder();
-        builder.Services.AddSingleton(collector);
-
-        var pipeline = builder.Build();
-
-        // Act
-        pipeline.UseStep(typeof(TestPipelineStep));
-
-        // Assert
-        collector.Received().AddStep(typeof(TestPipelineStep));
+        builder.UseStep<TestPipelineStep>();
     }
+}
 
-    [Fact]
-    public void UseStepGeneric_AddsStepToCollector()
+class ExitCodePipeline : Pipeline
+{
+    /// <inheritdoc />
+    public override void Configure(IPipelineBuilder builder)
     {
-        // Arrange
-        var collector = Substitute.For<IPipelineStepCollection>();
-
-        var builder = RittenApplication.CreateBuilder();
-        builder.Services.AddSingleton(collector);
-
-        var pipeline = builder.Build();
-
-        // Act
-        pipeline.UseStep<TestPipelineStep>();
-
-        // Assert
-        collector.Received().AddStep(typeof(TestPipelineStep));
+        builder.UseStep<SetExitCodeTestPipelineStep>();
     }
 }
 
