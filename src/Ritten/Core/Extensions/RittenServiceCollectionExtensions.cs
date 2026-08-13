@@ -18,17 +18,5 @@ internal static class RittenServiceCollectionExtensions
         {
             return services.AddTransient<IPostPipelineHook, THook>();
         }
-
-        public IServiceCollection AddPreStepHook<THook>()
-            where THook : class, IPreStepHook
-        {
-            return services.AddTransient<IPreStepHook, THook>();
-        }
-
-        public IServiceCollection AddPostStepHook<THook>()
-            where THook : class, IPostStepHook
-        {
-            return services.AddTransient<IPostStepHook, THook>();
-        }
     }
 }

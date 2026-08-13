@@ -7,7 +7,7 @@ using Ritten.Core.Steps;
 
 namespace Ritten.Core.Runner;
 
-internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, IServiceScopeFactory scopeFactory, IPipelineStepRunner stepRunner) : IPipelineRunner
+internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, IServiceScopeFactory scopeFactory) : IPipelineRunner
 {
     public async Task<PipelineExecutionSummary> RunPipeline(CancellationToken cancellationToken)
     {
@@ -108,7 +108,7 @@ internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, ISer
                 break;
             }
 
-            var summary = await stepRunner.RunStep(scope, step, cancellationToken);
+            var summary = await RunStep(step, cancellationToken);
             summaries.Add(summary);
             if (!summary.Result.Continue)
             {
@@ -118,5 +118,20 @@ internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, ISer
         }
 
         return summaries.ToArray();
+    }
+
+    private async Task<StepExecutionSummary> RunStep(IPipelineStep step, CancellationToken cancellationToken)
+    {
+        var displayName = step.GetDisplayName();
+        try
+        {
+            await step.Run(cancellationToken);
+            return new StepExecutionSummary(displayName, PipelineStepResult.Successful);
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "Unhandled error during step. Exiting.");
+            return new StepExecutionSummary(displayName, PipelineStepResult.StoppedOnError(ex));
+        }
     }
 }

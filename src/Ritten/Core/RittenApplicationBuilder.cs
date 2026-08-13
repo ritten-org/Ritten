@@ -54,7 +54,6 @@ public class RittenApplicationBuilder : IPipelineBuilder
         Services.AddSingleton(TimeProvider.System);
 
         Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
-        Services.TryAddSingleton<IPipelineStepRunner, DefaultPipelineStepRunner>();
 
         Services.TryAddScoped<IFileSystem>(_ => new PhysicalFileSystem(Environment.CurrentDirectory));
         Services.TryAddScoped<IPipelineState, DefaultPipelineState>();

@@ -13,21 +13,12 @@ internal static class DefaultPipelineRunnerHelpers
         IPipelineStep[]? steps = null,
         IPrePipelineHook[]? prePipelineHooks = null,
         IPostPipelineHook[]? postPipelineHooks = null,
-        IPipelineStepRunner? stepRunner = null,
         IPipelineContext? context = null,
         ILogger<DefaultPipelineRunner>? logger = null
     )
     {
         logger ??= Substitute.For<ILogger<DefaultPipelineRunner>>();
         context ??= Substitute.For<IPipelineContext>();
-
-        if (stepRunner == null)
-        {
-            stepRunner = Substitute.For<IPipelineStepRunner>();
-            stepRunner
-                .RunStep(Arg.Any<AsyncServiceScope>(), Arg.Any<IPipelineStep>(), Arg.Any<CancellationToken>())
-                .Returns(new StepExecutionSummary { StepName = "", Result = PipelineStepResult.Successful });
-        }
 
         var stepProvider = Substitute.For<IPipelineStepProvider>();
         stepProvider.GetSteps().Returns(steps ?? []);
@@ -48,6 +39,6 @@ internal static class DefaultPipelineRunnerHelpers
         var provider = services.BuildServiceProvider();
         var scopeFactory = ServiceScopeHelpers.CreateScopeFactory(provider);
 
-        return new DefaultPipelineRunner(logger, scopeFactory, stepRunner);
+        return new DefaultPipelineRunner(logger, scopeFactory);
     }
 }
