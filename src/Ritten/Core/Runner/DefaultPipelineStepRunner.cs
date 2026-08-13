@@ -6,9 +6,7 @@ using Ritten.Core.Extensions;
 
 namespace Ritten.Core.Runner;
 
-internal class DefaultPipelineStepRunner(
-    ILogger<DefaultPipelineStepRunner> logger
-) : IPipelineStepRunner
+internal class DefaultPipelineStepRunner(ILogger<DefaultPipelineStepRunner> logger) : IPipelineStepRunner
 {
     public async Task<StepExecutionSummary> RunStep(AsyncServiceScope scope, IPipelineStep step, CancellationToken cancellationToken)
     {
