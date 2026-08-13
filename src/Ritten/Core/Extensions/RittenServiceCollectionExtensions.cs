@@ -58,32 +58,5 @@ internal static class RittenServiceCollectionExtensions
         {
             return services.AddTransient<IPostStepHook, THook>();
         }
-
-        public IServiceCollection AddHooksFromAssembly(Assembly assembly)
-        {
-            var allTypes = assembly.GetTypes();
-            AddHooksOfType(typeof(IPrePipelineHook));
-            AddHooksOfType(typeof(IPostPipelineHook));
-            AddHooksOfType(typeof(IPreStepHook));
-            AddHooksOfType(typeof(IPostStepHook));
-
-            return services;
-
-            void AddHooksOfType(Type hookType)
-            {
-                var hookTypes = allTypes
-                    .Where(t => t is { IsAbstract: false, IsClass: true } && hookType.IsAssignableFrom(t));
-                foreach (var type in hookTypes)
-                {
-                    services.AddTransient(hookType, type);
-                }
-            }
-        }
-
-        public IServiceCollection AddHooksFromAssemblyContaining<TType>()
-        {
-            var assembly = typeof(TType).Assembly;
-            return services.AddHooksFromAssembly(assembly);
-        }
     }
 }
