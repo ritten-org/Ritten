@@ -22,8 +22,8 @@ public class NuGetPushTests
     public NuGetPushTests()
     {
         _report.Section("Release").Returns(_releaseSection);
-        _state.Get<PackResult>(Arg.Any<string>()).Returns(new PackResult { Packages = [_package] });
-        _state.Get<Project>(Arg.Any<string>())
+        _state.Get<PackResult>().Returns(new PackResult { Packages = [_package] });
+        _state.Get<Project>()
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
     }
 

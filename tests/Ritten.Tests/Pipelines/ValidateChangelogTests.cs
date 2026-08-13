@@ -31,7 +31,7 @@ public class ValidateChangelogTests
     public ValidateChangelogTests()
     {
         _options.RepositoryUrl = "https://github.com/example/repo";
-        _state.Get<Project>(Arg.Any<string>())
+        _state.Get<Project>()
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
         _report.Section("Release").Returns(_releaseSection);
     }

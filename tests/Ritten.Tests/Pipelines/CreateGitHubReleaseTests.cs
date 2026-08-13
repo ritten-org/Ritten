@@ -20,7 +20,7 @@ public class CreateGitHubReleaseTests
     public CreateGitHubReleaseTests()
     {
         SetVersion("1.2.0");
-        _state.Get<ChangelogEntry>(Arg.Any<string>()).Returns(_entry);
+        _state.Get<ChangelogEntry>().Returns(_entry);
         _changelogs.RenderEntry(_entry).Returns("### Added\n\n- A thing.");
     }
 
@@ -54,7 +54,7 @@ public class CreateGitHubReleaseTests
     }
 
     private void SetVersion(string version) =>
-        _state.Get<Project>(Arg.Any<string>())
+        _state.Get<Project>()
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse(version) });
 
     private CreateGitHubRelease Step() =>
