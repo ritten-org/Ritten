@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
@@ -58,5 +57,5 @@ public class CreateGitHubReleaseTests
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse(version) });
 
     private CreateGitHubRelease Step() =>
-        new(NullLogger<CreateGitHubRelease>.Instance, Options.Create(TestOptions.Git()), _state, _releases, _changelogs);
+        new(Substitute.For<IPipelineLog>(), Options.Create(TestOptions.Git()), _state, _releases, _changelogs);
 }

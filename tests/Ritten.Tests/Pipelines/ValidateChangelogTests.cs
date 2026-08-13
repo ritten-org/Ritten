@@ -1,6 +1,5 @@
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
@@ -106,5 +105,5 @@ public class ValidateChangelogTests
     }
 
     private ValidateChangelog Step() =>
-        new(NullLogger<ValidateChangelog>.Instance, Options.Create(_options), Options.Create(TestOptions.Git()), _fileSystem, _state, _report, Changelogs);
+        new(Substitute.For<IPipelineLog>(), Options.Create(_options), Options.Create(TestOptions.Git()), _fileSystem, _state, _report, Changelogs);
 }

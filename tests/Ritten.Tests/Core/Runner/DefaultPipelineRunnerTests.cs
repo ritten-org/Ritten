@@ -151,7 +151,7 @@ public class DefaultPipelineRunnerTests
         {
             reporter.OnStepStarted(Arg.Any<IPipelineStep>(), Arg.Any<CancellationToken>());
             step.Run(Arg.Any<CancellationToken>());
-            reporter.OnStepCompleted(Arg.Any<StepResult>(), Arg.Any<CancellationToken>());
+            reporter.OnStepCompleted(Arg.Any<IPipelineStep>(), Arg.Any<StepResult>(), Arg.Any<CancellationToken>());
         });
     }
 

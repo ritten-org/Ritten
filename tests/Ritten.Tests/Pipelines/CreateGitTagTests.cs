@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Contracts;
@@ -73,5 +72,5 @@ public class CreateGitTagTests
     }
 
     private CreateGitTag Step() =>
-        new(NullLogger<CreateGitTag>.Instance, Options.Create(_options), _state, _git);
+        new(Substitute.For<IPipelineLog>(), Options.Create(_options), _state, _git);
 }
