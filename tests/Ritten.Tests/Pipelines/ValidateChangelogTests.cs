@@ -22,7 +22,8 @@ public class ValidateChangelogTests
         .BuildServiceProvider()
         .GetRequiredService<IChangelog>();
 
-    private readonly IPipelineContext _context = Substitute.For<IPipelineContext>();
+    private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
+    private readonly IPipelineState _state = Substitute.For<IPipelineState>();
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
     private readonly ReportSection _releaseSection = new("Release");
     private readonly ChangelogOptions _options = TestOptions.Changelog();
@@ -30,7 +31,7 @@ public class ValidateChangelogTests
     public ValidateChangelogTests()
     {
         _options.RepositoryUrl = "https://github.com/example/repo";
-        _context.State.Get<Project>(Arg.Any<string>())
+        _state.Get<Project>(Arg.Any<string>())
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
         _report.Section("Release").Returns(_releaseSection);
     }
@@ -100,9 +101,9 @@ public class ValidateChangelogTests
         var file = Substitute.For<IFile>();
         file.Exists.Returns(true);
         file.OpenRead().Returns(_ => new MemoryStream(Encoding.UTF8.GetBytes(content)));
-        _context.FileSystem.CurrentDirectory.GetFile(_options.File).Returns(file);
+        _fileSystem.CurrentDirectory.GetFile(_options.File).Returns(file);
     }
 
     private ValidateChangelog Step() =>
-        new(NullLogger<ValidateChangelog>.Instance, Options.Create(_options), Options.Create(TestOptions.Git()), _context, _report, Changelogs);
+        new(NullLogger<ValidateChangelog>.Instance, Options.Create(_options), Options.Create(TestOptions.Git()), _fileSystem, _state, _report, Changelogs);
 }

@@ -53,8 +53,6 @@ public class RittenApplicationBuilder : IPipelineBuilder
 
         Services.TryAddSingleton<IFileSystem>(_ => new PhysicalFileSystem(Environment.CurrentDirectory));
         Services.TryAddSingleton<IPipelineState, DefaultPipelineState>();
-        Services.TryAddSingleton<IPipelineContext, DefaultPipelineContext>();
-
         var host = _innerBuilder.Build();
         return new RittenApplication(host);
     }

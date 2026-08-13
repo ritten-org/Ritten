@@ -15,7 +15,7 @@ public class DotNetClientTests
 
     public DotNetClientTests()
     {
-        _client = new DotNetClient(_commands, Substitute.For<IPipelineContext>());
+        _client = new DotNetClient(_commands, Substitute.For<IFileSystem>());
     }
 
     [Fact]
@@ -70,9 +70,9 @@ public class DotNetClientTests
             </Project>
             """);
 
-        var context = Substitute.For<IPipelineContext>();
-        context.CurrentDirectory.Returns(project.Root);
-        var client = new DotNetClient(new CommandRunner(NullLogger<CommandRunner>.Instance, context), context);
+        var fileSystem = Substitute.For<IFileSystem>();
+        fileSystem.CurrentDirectory.AbsolutePath.Returns(project.Root);
+        var client = new DotNetClient(new CommandRunner(NullLogger<CommandRunner>.Instance, fileSystem), fileSystem);
 
         var result = await client.ReadProject(ProjectFile(project.CsprojPath), TestContext.Current.CancellationToken);
 

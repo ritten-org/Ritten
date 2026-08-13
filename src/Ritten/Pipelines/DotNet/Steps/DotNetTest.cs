@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Reporting;
 
@@ -10,13 +11,13 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// </summary>
 /// <param name="options">The pipeline's .NET options.</param>
 /// <param name="pipeline">The pipeline's directory layout options.</param>
-/// <param name="context">The pipeline context.</param>
+/// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
 public class DotNetTest(
     IOptions<DotNetOptions> options,
     IOptions<PipelineOptions> pipeline,
-    IPipelineContext context,
+    IFileSystem fileSystem,
     IDotNet dotnet,
     IBuildReport report
 ) : IPipelineStep
@@ -26,7 +27,7 @@ public class DotNetTest(
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        var resultsDirectory = context.FileSystem.CurrentDirectory
+        var resultsDirectory = fileSystem.CurrentDirectory
             .GetDirectory(pipeline.Value.TempDirectory)
             .GetDirectory("test-results");
 

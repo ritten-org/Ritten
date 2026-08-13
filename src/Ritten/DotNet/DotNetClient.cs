@@ -1,12 +1,11 @@
 using System.Text.Json;
-using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using NuGet.Versioning;
 using Ritten.Commands;
 
 namespace Ritten.DotNet;
 
-internal class DotNetClient(ICommandRunner commands, IPipelineContext context) : IDotNet
+internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : IDotNet
 {
     private static readonly JsonSerializerOptions FormatReportJson = new() { PropertyNameCaseInsensitive = true };
 
@@ -184,7 +183,7 @@ internal class DotNetClient(ICommandRunner commands, IPipelineContext context) :
         var documents = await JsonSerializer.DeserializeAsync<List<FormatReportDocument>>(stream, FormatReportJson, cancellationToken) ?? [];
         return documents
             .Where(d => d.FilePath != null)
-            .Select(d => Path.GetRelativePath(context.CurrentDirectory, d.FilePath!))
+            .Select(d => Path.GetRelativePath(fileSystem.CurrentDirectory.AbsolutePath, d.FilePath!))
             .Distinct()
             .Order()
             .ToList();

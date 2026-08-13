@@ -12,12 +12,12 @@ namespace Ritten.Tests.Pipelines;
 public class CreateGitTagTests
 {
     private readonly IGit _git = Substitute.For<IGit>();
-    private readonly IPipelineContext _context = Substitute.For<IPipelineContext>();
+    private readonly IPipelineState _state = Substitute.For<IPipelineState>();
     private readonly GitOptions _options = TestOptions.Git();
 
     public CreateGitTagTests()
     {
-        _context.State.Get<Project>(Arg.Any<string>())
+        _state.Get<Project>(Arg.Any<string>())
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
     }
 
@@ -73,5 +73,5 @@ public class CreateGitTagTests
     }
 
     private CreateGitTag Step() =>
-        new(NullLogger<CreateGitTag>.Instance, Options.Create(_options), _context, _git);
+        new(NullLogger<CreateGitTag>.Instance, Options.Create(_options), _state, _git);
 }

@@ -14,13 +14,13 @@ public class CreateGitHubReleaseTests
 {
     private readonly IReleaseService _releases = Substitute.For<IReleaseService>();
     private readonly IChangelog _changelogs = Substitute.For<IChangelog>();
-    private readonly IPipelineContext _context = Substitute.For<IPipelineContext>();
+    private readonly IPipelineState _state = Substitute.For<IPipelineState>();
     private readonly ChangelogEntry _entry = new() { Version = NuGetVersion.Parse("1.2.0"), Added = ["A thing."] };
 
     public CreateGitHubReleaseTests()
     {
         SetVersion("1.2.0");
-        _context.State.Get<ChangelogEntry>(Arg.Any<string>()).Returns(_entry);
+        _state.Get<ChangelogEntry>(Arg.Any<string>()).Returns(_entry);
         _changelogs.RenderEntry(_entry).Returns("### Added\n\n- A thing.");
     }
 
@@ -54,9 +54,9 @@ public class CreateGitHubReleaseTests
     }
 
     private void SetVersion(string version) =>
-        _context.State.Get<Project>(Arg.Any<string>())
+        _state.Get<Project>(Arg.Any<string>())
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse(version) });
 
     private CreateGitHubRelease Step() =>
-        new(NullLogger<CreateGitHubRelease>.Instance, Options.Create(TestOptions.Git()), _context, _releases, _changelogs);
+        new(NullLogger<CreateGitHubRelease>.Instance, Options.Create(TestOptions.Git()), _state, _releases, _changelogs);
 }

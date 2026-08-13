@@ -13,12 +13,12 @@ namespace Ritten.Pipelines.NuGet;
 /// when present.
 /// </summary>
 /// <param name="options">The pipeline's NuGet options.</param>
-/// <param name="context">The pipeline context.</param>
+/// <param name="state">The pipeline state.</param>
 /// <param name="nuget">The NuGet client.</param>
 /// <param name="report">The build report.</param>
 public class NuGetPush(
     IOptions<NuGetOptions> options,
-    IPipelineContext context,
+    IPipelineState state,
     INuGet nuget,
     IBuildReport report
 ) : IPipelineStep
@@ -31,7 +31,7 @@ public class NuGetPush(
             throw new Exception("The NuGet API key is not configured; set NuGet__ApiKey for the deploy pipeline.");
         }
 
-        var packed = context.State.Get<PackResult>() ?? throw new Exception("Pack result not found in state.");
+        var packed = state.Get<PackResult>() ?? throw new Exception("Pack result not found in state.");
         var feed = new NuGetFeed(options.Value.Feed).WithApiKey(options.Value.ApiKey);
 
         foreach (var package in packed.Packages)
@@ -39,7 +39,7 @@ public class NuGetPush(
             await nuget.Push(feed, package, cancellationToken);
         }
 
-        if (context.State.Get<Project>() is { } project)
+        if (state.Get<Project>() is { } project)
         {
             report.Section("Release").Success($"Published **{project.Name} {project.Version}** to NuGet.");
         }

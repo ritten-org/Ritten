@@ -16,13 +16,13 @@ namespace Ritten.Pipelines.GitHub;
 /// </summary>
 /// <param name="logger">The step's logger.</param>
 /// <param name="options">The pipeline's release options.</param>
-/// <param name="context">The pipeline context.</param>
+/// <param name="state">The pipeline state.</param>
 /// <param name="releases">The GitHub release service.</param>
 /// <param name="changelogs">The changelog client.</param>
 public class CreateGitHubRelease(
     ILogger<CreateGitHubRelease> logger,
     IOptions<GitOptions> options,
-    IPipelineContext context,
+    IPipelineState state,
     IReleaseService releases,
     IChangelog changelogs
 ) : IPipelineStep
@@ -30,7 +30,7 @@ public class CreateGitHubRelease(
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        var project = context.State.Get<Project>() ?? throw new Exception("Project info not found in state.");
+        var project = state.Get<Project>() ?? throw new Exception("Project info not found in state.");
 
         if (project.Version.IsPrerelease)
         {
@@ -47,7 +47,7 @@ public class CreateGitHubRelease(
             return StepResult.Successful;
         }
 
-        var entry = context.State.Get<ChangelogEntry>() ?? throw new Exception("Changelog entry not found in state.");
+        var entry = state.Get<ChangelogEntry>() ?? throw new Exception("Changelog entry not found in state.");
 
         logger.LogInformation("Creating GitHub Release {Tag}.", tag);
         await releases.Create(tag, tag, changelogs.RenderEntry(entry), cancellationToken);

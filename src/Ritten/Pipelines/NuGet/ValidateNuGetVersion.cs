@@ -17,14 +17,14 @@ namespace Ritten.Pipelines.NuGet;
 /// <param name="logger">The step's logger.</param>
 /// <param name="options">The pipeline's NuGet options.</param>
 /// <param name="dotnet">The pipeline's .NET options.</param>
-/// <param name="context">The pipeline context.</param>
+/// <param name="state">The pipeline state.</param>
 /// <param name="report">The build report.</param>
 /// <param name="nuget">The NuGet client.</param>
 public class ValidateNuGetVersion(
     ILogger<ValidateNuGetVersion> logger,
     IOptions<NuGetOptions> options,
     IOptions<DotNetOptions> dotnet,
-    IPipelineContext context,
+    IPipelineState state,
     IBuildReport report,
     INuGet nuget
 ) : IPipelineStep
@@ -38,7 +38,7 @@ public class ValidateNuGetVersion(
             return StepResult.Successful;
         }
 
-        var project = context.State.Get<Project>();
+        var project = state.Get<Project>();
         if (project == null)
         {
             throw new Exception("Project info not found in state.");

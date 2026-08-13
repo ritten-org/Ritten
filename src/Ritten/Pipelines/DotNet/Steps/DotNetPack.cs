@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Pipelines.NuGet;
 
@@ -11,9 +12,10 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// </summary>
 /// <param name="options">The pipeline's .NET options.</param>
 /// <param name="pipeline">The pipeline's directory layout options.</param>
-/// <param name="context">The pipeline context.</param>
+/// <param name="fileSystem">The file system.</param>
+/// <param name="state">The pipeline state.</param>
 /// <param name="dotnet">The dotnet client.</param>
-public class DotNetPack(IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IPipelineContext context, IDotNet dotnet) : IPipelineStep
+public class DotNetPack(IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IFileSystem fileSystem, IPipelineState state, IDotNet dotnet) : IPipelineStep
 {
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
@@ -24,11 +26,11 @@ public class DotNetPack(IOptions<DotNetOptions> options, IOptions<PipelineOption
                 Project = options.Value.ProjectFile,
                 Configuration = options.Value.Configuration,
                 NoBuild = true,
-                Output = context.FileSystem.CurrentDirectory.GetDirectory(pipeline.Value.ArtifactsDirectory)
+                Output = fileSystem.CurrentDirectory.GetDirectory(pipeline.Value.ArtifactsDirectory)
             },
             cancellationToken);
 
-        context.State.Set(result);
+        state.Set(result);
         return StepResult.Successful;
     }
 }

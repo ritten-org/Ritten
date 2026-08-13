@@ -14,14 +14,14 @@ namespace Ritten.Pipelines.Git;
 /// </summary>
 /// <param name="logger">The step's logger.</param>
 /// <param name="options">The pipeline's release options.</param>
-/// <param name="context">The pipeline context.</param>
+/// <param name="state">The pipeline state.</param>
 /// <param name="git">The git client.</param>
-public class CreateGitTag(ILogger<CreateGitTag> logger, IOptions<GitOptions> options, IPipelineContext context, IGit git) : IPipelineStep
+public class CreateGitTag(ILogger<CreateGitTag> logger, IOptions<GitOptions> options, IPipelineState state, IGit git) : IPipelineStep
 {
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        var project = context.State.Get<Project>() ?? throw new Exception("Project info not found in state.");
+        var project = state.Get<Project>() ?? throw new Exception("Project info not found in state.");
         var tag = $"{options.Value.TagPrefix}{project.Version}";
 
         // A failed deploy may have already pushed the tag; rerunning should carry on, not crash.

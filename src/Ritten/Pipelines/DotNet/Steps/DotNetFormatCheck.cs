@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Reporting;
 
@@ -9,12 +10,12 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// Fails the pipeline when <c>dotnet format</c> would make changes, reporting the unformatted files.
 /// </summary>
 /// <param name="options">The pipeline's build options.</param>
-/// <param name="context">The pipeline context.</param>
+/// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
 public class DotNetFormatCheck(
     IOptions<PipelineOptions> options,
-    IPipelineContext context,
+    IFileSystem fileSystem,
     IDotNet dotnet,
     IBuildReport report
 ) : IPipelineStep
@@ -22,7 +23,7 @@ public class DotNetFormatCheck(
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        var reportDirectory = context.FileSystem.CurrentDirectory
+        var reportDirectory = fileSystem.CurrentDirectory
             .GetDirectory(options.Value.TempDirectory)
             .GetDirectory("format");
 

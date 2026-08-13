@@ -1,4 +1,5 @@
 using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
@@ -15,14 +16,16 @@ namespace Ritten.Pipelines;
 /// <param name="logger">The step's logger.</param>
 /// <param name="options">The pipeline's changelog options.</param>
 /// <param name="release">The pipeline's release options.</param>
-/// <param name="context">The pipeline context.</param>
+/// <param name="fileSystem">The file system.</param>
+/// <param name="state">The pipeline state.</param>
 /// <param name="report">The build report.</param>
 /// <param name="changelogs">The changelog client.</param>
 public class ValidateChangelog(
     ILogger<ValidateChangelog> logger,
     IOptions<ChangelogOptions> options,
     IOptions<GitOptions> release,
-    IPipelineContext context,
+    IFileSystem fileSystem,
+    IPipelineState state,
     IBuildReport report,
     IChangelog changelogs
 ) : IPipelineStep
@@ -36,13 +39,13 @@ public class ValidateChangelog(
             return StepResult.Successful;
         }
 
-        var project = context.State.Get<Project>();
+        var project = state.Get<Project>();
         if (project == null)
         {
             throw new Exception("Project info not found in state.");
         }
 
-        var changelogFile = context.FileSystem.CurrentDirectory.GetFile(options.Value.File);
+        var changelogFile = fileSystem.CurrentDirectory.GetFile(options.Value.File);
         if (!changelogFile.Exists)
         {
             report.Section("Release").Failure($"The changelog file `{options.Value.File}` does not exist.");
@@ -78,7 +81,7 @@ public class ValidateChangelog(
             }
         }
 
-        context.State.Set(entry);
+        state.Set(entry);
         report.Section("Release").Success($"Changelog entry for **{project.Version}** is present.");
         logger.LogInformation("Found changelog entry for {Version}.", project.Version);
         return StepResult.Successful;

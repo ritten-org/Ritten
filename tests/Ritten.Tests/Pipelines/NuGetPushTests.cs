@@ -13,7 +13,7 @@ namespace Ritten.Tests.Pipelines;
 public class NuGetPushTests
 {
     private readonly INuGet _nuget = Substitute.For<INuGet>();
-    private readonly IPipelineContext _context = Substitute.For<IPipelineContext>();
+    private readonly IPipelineState _state = Substitute.For<IPipelineState>();
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
     private readonly ReportSection _releaseSection = new("Release");
     private readonly NuGetOptions _options = TestOptions.NuGet();
@@ -22,8 +22,8 @@ public class NuGetPushTests
     public NuGetPushTests()
     {
         _report.Section("Release").Returns(_releaseSection);
-        _context.State.Get<PackResult>(Arg.Any<string>()).Returns(new PackResult { Packages = [_package] });
-        _context.State.Get<Project>(Arg.Any<string>())
+        _state.Get<PackResult>(Arg.Any<string>()).Returns(new PackResult { Packages = [_package] });
+        _state.Get<Project>(Arg.Any<string>())
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
     }
 
@@ -51,5 +51,5 @@ public class NuGetPushTests
     }
 
     private NuGetPush Step() =>
-        new(Options.Create(_options), _context, _nuget, _report);
+        new(Options.Create(_options), _state, _nuget, _report);
 }

@@ -1,11 +1,11 @@
 using System.Diagnostics;
 using System.Text;
-using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.Logging;
 
 namespace Ritten.Commands;
 
-internal class CommandRunner(ILogger<CommandRunner> logger, IPipelineContext context) : ICommandRunner
+internal class CommandRunner(ILogger<CommandRunner> logger, IFileSystem fileSystem) : ICommandRunner
 {
     public async Task<CommandResult> Run(Command command, CancellationToken cancellationToken = default)
     {
@@ -14,7 +14,7 @@ internal class CommandRunner(ILogger<CommandRunner> logger, IPipelineContext con
         process.StartInfo = new ProcessStartInfo
         {
             FileName = command.Path,
-            WorkingDirectory = Path.Combine(context.CurrentDirectory, command.WorkingDirectory ?? string.Empty),
+            WorkingDirectory = Path.Combine(fileSystem.CurrentDirectory.AbsolutePath, command.WorkingDirectory ?? string.Empty),
             RedirectStandardInput = command.StandardInput is not null,
             RedirectStandardOutput = true,
             RedirectStandardError = true,

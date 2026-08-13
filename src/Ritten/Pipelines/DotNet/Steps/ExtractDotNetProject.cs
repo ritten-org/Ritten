@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 
 namespace Ritten.Pipelines.DotNet.Steps;
@@ -11,21 +12,22 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// </summary>
 /// <param name="logger">The step's logger.</param>
 /// <param name="options">The pipeline's build options.</param>
-/// <param name="context">The pipeline context.</param>
+/// <param name="fileSystem">The file system.</param>
+/// <param name="state">The pipeline state.</param>
 /// <param name="dotnet">The dotnet client.</param>
-public class ExtractDotNetProject(ILogger<ExtractDotNetProject> logger, IOptions<DotNetOptions> options, IPipelineContext context, IDotNet dotnet) : IPipelineStep
+public class ExtractDotNetProject(ILogger<ExtractDotNetProject> logger, IOptions<DotNetOptions> options, IFileSystem fileSystem, IPipelineState state, IDotNet dotnet) : IPipelineStep
 {
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        var csproj = context.FileSystem.CurrentDirectory.GetFile(options.Value.ProjectFile);
+        var csproj = fileSystem.CurrentDirectory.GetFile(options.Value.ProjectFile);
         if (!csproj.Exists)
         {
             throw new FileNotFoundException("Could not find project file", csproj.AbsolutePath);
         }
 
         var project = await dotnet.ReadProject(csproj, cancellationToken);
-        context.State.Set(project);
+        state.Set(project);
 
         logger.LogInformation("Extracted project info: {ProjectName} (v{Version})", project.Name, project.Version);
         return StepResult.Successful;
