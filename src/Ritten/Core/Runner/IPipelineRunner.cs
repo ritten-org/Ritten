@@ -1,6 +1,12 @@
 namespace Ritten.Core.Runner;
 
+/// <summary>
+/// Exposes an interface for running pipelines.
+/// </summary>
 internal interface IPipelineRunner
 {
-    Task<PipelineExecutionSummary> RunPipeline(CancellationToken cancellationToken);
+    /// <summary>
+    /// Runs the current pipeline.
+    /// </summary>
+    Task<PipelineResult> Run(CancellationToken cancellationToken);
 }

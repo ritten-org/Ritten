@@ -1,19 +1,19 @@
-using Microsoft.Extensions.Logging;
+using Ritten.Contracts;
 using Ritten.NuGet;
 
 namespace Ritten.Extensions;
 
 /// <summary>
-/// Provides extension methods for <see cref="ILogger"/>.
+/// Provides extension methods for <see cref="IPipelineLog"/>.
 /// </summary>
 public static class LoggerExtensions
 {
-    extension(ILogger logger)
+    extension(IPipelineLog log)
     {
         /// <summary>
-        /// Adapts the logger to be compatible with NuGet.
+        /// Adapts the pipeline log to be compatible with NuGet.
         /// </summary>
         /// <returns>The compatible logger.</returns>
-        public global::NuGet.Common.ILogger ForNuGet() => new NuGetLoggerAdapter(logger);
+        public global::NuGet.Common.ILogger ForNuGet() => new NuGetLoggerAdapter(log);
     }
 }

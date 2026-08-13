@@ -47,12 +47,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Hamelin" />
+    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
     <PackageReference Include="NuGet.Common" />
     <PackageReference Include="NuGet.Protocol" />
     <PackageReference Include="NuGet.Versioning" />
     <PackageReference Include="Octokit" />
+    <PackageReference Include="Spectre.Console" />
   </ItemGroup>
   
 </Project>

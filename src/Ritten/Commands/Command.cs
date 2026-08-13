@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-
 namespace Ritten.Commands;
 
 /// <summary>
@@ -46,11 +44,6 @@ public record Command
     /// Indicates whether the runner throws a <see cref="CommandFailedException"/> when the command exits non-zero.
     /// </summary>
     public bool ThrowsOnError { get; init; }
-
-    /// <summary>
-    /// The level at which standard error is logged.
-    /// </summary>
-    public LogLevel StandardErrorLogLevel { get; init; } = LogLevel.Error;
 
     /// <summary>
     /// Creates a new command for the executable at the given path.
@@ -102,8 +95,4 @@ public record Command
     /// </summary>
     public Command ThrowOnError() => this with { ThrowsOnError = true };
 
-    /// <summary>
-    /// Returns a copy of the command that logs standard error at the given level.
-    /// </summary>
-    public Command ReportStandardError(LogLevel logLevel) => this with { StandardErrorLogLevel = logLevel };
 }

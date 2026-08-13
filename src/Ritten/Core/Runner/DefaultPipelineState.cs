@@ -4,11 +4,11 @@ namespace Ritten.Core.Runner;
 
 internal class DefaultPipelineState : IPipelineState
 {
-    private readonly Dictionary<(Type, string), object> _state = new();
+    private readonly Dictionary<Type, object> _state = new();
 
-    public T? Get<T>(string? key = null)
+    public T? Get<T>()
     {
-        if (_state.TryGetValue((typeof(T), key ?? ""), out var value))
+        if (_state.TryGetValue(typeof(T), out var value))
         {
             return (T)value;
         }
@@ -16,8 +16,8 @@ internal class DefaultPipelineState : IPipelineState
         return default;
     }
 
-    public void Set<T>(T value, string? key = null) where T : notnull
+    public void Set<T>(T value) where T : notnull
     {
-        _state[(typeof(T), key ?? "")] = value;
+        _state[typeof(T)] = value;
     }
 }

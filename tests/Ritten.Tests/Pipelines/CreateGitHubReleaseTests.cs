@@ -1,11 +1,10 @@
-using Hamelin;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
+using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.GitHub;
 using Ritten.Pipelines.GitHub;
+using Ritten.Runtimes.GitHubActions;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Pipelines;
@@ -14,13 +13,13 @@ public class CreateGitHubReleaseTests
 {
     private readonly IReleaseService _releases = Substitute.For<IReleaseService>();
     private readonly IChangelog _changelogs = Substitute.For<IChangelog>();
-    private readonly IPipelineContext _context = Substitute.For<IPipelineContext>();
+    private readonly IPipelineState _state = Substitute.For<IPipelineState>();
     private readonly ChangelogEntry _entry = new() { Version = NuGetVersion.Parse("1.2.0"), Added = ["A thing."] };
 
     public CreateGitHubReleaseTests()
     {
         SetVersion("1.2.0");
-        _context.State.Get<ChangelogEntry>(Arg.Any<string>()).Returns(_entry);
+        _state.Get<ChangelogEntry>().Returns(_entry);
         _changelogs.RenderEntry(_entry).Returns("### Added\n\n- A thing.");
     }
 
@@ -54,9 +53,9 @@ public class CreateGitHubReleaseTests
     }
 
     private void SetVersion(string version) =>
-        _context.State.Get<Project>(Arg.Any<string>())
+        _state.Get<Project>()
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse(version) });
 
     private CreateGitHubRelease Step() =>
-        new(NullLogger<CreateGitHubRelease>.Instance, Options.Create(TestOptions.Git()), _context, _releases, _changelogs);
+        new(Substitute.For<IPipelineLog>(), Options.Create(TestOptions.Git()), _state, _releases, _changelogs);
 }

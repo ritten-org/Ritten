@@ -1,8 +1,7 @@
-using Hamelin;
-using Hamelin.FileSystem;
-using Microsoft.Extensions.Logging.Abstractions;
 using NuGet.Versioning;
 using Ritten.Commands;
+using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Tests.Support;
 
@@ -15,7 +14,7 @@ public class DotNetClientTests
 
     public DotNetClientTests()
     {
-        _client = new DotNetClient(_commands, Substitute.For<IPipelineContext>());
+        _client = new DotNetClient(_commands, Substitute.For<IFileSystem>());
     }
 
     [Fact]
@@ -29,21 +28,21 @@ public class DotNetClientTests
 
         _commands.Executed.ShouldHaveSingleItem().Arguments
             .ShouldBe(["msbuild", "/repo/src/My.Package.csproj", "-getProperty:PackageId", "-getProperty:Version"]);
+        project.ShouldNotBeNull();
         project.Name.ShouldBe("My.Package");
         project.Version.ShouldBe(NuGetVersion.Parse("1.2.3-beta.1"));
     }
 
     [Fact]
-    public async Task ReadProject_ThrowsWhenTheVersionEvaluatesEmpty()
+    public async Task ReadProject_ReturnsNullWhenTheVersionEvaluatesEmpty()
     {
         _commands.Respond(
             c => c.Arguments.Contains("msbuild"),
             new CommandResult(0, """{"Properties":{"PackageId":"My.Package","Version":""}}""", ""));
 
-        var exception = await Should.ThrowAsync<Exception>(
-            () => _client.ReadProject(ProjectFile("/repo/src/My.Package.csproj"), TestContext.Current.CancellationToken));
+        var project = await _client.ReadProject(ProjectFile("/repo/src/My.Package.csproj"), TestContext.Current.CancellationToken);
 
-        exception.Message.ShouldContain("Version");
+        project.ShouldBeNull();
     }
 
     [Fact]
@@ -70,12 +69,13 @@ public class DotNetClientTests
             </Project>
             """);
 
-        var context = Substitute.For<IPipelineContext>();
-        context.CurrentDirectory.Returns(project.Root);
-        var client = new DotNetClient(new CommandRunner(NullLogger<CommandRunner>.Instance, context), context);
+        var fileSystem = Substitute.For<IFileSystem>();
+        fileSystem.CurrentDirectory.AbsolutePath.Returns(project.Root);
+        var client = new DotNetClient(new CommandRunner(Substitute.For<IPipelineLog>(), fileSystem), fileSystem);
 
         var result = await client.ReadProject(ProjectFile(project.CsprojPath), TestContext.Current.CancellationToken);
 
+        result.ShouldNotBeNull();
         result.Name.ShouldBe("Inherited.Package");
         result.Version.ShouldBe(NuGetVersion.Parse("2.3.4"));
     }

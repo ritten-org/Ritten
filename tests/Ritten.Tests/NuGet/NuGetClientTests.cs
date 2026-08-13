@@ -1,7 +1,7 @@
-using Hamelin.FileSystem;
-using Microsoft.Extensions.Logging.Abstractions;
 using NuGet.Packaging;
 using NuGet.Versioning;
+using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.NuGet;
 using Ritten.Tests.Support;
 
@@ -14,7 +14,7 @@ public class NuGetClientTests
 
     public NuGetClientTests()
     {
-        _client = new NuGetClient(NullLogger<NuGetClient>.Instance, _commands);
+        _client = new NuGetClient(Substitute.For<IPipelineLog>(), _commands);
     }
 
     [Fact]

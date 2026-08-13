@@ -6,7 +6,7 @@ namespace Ritten.Core;
 public class RittenApplicationOptions
 {
     /// <summary>
-    /// Gets or sets the command-line arguments to add to the <see cref="RittenApplicationBuilder.Configuration"/>.
+    /// Gets or sets the command-line arguments.
     /// </summary>
     public string[]? Args { get; init; }
 

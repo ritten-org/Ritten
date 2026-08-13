@@ -1,10 +1,9 @@
-using System.ComponentModel;
-using Hamelin;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.NuGet;
 using Ritten.Pipelines.DotNet;
+using Ritten.Pipelines.DotNet.Steps;
 using Ritten.Reporting;
 
 namespace Ritten.Pipelines.NuGet;
@@ -14,35 +13,34 @@ namespace Ritten.Pipelines.NuGet;
 /// latest published version. Requires <see cref="Project"/> in pipeline state
 /// (see <see cref="ExtractDotNetProject"/>).
 /// </summary>
-/// <param name="logger">The step's logger.</param>
+/// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's NuGet options.</param>
 /// <param name="dotnet">The pipeline's .NET options.</param>
-/// <param name="context">The pipeline context.</param>
+/// <param name="state">The pipeline state.</param>
 /// <param name="report">The build report.</param>
 /// <param name="nuget">The NuGet client.</param>
-[DisplayName("Validate NuGet Version")]
 public class ValidateNuGetVersion(
-    ILogger<ValidateNuGetVersion> logger,
+    IPipelineLog log,
     IOptions<NuGetOptions> options,
     IOptions<DotNetOptions> dotnet,
-    IPipelineContext context,
+    IPipelineState state,
     IBuildReport report,
     INuGet nuget
 ) : IPipelineStep
 {
     /// <inheritdoc />
-    public async Task Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         if (options.Value.SkipVersionCheck)
         {
-            logger.LogInformation("Skipping version check.");
-            return;
+            log.Detail("Skipping version check.");
+            return StepResult.Successful;
         }
 
-        var project = context.State.Get<Project>();
+        var project = state.Get<Project>();
         if (project == null)
         {
-            throw new Exception("Project info not found in state.");
+            return StepResult.Failed("Project info not found in state.");
         }
 
         var feed = new NuGetFeed(options.Value.Feed);
@@ -52,7 +50,7 @@ public class ValidateNuGetVersion(
         {
             report.Section("Release")
                 .Failure($"Version **{project.Version}** is already published on the feed — bump `<Version>` in `{dotnet.Value.ProjectFile}`.");
-            throw new Exception($"Package version {project.Version} already exists on the feed.");
+            return StepResult.Failed($"Package version {project.Version} already exists on the feed.");
         }
 
         var latestVersion = versions.DefaultIfEmpty().Max();
@@ -60,13 +58,14 @@ public class ValidateNuGetVersion(
         {
             report.Section("Release")
                 .Failure($"Version **{project.Version}** isn't greater than the latest published version **{latestVersion}** — bump `<Version>` in `{dotnet.Value.ProjectFile}`.");
-            throw new Exception($"Project version {project.Version} is not greater than the latest version {latestVersion}.");
+            return StepResult.Failed($"Project version {project.Version} is not greater than the latest version {latestVersion}.");
         }
 
         report.Section("Release")
             .Success(latestVersion == null
                 ? $"Version **{project.Version}** will be the first published version of {project.Name}."
                 : $"Version **{project.Version}** is valid (latest published: **{latestVersion}**).");
-        logger.LogInformation("Version {Version} is valid and can be used for package {PackageName}.", project.Version, project.Name);
+        log.Detail($"Version {project.Version} is valid for {project.Name}.");
+        return StepResult.Successful;
     }
 }

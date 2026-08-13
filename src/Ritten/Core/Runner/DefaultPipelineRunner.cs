@@ -1,128 +1,95 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
-using Ritten.Contracts.Hooks;
-using Ritten.Core.Extensions;
-using Ritten.Core.Steps;
 
 namespace Ritten.Core.Runner;
 
 internal class DefaultPipelineRunner(
     ILogger<DefaultPipelineRunner> logger,
-    IOptions<PipelineExecutionOptions> options,
-    IServiceScopeFactory scopeFactory,
-    IPipelineStepRunner stepRunner
+    IEnumerable<IProgressReporter> reporters,
+    IEnumerable<IPipelineStep> steps,
+    Pipeline pipeline
 ) : IPipelineRunner
 {
-    public async Task<PipelineExecutionSummary> RunPipeline(CancellationToken cancellationToken)
+
+    private readonly IReadOnlyCollection<IProgressReporter> _reporters = [.. reporters];
+    private readonly IReadOnlyList<IPipelineStep> _steps = [.. steps];
+
+    public async Task<PipelineResult> Run(CancellationToken cancellationToken)
     {
-        logger.LogInformation("Running pipeline...");
+        await NotifyReporters(r => r.OnPipelineStarted(pipeline, cancellationToken));
+        var stepResults = await RunSteps(cancellationToken);
 
-        await using var scope = scopeFactory.CreateAsyncScope();
-        var context = scope.ServiceProvider.GetRequiredService<IPipelineContext>();
+        int exitCode;
+        if (cancellationToken.IsCancellationRequested)
+        {
+            exitCode = PipelineExitCodes.StoppedAfterCancel;
+        }
+        else if (stepResults.Count == 0)
+        {
+            exitCode = PipelineExitCodes.Success;
+        }
+        else
+        {
+            exitCode = stepResults[^1].ExitCode;
+        }
+        var result = new PipelineResult(exitCode, stepResults);
+        await NotifyReporters(r => r.OnPipelineCompleted(result, cancellationToken));
 
-        await RunPrePipelineHooks(scope, cancellationToken);
-        var results = await RunSteps(scope, cancellationToken);
-        var summary = new PipelineExecutionSummary(options, context, results, cancellationToken);
-        await RunPostPipelineHooks(scope, summary, cancellationToken);
-
-        logger.LogInformation("Pipeline finished with exit code {ExitCode}", summary.ExitCode);
-        return summary;
+        return result;
     }
 
-    private async Task RunPrePipelineHooks(AsyncServiceScope scope, CancellationToken cancellationToken)
+    private async Task<List<StepResult>> RunSteps(CancellationToken cancellationToken)
     {
-        var hooks = scope.ServiceProvider.GetServices<IPrePipelineHook>().ToList();
-        if (hooks.Count == 0)
-        {
-            logger.LogDebug("No pre-pipeline hooks registered.");
-            return;
-        }
-
-        var args = new PrePipelineHookArgs();
-
-        logger.LogInformation("Running pre-pipeline hooks...");
-        foreach (var hook in hooks)
+        List<StepResult> results = [];
+        foreach (var step in _steps)
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                logger.LogInformation("Aborting pre-pipeline hooks due to cancellation request.");
+                results.Add(StepResult.StoppedAfterCancel);
                 break;
             }
 
+            await NotifyReporters(r => r.OnStepStarted(step, cancellationToken));
+
+            var result = await RunStep(step, cancellationToken);
+            results.Add(result);
+
+            await NotifyReporters(r => r.OnStepCompleted(step, result, cancellationToken));
+
+            if (!result.Continue)
+            {
+                break;
+            }
+        }
+
+        return results;
+    }
+
+    private async Task<StepResult> RunStep(IPipelineStep step, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await step.Run(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "Unhandled error during step {Step}.", step.Name);
+            return StepResult.Failed(ex.Message);
+        }
+    }
+
+    private async Task NotifyReporters(Func<IProgressReporter, Task> action)
+    {
+        foreach (var reporter in _reporters)
+        {
             try
             {
-                await hook.PrePipeline(args, cancellationToken);
+                await action(reporter);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Unhandled error during pre-step hook. Continuing...");
+                logger.LogError(ex, "Progress reporter error. Continuing...");
             }
         }
-
-        logger.LogInformation("Pre-pipeline hooks completed.");
-    }
-
-    private async Task RunPostPipelineHooks(AsyncServiceScope scope, PipelineExecutionSummary summary, CancellationToken cancellationToken)
-    {
-        var hooks = scope.ServiceProvider.GetServices<IPostPipelineHook>().ToList();
-        if (hooks.Count == 0)
-        {
-            logger.LogDebug("No post-pipeline hooks registered.");
-            return;
-        }
-
-        var args = new PostPipelineHookArgs
-        {
-            ExitCode = summary.ExitCode,
-            Steps = summary.Steps
-        };
-
-        logger.LogInformation("Running post-pipeline hooks...");
-        foreach (var hook in hooks)
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                logger.LogInformation("Aborting post-pipeline hooks due to cancellation request.");
-                break;
-            }
-
-            try
-            {
-                await hook.PostPipeline(args, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Unhandled error during post-step hook. Continuing...");
-            }
-        }
-
-        logger.LogInformation("Post-pipeline hooks completed.");
-    }
-
-    private async Task<IEnumerable<StepExecutionSummary>> RunSteps(AsyncServiceScope scope, CancellationToken cancellationToken)
-    {
-        List<StepExecutionSummary> summaries = [];
-        var stepProvider = scope.ServiceProvider.GetRequiredService<IPipelineStepProvider>();
-        var steps = stepProvider.GetSteps();
-        foreach (var step in steps)
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                summaries.Add(new StepExecutionSummary(step.GetDisplayName(), PipelineStepResult.StoppedAfterCancel));
-                break;
-            }
-
-            var summary = await stepRunner.RunStep(scope, step, cancellationToken);
-            summaries.Add(summary);
-            if (!summary.Result.Continue)
-            {
-                logger.LogInformation("Step resulted in non-continuation. Aborting pipeline.");
-                break;
-            }
-        }
-
-        return summaries.ToArray();
     }
 }

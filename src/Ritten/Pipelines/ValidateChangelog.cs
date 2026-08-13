@@ -1,9 +1,8 @@
-using System.ComponentModel;
-using Hamelin;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
+using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Pipelines.Git;
 using Ritten.Reporting;
@@ -13,42 +12,43 @@ namespace Ritten.Pipelines;
 /// <summary>
 /// Fails the pipeline when the changelog has no entry for the version being shipped.
 /// </summary>
-/// <param name="logger">The step's logger.</param>
+/// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's changelog options.</param>
 /// <param name="release">The pipeline's release options.</param>
-/// <param name="context">The pipeline context.</param>
+/// <param name="fileSystem">The file system.</param>
+/// <param name="state">The pipeline state.</param>
 /// <param name="report">The build report.</param>
 /// <param name="changelogs">The changelog client.</param>
-[DisplayName("Validate Changelog Entry")]
 public class ValidateChangelog(
-    ILogger<ValidateChangelog> logger,
+    IPipelineLog log,
     IOptions<ChangelogOptions> options,
     IOptions<GitOptions> release,
-    IPipelineContext context,
+    IFileSystem fileSystem,
+    IPipelineState state,
     IBuildReport report,
     IChangelog changelogs
 ) : IPipelineStep
 {
     /// <inheritdoc />
-    public async Task Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         if (options.Value.Skip)
         {
-            logger.LogInformation("Skipping changelog check.");
-            return;
+            log.Detail("Skipping changelog check.");
+            return StepResult.Successful;
         }
 
-        var project = context.State.Get<Project>();
+        var project = state.Get<Project>();
         if (project == null)
         {
-            throw new Exception("Project info not found in state.");
+            return StepResult.Failed("Project info not found in state.");
         }
 
-        var changelogFile = context.FileSystem.CurrentDirectory.GetFile(options.Value.File);
+        var changelogFile = fileSystem.CurrentDirectory.GetFile(options.Value.File);
         if (!changelogFile.Exists)
         {
             report.Section("Release").Failure($"The changelog file `{options.Value.File}` does not exist.");
-            throw new FileNotFoundException("Could not find changelog file", changelogFile.AbsolutePath);
+            return StepResult.Failed($"Could not find changelog file '{options.Value.File}'.");
         }
 
         var changelog = await changelogs.Read(changelogFile, cancellationToken);
@@ -58,13 +58,13 @@ public class ValidateChangelog(
         if (entry is null)
         {
             report.Section("Release").Failure($"There's no changelog entry for **{project.Version}** in `{options.Value.File}`.");
-            throw new Exception($"No changelog entry found for version {project.Version} in {options.Value.File}.");
+            return StepResult.Failed($"No changelog entry found for version {project.Version} in {options.Value.File}.");
         }
 
         if (entry.IsEmpty)
         {
             report.Section("Release").Failure($"The changelog entry for **{project.Version}** is empty.");
-            throw new Exception($"Changelog entry for version {project.Version} is empty.");
+            return StepResult.Failed($"Changelog entry for version {project.Version} is empty.");
         }
 
         if (!string.IsNullOrEmpty(options.Value.RepositoryUrl))
@@ -76,12 +76,13 @@ public class ValidateChangelog(
                 var block = string.Join('\n', expected.Select(l => l.ToMarkdown()));
                 report.Section("Release")
                     .Failure($"The version links in `{options.Value.File}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
-                throw new Exception($"Changelog version links in {options.Value.File} are missing or out of date.");
+                return StepResult.Failed($"Changelog version links in {options.Value.File} are missing or out of date.");
             }
         }
 
-        context.State.Set(entry);
+        state.Set(entry);
         report.Section("Release").Success($"Changelog entry for **{project.Version}** is present.");
-        logger.LogInformation("Found changelog entry for {Version}.", project.Version);
+        log.Detail($"Found changelog entry for {project.Version}.");
+        return StepResult.Successful;
     }
 }

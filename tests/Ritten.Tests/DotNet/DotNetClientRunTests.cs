@@ -1,7 +1,6 @@
 using System.Text;
-using Hamelin;
-using Hamelin.FileSystem;
 using Ritten.Commands;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Tests.Support;
 
@@ -14,13 +13,13 @@ namespace Ritten.Tests.DotNet;
 public class DotNetClientRunTests
 {
     private readonly FakeCommandRunner _commands = new();
-    private readonly IPipelineContext _context = Substitute.For<IPipelineContext>();
+    private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly DotNetClient _client;
 
     public DotNetClientRunTests()
     {
-        _context.CurrentDirectory.Returns("/repo");
-        _client = new DotNetClient(_commands, _context);
+        _fileSystem.CurrentDirectory.AbsolutePath.Returns("/repo");
+        _client = new DotNetClient(_commands, _fileSystem);
     }
 
     [Fact]

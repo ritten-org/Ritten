@@ -1,4 +1,4 @@
-using Hamelin.FileSystem;
+using Ritten.Contracts.FileSystem;
 
 namespace Ritten.DotNet;
 
@@ -10,7 +10,7 @@ public interface IDotNet
     /// <summary>
     /// Reads the package information from the given project file.
     /// </summary>
-    Task<Project> ReadProject(IFile file, CancellationToken cancellationToken = default);
+    Task<Project?> ReadProject(IFile file, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Runs <c>dotnet restore</c>, throwing a <see cref="Commands.CommandFailedException"/> on failure.
