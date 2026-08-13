@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Ritten.GitHub;
 using Ritten.Reporting.Sinks;
 
 namespace Ritten.Runtimes.GitHubActions;
@@ -10,6 +11,7 @@ internal static class ServiceCollectionExtensions
     {
         services.TryAddSingleton<IGitHubActionsRuntime, GitHubActionsRuntime>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IReportSink, GitHubReportSink>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IReportSink, GitHubCommentSink>());
         return services;
     }
 }
