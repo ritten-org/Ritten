@@ -62,18 +62,9 @@ public class RittenApplication : IDisposable
     /// <summary>
     /// Runs the pipeline and returns the exit code from the execution.
     /// </summary>
-    /// <returns>The exit code from the pipeline execution.</returns>
-    public int RunWithExitCode()
-    {
-        return RunWithExitCodeAsync().GetAwaiter().GetResult();
-    }
-
-    /// <summary>
-    /// Runs the pipeline and returns the exit code from the execution.
-    /// </summary>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>The exit code from the pipeline execution.</returns>
-    public async Task<int> RunWithExitCodeAsync(CancellationToken cancellationToken = default)
+    public async Task<int> Run(CancellationToken cancellationToken = default)
     {
         try
         {

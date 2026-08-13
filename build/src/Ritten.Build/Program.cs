@@ -18,5 +18,5 @@ static Task<int> RunPipeline(Func<RittenApplication, RittenApplication> compose,
 {
     var builder = RittenApplication.CreateBuilder();
     builder.Services.AddDotNetPackagePipeline();
-    return compose(builder.Build()).RunWithExitCodeAsync(cancellationToken);
+    return compose(builder.Build()).Run(cancellationToken);
 }

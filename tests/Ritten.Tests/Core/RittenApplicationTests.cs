@@ -20,7 +20,7 @@ public class RittenApplicationTests
         pipeline.UseStep<TestPipelineStep>();
 
         // Act
-        var exitCode = await pipeline.RunWithExitCodeAsync(TestContext.Current.CancellationToken);
+        var exitCode = await pipeline.Run(TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(0);
@@ -38,7 +38,7 @@ public class RittenApplicationTests
         pipeline.UseStep<SetExitCodeTestPipelineStep>();
 
         // Act
-        var exitCode = await pipeline.RunWithExitCodeAsync(TestContext.Current.CancellationToken);
+        var exitCode = await pipeline.Run(TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(1234);
