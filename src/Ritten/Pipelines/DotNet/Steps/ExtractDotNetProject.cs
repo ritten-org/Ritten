@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
@@ -10,12 +9,12 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// Reads the package name and version from the configured project file.
 /// Sets <see cref="Project"/> in pipeline state for later steps.
 /// </summary>
-/// <param name="logger">The step's logger.</param>
+/// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's build options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="state">The pipeline state.</param>
 /// <param name="dotnet">The dotnet client.</param>
-public class ExtractDotNetProject(ILogger<ExtractDotNetProject> logger, IOptions<DotNetOptions> options, IFileSystem fileSystem, IPipelineState state, IDotNet dotnet) : IPipelineStep
+public class ExtractDotNetProject(IPipelineLog log, IOptions<DotNetOptions> options, IFileSystem fileSystem, IPipelineState state, IDotNet dotnet) : IPipelineStep
 {
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
@@ -34,7 +33,7 @@ public class ExtractDotNetProject(ILogger<ExtractDotNetProject> logger, IOptions
 
         state.Set(project);
 
-        logger.LogInformation("Extracted project info: {ProjectName} (v{Version})", project.Name, project.Version);
+        log.Status($"Extracted project info: {project.Name} (v{project.Version})");
         return StepResult.Successful;
     }
 }

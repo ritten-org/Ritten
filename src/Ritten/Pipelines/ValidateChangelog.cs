@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
@@ -13,7 +12,7 @@ namespace Ritten.Pipelines;
 /// <summary>
 /// Fails the pipeline when the changelog has no entry for the version being shipped.
 /// </summary>
-/// <param name="logger">The step's logger.</param>
+/// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's changelog options.</param>
 /// <param name="release">The pipeline's release options.</param>
 /// <param name="fileSystem">The file system.</param>
@@ -21,7 +20,7 @@ namespace Ritten.Pipelines;
 /// <param name="report">The build report.</param>
 /// <param name="changelogs">The changelog client.</param>
 public class ValidateChangelog(
-    ILogger<ValidateChangelog> logger,
+    IPipelineLog log,
     IOptions<ChangelogOptions> options,
     IOptions<GitOptions> release,
     IFileSystem fileSystem,
@@ -35,7 +34,7 @@ public class ValidateChangelog(
     {
         if (options.Value.Skip)
         {
-            logger.LogInformation("Skipping changelog check.");
+            log.Detail("Skipping changelog check.");
             return StepResult.Successful;
         }
 
@@ -83,7 +82,7 @@ public class ValidateChangelog(
 
         state.Set(entry);
         report.Section("Release").Success($"Changelog entry for **{project.Version}** is present.");
-        logger.LogInformation("Found changelog entry for {Version}.", project.Version);
+        log.Detail($"Found changelog entry for {project.Version}.");
         return StepResult.Successful;
     }
 }

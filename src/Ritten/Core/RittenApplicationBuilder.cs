@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core.FileSystem;
@@ -55,7 +56,13 @@ public class RittenApplicationBuilder : IPipelineBuilder
 
         Services.TryAddSingleton<IFileSystem>(_ => new PhysicalFileSystem(Environment.CurrentDirectory));
         Services.TryAddSingleton<IPipelineState, DefaultPipelineState>();
-        Services.AddSingleton<IProgressReporter>(_ => new SpectreProgressReporter(AnsiConsole.Console));
+
+        var reporter = new SpectreProgressReporter(AnsiConsole.Console);
+        Services.AddSingleton<IProgressReporter>(reporter);
+        Services.TryAddSingleton<IPipelineLog>(reporter);
+
+        _innerBuilder.Logging.ClearProviders();
+
         var host = _innerBuilder.Build();
         return new RittenApplication(host);
     }

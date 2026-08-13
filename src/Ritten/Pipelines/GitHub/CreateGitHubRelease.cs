@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Ritten.Changelogs;
 using Ritten.Contracts;
@@ -14,13 +13,13 @@ namespace Ritten.Pipelines.GitHub;
 /// Prereleases are skipped, and so is a release a previous run already created.
 /// Requires <see cref="Project"/> and <see cref="ChangelogEntry"/> in pipeline state (see <see cref="ExtractDotNetProject"/> and <see cref="ValidateChangelog"/>).
 /// </summary>
-/// <param name="logger">The step's logger.</param>
+/// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's release options.</param>
 /// <param name="state">The pipeline state.</param>
 /// <param name="releases">The GitHub release service.</param>
 /// <param name="changelogs">The changelog client.</param>
 public class CreateGitHubRelease(
-    ILogger<CreateGitHubRelease> logger,
+    IPipelineLog log,
     IOptions<GitOptions> options,
     IPipelineState state,
     IReleaseService releases,
@@ -37,7 +36,7 @@ public class CreateGitHubRelease(
 
         if (project.Version.IsPrerelease)
         {
-            logger.LogInformation("Skipping GitHub Release for prerelease version {Version}; tag has still been pushed.", project.Version);
+            log.Detail($"Skipping GitHub Release for prerelease version {project.Version}; tag has still been pushed.");
             return StepResult.Successful;
         }
 
@@ -46,7 +45,7 @@ public class CreateGitHubRelease(
         // A failed deploy may have already created the release; rerunning should carry on, not crash.
         if (await releases.Exists(tag, cancellationToken))
         {
-            logger.LogInformation("GitHub Release {Tag} already exists; skipping.", tag);
+            log.Detail($"GitHub Release {tag} already exists; skipping.");
             return StepResult.Successful;
         }
 
@@ -55,7 +54,7 @@ public class CreateGitHubRelease(
             return StepResult.Failed("Changelog entry not found in state.");
         }
 
-        logger.LogInformation("Creating GitHub Release {Tag}.", tag);
+        log.Detail($"Creating GitHub Release {tag}.");
         await releases.Create(tag, tag, changelogs.RenderEntry(entry), cancellationToken);
         return StepResult.Successful;
     }

@@ -8,9 +8,8 @@ namespace Ritten.Reporting;
 /// <summary>
 /// Renders pipeline progress to the terminal using Spectre.Console.
 /// </summary>
-internal sealed class SpectreProgressReporter(IAnsiConsole console) : IProgressReporter
+internal sealed class SpectreProgressReporter(IAnsiConsole console) : IProgressReporter, IPipelineLog
 {
-    private IPipelineStep? _currentStep;
     private readonly Stopwatch _stepTimer = new();
     private readonly Stopwatch _pipelineTimer = new();
 
@@ -25,15 +24,14 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console) : IProgressR
     /// <inheritdoc />
     public Task OnStepStarted(IPipelineStep step, CancellationToken cancellationToken)
     {
-        _currentStep = step;
         _stepTimer.Restart();
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task OnStepCompleted(StepResult result, CancellationToken cancellationToken)
+    public Task OnStepCompleted(IPipelineStep step, StepResult result, CancellationToken cancellationToken)
     {
-        var name = Markup.Escape(_currentStep?.Name ?? "Unknown");
+        var name = Markup.Escape(step.Name);
         var elapsed = FormatDuration(_stepTimer.Elapsed);
 
         if (result.IsFailure)
@@ -46,7 +44,6 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console) : IProgressR
             console.MarkupLine($"  [green]✓ {name}[/] [grey]{elapsed}[/]");
         }
 
-        _currentStep = null;
         return Task.CompletedTask;
     }
 
@@ -67,6 +64,14 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console) : IProgressR
         console.Write(new Rule($"[{color}]{summary}[/]").LeftJustified());
         return Task.CompletedTask;
     }
+
+    /// <inheritdoc />
+    public void Status(string message) =>
+        console.MarkupLine($"  [grey]{Markup.Escape(message)}[/]");
+
+    /// <inheritdoc />
+    public void Detail(string message) =>
+        console.MarkupLine($"    [grey]{Markup.Escape(message)}[/]");
 
     private static string FormatDuration(TimeSpan elapsed) =>
         elapsed.TotalMinutes >= 1 ? $"{elapsed.TotalMinutes:0.0}m" : $"{elapsed.TotalSeconds:0.0}s";

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.DotNet;
@@ -14,14 +13,14 @@ namespace Ritten.Pipelines.NuGet;
 /// latest published version. Requires <see cref="Project"/> in pipeline state
 /// (see <see cref="ExtractDotNetProject"/>).
 /// </summary>
-/// <param name="logger">The step's logger.</param>
+/// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's NuGet options.</param>
 /// <param name="dotnet">The pipeline's .NET options.</param>
 /// <param name="state">The pipeline state.</param>
 /// <param name="report">The build report.</param>
 /// <param name="nuget">The NuGet client.</param>
 public class ValidateNuGetVersion(
-    ILogger<ValidateNuGetVersion> logger,
+    IPipelineLog log,
     IOptions<NuGetOptions> options,
     IOptions<DotNetOptions> dotnet,
     IPipelineState state,
@@ -34,7 +33,7 @@ public class ValidateNuGetVersion(
     {
         if (options.Value.SkipVersionCheck)
         {
-            logger.LogInformation("Skipping version check.");
+            log.Detail("Skipping version check.");
             return StepResult.Successful;
         }
 
@@ -66,7 +65,7 @@ public class ValidateNuGetVersion(
             .Success(latestVersion == null
                 ? $"Version **{project.Version}** will be the first published version of {project.Name}."
                 : $"Version **{project.Version}** is valid (latest published: **{latestVersion}**).");
-        logger.LogInformation("Version {Version} is valid and can be used for package {PackageName}.", project.Version, project.Name);
+        log.Detail($"Version {project.Version} is valid for {project.Name}.");
         return StepResult.Successful;
     }
 }

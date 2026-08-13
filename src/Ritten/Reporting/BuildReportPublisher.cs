@@ -42,7 +42,7 @@ internal class BuildReportPublisher(
     public Task OnStepStarted(IPipelineStep step, CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc />
-    public Task OnStepCompleted(StepResult result, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task OnStepCompleted(IPipelineStep step, StepResult result, CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc />
     public async Task OnPipelineCompleted(PipelineResult result, CancellationToken cancellationToken)

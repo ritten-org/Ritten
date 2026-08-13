@@ -20,7 +20,7 @@ public interface IProgressReporter
     /// <summary>
     /// Called when a step has finished executing.
     /// </summary>
-    Task OnStepCompleted(StepResult result, CancellationToken cancellationToken = default);
+    Task OnStepCompleted(IPipelineStep step, StepResult result, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Called when the pipeline has finished executing.
