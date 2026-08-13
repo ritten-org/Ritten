@@ -1,4 +1,4 @@
-namespace Ritten.GitHub;
+namespace Ritten.Runtimes;
 
 /// <summary>
 /// Maintains a single, updatable comment on the pull request that triggered the current run.

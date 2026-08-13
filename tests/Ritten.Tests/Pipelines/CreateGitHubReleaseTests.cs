@@ -3,7 +3,7 @@ using NuGet.Versioning;
 using Ritten.Changelogs;
 using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.GitHub;
+using Ritten.Runtimes.GitHubActions;
 using Ritten.Pipelines.GitHub;
 using Ritten.Tests.Support;
 

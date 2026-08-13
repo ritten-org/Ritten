@@ -1,13 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
-using Octokit;
 using Ritten.Changelogs;
 using Ritten.Commands;
 using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Git;
-using Ritten.GitHub;
 using Ritten.NuGet;
 using Ritten.Pipelines;
 using Ritten.Pipelines.DotNet;
@@ -74,42 +72,6 @@ public static class ServiceCollectionExtensions
         }
 
         /// <summary>
-        /// Adds the GitHub API client and services to the service collection:
-        /// <see cref="ICommentService"/> and <see cref="IReleaseService"/>.
-        /// </summary>
-        /// <param name="clientName">The product name used to identify this pipeline to the GitHub API.</param>
-        public IServiceCollection AddGitHub(string? clientName = null)
-        {
-            if (services.All(d => d.ServiceType != typeof(IGitHubClient)))
-            {
-                services.AddOptions<GitHubOptions>()
-                    .BindConfiguration("GitHub")
-                    .Configure(o => GitHubEnvironmentDefaults.Apply(o, Environment.GetEnvironmentVariable));
-                services.AddSingleton<IGitHubClient>(provider =>
-                {
-                    var options = provider.GetRequiredService<IOptions<GitHubOptions>>().Value;
-                    var client = new GitHubClient(new ProductHeaderValue(options.ClientName));
-                    if (options.Token is { } token)
-                    {
-                        client.Credentials = new Credentials(token);
-                    }
-
-                    return client;
-                });
-
-                services.TryAddSingleton<ICommentService, CommentService>();
-                services.TryAddSingleton<IReleaseService, ReleaseService>();
-            }
-
-            if (clientName is not null)
-            {
-                services.PostConfigure<GitHubOptions>(o => o.ClientName = clientName);
-            }
-
-            return services;
-        }
-
-        /// <summary>
         /// Registers the services and options that the standard .NET package pipelines need.
         /// </summary>
         public IServiceCollection AddDotNetPackageServices()
@@ -120,7 +82,6 @@ public static class ServiceCollectionExtensions
                 .AddDotNet()
                 .AddGit()
                 .AddNuGet()
-                .AddGitHub()
                 .AddGitHubActionsRuntime()
                 .AddBuildReporting();
 
@@ -163,7 +124,7 @@ public static class ServiceCollectionExtensions
         /// </summary>
         public IServiceCollection AddBuildReporting()
         {
-            services.AddGitHub();
+            services.AddGitHubActionsRuntime();
             if (services.Any(d => d.ServiceType == typeof(IBuildReport)))
             {
                 return services;

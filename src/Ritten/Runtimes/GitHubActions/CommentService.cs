@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Octokit;
 
-namespace Ritten.GitHub;
+namespace Ritten.Runtimes.GitHubActions;
 
 internal class CommentService(ILogger<CommentService> logger, IOptions<GitHubOptions> options, IGitHubClient client) : ICommentService
 {

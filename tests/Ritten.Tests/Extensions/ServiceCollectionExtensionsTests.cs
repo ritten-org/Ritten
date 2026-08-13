@@ -7,10 +7,10 @@ using Ritten.Commands;
 using Ritten.DotNet;
 using Ritten.Extensions;
 using Ritten.Git;
-using Ritten.GitHub;
 using Ritten.NuGet;
 using Ritten.Reporting;
 using Ritten.Reporting.Sinks;
+using Ritten.Runtimes;
 using Ritten.Runtimes.GitHubActions;
 
 namespace Ritten.Tests.Extensions;
@@ -26,7 +26,6 @@ public class ServiceCollectionExtensionsTests
             .AddDotNet().AddDotNet()
             .AddGit().AddGit()
             .AddNuGet().AddNuGet()
-            .AddGitHub().AddGitHub()
             .AddGitHubActionsRuntime().AddGitHubActionsRuntime()
             .AddBuildReporting().AddBuildReporting();
 
@@ -68,17 +67,17 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddGitHub_AppliesTheGivenClientName()
+    public void AddGitHubActionsRuntime_AppliesTheGivenClientName()
     {
-        var provider = Services().AddGitHub("My.Pipeline").BuildServiceProvider();
+        var provider = Services().AddGitHubActionsRuntime("My.Pipeline").BuildServiceProvider();
 
         provider.GetRequiredService<IOptions<GitHubOptions>>().Value.ClientName.ShouldBe("My.Pipeline");
     }
 
     [Fact]
-    public void AddGitHub_KeepsAnExplicitClientNameWhenRedundantlyRegisteredWithoutOne()
+    public void AddGitHubActionsRuntime_KeepsAnExplicitClientNameWhenRedundantlyRegistered()
     {
-        var provider = Services().AddGitHub("My.Pipeline").AddBuildReporting().BuildServiceProvider();
+        var provider = Services().AddGitHubActionsRuntime("My.Pipeline").AddBuildReporting().BuildServiceProvider();
 
         provider.GetRequiredService<IOptions<GitHubOptions>>().Value.ClientName.ShouldBe("My.Pipeline");
     }

@@ -1,4 +1,4 @@
-namespace Ritten.GitHub;
+namespace Ritten.Runtimes.GitHubActions;
 
 /// <summary>
 /// Populates <see cref="GitHubOptions"/> from the environment variables GitHub Actions provides.

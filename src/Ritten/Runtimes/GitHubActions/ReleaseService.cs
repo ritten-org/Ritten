@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
 using Octokit;
 
-namespace Ritten.GitHub;
+namespace Ritten.Runtimes.GitHubActions;
 
 internal class ReleaseService(IOptions<GitHubOptions> options, IGitHubClient client) : IReleaseService
 {

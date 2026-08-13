@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Ritten.GitHub;
+namespace Ritten.Runtimes.GitHubActions;
 
 /// <summary>
 /// GitHub context for publishing the build report.

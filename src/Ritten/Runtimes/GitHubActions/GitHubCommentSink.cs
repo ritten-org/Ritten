@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Options;
-using Ritten.GitHub;
 using Ritten.Reporting.Sinks;
 
 namespace Ritten.Runtimes.GitHubActions;

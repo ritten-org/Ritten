@@ -1,4 +1,4 @@
-using Ritten.GitHub;
+using Ritten.Runtimes.GitHubActions;
 
 namespace Ritten.Tests.GitHub;
 

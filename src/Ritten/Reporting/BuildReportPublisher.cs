@@ -2,7 +2,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Core;
-using Ritten.GitHub;
+using Ritten.Runtimes;
+using Ritten.Runtimes.GitHubActions;
 using Ritten.Reporting.Sinks;
 
 namespace Ritten.Reporting;

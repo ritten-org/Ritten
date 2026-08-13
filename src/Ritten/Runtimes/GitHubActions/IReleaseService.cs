@@ -1,4 +1,4 @@
-namespace Ritten.GitHub;
+namespace Ritten.Runtimes.GitHubActions;
 
 /// <summary>
 /// Manages GitHub releases for the repository the pipeline is running against.

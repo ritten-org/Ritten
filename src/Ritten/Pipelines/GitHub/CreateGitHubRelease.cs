@@ -2,7 +2,7 @@ using Microsoft.Extensions.Options;
 using Ritten.Changelogs;
 using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.GitHub;
+using Ritten.Runtimes.GitHubActions;
 using Ritten.Pipelines.DotNet.Steps;
 using Ritten.Pipelines.Git;
 
