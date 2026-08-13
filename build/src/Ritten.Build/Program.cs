@@ -17,11 +17,6 @@ return await root.Parse(args).InvokeAsync();
 static Task<int> RunPipeline(Func<RittenApplication, RittenApplication> compose, CancellationToken cancellationToken)
 {
     var builder = RittenApplication.CreateBuilder();
-
-    builder.Services
-        .AddGitHub("Ritten.Build")
-        .AddGitHubActionsRuntime()
-        .AddDotNetPackagePipeline();
-
+    builder.Services.AddDotNetPackagePipeline();
     return compose(builder.Build()).RunWithExitCodeAsync(cancellationToken);
 }
