@@ -9,7 +9,6 @@ using Ritten.Contracts.FileSystem;
 using Ritten.Core.FileSystem;
 using Ritten.Core.Runner;
 using Ritten.Core.Steps;
-using Ritten.Runtimes.GitHubActions;
 
 namespace Ritten.Core;
 
@@ -97,7 +96,5 @@ public class RittenApplicationBuilder : IHostApplicationBuilder
             services.TryAddSingleton<IPipelineStepCollection, PipelineStepCollection>();
             services.TryAddScoped<IPipelineStepProvider, PipelineStepProvider>();
         }
-
-        services.AddGitHubActionsRuntime();
     }
 }

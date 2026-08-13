@@ -16,6 +16,7 @@ using Ritten.Pipelines.NuGet;
 using Ritten.Reporting;
 using Ritten.Reporting.Hooks;
 using Ritten.Reporting.Sinks;
+using Ritten.Runtimes.GitHubActions;
 
 namespace Ritten.Extensions;
 
@@ -122,6 +123,7 @@ public static class ServiceCollectionExtensions
                 .AddGit()
                 .AddNuGet()
                 .AddGitHub()
+                .AddGitHubActionsRuntime()
                 .AddBuildReporting();
 
             if (services.Any(d => d.ServiceType == typeof(IConfigureOptions<PipelineOptions>)))

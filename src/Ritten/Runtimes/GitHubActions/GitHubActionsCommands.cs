@@ -1,13 +1,11 @@
-using Microsoft.Extensions.Logging;
 using Ritten.Contracts.Runtime;
-using Ritten.Runtimes.GitHubActions.Logging;
 
 namespace Ritten.Runtimes.GitHubActions;
 
 /// <remarks>
 /// Based on https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands
 /// </remarks>
-internal class GitHubActionsCommands(ILogger<GitHubActionsCommands> logger) : IRuntimeCommands
+internal class GitHubActionsCommands : IRuntimeCommands
 {
     public void LogDebug(string message) => WriteCommand("debug", message, null);
 
@@ -93,7 +91,7 @@ internal class GitHubActionsCommands(ILogger<GitHubActionsCommands> logger) : IR
         WriteCommand(command, message, args);
     }
 
-    private void WriteCommand(string command, string message, Dictionary<string, string?>? args)
+    private static void WriteCommand(string command, string message, Dictionary<string, string?>? args)
     {
         var argString = "";
         if (args != null)
@@ -109,9 +107,7 @@ internal class GitHubActionsCommands(ILogger<GitHubActionsCommands> logger) : IR
         }
 
         message = StringUtils.SanitizeNewLines(message);
-        var commandText = $"::{command}{argString}::{message}";
-
-        logger.LogInformation(Constants.RawCommandEventId, "{Command}", commandText);
+        Console.WriteLine($"::{command}{argString}::{message}");
     }
 
     private class DisposableGroup(IRuntimeCommands commands) : IDisposable

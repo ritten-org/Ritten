@@ -1,7 +1,4 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using Ritten.Runtimes.GitHubActions;
-using Ritten.Runtimes.GitHubActions.Logging;
 
 namespace Ritten.Tests.Runtimes.GitHubActions;
 
@@ -9,41 +6,26 @@ namespace Ritten.Tests.Runtimes.GitHubActions;
 public class GitHubActionsCommandsTests
 {
     private readonly StringWriter _writer = new();
-    private readonly ILoggerFactory _loggerFactory;
-
-    private readonly GitHubActionsCommands _sut;
+    private readonly GitHubActionsCommands _sut = new();
 
     public GitHubActionsCommandsTests()
     {
         Console.SetOut(_writer);
-
-        _loggerFactory = LoggerFactory.Create(b => b
-            .AddConsole(o => o.FormatterName = Constants.FormatterName)
-            .AddConsoleFormatter<GitHubActionsConsoleFormatter, ConsoleFormatterOptions>()
-        );
-        var logger = _loggerFactory.CreateLogger<GitHubActionsCommands>();
-        _sut = new GitHubActionsCommands(logger);
     }
 
     [Fact]
     public void LogDebug_Message_LogsDebugMessage()
     {
-        // Arrange
-
         // Act
         _sut.LogDebug("This is a debug message");
-        _loggerFactory.Dispose();
 
         // Assert
-        var output = _writer.ToString();
-        output.ShouldBe("::debug::This is a debug message\n");
+        _writer.ToString().ShouldBe("::debug::This is a debug message\n");
     }
 
     [Fact]
     public void LogNotice_AllArgs_LogsNotice()
     {
-        // Arrange
-
         // Act
         _sut.LogNotice(
             message: "This is a notice message",
@@ -54,32 +36,24 @@ public class GitHubActionsCommandsTests
             startColumn: 3,
             endColumn: 4
         );
-        _loggerFactory.Dispose();
 
         // Assert
-        var output = _writer.ToString();
-        output.ShouldBe("::notice title=Title,file=file.txt,line=1,endLine=2,col=3,endColumn=4::This is a notice message\n");
+        _writer.ToString().ShouldBe("::notice title=Title,file=file.txt,line=1,endLine=2,col=3,endColumn=4::This is a notice message\n");
     }
 
     [Fact]
     public void LogNotice_NoOptionalArgs_LogsNotice()
     {
-        // Arrange
-
         // Act
         _sut.LogNotice("This is a notice message");
-        _loggerFactory.Dispose();
 
         // Assert
-        var output = _writer.ToString();
-        output.ShouldBe("::notice::This is a notice message\n");
+        _writer.ToString().ShouldBe("::notice::This is a notice message\n");
     }
 
     [Fact]
-    public void LogWarning_AllArgs_LogsNotice()
+    public void LogWarning_AllArgs_LogsWarning()
     {
-        // Arrange
-
         // Act
         _sut.LogWarning(
             message: "This is a warning message",
@@ -90,32 +64,24 @@ public class GitHubActionsCommandsTests
             startColumn: 3,
             endColumn: 4
         );
-        _loggerFactory.Dispose();
 
         // Assert
-        var output = _writer.ToString();
-        output.ShouldBe("::warning title=Title,file=file.txt,line=1,endLine=2,col=3,endColumn=4::This is a warning message\n");
+        _writer.ToString().ShouldBe("::warning title=Title,file=file.txt,line=1,endLine=2,col=3,endColumn=4::This is a warning message\n");
     }
 
     [Fact]
-    public void LogWarning_NoOptionalArgs_LogsNotice()
+    public void LogWarning_NoOptionalArgs_LogsWarning()
     {
-        // Arrange
-
-        // Acts
+        // Act
         _sut.LogWarning("This is a warning message");
-        _loggerFactory.Dispose();
 
         // Assert
-        var output = _writer.ToString();
-        output.ShouldBe("::warning::This is a warning message\n");
+        _writer.ToString().ShouldBe("::warning::This is a warning message\n");
     }
 
     [Fact]
-    public void LogError_AllArgs_LogsNotice()
+    public void LogError_AllArgs_LogsError()
     {
-        // Arrange
-
         // Act
         _sut.LogError(
             message: "This is an error message",
@@ -126,53 +92,39 @@ public class GitHubActionsCommandsTests
             startColumn: 3,
             endColumn: 4
         );
-        _loggerFactory.Dispose();
 
         // Assert
-        var output = _writer.ToString();
-        output.ShouldBe("::error title=Title,file=file.txt,line=1,endLine=2,col=3,endColumn=4::This is an error message\n");
+        _writer.ToString().ShouldBe("::error title=Title,file=file.txt,line=1,endLine=2,col=3,endColumn=4::This is an error message\n");
     }
 
     [Fact]
-    public void LogError_NoOptionalArgs_LogsNotice()
+    public void LogError_NoOptionalArgs_LogsError()
     {
-        // Arrange
-
-        // Acts
+        // Act
         _sut.LogError("This is an error message");
-        _loggerFactory.Dispose();
 
         // Assert
-        var output = _writer.ToString();
-        output.ShouldBe("::error::This is an error message\n");
+        _writer.ToString().ShouldBe("::error::This is an error message\n");
     }
 
     [Fact]
     public void BeginGroup_WithTitle_LogsCommand()
     {
-        // Arrange
-
         // Act
         _sut.BeginGroup("Title");
-        _loggerFactory.Dispose();
 
         // Assert
-        var output = _writer.ToString();
-        output.ShouldBe("::group::Title\n");
+        _writer.ToString().ShouldBe("::group::Title\n");
     }
 
     [Fact]
     public void EndGroup_LogsCommand()
     {
-        // Arrange
-
         // Act
         _sut.EndGroup();
-        _loggerFactory.Dispose();
 
         // Assert
-        var output = _writer.ToString();
-        output.ShouldBe("::endgroup::\n");
+        _writer.ToString().ShouldBe("::endgroup::\n");
     }
 
     [Fact]
@@ -200,31 +152,23 @@ public class GitHubActionsCommandsTests
     [Fact]
     public void WithGroup_DisposesCorrectly_LogsBothGroupAndEndGroup()
     {
-        // Arrange
-        var group = _sut.WithGroup("Test Group");
-
         // Act
+        var group = _sut.WithGroup("Test Group");
         group.Dispose();
-        _loggerFactory.Dispose();
 
         // Assert
-        var output = _writer.ToString();
-        output.ShouldBe("::group::Test Group\n::endgroup::\n");
+        _writer.ToString().ShouldBe("::group::Test Group\n::endgroup::\n");
     }
 
     [Fact]
     public void WithGroup_MultipleDisposeCalls_OnlyLogsOnce()
     {
-        // Arrange
-        IDisposable group = _sut.WithGroup("Test Group");
-
         // Act
+        IDisposable group = _sut.WithGroup("Test Group");
         group.Dispose();
         group.Dispose();
-        _loggerFactory.Dispose();
 
         // Assert
-        var output = _writer.ToString();
-        output.ShouldBe("::group::Test Group\n::endgroup::\n");
+        _writer.ToString().ShouldBe("::group::Test Group\n::endgroup::\n");
     }
 }
