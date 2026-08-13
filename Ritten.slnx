@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/build/">
+    <File Path=".editorconfig" />
+    <File Path=".github\workflows\ritten.yml" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Project Path="src\Ritten\Ritten.csproj" />
+  <Project Path="tests\Ritten.Tests\Ritten.Tests.csproj" />
+</Solution>
