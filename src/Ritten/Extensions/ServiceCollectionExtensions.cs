@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Changelogs;
 using Ritten.Commands;
-using Ritten.Core.Extensions;
+using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.GitHub;
@@ -14,7 +14,6 @@ using Ritten.Pipelines.DotNet;
 using Ritten.Pipelines.Git;
 using Ritten.Pipelines.NuGet;
 using Ritten.Reporting;
-using Ritten.Reporting.Hooks;
 using Ritten.Reporting.Sinks;
 using Ritten.Runtimes.GitHubActions;
 
@@ -160,8 +159,8 @@ public static class ServiceCollectionExtensions
         }
 
         /// <summary>
-        /// Adds <see cref="IBuildReport"/> to the service collection and configures hooks that
-        /// publish it to the job summary and pull request when the pipeline finishes.
+        /// Adds <see cref="IBuildReport"/> to the service collection and registers the
+        /// <see cref="BuildReportPublisher"/> that publishes it when the pipeline finishes.
         /// </summary>
         public IServiceCollection AddBuildReporting()
         {
@@ -176,8 +175,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IReportSink, JobSummarySink>();
             services.AddSingleton<IReportSink, PullRequestCommentSink>();
 
-            services.AddPrePipelineHook<PendingCommentHook>();
-            services.AddPostPipelineHook<PublishReportHook>();
+            services.AddScoped<IProgressReporter, BuildReportPublisher>();
             return services;
         }
     }

@@ -1,5 +1,4 @@
 using Ritten.Contracts;
-using Ritten.Contracts.Hooks;
 using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Core.Runner;
@@ -124,15 +123,14 @@ public class DefaultPipelineRunnerTests
     }
 
     [Fact]
-    public async Task RunPipeline_WithPrePipelineHooks_RunsHooks()
+    public async Task RunPipeline_WithReporters_CallsOnPipelineStartedBeforeSteps()
     {
         // Arrange
-        var hook1 = Substitute.For<IPrePipelineHook>();
-        var hook2 = Substitute.For<IPrePipelineHook>();
+        var reporter = Substitute.For<IProgressReporter>();
         var step = PipelineStepHelpers.CreateMock();
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(
-            prePipelineHooks: [hook1, hook2],
+            reporters: [reporter],
             steps: [step]
         );
 
@@ -142,23 +140,21 @@ public class DefaultPipelineRunnerTests
         // Assert
         Received.InOrder(() =>
         {
-            hook1.PrePipeline(Arg.Any<PrePipelineHookArgs>(), Arg.Any<CancellationToken>());
-            hook2.PrePipeline(Arg.Any<PrePipelineHookArgs>(), Arg.Any<CancellationToken>());
+            reporter.OnPipelineStarted(Arg.Any<CancellationToken>());
             step.Run(Arg.Any<CancellationToken>());
         });
     }
 
     [Fact]
-    public async Task RunPipeline_WithPostPipelineHooks_RunsHooks()
+    public async Task RunPipeline_WithReporters_CallsOnPipelineCompletedAfterSteps()
     {
         // Arrange
-        var hook1 = Substitute.For<IPostPipelineHook>();
-        var hook2 = Substitute.For<IPostPipelineHook>();
+        var reporter = Substitute.For<IProgressReporter>();
         var step = PipelineStepHelpers.CreateMock();
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(
             steps: [step],
-            postPipelineHooks: [hook1, hook2]
+            reporters: [reporter]
         );
 
         // Act
@@ -168,23 +164,45 @@ public class DefaultPipelineRunnerTests
         Received.InOrder(() =>
         {
             step.Run(Arg.Any<CancellationToken>());
-            hook1.PostPipeline(Arg.Any<PostPipelineHookArgs>(), Arg.Any<CancellationToken>());
-            hook2.PostPipeline(Arg.Any<PostPipelineHookArgs>(), Arg.Any<CancellationToken>());
+            reporter.OnPipelineCompleted(Arg.Any<int>(), Arg.Any<IReadOnlyCollection<StepExecutionSummary>>(), Arg.Any<CancellationToken>());
         });
     }
 
     [Fact]
-    public async Task RunPipeline_PrePipelineHookError_StillRunsAllHooks()
+    public async Task RunPipeline_WithReporters_CallsStepLifecycleAroundEachStep()
     {
         // Arrange
-        var hook1 = Substitute.For<IPrePipelineHook>();
-        hook1.PrePipeline(Arg.Any<PrePipelineHookArgs>(), Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
-
-        var hook2 = Substitute.For<IPrePipelineHook>();
+        var reporter = Substitute.For<IProgressReporter>();
         var step = PipelineStepHelpers.CreateMock();
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(
-            prePipelineHooks: [hook1, hook2],
+            reporters: [reporter],
+            steps: [step]
+        );
+
+        // Act
+        await sut.RunPipeline(CancellationToken.None);
+
+        // Assert
+        Received.InOrder(() =>
+        {
+            reporter.OnStepStarted(Arg.Any<string>(), Arg.Any<CancellationToken>());
+            step.Run(Arg.Any<CancellationToken>());
+            reporter.OnStepCompleted(Arg.Any<StepExecutionSummary>(), Arg.Any<CancellationToken>());
+        });
+    }
+
+    [Fact]
+    public async Task RunPipeline_ReporterError_StillRunsPipeline()
+    {
+        // Arrange
+        var reporter = Substitute.For<IProgressReporter>();
+        reporter.OnPipelineStarted(Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
+
+        var step = PipelineStepHelpers.CreateMock();
+
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(
+            reporters: [reporter],
             steps: [step]
         );
 
@@ -193,39 +211,6 @@ public class DefaultPipelineRunnerTests
 
         // Assert
         await act.ShouldNotThrowAsync();
-        Received.InOrder(() =>
-        {
-            hook1.PrePipeline(Arg.Any<PrePipelineHookArgs>(), Arg.Any<CancellationToken>());
-            hook2.PrePipeline(Arg.Any<PrePipelineHookArgs>(), Arg.Any<CancellationToken>());
-            step.Run(Arg.Any<CancellationToken>());
-        });
-    }
-
-    [Fact]
-    public async Task RunPipeline_PostPipelineHookError_StillRunsAllHooks()
-    {
-        // Arrange
-        var hook1 = Substitute.For<IPostPipelineHook>();
-        hook1.PostPipeline(Arg.Any<PostPipelineHookArgs>(), Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
-
-        var hook2 = Substitute.For<IPostPipelineHook>();
-        var step = PipelineStepHelpers.CreateMock();
-
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(
-            steps: [step],
-            postPipelineHooks: [hook1, hook2]
-        );
-
-        // Act
-        var act = () => sut.RunPipeline(CancellationToken.None);
-
-        // Assert
-        await act.ShouldNotThrowAsync();
-        Received.InOrder(() =>
-        {
-            step.Run(Arg.Any<CancellationToken>());
-            hook1.PostPipeline(Arg.Any<PostPipelineHookArgs>(), Arg.Any<CancellationToken>());
-            hook2.PostPipeline(Arg.Any<PostPipelineHookArgs>(), Arg.Any<CancellationToken>());
-        });
+        await step.Received().Run(Arg.Any<CancellationToken>());
     }
 }

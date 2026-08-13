@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Ritten.Contracts;
-using Ritten.Contracts.Hooks;
 using Ritten.Core.Runner;
 using Ritten.Core.Steps;
 
@@ -11,8 +10,7 @@ internal static class DefaultPipelineRunnerHelpers
 {
     public static DefaultPipelineRunner CreateRunner(
         IPipelineStep[]? steps = null,
-        IPrePipelineHook[]? prePipelineHooks = null,
-        IPostPipelineHook[]? postPipelineHooks = null,
+        IProgressReporter[]? reporters = null,
         IPipelineContext? context = null,
         ILogger<DefaultPipelineRunner>? logger = null
     )
@@ -27,13 +25,9 @@ internal static class DefaultPipelineRunnerHelpers
             .AddSingleton(stepProvider)
             .AddSingleton(context);
 
-        foreach (var hook in prePipelineHooks ?? [])
+        foreach (var reporter in reporters ?? [])
         {
-            services.AddScoped<IPrePipelineHook>(_ => hook);
-        }
-        foreach (var hook in postPipelineHooks ?? [])
-        {
-            services.AddScoped<IPostPipelineHook>(_ => hook);
+            services.AddScoped<IProgressReporter>(_ => reporter);
         }
 
         var provider = services.BuildServiceProvider();
