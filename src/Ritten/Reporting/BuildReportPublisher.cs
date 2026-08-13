@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
+using Ritten.Core;
 using Ritten.GitHub;
 using Ritten.Reporting.Sinks;
 
@@ -41,10 +42,10 @@ internal class BuildReportPublisher(
     public Task OnStepStarted(string stepName, CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc />
-    public Task OnStepCompleted(StepExecutionSummary step, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task OnStepCompleted(StepResult result, CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc />
-    public async Task OnPipelineCompleted(int exitCode, IReadOnlyCollection<StepExecutionSummary> steps, CancellationToken cancellationToken)
+    public async Task OnPipelineCompleted(int exitCode, PipelineResult result, CancellationToken cancellationToken)
     {
         var succeeded = exitCode == 0;
         var markdown = renderer.Render(options.Value.WorkflowName, succeeded, report.Sections);

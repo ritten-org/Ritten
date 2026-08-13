@@ -6,12 +6,12 @@ namespace Ritten.Core;
 /// <summary>
 /// Represents the summary of a pipeline execution, including the exit code and results of each step.
 /// </summary>
-public class PipelineExecutionSummary
+public class PipelineResult
 {
     /// <summary>
-    /// Creates a new instance of <see cref="PipelineExecutionSummary"/>.
+    /// Creates a new instance of <see cref="PipelineResult"/>.
     /// </summary>
-    public PipelineExecutionSummary(IPipelineContext context, IEnumerable<StepExecutionSummary> steps, CancellationToken cancellationToken)
+    public PipelineResult(IPipelineContext context, IEnumerable<StepResult> steps, CancellationToken cancellationToken)
     {
         var stepList = steps.ToList().AsReadOnly();
         ExitCode = CalculateExitCode(context, stepList, cancellationToken);
@@ -26,11 +26,11 @@ public class PipelineExecutionSummary
     /// <summary>
     /// Gets the results of each step in the pipeline execution.
     /// </summary>
-    public IReadOnlyCollection<StepExecutionSummary> Steps { get; init; }
+    public IReadOnlyCollection<StepResult> Steps { get; init; }
 
-    private static int CalculateExitCode(IPipelineContext context, ReadOnlyCollection<StepExecutionSummary> steps, CancellationToken cancellationToken)
+    private static int CalculateExitCode(IPipelineContext context, ReadOnlyCollection<StepResult> steps, CancellationToken cancellationToken)
     {
-        var autoCode = steps.LastOrDefault()?.Result.ExitCode ?? PipelineExitCodes.Success;
+        var autoCode = steps.LastOrDefault()?.ExitCode ?? PipelineExitCodes.Success;
         if (steps.Count == 0 && cancellationToken.IsCancellationRequested)
         {
             autoCode = PipelineExitCodes.StoppedAfterCancel;

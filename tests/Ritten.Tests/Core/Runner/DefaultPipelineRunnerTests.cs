@@ -1,4 +1,5 @@
 using Ritten.Contracts;
+using Ritten.Core;
 using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Core.Runner;
@@ -164,7 +165,7 @@ public class DefaultPipelineRunnerTests
         Received.InOrder(() =>
         {
             step.Run(Arg.Any<CancellationToken>());
-            reporter.OnPipelineCompleted(Arg.Any<int>(), Arg.Any<IReadOnlyCollection<StepExecutionSummary>>(), Arg.Any<CancellationToken>());
+            reporter.OnPipelineCompleted(Arg.Any<int>(), Arg.Any<PipelineResult>(), Arg.Any<CancellationToken>());
         });
     }
 
@@ -188,7 +189,7 @@ public class DefaultPipelineRunnerTests
         {
             reporter.OnStepStarted(Arg.Any<string>(), Arg.Any<CancellationToken>());
             step.Run(Arg.Any<CancellationToken>());
-            reporter.OnStepCompleted(Arg.Any<StepExecutionSummary>(), Arg.Any<CancellationToken>());
+            reporter.OnStepCompleted(Arg.Any<StepResult>(), Arg.Any<CancellationToken>());
         });
     }
 

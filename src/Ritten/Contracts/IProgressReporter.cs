@@ -1,3 +1,5 @@
+using Ritten.Core;
+
 namespace Ritten.Contracts;
 
 /// <summary>
@@ -20,15 +22,15 @@ public interface IProgressReporter
     /// <summary>
     /// Called when a step has finished executing.
     /// </summary>
-    /// <param name="step">The execution summary for the completed step.</param>
+    /// <param name="result">The execution summary for the completed step.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    Task OnStepCompleted(StepExecutionSummary step, CancellationToken cancellationToken = default);
+    Task OnStepCompleted(StepResult result, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Called when the pipeline has finished executing.
     /// </summary>
     /// <param name="exitCode">The exit code of the pipeline.</param>
-    /// <param name="steps">The execution summaries of all steps that ran.</param>
+    /// <param name="result">The execution summaries of all steps that ran.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    Task OnPipelineCompleted(int exitCode, IReadOnlyCollection<StepExecutionSummary> steps, CancellationToken cancellationToken = default);
+    Task OnPipelineCompleted(int exitCode, PipelineResult result, CancellationToken cancellationToken = default);
 }
