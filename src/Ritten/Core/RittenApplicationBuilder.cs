@@ -6,7 +6,6 @@ using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core.FileSystem;
 using Ritten.Core.Runner;
-using Ritten.Core.Steps;
 
 namespace Ritten.Core;
 
@@ -16,8 +15,6 @@ namespace Ritten.Core;
 public class RittenApplicationBuilder : IPipelineBuilder
 {
     private readonly HostApplicationBuilder _innerBuilder;
-    private readonly List<Type> _stepTypes = [];
-
     /// <summary>
     /// Creates a new instance of the <see cref="RittenApplicationBuilder"/> with the given options.
     /// </summary>
@@ -40,8 +37,7 @@ public class RittenApplicationBuilder : IPipelineBuilder
     /// <inheritdoc />
     public IPipelineBuilder UseStep<TStep>() where TStep : class, IPipelineStep
     {
-        _stepTypes.Add(typeof(TStep));
-        Services.AddTransient<TStep>();
+        Services.AddTransient<IPipelineStep, TStep>();
         return this;
     }
 
@@ -58,9 +54,6 @@ public class RittenApplicationBuilder : IPipelineBuilder
         Services.TryAddSingleton<IFileSystem>(_ => new PhysicalFileSystem(Environment.CurrentDirectory));
         Services.TryAddSingleton<IPipelineState, DefaultPipelineState>();
         Services.TryAddSingleton<IPipelineContext, DefaultPipelineContext>();
-
-        Services.AddSingleton(new PipelineStepTypes(_stepTypes));
-        Services.TryAddSingleton<IPipelineStepProvider, PipelineStepProvider>();
 
         var host = _innerBuilder.Build();
         return new RittenApplication(host);

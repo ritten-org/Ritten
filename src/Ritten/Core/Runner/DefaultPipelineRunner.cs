@@ -1,20 +1,20 @@
 using Microsoft.Extensions.Logging;
 using Ritten.Contracts;
-using Ritten.Core.Steps;
 
 namespace Ritten.Core.Runner;
 
 internal class DefaultPipelineRunner(
     ILogger<DefaultPipelineRunner> logger,
     IEnumerable<IProgressReporter> reporters,
-    IPipelineStepProvider stepProvider,
+    IEnumerable<IPipelineStep> steps,
     Pipeline pipeline
 ) : IPipelineRunner
 {
 
     private readonly IReadOnlyCollection<IProgressReporter> _reporters = [.. reporters];
+    private readonly IReadOnlyList<IPipelineStep> _steps = [.. steps];
 
-    public async Task<PipelineResult> RunPipeline(CancellationToken cancellationToken)
+    public async Task<PipelineResult> Run(CancellationToken cancellationToken)
     {
         logger.LogInformation("Running pipeline...");
 
@@ -44,8 +44,7 @@ internal class DefaultPipelineRunner(
     private async Task<List<StepResult>> RunSteps(CancellationToken cancellationToken)
     {
         List<StepResult> results = [];
-        var steps = stepProvider.GetSteps();
-        foreach (var step in steps)
+        foreach (var step in _steps)
         {
             if (cancellationToken.IsCancellationRequested)
             {

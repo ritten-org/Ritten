@@ -8,5 +8,5 @@ internal interface IPipelineRunner
     /// <summary>
     /// Runs the current pipeline.
     /// </summary>
-    Task<PipelineResult> RunPipeline(CancellationToken cancellationToken);
+    Task<PipelineResult> Run(CancellationToken cancellationToken);
 }

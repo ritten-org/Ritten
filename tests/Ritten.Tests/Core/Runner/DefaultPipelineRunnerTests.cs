@@ -17,7 +17,7 @@ public class DefaultPipelineRunnerTests
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step1, step2, step3]);
 
         // Act
-        await sut.RunPipeline(CancellationToken.None);
+        await sut.Run(CancellationToken.None);
 
         // Assert
         Received.InOrder(() =>
@@ -40,7 +40,7 @@ public class DefaultPipelineRunnerTests
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step1, step2, step3]);
 
         // Act
-        await sut.RunPipeline(CancellationToken.None);
+        await sut.Run(CancellationToken.None);
 
         // Assert
         await step1.Received().Run(Arg.Any<CancellationToken>());
@@ -60,7 +60,7 @@ public class DefaultPipelineRunnerTests
         await cts.CancelAsync();
 
         // Act
-        var summary = await sut.RunPipeline(cts.Token);
+        var summary = await sut.Run(cts.Token);
 
         // Assert
         await step1.DidNotReceive().Run(Arg.Any<CancellationToken>());
@@ -79,7 +79,7 @@ public class DefaultPipelineRunnerTests
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step1, step2, step3]);
 
         // Act
-        var summary = await sut.RunPipeline(CancellationToken.None);
+        var summary = await sut.Run(CancellationToken.None);
 
         // Assert
         summary.ExitCode.ShouldBe(PipelineExitCodes.StoppedOnError);
@@ -98,7 +98,7 @@ public class DefaultPipelineRunnerTests
         );
 
         // Act
-        await sut.RunPipeline(CancellationToken.None);
+        await sut.Run(CancellationToken.None);
 
         // Assert
         Received.InOrder(() =>
@@ -121,7 +121,7 @@ public class DefaultPipelineRunnerTests
         );
 
         // Act
-        await sut.RunPipeline(CancellationToken.None);
+        await sut.Run(CancellationToken.None);
 
         // Assert
         Received.InOrder(() =>
@@ -144,7 +144,7 @@ public class DefaultPipelineRunnerTests
         );
 
         // Act
-        await sut.RunPipeline(CancellationToken.None);
+        await sut.Run(CancellationToken.None);
 
         // Assert
         Received.InOrder(() =>
@@ -170,7 +170,7 @@ public class DefaultPipelineRunnerTests
         );
 
         // Act
-        var act = () => sut.RunPipeline(CancellationToken.None);
+        var act = () => sut.Run(CancellationToken.None);
 
         // Assert
         await act.ShouldNotThrowAsync();

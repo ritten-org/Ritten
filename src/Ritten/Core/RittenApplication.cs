@@ -37,7 +37,7 @@ public class RittenApplication : IDisposable
 
         using var app = builder.Build();
         var runner = app._host.Services.GetRequiredService<IPipelineRunner>();
-        var summary = await runner.RunPipeline(cancellationToken);
+        var summary = await runner.Run(cancellationToken);
         return summary.ExitCode;
     }
 }
