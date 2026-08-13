@@ -14,7 +14,6 @@ using Ritten.Pipelines.DotNet;
 using Ritten.Pipelines.Git;
 using Ritten.Pipelines.NuGet;
 using Ritten.Reporting;
-using Ritten.Reporting.Sinks;
 using Ritten.Runtimes.GitHubActions;
 
 namespace Ritten.Extensions;

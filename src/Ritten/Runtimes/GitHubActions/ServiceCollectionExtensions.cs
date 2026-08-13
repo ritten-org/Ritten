@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Ritten.GitHub;
 using Ritten.Reporting.Sinks;
 
 namespace Ritten.Runtimes.GitHubActions;
