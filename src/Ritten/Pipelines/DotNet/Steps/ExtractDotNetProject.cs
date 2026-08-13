@@ -27,6 +27,11 @@ public class ExtractDotNetProject(ILogger<ExtractDotNetProject> logger, IOptions
         }
 
         var project = await dotnet.ReadProject(csproj, cancellationToken);
+        if (project is null)
+        {
+            return StepResult.Failed($"The project '{options.Value.ProjectFile}' could not be read.");
+        }
+
         state.Set(project);
 
         logger.LogInformation("Extracted project info: {ProjectName} (v{Version})", project.Name, project.Version);

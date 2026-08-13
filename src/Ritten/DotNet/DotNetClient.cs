@@ -9,7 +9,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
 {
     private static readonly JsonSerializerOptions FormatReportJson = new() { PropertyNameCaseInsensitive = true };
 
-    public async Task<Project> ReadProject(IFile file, CancellationToken cancellationToken = default)
+    public async Task<Project?> ReadProject(IFile file, CancellationToken cancellationToken = default)
     {
         // MSBuild evaluates the project for real, so properties inherited from
         // Directory.Build.props, conditions, and SDK defaults are all resolved.
@@ -23,14 +23,9 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         var packageId = properties.GetProperty("PackageId").GetString();
         var version = properties.GetProperty("Version").GetString();
 
-        if (string.IsNullOrEmpty(packageId))
+        if (string.IsNullOrEmpty(packageId) || string.IsNullOrEmpty(version))
         {
-            throw new Exception($"The project '{file.Name}' did not evaluate a PackageId.");
-        }
-
-        if (string.IsNullOrEmpty(version))
-        {
-            throw new Exception($"The project '{file.Name}' did not evaluate a Version.");
+            return null;
         }
 
         return new Project
