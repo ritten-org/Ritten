@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text;
-using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.Logging;
+using Ritten.Contracts.FileSystem;
 
 namespace Ritten.Commands;
 

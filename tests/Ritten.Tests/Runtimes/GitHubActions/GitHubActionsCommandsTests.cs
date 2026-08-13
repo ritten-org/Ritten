@@ -164,7 +164,7 @@ public class GitHubActionsCommandsTests
     public void WithGroup_MultipleDisposeCalls_OnlyLogsOnce()
     {
         // Act
-        IDisposable group = _sut.WithGroup("Test Group");
+        var group = _sut.WithGroup("Test Group");
         group.Dispose();
         group.Dispose();
 

@@ -1,9 +1,9 @@
-using Ritten.Contracts;
-using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
+using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Pipelines.Git;
 using Ritten.Reporting;

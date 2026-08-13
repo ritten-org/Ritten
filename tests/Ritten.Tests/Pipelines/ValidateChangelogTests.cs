@@ -1,11 +1,11 @@
 using System.Text;
-using Ritten.Contracts;
-using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
+using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Extensions;
 using Ritten.Pipelines;

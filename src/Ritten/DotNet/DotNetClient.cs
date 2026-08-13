@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Ritten.Contracts.FileSystem;
 using NuGet.Versioning;
 using Ritten.Commands;
+using Ritten.Contracts.FileSystem;
 
 namespace Ritten.DotNet;
 

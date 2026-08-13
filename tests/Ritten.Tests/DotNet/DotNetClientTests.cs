@@ -1,8 +1,8 @@
-using Ritten.Contracts;
-using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.Logging.Abstractions;
 using NuGet.Versioning;
 using Ritten.Commands;
+using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Tests.Support;
 

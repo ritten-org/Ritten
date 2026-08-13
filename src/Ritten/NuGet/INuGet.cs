@@ -1,5 +1,5 @@
-using Ritten.Contracts.FileSystem;
 using NuGet.Versioning;
+using Ritten.Contracts.FileSystem;
 
 namespace Ritten.NuGet;
 

@@ -1,6 +1,6 @@
-using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.Logging.Abstractions;
 using Ritten.Commands;
+using Ritten.Contracts.FileSystem;
 using Ritten.Git;
 
 namespace Ritten.Tests.Git;

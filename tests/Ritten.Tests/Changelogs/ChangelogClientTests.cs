@@ -1,7 +1,7 @@
 using System.Text;
-using Ritten.Contracts.FileSystem;
 using NuGet.Versioning;
 using Ritten.Changelogs;
+using Ritten.Contracts.FileSystem;
 
 namespace Ritten.Tests.Changelogs;
 

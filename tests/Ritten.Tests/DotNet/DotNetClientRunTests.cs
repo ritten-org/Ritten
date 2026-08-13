@@ -1,6 +1,6 @@
 using System.Text;
-using Ritten.Contracts.FileSystem;
 using Ritten.Commands;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Tests.Support;
 

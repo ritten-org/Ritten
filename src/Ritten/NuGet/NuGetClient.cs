@@ -1,10 +1,10 @@
-using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.Logging;
 using NuGet.Configuration;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using Ritten.Commands;
+using Ritten.Contracts.FileSystem;
 using Ritten.Extensions;
 
 namespace Ritten.NuGet;

@@ -1,6 +1,6 @@
-using Ritten.Contracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.NuGet;
 using Ritten.Pipelines.DotNet;

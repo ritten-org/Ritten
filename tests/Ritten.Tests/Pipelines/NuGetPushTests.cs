@@ -1,7 +1,7 @@
-using Ritten.Contracts;
-using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
+using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.NuGet;
 using Ritten.Pipelines.NuGet;

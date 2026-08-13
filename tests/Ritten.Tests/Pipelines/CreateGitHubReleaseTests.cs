@@ -1,8 +1,8 @@
-using Ritten.Contracts;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
+using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.GitHub;
 using Ritten.Pipelines.GitHub;

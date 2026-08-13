@@ -1,7 +1,7 @@
-using Ritten.Contracts;
-using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 
 namespace Ritten.Pipelines;
 
