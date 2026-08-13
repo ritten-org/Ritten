@@ -11,6 +11,7 @@ using Ritten.GitHub;
 using Ritten.NuGet;
 using Ritten.Reporting;
 using Ritten.Reporting.Sinks;
+using Ritten.Runtimes.GitHubActions;
 
 namespace Ritten.Tests.Extensions;
 
@@ -26,6 +27,7 @@ public class ServiceCollectionExtensionsTests
             .AddGit().AddGit()
             .AddNuGet().AddNuGet()
             .AddGitHub().AddGitHub()
+            .AddGitHubActionsRuntime().AddGitHubActionsRuntime()
             .AddBuildReporting().AddBuildReporting();
 
         services.Count(d => d.ServiceType == typeof(ICommandRunner)).ShouldBe(1);

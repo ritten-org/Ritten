@@ -1,23 +1,14 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Ritten.Contracts.Runtime;
+using Ritten.Reporting.Sinks;
 
 namespace Ritten.Runtimes.GitHubActions;
 
 internal static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddGitHubActionsRuntime(this IServiceCollection services, Action<GitHubActionsRuntimeOptions>? configure = null)
+    public static IServiceCollection AddGitHubActionsRuntime(this IServiceCollection services)
     {
-        var options = new GitHubActionsRuntimeOptions();
-        configure?.Invoke(options);
-
-        var context = new GitHubActionsContext
-        {
-            IsCI = options.RuntimeDetector()
-        };
-
-        services.TryAddSingleton<IRuntimeContext>(context);
-
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IReportSink, GitHubReportSink>());
         return services;
     }
 }
