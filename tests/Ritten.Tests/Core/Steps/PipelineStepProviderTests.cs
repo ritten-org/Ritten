@@ -1,0 +1,41 @@
+using Microsoft.Extensions.DependencyInjection;
+using Ritten.Contracts;
+using Ritten.Core.Extensions;
+using Ritten.Core.Steps;
+
+namespace Ritten.Tests.Core.Steps;
+
+public class PipelineStepProviderTests
+{
+    [Fact]
+    public void GetSteps_WithSteps_ReturnsCorrectSteps()
+    {
+        // Arrange
+        var services = new ServiceCollection()
+            .AddStep<DummyStep1>()
+            .AddStep<DummyStep2>()
+            .BuildServiceProvider();
+
+        var collection = new PipelineStepCollection();
+        collection.AddStep(typeof(DummyStep1));
+        collection.AddStep(typeof(DummyStep2));
+
+        var provider = new PipelineStepProvider(services, collection);
+
+        // Act
+        var steps = provider.GetSteps().ToList();
+
+        // Assert
+        steps.ShouldBeOfTypes(typeof(DummyStep1), typeof(DummyStep2));
+    }
+
+    private class DummyStep1 : IPipelineStep
+    {
+        public Task Run(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private class DummyStep2 : IPipelineStep
+    {
+        public Task Run(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+}
