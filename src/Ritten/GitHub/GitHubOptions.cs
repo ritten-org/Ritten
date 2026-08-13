@@ -33,6 +33,16 @@ public class GitHubOptions
     public string WorkflowName { get; set; } = "Pipeline";
 
     /// <summary>
+    /// True if the pipeline is running in a GitHub Actions environment.
+    /// </summary>
+    public bool IsEnabled { get; set; }
+
+    /// <summary>
+    /// The path to the GitHub Actions job summary file, if available.
+    /// </summary>
+    public string? SummaryFile { get; set; }
+
+    /// <summary>
     /// True if the run was triggered by a pull request, otherwise false.
     /// </summary>
     [MemberNotNullWhen(true, nameof(PullRequestNumber))]

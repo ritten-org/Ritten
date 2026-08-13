@@ -9,7 +9,6 @@ internal static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddGitHubActionsRuntime(this IServiceCollection services)
     {
-        services.TryAddSingleton<IGitHubActionsRuntime, GitHubActionsRuntime>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IReportSink, GitHubReportSink>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IReportSink, GitHubCommentSink>());
         return services;

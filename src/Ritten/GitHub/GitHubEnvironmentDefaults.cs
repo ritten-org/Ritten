@@ -11,6 +11,8 @@ internal static class GitHubEnvironmentDefaults
         options.RepositoryId = ParseRepositoryId(environment("GITHUB_REPOSITORY_ID")) ?? options.RepositoryId;
         options.PullRequestNumber = ParsePullRequestNumber(environment("GITHUB_REF")) ?? options.PullRequestNumber;
         options.WorkflowName = environment("GITHUB_WORKFLOW") ?? options.WorkflowName;
+        options.IsEnabled = !string.IsNullOrEmpty(environment("GITHUB_ACTIONS")) || options.IsEnabled;
+        options.SummaryFile = environment("GITHUB_STEP_SUMMARY") ?? options.SummaryFile;
     }
 
     private static long? ParseRepositoryId(string? value) =>

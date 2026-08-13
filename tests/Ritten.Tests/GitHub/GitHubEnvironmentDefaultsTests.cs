@@ -12,7 +12,9 @@ public class GitHubEnvironmentDefaultsTests
             ["GH_TOKEN"] = "token-1",
             ["GITHUB_REPOSITORY_ID"] = "12345",
             ["GITHUB_REF"] = "refs/pull/42/merge",
-            ["GITHUB_WORKFLOW"] = "My Workflow"
+            ["GITHUB_WORKFLOW"] = "My Workflow",
+            ["GITHUB_ACTIONS"] = "true",
+            ["GITHUB_STEP_SUMMARY"] = "/tmp/summary.md"
         });
 
         options.Token.ShouldBe("token-1");
@@ -20,6 +22,8 @@ public class GitHubEnvironmentDefaultsTests
         options.PullRequestNumber.ShouldBe(42);
         options.IsPullRequest.ShouldBeTrue();
         options.WorkflowName.ShouldBe("My Workflow");
+        options.IsEnabled.ShouldBeTrue();
+        options.SummaryFile.ShouldBe("/tmp/summary.md");
     }
 
     [Fact]
@@ -60,6 +64,8 @@ public class GitHubEnvironmentDefaultsTests
         options.RepositoryId.ShouldBeNull();
         options.PullRequestNumber.ShouldBeNull();
         options.WorkflowName.ShouldBe("Pipeline");
+        options.IsEnabled.ShouldBeFalse();
+        options.SummaryFile.ShouldBeNull();
     }
 
     [Fact]
@@ -81,6 +87,8 @@ public class GitHubEnvironmentDefaultsTests
         options.RepositoryId.ShouldBe(99);
         options.PullRequestNumber.ShouldBe(7);
         options.WorkflowName.ShouldBe("Configured Workflow");
+        options.IsEnabled.ShouldBeTrue();
+        options.SummaryFile.ShouldBe("/configured/summary.md");
     }
 
     [Fact]
@@ -93,13 +101,17 @@ public class GitHubEnvironmentDefaultsTests
             ["GH_TOKEN"] = "env-token",
             ["GITHUB_REPOSITORY_ID"] = "12345",
             ["GITHUB_REF"] = "refs/pull/42/merge",
-            ["GITHUB_WORKFLOW"] = "Env Workflow"
+            ["GITHUB_WORKFLOW"] = "Env Workflow",
+            ["GITHUB_ACTIONS"] = "true",
+            ["GITHUB_STEP_SUMMARY"] = "/env/summary.md"
         }.GetValueOrDefault);
 
         options.Token.ShouldBe("env-token");
         options.RepositoryId.ShouldBe(12345);
         options.PullRequestNumber.ShouldBe(42);
         options.WorkflowName.ShouldBe("Env Workflow");
+        options.IsEnabled.ShouldBeTrue();
+        options.SummaryFile.ShouldBe("/env/summary.md");
     }
 
     private static GitHubOptions ConfiguredOptions() => new()
@@ -107,7 +119,9 @@ public class GitHubEnvironmentDefaultsTests
         Token = "configured-token",
         RepositoryId = 99,
         PullRequestNumber = 7,
-        WorkflowName = "Configured Workflow"
+        WorkflowName = "Configured Workflow",
+        IsEnabled = true,
+        SummaryFile = "/configured/summary.md"
     };
 
     private static GitHubOptions Apply(Dictionary<string, string> environment)

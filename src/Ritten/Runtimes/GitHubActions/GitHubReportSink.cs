@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using Ritten.GitHub;
 using Ritten.Reporting.Sinks;
 
 namespace Ritten.Runtimes.GitHubActions;
@@ -6,16 +8,16 @@ namespace Ritten.Runtimes.GitHubActions;
 /// Publishes the report to the GitHub Actions job summary via <c>GITHUB_STEP_SUMMARY</c>.
 /// Does nothing when the pipeline is not running in GitHub Actions.
 /// </summary>
-internal class GitHubReportSink(IGitHubActionsRuntime runtime) : IReportSink
+internal class GitHubReportSink(IOptions<GitHubOptions> options) : IReportSink
 {
     public async Task Publish(string markdown, CancellationToken cancellationToken = default)
     {
-        if (!runtime.IsEnabled)
+        if (!options.Value.IsEnabled)
         {
             return;
         }
 
-        if (runtime.SummaryFile is not { } path)
+        if (options.Value.SummaryFile is not { } path)
         {
             return;
         }
