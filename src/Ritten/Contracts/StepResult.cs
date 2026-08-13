@@ -5,20 +5,26 @@ namespace Ritten.Contracts;
 /// </summary>
 /// <param name="ExitCode">The exit code of the individual step.</param>
 /// <param name="Continue">True if the pipeline should continue execution, otherwise false.</param>
-public record StepResult(int ExitCode, bool Continue)
+/// <param name="Message">An optional human-readable message describing the outcome.</param>
+public record StepResult(int ExitCode, bool Continue, string Message)
 {
     /// <summary>
     /// Represents a successful pipeline step execution with no exceptions and continuation.
     /// </summary>
-    public static readonly StepResult Successful = new(PipelineExitCodes.Success, true);
+    public static readonly StepResult Successful = new(PipelineExitCodes.Success, true, "Success");
 
     /// <summary>
     /// Indicates that cancellation was requested, and the pipeline should stop execution.
     /// </summary>
-    public static readonly StepResult StoppedAfterCancel = new(PipelineExitCodes.StoppedAfterCancel, false);
+    public static readonly StepResult StoppedAfterCancel = new(PipelineExitCodes.StoppedAfterCancel, false, "Stopped after cancel");
 
     /// <summary>
-    /// Indicates that the pipeline step resulted in an error, and the pipeline should stop execution.
+    /// Indicates that the step failed with a human-readable error message.
     /// </summary>
-    public static readonly StepResult StoppedOnError = new(PipelineExitCodes.StoppedOnError, false);
+    public static StepResult Failed(string message) => new(PipelineExitCodes.StoppedOnError, false, message);
+
+    /// <summary>
+    /// Gets whether this result represents a failure.
+    /// </summary>
+    public bool IsFailure => ExitCode != PipelineExitCodes.Success;
 }

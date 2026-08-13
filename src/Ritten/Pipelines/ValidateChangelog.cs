@@ -42,14 +42,14 @@ public class ValidateChangelog(
         var project = state.Get<Project>();
         if (project == null)
         {
-            throw new Exception("Project info not found in state.");
+            return StepResult.Failed("Project info not found in state.");
         }
 
         var changelogFile = fileSystem.CurrentDirectory.GetFile(options.Value.File);
         if (!changelogFile.Exists)
         {
             report.Section("Release").Failure($"The changelog file `{options.Value.File}` does not exist.");
-            throw new FileNotFoundException("Could not find changelog file", changelogFile.AbsolutePath);
+            return StepResult.Failed($"Could not find changelog file '{options.Value.File}'.");
         }
 
         var changelog = await changelogs.Read(changelogFile, cancellationToken);
@@ -59,13 +59,13 @@ public class ValidateChangelog(
         if (entry is null)
         {
             report.Section("Release").Failure($"There's no changelog entry for **{project.Version}** in `{options.Value.File}`.");
-            throw new Exception($"No changelog entry found for version {project.Version} in {options.Value.File}.");
+            return StepResult.Failed($"No changelog entry found for version {project.Version} in {options.Value.File}.");
         }
 
         if (entry.IsEmpty)
         {
             report.Section("Release").Failure($"The changelog entry for **{project.Version}** is empty.");
-            throw new Exception($"Changelog entry for version {project.Version} is empty.");
+            return StepResult.Failed($"Changelog entry for version {project.Version} is empty.");
         }
 
         if (!string.IsNullOrEmpty(options.Value.RepositoryUrl))
@@ -77,7 +77,7 @@ public class ValidateChangelog(
                 var block = string.Join('\n', expected.Select(l => l.ToMarkdown()));
                 report.Section("Release")
                     .Failure($"The version links in `{options.Value.File}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
-                throw new Exception($"Changelog version links in {options.Value.File} are missing or out of date.");
+                return StepResult.Failed($"Changelog version links in {options.Value.File} are missing or out of date.");
             }
         }
 

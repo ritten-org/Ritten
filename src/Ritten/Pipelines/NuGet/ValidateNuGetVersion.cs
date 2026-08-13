@@ -41,7 +41,7 @@ public class ValidateNuGetVersion(
         var project = state.Get<Project>();
         if (project == null)
         {
-            throw new Exception("Project info not found in state.");
+            return StepResult.Failed("Project info not found in state.");
         }
 
         var feed = new NuGetFeed(options.Value.Feed);
@@ -51,7 +51,7 @@ public class ValidateNuGetVersion(
         {
             report.Section("Release")
                 .Failure($"Version **{project.Version}** is already published on the feed — bump `<Version>` in `{dotnet.Value.ProjectFile}`.");
-            throw new Exception($"Package version {project.Version} already exists on the feed.");
+            return StepResult.Failed($"Package version {project.Version} already exists on the feed.");
         }
 
         var latestVersion = versions.DefaultIfEmpty().Max();
@@ -59,7 +59,7 @@ public class ValidateNuGetVersion(
         {
             report.Section("Release")
                 .Failure($"Version **{project.Version}** isn't greater than the latest published version **{latestVersion}** — bump `<Version>` in `{dotnet.Value.ProjectFile}`.");
-            throw new Exception($"Project version {project.Version} is not greater than the latest version {latestVersion}.");
+            return StepResult.Failed($"Project version {project.Version} is not greater than the latest version {latestVersion}.");
         }
 
         report.Section("Release")

@@ -28,13 +28,14 @@ public class NuGetPushTests
     }
 
     [Fact]
-    public async Task ThrowsAClearErrorWithoutAnApiKey()
+    public async Task FailsWithAClearErrorWithoutAnApiKey()
     {
         _options.ApiKey = null;
 
-        var exception = await Should.ThrowAsync<Exception>(() => Step().Run(TestContext.Current.CancellationToken));
+        var result = await Step().Run(TestContext.Current.CancellationToken);
 
-        exception.Message.ShouldContain("NuGet__ApiKey");
+        result.IsFailure.ShouldBeTrue();
+        result.Message!.ShouldContain("NuGet__ApiKey");
         await _nuget.DidNotReceiveWithAnyArgs().Push(default!, default!, TestContext.Current.CancellationToken);
     }
 

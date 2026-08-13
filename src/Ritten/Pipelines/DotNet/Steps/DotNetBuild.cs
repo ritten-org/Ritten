@@ -39,6 +39,6 @@ public class DotNetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuild
             section.Details("Compiler output", $"```\n{string.Join('\n', diagnostics)}\n```");
         }
 
-        throw new Exception("Build failed.");
+        return StepResult.Failed("Build failed.");
     }
 }

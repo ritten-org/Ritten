@@ -28,10 +28,13 @@ public class NuGetPush(
     {
         if (string.IsNullOrEmpty(options.Value.ApiKey))
         {
-            throw new Exception("The NuGet API key is not configured; set NuGet__ApiKey for the deploy pipeline.");
+            return StepResult.Failed("The NuGet API key is not configured; set NuGet__ApiKey for the deploy pipeline.");
         }
 
-        var packed = state.Get<PackResult>() ?? throw new Exception("Pack result not found in state.");
+        if (state.Get<PackResult>() is not { } packed)
+        {
+            return StepResult.Failed("Pack result not found in state.");
+        }
         var feed = new NuGetFeed(options.Value.Feed).WithApiKey(options.Value.ApiKey);
 
         foreach (var package in packed.Packages)

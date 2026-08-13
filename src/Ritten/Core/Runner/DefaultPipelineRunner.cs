@@ -73,12 +73,18 @@ internal class DefaultPipelineRunner(
     {
         try
         {
-            return await step.Run(cancellationToken);
+            var result = await step.Run(cancellationToken);
+            if (result.IsFailure)
+            {
+                logger.LogError("Step failed: {Message}", result.Message);
+            }
+
+            return result;
         }
         catch (Exception ex)
         {
             logger.LogCritical(ex, "Unhandled error during step. Exiting.");
-            return StepResult.StoppedOnError;
+            return StepResult.Failed(ex.Message);
         }
     }
 

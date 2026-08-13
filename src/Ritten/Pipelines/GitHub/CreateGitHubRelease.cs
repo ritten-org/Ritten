@@ -30,7 +30,10 @@ public class CreateGitHubRelease(
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        var project = state.Get<Project>() ?? throw new Exception("Project info not found in state.");
+        if (state.Get<Project>() is not { } project)
+        {
+            return StepResult.Failed("Project info not found in state.");
+        }
 
         if (project.Version.IsPrerelease)
         {
@@ -47,7 +50,10 @@ public class CreateGitHubRelease(
             return StepResult.Successful;
         }
 
-        var entry = state.Get<ChangelogEntry>() ?? throw new Exception("Changelog entry not found in state.");
+        if (state.Get<ChangelogEntry>() is not { } entry)
+        {
+            return StepResult.Failed("Changelog entry not found in state.");
+        }
 
         logger.LogInformation("Creating GitHub Release {Tag}.", tag);
         await releases.Create(tag, tag, changelogs.RenderEntry(entry), cancellationToken);

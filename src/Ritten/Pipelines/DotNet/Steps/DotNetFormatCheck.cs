@@ -44,6 +44,6 @@ public class DotNetFormatCheck(
             report.Section("Formatting").Failure("`dotnet format --verify-no-changes` failed — check the build logs for details.");
         }
 
-        throw new Exception("Code formatting check failed.");
+        return StepResult.Failed("Code formatting check failed.");
     }
 }

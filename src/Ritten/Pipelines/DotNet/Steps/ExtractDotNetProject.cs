@@ -23,7 +23,7 @@ public class ExtractDotNetProject(ILogger<ExtractDotNetProject> logger, IOptions
         var csproj = fileSystem.CurrentDirectory.GetFile(options.Value.ProjectFile);
         if (!csproj.Exists)
         {
-            throw new FileNotFoundException("Could not find project file", csproj.AbsolutePath);
+            return StepResult.Failed($"Could not find project file '{options.Value.ProjectFile}'.");
         }
 
         var project = await dotnet.ReadProject(csproj, cancellationToken);

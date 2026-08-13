@@ -69,8 +69,9 @@ public class ValidateChangelogTests
             [1.2.0]: https://github.com/example/repo/releases/tag/v1.0.0
             """);
 
-        await Should.ThrowAsync<Exception>(() => Step().Run(TestContext.Current.CancellationToken));
+        var result = await Step().Run(TestContext.Current.CancellationToken);
 
+        result.IsFailure.ShouldBeTrue();
         _releaseSection.Tone.ShouldBe(ReportTone.Failure);
         var failure = _releaseSection.Entries.OfType<ReportParagraph>().Last();
         failure.Markdown.ShouldContain("[1.2.0]: https://github.com/example/repo/releases/tag/v1.2.0");

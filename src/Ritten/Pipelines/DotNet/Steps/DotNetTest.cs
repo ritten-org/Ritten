@@ -64,7 +64,7 @@ public class DotNetTest(
                 .Details("Failed tests", DescribeFailures(result.Failures));
         }
 
-        throw new Exception("Tests failed.");
+        return StepResult.Failed("Tests failed.");
     }
 
     private static string DescribeFailures(IReadOnlyList<TestFailure> failures)

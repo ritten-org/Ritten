@@ -21,7 +21,11 @@ public class CreateGitTag(ILogger<CreateGitTag> logger, IOptions<GitOptions> opt
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        var project = state.Get<Project>() ?? throw new Exception("Project info not found in state.");
+        if (state.Get<Project>() is not { } project)
+        {
+            return StepResult.Failed("Project info not found in state.");
+        }
+
         var tag = $"{options.Value.TagPrefix}{project.Version}";
 
         // A failed deploy may have already pushed the tag; rerunning should carry on, not crash.
