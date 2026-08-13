@@ -1,6 +1,5 @@
 using System.CommandLine;
-using Hamelin;
-using Hamelin.Runtimes.GitHubActions;
+using Ritten.Core;
 using Ritten.Extensions;
 
 var build = new Command("build", "Validates a pull request: formatting, version, changelog, compile, and tests.");
@@ -15,9 +14,9 @@ deploy.SetAction((_, cancellationToken) => RunPipeline(p => p.UseDotNetPackageDe
 var root = new RootCommand("The Ritten build pipeline.") { build, verify, deploy };
 return await root.Parse(args).InvokeAsync();
 
-static Task<int> RunPipeline(Func<PipelineApplication, PipelineApplication> compose, CancellationToken cancellationToken)
+static Task<int> RunPipeline(Func<RittenApplication, RittenApplication> compose, CancellationToken cancellationToken)
 {
-    var builder = PipelineApplication.CreateBuilder();
+    var builder = RittenApplication.CreateBuilder();
 
     builder.Services
         .AddGitHub("Ritten.Build")

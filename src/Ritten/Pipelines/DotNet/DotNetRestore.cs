@@ -1,5 +1,5 @@
 using System.ComponentModel;
-using Hamelin;
+using Ritten.Contracts;
 using Ritten.DotNet;
 
 namespace Ritten.Pipelines.DotNet;

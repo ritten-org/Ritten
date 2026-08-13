@@ -1,5 +1,5 @@
 using System.Text;
-using Hamelin.FileSystem;
+using Ritten.Contracts.FileSystem;
 using NuGet.Versioning;
 using Ritten.Changelogs;
 

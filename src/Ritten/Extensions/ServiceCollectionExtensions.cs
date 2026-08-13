@@ -1,9 +1,9 @@
-using Hamelin;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Changelogs;
+using Ritten.Core.Extensions;
 using Ritten.Commands;
 using Ritten.DotNet;
 using Ritten.Git;

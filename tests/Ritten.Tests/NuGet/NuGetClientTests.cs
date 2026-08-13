@@ -1,4 +1,4 @@
-using Hamelin.FileSystem;
+using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.Logging.Abstractions;
 using NuGet.Packaging;
 using NuGet.Versioning;

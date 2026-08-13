@@ -1,6 +1,6 @@
 using System.Text;
-using Hamelin;
-using Hamelin.FileSystem;
+using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;

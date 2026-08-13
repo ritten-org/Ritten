@@ -1,4 +1,4 @@
-using Hamelin.Hooks;
+using Ritten.Contracts.Hooks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Ritten.GitHub;

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Text;
-using Hamelin;
+using Ritten.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Ritten.Commands;

@@ -1,20 +1,19 @@
+using Ritten.Contracts.Runtime;
+
 namespace Ritten.Reporting.Sinks;
 
 /// <summary>
 /// Publishes the report to the GitHub Actions job summary.
 /// </summary>
-internal class JobSummarySink : IReportSink
+internal class JobSummarySink(IRuntimeContext context, IRuntimeCommands commands) : IReportSink
 {
-    // Writes the file directly rather than going through IGitHubActionsCommands.AppendJobSummary:
-    // Hamelin 3.0.0 reads GITHUB_JOB_SUMMARY, but the variable GitHub Actions provides is
-    // GITHUB_STEP_SUMMARY.
     public async Task Publish(string markdown, CancellationToken cancellationToken = default)
     {
-        if (Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY") is not { Length: > 0 } summaryFile)
+        if (!context.IsCI)
         {
             return;
         }
 
-        await File.AppendAllTextAsync(summaryFile, markdown, cancellationToken);
+        await commands.AppendJobSummary(markdown, cancellationToken);
     }
 }

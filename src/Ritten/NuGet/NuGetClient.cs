@@ -1,4 +1,4 @@
-using Hamelin.FileSystem;
+using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.Logging;
 using NuGet.Configuration;
 using NuGet.Protocol;

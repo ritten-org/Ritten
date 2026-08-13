@@ -1,6 +1,6 @@
 using System.Text.Json;
-using Hamelin;
-using Hamelin.FileSystem;
+using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using NuGet.Versioning;
 using Ritten.Commands;
 

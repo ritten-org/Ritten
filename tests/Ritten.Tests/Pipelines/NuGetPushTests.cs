@@ -1,5 +1,5 @@
-using Hamelin;
-using Hamelin.FileSystem;
+using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.DotNet;

@@ -1,4 +1,4 @@
-using Hamelin;
+using Ritten.Core;
 using Ritten.Pipelines;
 using Ritten.Pipelines.DotNet;
 using Ritten.Pipelines.Git;
@@ -10,17 +10,17 @@ namespace Ritten.Extensions;
 /// <summary>
 /// Standard pipeline compositions for repositories that ship a .NET package with a Keep a Changelog file.
 /// Each preset appends the steps <see cref="ServiceCollectionExtensions.AddDotNetPackagePipeline"/>
-/// registers; interleave repository-specific steps with <see cref="PipelineApplication.UseStep{T}"/>.
+/// registers; interleave repository-specific steps with <see cref="RittenApplication.UseStep{T}"/>.
 /// </summary>
-public static class PipelineApplicationExtensions
+public static class RittenApplicationExtensions
 {
-    extension(PipelineApplication pipeline)
+    extension(RittenApplication pipeline)
     {
         /// <summary>
         /// The pull request pipeline: cleans, checks formatting, validates the package version and
         /// changelog entry, then restores, builds, and tests.
         /// </summary>
-        public PipelineApplication UseDotNetPackageBuild() => pipeline
+        public RittenApplication UseDotNetPackageBuild() => pipeline
             .UseStep<CleanDirectories>()
             .UseStep<DotNetFormatCheck>()
             .UseStep<ExtractDotNetProject>()
@@ -34,7 +34,7 @@ public static class PipelineApplicationExtensions
         /// The compile-and-test pipeline: cleans, checks formatting, then restores, builds, and
         /// tests — no release validation, for repositories or branches that don't ship.
         /// </summary>
-        public PipelineApplication UseDotNetPackageVerify() => pipeline
+        public RittenApplication UseDotNetPackageVerify() => pipeline
             .UseStep<CleanDirectories>()
             .UseStep<DotNetFormatCheck>()
             .UseStep<DotNetRestore>()
@@ -47,7 +47,7 @@ public static class PipelineApplicationExtensions
         /// Every release step skips work a previous run already completed, so failed deploys can
         /// be rerun.
         /// </summary>
-        public PipelineApplication UseDotNetPackageDeploy() => pipeline
+        public RittenApplication UseDotNetPackageDeploy() => pipeline
             .UseStep<CleanDirectories>()
             .UseStep<ExtractDotNetProject>()
             .UseStep<ValidateNuGetVersion>()

@@ -1,4 +1,4 @@
-using Hamelin;
+using Ritten.Contracts;
 using Microsoft.Extensions.Logging.Abstractions;
 using Ritten.Commands;
 using Ritten.Git;

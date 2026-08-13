@@ -1,4 +1,4 @@
-using Hamelin.FileSystem;
+using Ritten.Contracts.FileSystem;
 using NuGet.Versioning;
 
 namespace Ritten.NuGet;
