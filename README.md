@@ -1,11 +1,11 @@
-[![Wolfe.Hamelin](https://github.com/tom-wolfe/Wolfe.Hamelin/actions/workflows/wolfe.hamelin.yml/badge.svg)](https://github.com/tom-wolfe/Wolfe.Hamelin/actions/workflows/wolfe.hamelin.yml)
+[![Ritten](https://github.com/ritten-org/Ritten/actions/workflows/ritten.yml/badge.svg)](https://github.com/ritten-org/Ritten/actions/workflows/ritten.yml)
 
-This library provides utilities and helpers for building [Hamelin](https://github.com/hamelin-org/Hamelin) pipelines.
+Your build, ritten in C#.
 
 ## Installation
 
 ```sh
-dotnet add package Wolfe.Hamelin
+dotnet add package Ritten
 ```
 
 ## License
