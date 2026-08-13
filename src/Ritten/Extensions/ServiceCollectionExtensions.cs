@@ -174,8 +174,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<MarkdownReportRenderer>();
             services.AddSingleton<IReportSink, JobSummarySink>();
             services.AddSingleton<IReportSink, PullRequestCommentSink>();
-
-            services.AddScoped<IProgressReporter, BuildReportPublisher>();
+            services.AddSingleton<IProgressReporter, BuildReportPublisher>();
             return services;
         }
     }

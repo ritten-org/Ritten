@@ -55,12 +55,12 @@ public class RittenApplicationBuilder : IPipelineBuilder
 
         Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
 
-        Services.TryAddScoped<IFileSystem>(_ => new PhysicalFileSystem(Environment.CurrentDirectory));
-        Services.TryAddScoped<IPipelineState, DefaultPipelineState>();
-        Services.TryAddScoped<IPipelineContext, DefaultPipelineContext>();
+        Services.TryAddSingleton<IFileSystem>(_ => new PhysicalFileSystem(Environment.CurrentDirectory));
+        Services.TryAddSingleton<IPipelineState, DefaultPipelineState>();
+        Services.TryAddSingleton<IPipelineContext, DefaultPipelineContext>();
 
         Services.AddSingleton(new PipelineStepTypes(_stepTypes));
-        Services.AddScoped<IPipelineStepProvider, PipelineStepProvider>();
+        Services.TryAddSingleton<IPipelineStepProvider, PipelineStepProvider>();
 
         var host = _innerBuilder.Build();
         return new RittenApplication(host);

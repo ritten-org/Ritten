@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Ritten.Contracts;
 using Ritten.Core;
@@ -22,17 +21,6 @@ internal static class DefaultPipelineRunnerHelpers
         var stepProvider = Substitute.For<IPipelineStepProvider>();
         stepProvider.GetSteps().Returns(steps ?? []);
 
-        var services = new ServiceCollection()
-            .AddSingleton(stepProvider);
-
-        foreach (var reporter in reporters ?? [])
-        {
-            services.AddScoped<IProgressReporter>(_ => reporter);
-        }
-
-        var provider = services.BuildServiceProvider();
-        var scopeFactory = ServiceScopeHelpers.CreateScopeFactory(provider);
-
-        return new DefaultPipelineRunner(logger, scopeFactory, pipeline);
+        return new DefaultPipelineRunner(logger, reporters ?? [], stepProvider, pipeline);
     }
 }

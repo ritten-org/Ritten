@@ -1,21 +1,25 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Ritten.Contracts;
 using Ritten.Core.Steps;
 
 namespace Ritten.Core.Runner;
 
-internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, IServiceScopeFactory scopeFactory, Pipeline pipeline) : IPipelineRunner
+internal class DefaultPipelineRunner(
+    ILogger<DefaultPipelineRunner> logger,
+    IEnumerable<IProgressReporter> reporters,
+    IPipelineStepProvider stepProvider,
+    Pipeline pipeline
+) : IPipelineRunner
 {
+
+    private readonly IReadOnlyCollection<IProgressReporter> _reporters = [.. reporters];
+
     public async Task<PipelineResult> RunPipeline(CancellationToken cancellationToken)
     {
         logger.LogInformation("Running pipeline...");
 
-        await using var scope = scopeFactory.CreateAsyncScope();
-        var reporters = scope.ServiceProvider.GetServices<IProgressReporter>().ToList();
-
-        await NotifyReporters(reporters, r => r.OnPipelineStarted(pipeline, cancellationToken));
-        var steps = await RunSteps(scope, reporters, cancellationToken);
+        await NotifyReporters(r => r.OnPipelineStarted(pipeline, cancellationToken));
+        var steps = await RunSteps(cancellationToken);
 
         int exitCode;
         if (cancellationToken.IsCancellationRequested)
@@ -31,16 +35,15 @@ internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, ISer
             exitCode = steps[^1].ExitCode;
         }
         var result = new PipelineResult(exitCode, steps);
-        await NotifyReporters(reporters, r => r.OnPipelineCompleted(result, cancellationToken));
+        await NotifyReporters(r => r.OnPipelineCompleted(result, cancellationToken));
 
         logger.LogInformation("Pipeline finished with exit code {ExitCode}", result.ExitCode);
         return result;
     }
 
-    private async Task<List<StepResult>> RunSteps(AsyncServiceScope scope, List<IProgressReporter> reporters, CancellationToken cancellationToken)
+    private async Task<List<StepResult>> RunSteps(CancellationToken cancellationToken)
     {
         List<StepResult> results = [];
-        var stepProvider = scope.ServiceProvider.GetRequiredService<IPipelineStepProvider>();
         var steps = stepProvider.GetSteps();
         foreach (var step in steps)
         {
@@ -50,12 +53,12 @@ internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, ISer
                 break;
             }
 
-            await NotifyReporters(reporters, r => r.OnStepStarted(step, cancellationToken));
+            await NotifyReporters(r => r.OnStepStarted(step, cancellationToken));
 
             var result = await RunStep(step, cancellationToken);
             results.Add(result);
 
-            await NotifyReporters(reporters, r => r.OnStepCompleted(result, cancellationToken));
+            await NotifyReporters(r => r.OnStepCompleted(result, cancellationToken));
 
             if (!result.Continue)
             {
@@ -80,9 +83,9 @@ internal class DefaultPipelineRunner(ILogger<DefaultPipelineRunner> logger, ISer
         }
     }
 
-    private async Task NotifyReporters(List<IProgressReporter> reporters, Func<IProgressReporter, Task> action)
+    private async Task NotifyReporters(Func<IProgressReporter, Task> action)
     {
-        foreach (var reporter in reporters)
+        foreach (var reporter in _reporters)
         {
             try
             {
