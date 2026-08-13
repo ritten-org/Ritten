@@ -73,6 +73,10 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console) : IProgressR
     public void Detail(string message) =>
         console.MarkupLine($"    [grey]{Markup.Escape(message)}[/]");
 
+    /// <inheritdoc />
+    public void Verbose(string message) =>
+        console.MarkupLine($"    [grey italic]{Markup.Escape(message)}[/]");
+
     private static string FormatDuration(TimeSpan elapsed) =>
         elapsed.TotalMinutes >= 1 ? $"{elapsed.TotalMinutes:0.0}m" : $"{elapsed.TotalSeconds:0.0}s";
 }

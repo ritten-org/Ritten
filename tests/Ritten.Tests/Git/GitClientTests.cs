@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using Ritten.Commands;
+using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Git;
 
@@ -20,7 +20,7 @@ public class GitClientTests : IAsyncLifetime
     {
         var fileSystem = Substitute.For<IFileSystem>();
         fileSystem.CurrentDirectory.AbsolutePath.Returns(_repository);
-        _commands = new CommandRunner(NullLogger<CommandRunner>.Instance, fileSystem);
+        _commands = new CommandRunner(Substitute.For<IPipelineLog>(), fileSystem);
         _git = new GitClient(_commands);
 
         await Git("init", "--initial-branch=main", ".");

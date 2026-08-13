@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using NuGet.Versioning;
 using Ritten.Commands;
 using Ritten.Contracts;
@@ -72,7 +71,7 @@ public class DotNetClientTests
 
         var fileSystem = Substitute.For<IFileSystem>();
         fileSystem.CurrentDirectory.AbsolutePath.Returns(project.Root);
-        var client = new DotNetClient(new CommandRunner(NullLogger<CommandRunner>.Instance, fileSystem), fileSystem);
+        var client = new DotNetClient(new CommandRunner(Substitute.For<IPipelineLog>(), fileSystem), fileSystem);
 
         var result = await client.ReadProject(ProjectFile(project.CsprojPath), TestContext.Current.CancellationToken);
 

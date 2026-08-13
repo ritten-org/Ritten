@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Ritten.Commands;
 
 namespace Ritten.Tests.Commands;
@@ -16,7 +15,6 @@ public class CommandTests
         command.ArgumentsRedacted.ShouldBeFalse();
         command.OutputRedacted.ShouldBeFalse();
         command.ThrowsOnError.ShouldBeFalse();
-        command.StandardErrorLogLevel.ShouldBe(LogLevel.Error);
     }
 
     [Fact]

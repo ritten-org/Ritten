@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using Ritten.Commands;
+using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 
 namespace Ritten.Tests.Commands;
@@ -90,7 +90,7 @@ public class CommandRunnerTests
     {
         var fileSystem = Substitute.For<IFileSystem>();
         fileSystem.CurrentDirectory.AbsolutePath.Returns(currentDirectory ?? Path.GetTempPath());
-        return new CommandRunner(NullLogger<CommandRunner>.Instance, fileSystem);
+        return new CommandRunner(Substitute.For<IPipelineLog>(), fileSystem);
     }
 
     private static Command Shell(string script) => Command.Create("/bin/sh").WithArguments("-c", script);

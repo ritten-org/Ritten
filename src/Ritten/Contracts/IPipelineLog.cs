@@ -1,8 +1,9 @@
 namespace Ritten.Contracts;
 
 /// <summary>
-/// Writes pipeline output to the terminal. Use <see cref="Status"/> for key progress messages
-/// and <see cref="Detail"/> for supplementary information that can be suppressed in quiet mode.
+/// Writes pipeline output to the terminal at three verbosity levels:
+/// <see cref="Status"/> (always visible), <see cref="Detail"/> (hidden in quiet mode),
+/// and <see cref="Verbose"/> (only shown with --verbose).
 /// </summary>
 public interface IPipelineLog
 {
@@ -15,4 +16,9 @@ public interface IPipelineLog
     /// Writes a detail message that is hidden in quiet mode.
     /// </summary>
     void Detail(string message);
+
+    /// <summary>
+    /// Writes a diagnostic message that is only shown with --verbose.
+    /// </summary>
+    void Verbose(string message);
 }

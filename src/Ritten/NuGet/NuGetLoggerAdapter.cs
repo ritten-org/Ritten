@@ -1,49 +1,39 @@
-using Microsoft.Extensions.Logging;
+using Ritten.Contracts;
 using ILogMessage = NuGet.Common.ILogMessage;
 using NuGetILogger = NuGet.Common.ILogger;
 using NuGetLogLevel = NuGet.Common.LogLevel;
 
 namespace Ritten.NuGet;
 
-#pragma warning disable CA2254
 /// <summary>
-/// Adapts the standard .NET <see cref="ILogger"/> to work with NuGet.
+/// Adapts <see cref="IPipelineLog"/> to NuGet's <see cref="NuGetILogger"/>.
 /// </summary>
-/// <param name="logger">The logger instance to adapt.</param>
-internal class NuGetLoggerAdapter(ILogger logger) : NuGetILogger
+/// <param name="log">The pipeline log to write to.</param>
+internal class NuGetLoggerAdapter(IPipelineLog log) : NuGetILogger
 {
     /// <inheritdoc/>
-    public void LogDebug(string data) => logger.LogDebug(data);
+    public void LogDebug(string data) => log.Verbose(data);
 
     /// <inheritdoc/>
-    public void LogVerbose(string data) => logger.LogTrace(data);
+    public void LogVerbose(string data) => log.Verbose(data);
 
     /// <inheritdoc/>
-    public void LogInformation(string data) => logger.LogInformation(data);
+    public void LogInformation(string data) => log.Verbose(data);
 
     /// <inheritdoc/>
-    public void LogMinimal(string data) => logger.LogInformation(data);
+    public void LogMinimal(string data) => log.Verbose(data);
 
     /// <inheritdoc/>
-    public void LogWarning(string data) => logger.LogWarning(data);
+    public void LogWarning(string data) => log.Verbose(data);
 
     /// <inheritdoc/>
-    public void LogError(string data) => logger.LogWarning(data);
+    public void LogError(string data) => log.Verbose(data);
 
     /// <inheritdoc/>
-    public void LogInformationSummary(string data) => logger.LogInformation(data);
+    public void LogInformationSummary(string data) => log.Verbose(data);
 
     /// <inheritdoc/>
-    public void Log(NuGetLogLevel level, string data) => logger.Log(level switch
-    {
-        NuGetLogLevel.Debug => LogLevel.Debug,
-        NuGetLogLevel.Verbose => LogLevel.Trace,
-        NuGetLogLevel.Information => LogLevel.Information,
-        NuGetLogLevel.Minimal => LogLevel.Information,
-        NuGetLogLevel.Warning => LogLevel.Warning,
-        NuGetLogLevel.Error => LogLevel.Error,
-        _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
-    }, data);
+    public void Log(NuGetLogLevel level, string data) => log.Verbose(data);
 
     /// <inheritdoc/>
     public Task LogAsync(NuGetLogLevel level, string data) { Log(level, data); return Task.CompletedTask; }
@@ -54,4 +44,3 @@ internal class NuGetLoggerAdapter(ILogger logger) : NuGetILogger
     /// <inheritdoc/>
     public Task LogAsync(ILogMessage message) { Log(message); return Task.CompletedTask; }
 }
-
