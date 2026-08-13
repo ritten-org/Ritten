@@ -1,6 +1,6 @@
+using Microsoft.Extensions.Logging;
 using Ritten.Contracts.Runtime;
 using Ritten.Runtimes.GitHubActions.Logging;
-using Microsoft.Extensions.Logging;
 
 namespace Ritten.Runtimes.GitHubActions;
 

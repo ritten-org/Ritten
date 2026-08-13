@@ -1,9 +1,9 @@
-using Ritten.Contracts.Hooks;
-using Ritten.Contracts.Runtime;
-using Ritten.Runtimes.GitHubActions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging.Console;
+using Ritten.Contracts.Hooks;
+using Ritten.Contracts.Runtime;
+using Ritten.Runtimes.GitHubActions.Logging;
 
 namespace Ritten.Runtimes.GitHubActions;
 

@@ -1,5 +1,5 @@
-using Ritten.Contracts;
 using Microsoft.Extensions.DependencyInjection;
+using Ritten.Contracts;
 
 namespace Ritten.Core.Runner;
 

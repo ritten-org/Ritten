@@ -1,10 +1,10 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.Hooks;
 using Ritten.Core.Extensions;
 using Ritten.Core.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Ritten.Core.Runner;
 

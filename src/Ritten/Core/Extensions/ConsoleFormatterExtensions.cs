@@ -1,5 +1,5 @@
-using Ritten.Core.Logging;
 using Microsoft.Extensions.Logging;
+using Ritten.Core.Logging;
 
 namespace Ritten.Core.Extensions;
 

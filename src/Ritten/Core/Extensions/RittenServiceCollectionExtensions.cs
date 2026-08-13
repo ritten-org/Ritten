@@ -1,7 +1,7 @@
 using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Contracts.Hooks;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Ritten.Core.Extensions;
 

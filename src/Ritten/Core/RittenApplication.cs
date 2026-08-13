@@ -1,8 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Ritten.Contracts;
 using Ritten.Core.Runner;
 using Ritten.Core.Steps;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace Ritten.Core;
 
