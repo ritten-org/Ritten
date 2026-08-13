@@ -18,15 +18,6 @@ internal static class ServiceCollectionExtensions
 
         services.TryAddSingleton<IRuntimeContext>(context);
 
-        if (context.IsCI)
-        {
-            services.TryAddSingleton<IRuntimeCommands, GitHubActionsCommands>();
-        }
-        else
-        {
-            services.TryAddSingleton<IRuntimeCommands, GitHubActionsCommandsStub>();
-        }
-
         return services;
     }
 }
