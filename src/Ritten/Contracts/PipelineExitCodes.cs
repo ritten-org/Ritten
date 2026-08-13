@@ -13,11 +13,6 @@ internal static class PipelineExitCodes
     public const int StoppedOnError = -1;
 
     /// <summary>
-    /// Indicates the pipeline had an error, but was configured to continue.
-    /// </summary>
-    public const int ContinuedAfterError = -2;
-
-    /// <summary>
     /// Indicates the pipeline stopped due to outside cancellation.
     /// </summary>
     public const int StoppedAfterCancel = -3;

@@ -1,8 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Contracts.Hooks;
-using Ritten.Core;
-using Ritten.Core.Runner;
 using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Core.Runner;
@@ -36,7 +34,7 @@ public class DefaultPipelineRunnerTests
     }
 
     [Fact]
-    public async Task RunPipeline_StoppedOnError_StopsOnUnhandledException()
+    public async Task RunPipeline_StoppedOnError_StopsExecution()
     {
         // Arrange
         var step1 = PipelineStepHelpers.CreateMock();
@@ -50,8 +48,7 @@ public class DefaultPipelineRunnerTests
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(
             steps: [step1, step2, step3],
-            stepRunner: stepRunner,
-            configure: options => options.TerminationMode = PipelineTerminationMode.StopOnUnhandledException
+            stepRunner: stepRunner
         );
 
         // Act
@@ -64,38 +61,6 @@ public class DefaultPipelineRunnerTests
             stepRunner.RunStep(Arg.Any<AsyncServiceScope>(), step2, Arg.Any<CancellationToken>());
         });
         await stepRunner.DidNotReceive().RunStep(Arg.Any<AsyncServiceScope>(), step3, Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task RunPipeline_ContinuedAfterError_StopsAfterAllSteps()
-    {
-        // Arrange
-        var step1 = PipelineStepHelpers.CreateMock();
-        var step2 = PipelineStepHelpers.CreateMock();
-        var step3 = PipelineStepHelpers.CreateMock();
-
-        var stepRunner = PipelineStepRunnerHelpers.CreateMock();
-        stepRunner
-            .RunStep(Arg.Any<AsyncServiceScope>(), step2, Arg.Any<CancellationToken>())
-            .Returns(new StepExecutionSummary { StepName = "", Result = PipelineStepResult.ContinuedAfterError(new Exception()) });
-
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(
-            steps: [step1, step2, step3],
-            stepRunner: stepRunner,
-            configure: options => options.TerminationMode = PipelineTerminationMode.StopAfterAllSteps
-        );
-
-        // Act
-        var act = () => sut.RunPipeline(CancellationToken.None);
-
-        // Assert
-        await act.ShouldNotThrowAsync();
-        Received.InOrder(() =>
-        {
-            stepRunner.RunStep(Arg.Any<AsyncServiceScope>(), step1, Arg.Any<CancellationToken>());
-            stepRunner.RunStep(Arg.Any<AsyncServiceScope>(), step2, Arg.Any<CancellationToken>());
-            stepRunner.RunStep(Arg.Any<AsyncServiceScope>(), step3, Arg.Any<CancellationToken>());
-        });
     }
 
     [Fact]
@@ -118,7 +83,7 @@ public class DefaultPipelineRunnerTests
     }
 
     [Fact]
-    public async Task RunPipeline_StopOnUnhandledException_ReturnsCorrectExitCode()
+    public async Task RunPipeline_StoppedOnError_ReturnsCorrectExitCode()
     {
         // Arrange
         var step1 = PipelineStepHelpers.CreateMock();
@@ -132,8 +97,7 @@ public class DefaultPipelineRunnerTests
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(
             steps: [step1, step2, step3],
-            stepRunner: stepRunner,
-            configure: options => options.TerminationMode = PipelineTerminationMode.StopOnUnhandledException
+            stepRunner: stepRunner
         );
 
         // Act
@@ -141,114 +105,6 @@ public class DefaultPipelineRunnerTests
 
         // Assert
         summary.ExitCode.ShouldBe(PipelineExitCodes.StoppedOnError);
-    }
-
-    [Fact]
-    public async Task RunPipeline_ContinueOnError_ReturnsCorrectExitCode()
-    {
-        // Arrange
-        var step1 = PipelineStepHelpers.CreateMock();
-        var step2 = PipelineStepHelpers.CreateMock();
-        var step3 = PipelineStepHelpers.CreateMock();
-
-        var stepRunner = PipelineStepRunnerHelpers.CreateMock();
-        stepRunner
-            .RunStep(Arg.Any<AsyncServiceScope>(), step2, Arg.Any<CancellationToken>())
-            .Returns(new StepExecutionSummary { StepName = "", Result = PipelineStepResult.ContinuedAfterError(new Exception()) });
-
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(
-            steps: [step1, step2, step3],
-            stepRunner: stepRunner,
-            configure: options => options.TerminationMode = PipelineTerminationMode.StopAfterAllSteps
-        );
-
-        // Act
-        var summary = await sut.RunPipeline(CancellationToken.None);
-
-        // Assert
-        summary.ExitCode.ShouldBe(PipelineExitCodes.ContinuedAfterError);
-    }
-
-    [Fact]
-    public async Task RunPipeline_NoAutoExitCodesAndTokenCancelled_DoesNotSetExitCode()
-    {
-        // Arrange
-        var step1 = PipelineStepHelpers.CreateMock();
-        var stepRunner = PipelineStepRunnerHelpers.CreateMock();
-
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(
-            steps: [step1],
-            stepRunner: stepRunner,
-            configure: options => options.EnableAutomaticExitCodes = false
-        );
-
-        var cts = new CancellationTokenSource();
-        await cts.CancelAsync();
-
-        // Act
-        var summary = await sut.RunPipeline(cts.Token);
-
-        // Assert
-        await step1.DidNotReceive().Run(Arg.Any<CancellationToken>());
-        summary.ExitCode.ShouldBe(PipelineExitCodes.Success);
-    }
-
-    [Fact]
-    public async Task RunPipeline_NoAutoExitCodesAndStopOnUnhandledException_DoesNotSetExitCode()
-    {
-        // Arrange
-        var step1 = PipelineStepHelpers.CreateMock();
-        var step2 = PipelineStepHelpers.CreateMock();
-        var step3 = PipelineStepHelpers.CreateMock();
-
-        var stepRunner = PipelineStepRunnerHelpers.CreateMock();
-        stepRunner
-            .RunStep(Arg.Any<AsyncServiceScope>(), step2, Arg.Any<CancellationToken>())
-            .Returns(new StepExecutionSummary { StepName = "", Result = PipelineStepResult.StoppedOnError(new Exception()) });
-
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(
-            steps: [step1, step2, step3],
-            stepRunner: stepRunner,
-            configure: options =>
-            {
-                options.EnableAutomaticExitCodes = false;
-                options.TerminationMode = PipelineTerminationMode.StopOnUnhandledException;
-            });
-
-        // Act
-        var summary = await sut.RunPipeline(CancellationToken.None);
-
-        // Assert
-        summary.ExitCode.ShouldBe(PipelineExitCodes.Success);
-    }
-
-    [Fact]
-    public async Task RunPipeline_NoAutoExitCodesAndStopAfterAllSteps_DoesNotSetExitCode()
-    {
-        // Arrange
-        var step1 = PipelineStepHelpers.CreateMock();
-        var step2 = PipelineStepHelpers.CreateMock();
-        var step3 = PipelineStepHelpers.CreateMock();
-
-        var stepRunner = PipelineStepRunnerHelpers.CreateMock();
-        stepRunner
-            .RunStep(Arg.Any<AsyncServiceScope>(), step2, Arg.Any<CancellationToken>())
-            .Returns(new StepExecutionSummary { StepName = "", Result = PipelineStepResult.ContinuedAfterError(new Exception()) });
-
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(
-            steps: [step1, step2, step3],
-            stepRunner: stepRunner,
-            configure: options =>
-            {
-                options.EnableAutomaticExitCodes = false;
-                options.TerminationMode = PipelineTerminationMode.StopAfterAllSteps;
-            });
-
-        // Act
-        var summary = await sut.RunPipeline(CancellationToken.None);
-
-        // Assert
-        summary.ExitCode.ShouldBe(PipelineExitCodes.Success);
     }
 
     [Fact]
@@ -319,8 +175,7 @@ public class DefaultPipelineRunnerTests
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(
             prePipelineHooks: [hook1, hook2],
             steps: [step],
-            stepRunner: stepRunner,
-            configure: options => options.TerminationMode = PipelineTerminationMode.StopAfterAllSteps
+            stepRunner: stepRunner
         );
 
         // Act
@@ -348,8 +203,7 @@ public class DefaultPipelineRunnerTests
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(
             steps: [step],
             postPipelineHooks: [hook1, hook2],
-            stepRunner: stepRunner,
-            configure: options => options.TerminationMode = PipelineTerminationMode.StopAfterAllSteps
+            stepRunner: stepRunner
         );
 
         // Act
@@ -379,8 +233,7 @@ public class DefaultPipelineRunnerTests
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(
             prePipelineHooks: [hook1, hook2],
             steps: [step],
-            stepRunner: stepRunner,
-            configure: options => options.TerminationMode = PipelineTerminationMode.StopAfterAllSteps
+            stepRunner: stepRunner
         );
 
         // Act
@@ -410,8 +263,7 @@ public class DefaultPipelineRunnerTests
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(
             steps: [step],
             postPipelineHooks: [hook1, hook2],
-            stepRunner: stepRunner,
-            configure: options => options.TerminationMode = PipelineTerminationMode.StopAfterAllSteps
+            stepRunner: stepRunner
         );
 
         // Act

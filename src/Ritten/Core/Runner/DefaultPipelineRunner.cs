@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.Hooks;
 using Ritten.Core.Extensions;
@@ -10,7 +9,6 @@ namespace Ritten.Core.Runner;
 
 internal class DefaultPipelineRunner(
     ILogger<DefaultPipelineRunner> logger,
-    IOptions<PipelineExecutionOptions> options,
     IServiceScopeFactory scopeFactory,
     IPipelineStepRunner stepRunner
 ) : IPipelineRunner
@@ -24,7 +22,7 @@ internal class DefaultPipelineRunner(
 
         await RunPrePipelineHooks(scope, cancellationToken);
         var results = await RunSteps(scope, cancellationToken);
-        var summary = new PipelineExecutionSummary(options, context, results, cancellationToken);
+        var summary = new PipelineExecutionSummary(context, results, cancellationToken);
         await RunPostPipelineHooks(scope, summary, cancellationToken);
 
         logger.LogInformation("Pipeline finished with exit code {ExitCode}", summary.ExitCode);

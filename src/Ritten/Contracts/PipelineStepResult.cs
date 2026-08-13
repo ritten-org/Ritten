@@ -19,13 +19,6 @@ public record PipelineStepResult(int ExitCode, bool Continue, Exception? Excepti
     public static readonly PipelineStepResult StoppedAfterCancel = new(PipelineExitCodes.StoppedAfterCancel, false, null);
 
     /// <summary>
-    /// Indicates that the pipeline step resulted in an error, but the pipeline should continue execution.
-    /// </summary>
-    /// <param name="ex">The exception that was thrown.</param>
-    /// <returns>The result.</returns>
-    public static PipelineStepResult ContinuedAfterError(Exception ex) => new(PipelineExitCodes.ContinuedAfterError, true, ex);
-
-    /// <summary>
     /// Indicates that the pipeline step resulted in an error, and the pipeline should stop execution.
     /// </summary>
     /// <param name="ex">The exception that was thrown.</param>

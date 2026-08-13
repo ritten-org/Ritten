@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 
 namespace Ritten.Core;
@@ -13,14 +12,13 @@ public class PipelineExecutionSummary
     /// Creates a new instance of <see cref="PipelineExecutionSummary"/>.
     /// </summary>
     public PipelineExecutionSummary(
-        IOptions<PipelineExecutionOptions> options,
         IPipelineContext context,
         IEnumerable<StepExecutionSummary> steps,
         CancellationToken cancellationToken
     )
     {
         var stepList = steps.ToList().AsReadOnly();
-        ExitCode = CalculateExitCode(options, context, stepList, cancellationToken);
+        ExitCode = CalculateExitCode(context, stepList, cancellationToken);
         Steps = stepList;
     }
 
@@ -34,19 +32,15 @@ public class PipelineExecutionSummary
     /// </summary>
     public IReadOnlyCollection<StepExecutionSummary> Steps { get; init; }
 
-    private static int CalculateExitCode(IOptions<PipelineExecutionOptions> options, IPipelineContext context, ReadOnlyCollection<StepExecutionSummary> steps, CancellationToken cancellationToken)
+    private static int CalculateExitCode(IPipelineContext context, ReadOnlyCollection<StepExecutionSummary> steps, CancellationToken cancellationToken)
     {
         var autoCode = steps.LastOrDefault()?.Result.ExitCode ?? PipelineExitCodes.Success;
-        if (autoCode == PipelineExitCodes.Success && steps.Any(r => r.Result.ExitCode == PipelineExitCodes.ContinuedAfterError))
-        {
-            autoCode = PipelineExitCodes.ContinuedAfterError;
-        }
-        else if (steps.Count == 0 && cancellationToken.IsCancellationRequested)
+        if (steps.Count == 0 && cancellationToken.IsCancellationRequested)
         {
             autoCode = PipelineExitCodes.StoppedAfterCancel;
         }
 
-        if (options.Value.EnableAutomaticExitCodes && autoCode != PipelineExitCodes.Success)
+        if (autoCode != PipelineExitCodes.Success)
         {
             return autoCode;
         }

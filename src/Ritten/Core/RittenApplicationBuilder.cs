@@ -44,9 +44,6 @@ public class RittenApplicationBuilder : IHostApplicationBuilder
             Configuration = configuration,
         });
 
-        _innerBuilder.Services
-            .AddOptions<PipelineExecutionOptions>();
-
         Logging.AddPipelineConsoleFormatter();
     }
 

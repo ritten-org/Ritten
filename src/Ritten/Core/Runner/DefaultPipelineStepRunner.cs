@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.Hooks;
 using Ritten.Core.Extensions;
@@ -9,8 +8,7 @@ using Ritten.Core.Logging;
 namespace Ritten.Core.Runner;
 
 internal class DefaultPipelineStepRunner(
-    ILogger<DefaultPipelineStepRunner> logger,
-    IOptions<PipelineExecutionOptions> options
+    ILogger<DefaultPipelineStepRunner> logger
 ) : IPipelineStepRunner
 {
     public async Task<StepExecutionSummary> RunStep(AsyncServiceScope scope, IPipelineStep step, CancellationToken cancellationToken)
@@ -80,16 +78,8 @@ internal class DefaultPipelineStepRunner(
         }
         catch (Exception ex)
         {
-            switch (options.Value.TerminationMode)
-            {
-                case PipelineTerminationMode.StopAfterAllSteps:
-                    logger.LogError(ex, "Unhandled error during step. Continuing...");
-                    return PipelineStepResult.ContinuedAfterError(ex);
-                case PipelineTerminationMode.StopOnUnhandledException:
-                default:
-                    logger.LogCritical(ex, "Unhandled error during step. Exiting.");
-                    return PipelineStepResult.StoppedOnError(ex);
-            }
+            logger.LogCritical(ex, "Unhandled error during step. Exiting.");
+            return PipelineStepResult.StoppedOnError(ex);
         }
     }
 

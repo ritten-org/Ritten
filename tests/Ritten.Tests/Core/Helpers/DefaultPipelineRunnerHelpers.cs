@@ -1,9 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.Hooks;
-using Ritten.Core;
 using Ritten.Core.Runner;
 using Ritten.Core.Steps;
 
@@ -16,7 +14,6 @@ internal static class DefaultPipelineRunnerHelpers
         IPrePipelineHook[]? prePipelineHooks = null,
         IPostPipelineHook[]? postPipelineHooks = null,
         IPipelineStepRunner? stepRunner = null,
-        Action<PipelineExecutionOptions>? configure = null,
         IPipelineContext? context = null,
         ILogger<DefaultPipelineRunner>? logger = null
     )
@@ -51,9 +48,6 @@ internal static class DefaultPipelineRunnerHelpers
         var provider = services.BuildServiceProvider();
         var scopeFactory = ServiceScopeHelpers.CreateScopeFactory(provider);
 
-        PipelineExecutionOptions pipelineExecutionOptions = new();
-        configure?.Invoke(pipelineExecutionOptions);
-
-        return new DefaultPipelineRunner(logger, Options.Create(pipelineExecutionOptions), scopeFactory, stepRunner);
+        return new DefaultPipelineRunner(logger, scopeFactory, stepRunner);
     }
 }
