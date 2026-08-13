@@ -6,6 +6,8 @@ using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core.FileSystem;
 using Ritten.Core.Runner;
+using Ritten.Reporting;
+using Spectre.Console;
 
 namespace Ritten.Core;
 
@@ -53,6 +55,7 @@ public class RittenApplicationBuilder : IPipelineBuilder
 
         Services.TryAddSingleton<IFileSystem>(_ => new PhysicalFileSystem(Environment.CurrentDirectory));
         Services.TryAddSingleton<IPipelineState, DefaultPipelineState>();
+        Services.AddSingleton<IProgressReporter>(_ => new SpectreProgressReporter(AnsiConsole.Console));
         var host = _innerBuilder.Build();
         return new RittenApplication(host);
     }
