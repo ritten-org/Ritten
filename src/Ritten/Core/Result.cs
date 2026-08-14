@@ -26,7 +26,8 @@ public static class Result
     /// Creates a single <see cref="Ritten.Core.Error"/>, which converts implicitly to a failed <see cref="Result{T}"/> of any type.
     /// </summary>
     /// <param name="message">A message describing what was wrong.</param>
-    public static Error Error(string message) => new(message);
+    /// <param name="cause">The exception behind the failure, when there was one.</param>
+    public static Error Error(string message, Exception? cause = null) => new(message, cause);
 }
 
 /// <summary>

@@ -1,3 +1,5 @@
+using Ritten.Core;
+
 namespace Ritten.Pipelines;
 
 /// <summary>
@@ -30,5 +32,5 @@ public class ChangelogOptions
     /// Configures the given options from the given environment.
     /// </summary>
     internal static void ConfigureFromEnvironment(ChangelogOptions options, Func<string, string?> envVar) =>
-        options.Skip = bool.TryParse(envVar("RITTEN_SKIP_CHANGELOG"), out var skip) && skip;
+        options.Skip = bool.TryParse(envVar(RittenEnvironment.SkipChangelog), out var skip) && skip;
 }

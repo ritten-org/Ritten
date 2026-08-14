@@ -26,14 +26,14 @@ public class ExtractDotNetProject(IPipelineLog log, IOptions<DotNetOptions> opti
         }
 
         var project = await dotnet.ReadProject(csproj, cancellationToken);
-        if (project is null)
+        if (project.IsError)
         {
-            return StepResult.Failed($"The project '{options.Value.ProjectFile}' could not be read.");
+            return StepResult.Failed(project.Errors);
         }
 
-        state.Set(project);
+        state.Set(project.Value);
 
-        log.Status($"Extracted project info: {project.Name} (v{project.Version})");
+        log.Status($"Extracted project info: {project.Value.Name} (v{project.Value.Version})");
         return StepResult.Successful;
     }
 }

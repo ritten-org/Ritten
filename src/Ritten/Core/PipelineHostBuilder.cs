@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Contracts;
@@ -81,13 +82,24 @@ public class PipelineHostBuilder : IPipelineBuilder
 
     private sealed class JobBuilder(IServiceCollection services) : IJobBuilder
     {
+        /// <summary>
+        /// Turns <c>settings.Build.Project</c> into <c>build.project</c>.
+        /// </summary>
+        private static string SettingKey(string expression)
+        {
+            var segments = expression.Split('.');
+            return string.Join('.', segments
+                .Skip(segments.Length > 1 ? 1 : 0)
+                .Select(JsonNamingPolicy.CamelCase.ConvertName));
+        }
+
         public List<Error> Errors { get; } = [];
 
-        public IJobBuilder Requires(string? value, string key)
+        public IJobBuilder Requires(string? value, string expression = "")
         {
             if (string.IsNullOrEmpty(value))
             {
-                Errors.Add($"'{key}' not set in {RittenProject.FileName}.");
+                Errors.Add($"'{SettingKey(expression)}' not set in {RittenProject.FileName}.");
             }
 
             return this;

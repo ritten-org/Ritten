@@ -41,16 +41,29 @@ internal sealed class RittenProject
     /// <summary>
     /// Reads the project's settings as the given pipeline's settings type.
     /// </summary>
-    /// <exception cref="JsonException">The file contains a key the pipeline doesn't recognize.</exception>
-    public TSettings GetSettings<TSettings>() => Settings.Deserialize<TSettings>(_serializerOptions)
-                                                 ?? throw new InvalidOperationException("Unable to read project settings.");
+    /// <typeparam name="TSettings">The pipeline's settings type.</typeparam>
+    public Result<TSettings> GetSettings<TSettings>() where TSettings : class
+    {
+        try
+        {
+            if (Settings.Deserialize<TSettings>(_serializerOptions) is not { } settings)
+            {
+                return Result.Error($"'{FilePath}' is empty.");
+            }
+
+            return settings;
+        }
+        catch (JsonException exception)
+        {
+            return Result.Error($"Could not read '{FilePath}'.", exception);
+        }
+    }
 
     /// <summary>
-    /// Walks up from the given directory looking for a project, or returns <c>null</c> if there
-    /// isn't one.
+    /// Walks up from the given directory looking for a project.
     /// </summary>
-    /// <exception cref="JsonException">The project file is not valid JSON.</exception>
-    public static async Task<RittenProject?> Resolve(string directory)
+    /// <param name="directory">The directory to start from, usually the working directory.</param>
+    public static async Task<Result<RittenProject>> Resolve(string directory)
     {
         var current = new DirectoryInfo(Path.GetFullPath(directory));
         while (current is not null)
@@ -58,15 +71,22 @@ internal sealed class RittenProject
             var path = Path.Combine(current.FullName, FileName);
             if (File.Exists(path))
             {
-                await using var stream = File.OpenRead(path);
-                var settings = await JsonSerializer.DeserializeAsync<JsonElement>(stream, _serializerOptions);
+                try
+                {
+                    await using var stream = File.OpenRead(path);
+                    var settings = await JsonSerializer.DeserializeAsync<JsonElement>(stream, _serializerOptions);
 
-                return new RittenProject { Directory = current.FullName, Settings = settings };
+                    return new RittenProject { Directory = current.FullName, Settings = settings };
+                }
+                catch (JsonException exception)
+                {
+                    return Result.Error($"Could not read '{path}'.", exception);
+                }
             }
 
             current = current.Parent;
         }
 
-        return null;
+        return Result.Error($"No {FileName} found in '{Path.GetFullPath(directory)}' or any parent directory.");
     }
 }

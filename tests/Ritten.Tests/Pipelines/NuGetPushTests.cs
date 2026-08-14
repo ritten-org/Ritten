@@ -35,7 +35,7 @@ public class NuGetPushTests
         var result = await Step().Run(TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeTrue();
-        result.Message!.ShouldContain("NuGet__ApiKey");
+        result.Message!.ShouldContain("RITTEN_NUGET_API_KEY");
         await _nuget.DidNotReceiveWithAnyArgs().Push(default!, default!, TestContext.Current.CancellationToken);
     }
 

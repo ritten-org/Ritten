@@ -34,7 +34,7 @@ public class DotNetPackagePipeline : Pipeline<DotNetPackageSettings>
             .UseStep<DotNetTest>());
 
         builder.AddJob("build", job => job
-            .Requires(settings.Build.Project, "build.project")
+            .Requires(settings.Build.Project)
             .UseStep<CleanDirectories>()
             .UseStep<DotNetFormatCheck>()
             .UseStep<ExtractDotNetProject>()
@@ -45,7 +45,7 @@ public class DotNetPackagePipeline : Pipeline<DotNetPackageSettings>
             .UseStep<DotNetTest>());
 
         builder.AddJob("deploy", job => job
-            .Requires(settings.Build.Project, "build.project")
+            .Requires(settings.Build.Project)
             .UseStep<CleanDirectories>()
             .UseStep<ExtractDotNetProject>()
             .UseStep<ValidateNuGetVersion>()

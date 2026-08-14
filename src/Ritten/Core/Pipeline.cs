@@ -14,7 +14,7 @@ public abstract class Pipeline
 /// <summary>
 /// A pipeline configured by <typeparamref name="TSettings"/>.
 /// </summary>
-public abstract class Pipeline<TSettings> : Pipeline
+public abstract class Pipeline<TSettings> : Pipeline where TSettings : class
 {
     /// <summary>
     /// Declares the services and jobs for this pipeline.

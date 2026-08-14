@@ -1,3 +1,5 @@
+using Ritten.Core;
+
 namespace Ritten.Pipelines.Git;
 
 /// <summary>
@@ -26,5 +28,5 @@ public class GitOptions
     /// Configures the given options from the given environment.
     /// </summary>
     internal static void ConfigureFromEnvironment(GitOptions options, Func<string, string?> envVar) =>
-        options.CommitSha = envVar("RITTEN_COMMIT_SHA");
+        options.CommitSha = envVar(RittenEnvironment.CommitSha);
 }

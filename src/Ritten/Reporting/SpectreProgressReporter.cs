@@ -37,7 +37,10 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
         if (result.IsFailure)
         {
             console.MarkupLine($"  [red]✗ {name}[/] [grey]{elapsed}[/]");
-            console.MarkupLine($"    [red]{Markup.Escape(result.Message)}[/]");
+            foreach (var error in result.Errors)
+            {
+                console.MarkupLine($"    [red]{Markup.Escape(error.Message)}[/]");
+            }
         }
         else
         {

@@ -1,3 +1,5 @@
+using Ritten.Core;
+
 namespace Ritten.Pipelines.NuGet;
 
 /// <summary>
@@ -32,7 +34,7 @@ public class NuGetOptions
     /// </summary>
     internal static void ConfigureFromEnvironment(NuGetOptions options, Func<string, string?> envVar)
     {
-        options.ApiKey = envVar("RITTEN_NUGET_API_KEY");
-        options.SkipVersionCheck = bool.TryParse(envVar("RITTEN_SKIP_VERSION_CHECK"), out var skip) && skip;
+        options.ApiKey = envVar(RittenEnvironment.NuGetApiKey);
+        options.SkipVersionCheck = bool.TryParse(envVar(RittenEnvironment.SkipVersionCheck), out var skip) && skip;
     }
 }

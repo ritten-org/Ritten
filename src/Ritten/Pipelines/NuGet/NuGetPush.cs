@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
+using Ritten.Core;
 using Ritten.DotNet;
 using Ritten.NuGet;
 using Ritten.Pipelines.DotNet.Steps;
@@ -28,7 +29,7 @@ public class NuGetPush(
     {
         if (string.IsNullOrEmpty(options.Value.ApiKey))
         {
-            return StepResult.Failed("The NuGet API key is not configured; set NuGet__ApiKey for the deploy pipeline.");
+            return StepResult.Failed($"The NuGet API key is not configured; set {RittenEnvironment.NuGetApiKey} for the deploy job.");
         }
 
         if (state.Get<PackResult>() is not { } packed)

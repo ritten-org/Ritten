@@ -38,7 +38,7 @@ public static class PipelineLogExtensions
         /// <summary>
         /// Writes an error.
         /// </summary>
-        public void Error(Error error) => log.Log(PipelineLogLevel.Error, error.Message);
+        public void Error(Error error) => log.Log(PipelineLogLevel.Error, error.Message, error.Cause);
 
         /// <summary>
         /// Writes multiple errors.

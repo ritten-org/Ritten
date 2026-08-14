@@ -59,13 +59,13 @@ public class GitHubOptions
     /// </summary>
     internal static void ConfigureFromEnvironment(GitHubOptions options, Func<string, string?> envVar)
     {
-        options.Token = envVar("GH_TOKEN") ?? envVar("GITHUB_TOKEN");
-        options.RepositoryId = ParseRepositoryId(envVar("GITHUB_REPOSITORY_ID"));
-        options.PullRequestNumber = ParsePullRequestNumber(envVar("GITHUB_REF"));
-        options.IsEnabled = !string.IsNullOrEmpty(envVar("GITHUB_ACTIONS"));
-        options.SummaryFile = envVar("GITHUB_STEP_SUMMARY");
+        options.Token = envVar(GitHubEnvironment.Token) ?? envVar(GitHubEnvironment.DefaultToken);
+        options.RepositoryId = ParseRepositoryId(envVar(GitHubEnvironment.RepositoryId));
+        options.PullRequestNumber = ParsePullRequestNumber(envVar(GitHubEnvironment.Ref));
+        options.IsEnabled = !string.IsNullOrEmpty(envVar(GitHubEnvironment.Actions));
+        options.SummaryFile = envVar(GitHubEnvironment.StepSummary);
 
-        var workflow = envVar("GITHUB_WORKFLOW");
+        var workflow = envVar(GitHubEnvironment.Workflow);
         if (workflow != null)
         {
             options.WorkflowName = workflow;

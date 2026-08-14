@@ -24,7 +24,7 @@ public class RittenProjectTests : IDisposable
 
         var project = await RittenProject.Resolve(_root);
 
-        project.ShouldNotBeNull().Directory.ShouldBe(_root);
+        project.Value.ShouldNotBeNull().Directory.ShouldBe(_root);
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public class RittenProjectTests : IDisposable
 
         var project = await RittenProject.Resolve(nested);
 
-        project.ShouldNotBeNull().Directory.ShouldBe(_root);
+        project.Value.ShouldNotBeNull().Directory.ShouldBe(_root);
     }
 
     [Fact]
@@ -48,26 +48,32 @@ public class RittenProjectTests : IDisposable
 
         var project = await RittenProject.Resolve(Path.Combine(nested, "src"));
 
-        project.ShouldNotBeNull().Directory.ShouldBe(nested);
+        project.Value.ShouldNotBeNull().Directory.ShouldBe(nested);
     }
 
     [Fact]
-    public async Task Resolve_ReturnsNullWhenNoFileExistsUpToTheFilesystemRoot()
+    public async Task Resolve_ReportsNoProjectUpToTheFilesystemRoot()
     {
         Directory.CreateDirectory(_root);
 
         var project = await RittenProject.Resolve(_root);
 
-        project.ShouldBeNull();
+        project.IsError.ShouldBeTrue();
+        project.Errors.ShouldHaveSingleItem().Message.ShouldContain("No ritten.json found");
     }
 
     [Fact]
-    public async Task Resolve_ThrowsOnMalformedJson()
+    public async Task Resolve_ReportsMalformedJsonWithoutThrowing()
     {
         WriteRittenJson(_root, "{ not json");
 
-        // PipelineHost turns this into a configuration error rather than a crash.
-        await Should.ThrowAsync<JsonException>(async () => await RittenProject.Resolve(_root));
+        var project = await RittenProject.Resolve(_root);
+
+        project.IsError.ShouldBeTrue();
+        var error = project.Errors.ShouldHaveSingleItem();
+        error.Message.ShouldContain("Could not read");
+        // The exception survives for anyone running with --verbose.
+        error.Cause.ShouldBeOfType<JsonException>();
     }
 
     [Fact]
@@ -124,9 +130,10 @@ public class RittenProjectTests : IDisposable
         WriteRittenJson(_root, """{ "biuld": { "project": "src/Thing/Thing.csproj" } }""");
         var project = await RittenProject.Resolve(_root);
 
-        var act = () => project!.GetSettings<DotNetPackageSettings>();
+        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
 
-        act.ShouldThrow<JsonException>().Message.ShouldContain("biuld");
+        settings.IsError.ShouldBeTrue();
+        settings.Errors.ShouldHaveSingleItem().Message.ShouldContain("biuld");
     }
 
     [Fact]
@@ -135,9 +142,10 @@ public class RittenProjectTests : IDisposable
         WriteRittenJson(_root, """{ "build": { "projct": "src/Thing/Thing.csproj" } }""");
         var project = await RittenProject.Resolve(_root);
 
-        var act = () => project!.GetSettings<DotNetPackageSettings>();
+        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
 
-        act.ShouldThrow<JsonException>().Message.ShouldContain("projct");
+        settings.IsError.ShouldBeTrue();
+        settings.Errors.ShouldHaveSingleItem().Message.ShouldContain("projct");
     }
 
     [Fact]
@@ -148,9 +156,10 @@ public class RittenProjectTests : IDisposable
         WriteRittenJson(_root, """{ "build": { "directory": "packages/thing" } }""");
         var project = await RittenProject.Resolve(_root);
 
-        var act = () => project!.GetSettings<DotNetPackageSettings>();
+        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
 
-        act.ShouldThrow<JsonException>().Message.ShouldContain("directory");
+        settings.IsError.ShouldBeTrue();
+        settings.Errors.ShouldHaveSingleItem().Message.ShouldContain("directory");
     }
 
     [Fact]
@@ -172,7 +181,9 @@ public class RittenProjectTests : IDisposable
     private static async Task<DotNetPackageSettings> GetSettings(string directory)
     {
         var project = await RittenProject.Resolve(directory);
-        return project.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
+        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
+        settings.IsError.ShouldBeFalse();
+        return settings.Value;
     }
 
     private static void WriteRittenJson(string directory, string content = "{}")

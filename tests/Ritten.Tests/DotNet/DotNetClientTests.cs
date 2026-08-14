@@ -28,13 +28,13 @@ public class DotNetClientTests
 
         _commands.Executed.ShouldHaveSingleItem().Arguments
             .ShouldBe(["msbuild", "/repo/src/My.Package.csproj", "-getProperty:PackageId", "-getProperty:Version"]);
-        project.ShouldNotBeNull();
-        project.Name.ShouldBe("My.Package");
-        project.Version.ShouldBe(NuGetVersion.Parse("1.2.3-beta.1"));
+        project.IsSuccess.ShouldBeTrue();
+        project.Value.Name.ShouldBe("My.Package");
+        project.Value.Version.ShouldBe(NuGetVersion.Parse("1.2.3-beta.1"));
     }
 
     [Fact]
-    public async Task ReadProject_ReturnsNullWhenTheVersionEvaluatesEmpty()
+    public async Task ReadProject_ReportsAnEmptyVersion()
     {
         _commands.Respond(
             c => c.Arguments.Contains("msbuild"),
@@ -42,7 +42,25 @@ public class DotNetClientTests
 
         var project = await _client.ReadProject(ProjectFile("/repo/src/My.Package.csproj"), TestContext.Current.CancellationToken);
 
-        project.ShouldBeNull();
+        project.IsError.ShouldBeTrue();
+        project.Errors.ShouldHaveSingleItem().Message.ShouldContain("does not set a Version");
+    }
+
+    [Fact]
+    public async Task ReadProject_ReportsEveryMissingPropertyAtOnce()
+    {
+        // Rather than sending someone round the loop twice.
+        _commands.Respond(
+            c => c.Arguments.Contains("msbuild"),
+            new CommandResult(0, """{"Properties":{"PackageId":"","Version":""}}""", ""));
+
+        var project = await _client.ReadProject(ProjectFile("/repo/src/My.Package.csproj"), TestContext.Current.CancellationToken);
+
+        project.IsError.ShouldBeTrue();
+        project.Errors.Select(e => e.Message).ShouldBe([
+            "'My.Package.csproj' does not set a PackageId.",
+            "'My.Package.csproj' does not set a Version."
+        ]);
     }
 
     [Fact]
@@ -75,9 +93,9 @@ public class DotNetClientTests
 
         var result = await client.ReadProject(ProjectFile(project.CsprojPath), TestContext.Current.CancellationToken);
 
-        result.ShouldNotBeNull();
-        result.Name.ShouldBe("Inherited.Package");
-        result.Version.ShouldBe(NuGetVersion.Parse("2.3.4"));
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Name.ShouldBe("Inherited.Package");
+        result.Value.Version.ShouldBe(NuGetVersion.Parse("2.3.4"));
     }
 
     private static IFile ProjectFile(string path)

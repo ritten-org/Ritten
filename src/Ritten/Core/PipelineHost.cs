@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Core.Runner;
@@ -33,51 +32,42 @@ public class PipelineHost : IDisposable
     /// <typeparam name="TSettings">The settings taken by the pipeline.</typeparam>
     /// <param name="job">The job to run.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public static async Task<int> Run<TPipeline, TSettings>(string job, CancellationToken cancellationToken = default) where TPipeline : Pipeline<TSettings>, new()
+    public static async Task<int> Run<TPipeline, TSettings>(string job, CancellationToken cancellationToken = default)
+        where TPipeline : Pipeline<TSettings>, new()
+        where TSettings : class
     {
         var reporter = new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail);
         var pipeline = new TPipeline();
 
-        RittenProject? project;
-        try
+        var project = await RittenProject.Resolve(Environment.CurrentDirectory);
+        if (project.IsError)
         {
-            project = await RittenProject.Resolve(Environment.CurrentDirectory);
-        }
-        catch (JsonException exception)
-        {
-            reporter.Error($"Could not read {RittenProject.FileName}: {exception.Message}", exception);
-            return PipelineExitCodes.ConfigurationError;
+            return ConfigurationError(reporter, project.Errors);
         }
 
-        if (project is null)
+        var settings = project.Value.GetSettings<TSettings>();
+        if (settings.IsError)
         {
-            reporter.Error($"{Environment.CurrentDirectory} is not a valid Ritten project.");
-            return PipelineExitCodes.ConfigurationError;
+            return ConfigurationError(reporter, settings.Errors);
         }
 
-        TSettings settings;
-        try
+        var builder = new PipelineHostBuilder(project.Value, pipeline.Name, reporter);
+        pipeline.Configure(builder, settings.Value);
+
+        var host = builder.Build(job);
+        if (host.IsError)
         {
-            settings = project.GetSettings<TSettings>();
-        }
-        catch (JsonException exception)
-        {
-            reporter.Error($"Could not read '{project.FilePath}'", exception);
-            return PipelineExitCodes.ConfigurationError;
+            return ConfigurationError(reporter, host.Errors);
         }
 
-        var builder = new PipelineHostBuilder(project, pipeline.Name, reporter);
-        pipeline.Configure(builder, settings);
+        using var _ = host.Value;
+        return await host.Value.Run(cancellationToken);
+    }
 
-        var result = builder.Build(job);
-        if (result.IsError)
-        {
-            reporter.Errors(result.Errors);
-            return PipelineExitCodes.ConfigurationError;
-        }
-
-        using var host = result.Value;
-        return await host.Run(cancellationToken);
+    private static int ConfigurationError(IPipelineLog log, IEnumerable<Error> errors)
+    {
+        log.Errors(errors);
+        return PipelineExitCodes.ConfigurationError;
     }
 
     internal async Task<int> Run(CancellationToken cancellationToken)

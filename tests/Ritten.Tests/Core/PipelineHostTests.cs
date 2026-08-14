@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Core;
+using Ritten.Pipelines.DotNet;
 using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Core;
@@ -59,11 +60,13 @@ public class PipelineHostTests
     [Fact]
     public void Build_ReportsEveryUnmetRequirementAtOnce()
     {
-        // Arrange — being told about all of them beats fixing them one run at a time.
+        // Arrange — being told about all of them beats fixing them one run at a time. The keys are
+        // inferred from the expressions, so they can't drift from the properties they describe.
+        var settings = new DotNetPackageSettings();
         var builder = PipelineHostBuilderHelpers.Create();
         builder.AddJob("deploy", job => job
-            .Requires(null, "build.project")
-            .Requires("", "release.feed"));
+            .Requires(settings.Build.Project)
+            .Requires(settings.Changelog.Repository));
 
         // Act
         var result = builder.Build("deploy");
@@ -72,7 +75,7 @@ public class PipelineHostTests
         result.IsError.ShouldBeTrue();
         result.Errors.Select(e => e.Message).ShouldBe([
             "'build.project' not set in ritten.json.",
-            "'release.feed' not set in ritten.json."
+            "'changelog.repository' not set in ritten.json."
         ]);
     }
 

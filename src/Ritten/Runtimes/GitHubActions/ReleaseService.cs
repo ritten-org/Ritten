@@ -22,5 +22,5 @@ internal class ReleaseService(IOptions<GitHubOptions> options, IGitHubClient cli
         client.Repository.Release.Create(RepositoryId, new NewRelease(tag) { Name = title, Body = notes });
 
     private long RepositoryId => options.Value.RepositoryId
-        ?? throw new InvalidOperationException("The GitHub repository ID is not available; set GITHUB_REPOSITORY_ID or GitHub__RepositoryId.");
+        ?? throw new InvalidOperationException($"The GitHub repository ID is not available; it comes from {GitHubEnvironment.RepositoryId}, which GitHub Actions sets automatically.");
 }

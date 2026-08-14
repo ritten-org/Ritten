@@ -4,7 +4,8 @@ namespace Ritten.Core;
 /// One reason an operation failed, phrased for whoever has to fix it.
 /// </summary>
 /// <param name="Message">A message describing what was wrong.</param>
-public record Error(string Message)
+/// <param name="Cause">The exception behind the failure, when there was one.</param>
+public record Error(string Message, Exception? Cause = null)
 {
     /// <summary>
     /// Converts a message to an <see cref="Error"/>, so that callers can collect plain strings.
