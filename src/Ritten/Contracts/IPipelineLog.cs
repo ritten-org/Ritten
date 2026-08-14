@@ -15,6 +15,6 @@ public interface IPipelineLog
     /// </summary>
     /// <param name="level">The kind of message being written.</param>
     /// <param name="message">The message content of the log.</param>
-    /// <param name="exception">An optional exception to provide information of.</param>
+    /// <param name="exception">An optional exception behind the message.</param>
     void Log(PipelineLogLevel level, string? message, Exception? exception = null);
 }

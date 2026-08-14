@@ -133,9 +133,10 @@ public class RittenProjectTests : IDisposable
 
         settings.IsError.ShouldBeTrue();
         var error = settings.Errors.ShouldHaveSingleItem();
+        // The message says what to fix without needing --verbose; the exception is kept for it.
         error.Message.ShouldContain(RittenProject.FileName);
-        // The message names the file; the cause names the key, for anyone running with --verbose.
-        error.Cause.ShouldBeOfType<JsonException>().Message.ShouldContain("biuld");
+        error.Message.ShouldContain("biuld");
+        error.Cause.ShouldBeOfType<JsonException>();
     }
 
     [Fact]
@@ -148,9 +149,10 @@ public class RittenProjectTests : IDisposable
 
         settings.IsError.ShouldBeTrue();
         var error = settings.Errors.ShouldHaveSingleItem();
+        // The message says what to fix without needing --verbose; the exception is kept for it.
         error.Message.ShouldContain(RittenProject.FileName);
-        // The message names the file; the cause names the key, for anyone running with --verbose.
-        error.Cause.ShouldBeOfType<JsonException>().Message.ShouldContain("projct");
+        error.Message.ShouldContain("projct");
+        error.Cause.ShouldBeOfType<JsonException>();
     }
 
     [Fact]
@@ -165,9 +167,10 @@ public class RittenProjectTests : IDisposable
 
         settings.IsError.ShouldBeTrue();
         var error = settings.Errors.ShouldHaveSingleItem();
+        // The message says what to fix without needing --verbose; the exception is kept for it.
         error.Message.ShouldContain(RittenProject.FileName);
-        // The message names the file; the cause names the key, for anyone running with --verbose.
-        error.Cause.ShouldBeOfType<JsonException>().Message.ShouldContain("directory");
+        error.Message.ShouldContain("directory");
+        error.Cause.ShouldBeOfType<JsonException>();
     }
 
     [Fact]

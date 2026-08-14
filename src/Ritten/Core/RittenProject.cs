@@ -55,7 +55,7 @@ internal sealed class RittenProject
         }
         catch (JsonException exception)
         {
-            return Result.Error($"Could not read '{FilePath}'.", exception);
+            return Result.Error($"Could not read '{FilePath}': {exception.Message}", exception);
         }
     }
 
@@ -80,7 +80,7 @@ internal sealed class RittenProject
                 }
                 catch (JsonException exception)
                 {
-                    return Result.Error($"Could not read '{path}'.", exception);
+                    return Result.Error($"Could not read '{path}': {exception.Message}", exception);
                 }
             }
 

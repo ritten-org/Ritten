@@ -92,22 +92,10 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
             });
         }
 
-        if (exception != null)
+        if (exception != null && IsEnabled(PipelineLogLevel.Verbose))
         {
-            var format = minimumLogLevel switch
-            {
-                // --verbose
-                PipelineLogLevel.Verbose => ExceptionFormats.Default | ExceptionFormats.ShowLinks,
-
-                // Default
-                PipelineLogLevel.Detail => ExceptionFormats.ShortenEverything,
-
-                // --quiet
-                _ => ExceptionFormats.NoStackTrace,
-            };
-
-            var paddedEx = new Padder(exception.GetRenderable(format)).PadLeft(4).PadTop(0).PadBottom(0).PadRight(0);
-            console.Write(paddedEx);
+            var renderable = exception.GetRenderable(ExceptionFormats.Default | ExceptionFormats.ShowLinks);
+            console.Write(new Padder(renderable).PadLeft(4).PadTop(0).PadBottom(0).PadRight(0));
         }
     }
 
