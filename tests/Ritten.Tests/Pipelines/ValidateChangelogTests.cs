@@ -101,7 +101,7 @@ public class ValidateChangelogTests
         var file = Substitute.For<IFile>();
         file.Exists.Returns(true);
         file.OpenRead().Returns(_ => new MemoryStream(Encoding.UTF8.GetBytes(content)));
-        _fileSystem.CurrentDirectory.GetFile(_options.File).Returns(file);
+        _fileSystem.ProjectRoot.GetFile(_options.File).Returns(file);
     }
 
     private ValidateChangelog Step() =>

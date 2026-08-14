@@ -19,7 +19,7 @@ public class ExtractDotNetProject(IPipelineLog log, IOptions<DotNetOptions> opti
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        var csproj = fileSystem.CurrentDirectory.GetFile(options.Value.ProjectFile);
+        var csproj = fileSystem.ProjectRoot.GetFile(options.Value.ProjectFile);
         if (!csproj.Exists)
         {
             return StepResult.Failed($"Could not find project file '{options.Value.ProjectFile}'.");

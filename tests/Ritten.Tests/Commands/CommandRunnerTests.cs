@@ -89,7 +89,7 @@ public class CommandRunnerTests
     private static CommandRunner Runner(string? currentDirectory = null)
     {
         var fileSystem = Substitute.For<IFileSystem>();
-        fileSystem.CurrentDirectory.AbsolutePath.Returns(currentDirectory ?? Path.GetTempPath());
+        fileSystem.ProjectRoot.AbsolutePath.Returns(currentDirectory ?? Path.GetTempPath());
         return new CommandRunner(Substitute.For<IPipelineLog>(), fileSystem);
     }
 

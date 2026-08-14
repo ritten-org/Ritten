@@ -14,7 +14,7 @@ internal class CommandRunner(IPipelineLog log, IFileSystem fileSystem) : IComman
         process.StartInfo = new ProcessStartInfo
         {
             FileName = command.Path,
-            WorkingDirectory = Path.Combine(fileSystem.CurrentDirectory.AbsolutePath, command.WorkingDirectory ?? string.Empty),
+            WorkingDirectory = Path.Combine(fileSystem.ProjectRoot.AbsolutePath, command.WorkingDirectory ?? string.Empty),
             RedirectStandardInput = command.StandardInput is not null,
             RedirectStandardOutput = true,
             RedirectStandardError = true,

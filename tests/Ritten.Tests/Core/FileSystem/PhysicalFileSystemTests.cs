@@ -5,7 +5,7 @@ namespace Ritten.Tests.Core.FileSystem;
 public class PhysicalFileSystemTests
 {
     [Fact]
-    public void CurrentDirectory_IsCurrentDirectory()
+    public void RootDirectory_IsTheGivenRoot()
     {
         // Arrange
         var directory = Directory.GetCurrentDirectory();
@@ -14,20 +14,16 @@ public class PhysicalFileSystemTests
         var fileSystem = new PhysicalFileSystem(directory);
 
         // Assert
-        fileSystem.CurrentDirectory.AbsolutePath.ShouldBe(directory);
+        fileSystem.ProjectRoot.AbsolutePath.ShouldBe(directory);
     }
 
     [Fact]
-    public void RootDirectory_IsRootDirectory()
+    public void RootDirectory_IsAbsolute()
     {
-        // Arrange
-        var directory = Directory.GetCurrentDirectory();
-        var root = Path.GetPathRoot(directory);
-
         // Act
-        var fileSystem = new PhysicalFileSystem(directory);
+        var fileSystem = new PhysicalFileSystem(".");
 
         // Assert
-        fileSystem.RootDirectory.AbsolutePath.ShouldBe(root);
+        Path.IsPathRooted(fileSystem.ProjectRoot.AbsolutePath).ShouldBeTrue();
     }
 }

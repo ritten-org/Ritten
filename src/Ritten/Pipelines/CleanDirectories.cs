@@ -16,7 +16,7 @@ public class CleanDirectories(IPipelineLog log, IOptions<PipelineOptions> option
     public Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         log.Detail("Cleaning temp and artifact directories.");
-        var cd = fileSystem.CurrentDirectory;
+        var cd = fileSystem.ProjectRoot;
         cd.GetDirectory(options.Value.ArtifactsDirectory).Delete();
         cd.GetDirectory(options.Value.TempDirectory).Delete();
         return Task.FromResult(StepResult.Successful);

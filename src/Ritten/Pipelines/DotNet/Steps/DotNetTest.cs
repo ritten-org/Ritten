@@ -27,7 +27,7 @@ public class DotNetTest(
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        var resultsDirectory = fileSystem.CurrentDirectory
+        var resultsDirectory = fileSystem.ProjectRoot
             .GetDirectory(pipeline.Value.TempDirectory)
             .GetDirectory("test-results");
 

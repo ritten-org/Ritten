@@ -23,7 +23,7 @@ public class DotNetFormatCheck(
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        var reportDirectory = fileSystem.CurrentDirectory
+        var reportDirectory = fileSystem.ProjectRoot
             .GetDirectory(options.Value.TempDirectory)
             .GetDirectory("format");
 

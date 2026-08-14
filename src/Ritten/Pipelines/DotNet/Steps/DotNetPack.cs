@@ -26,7 +26,7 @@ public class DotNetPack(IOptions<DotNetOptions> options, IOptions<PipelineOption
                 Project = options.Value.ProjectFile,
                 Configuration = options.Value.Configuration,
                 NoBuild = true,
-                Output = fileSystem.CurrentDirectory.GetDirectory(pipeline.Value.ArtifactsDirectory)
+                Output = fileSystem.ProjectRoot.GetDirectory(pipeline.Value.ArtifactsDirectory)
             },
             cancellationToken);
 

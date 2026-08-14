@@ -19,7 +19,7 @@ public class GitClientTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var fileSystem = Substitute.For<IFileSystem>();
-        fileSystem.CurrentDirectory.AbsolutePath.Returns(_repository);
+        fileSystem.ProjectRoot.AbsolutePath.Returns(_repository);
         _commands = new CommandRunner(Substitute.For<IPipelineLog>(), fileSystem);
         _git = new GitClient(_commands);
 

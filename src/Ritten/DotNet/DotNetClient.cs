@@ -178,7 +178,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         var documents = await JsonSerializer.DeserializeAsync<List<FormatReportDocument>>(stream, FormatReportJson, cancellationToken) ?? [];
         return documents
             .Where(d => d.FilePath != null)
-            .Select(d => Path.GetRelativePath(fileSystem.CurrentDirectory.AbsolutePath, d.FilePath!))
+            .Select(d => Path.GetRelativePath(fileSystem.ProjectRoot.AbsolutePath, d.FilePath!))
             .Distinct()
             .Order()
             .ToList();

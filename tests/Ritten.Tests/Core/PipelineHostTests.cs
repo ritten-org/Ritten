@@ -1,20 +1,29 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Core;
+using Ritten.Reporting;
 using Ritten.Tests.Core.Helpers;
+using Spectre.Console;
 
 namespace Ritten.Tests.Core;
 
-public class RittenApplicationTests
+public class PipelineHostTests
 {
     [Fact]
     public async Task Run_WithPassingStep_ReturnsZero()
     {
+        // Arrange
+        var step = PipelineStepHelpers.CreateMock();
+
+        using var app = BuildApplication(Substitute.For<IPipelineLog>(), step, _ => { });
+
         // Act
-        var exitCode = await RittenApplication.Run<TestPipeline>(TestContext.Current.CancellationToken);
+        var exitCode = await app.Run(TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(PipelineExitCodes.Success);
+        await step.Received().Run(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -87,11 +96,19 @@ public class RittenApplicationTests
         await step.Received().Run(Arg.Any<CancellationToken>());
     }
 
-    private static RittenApplication BuildApplication(IPipelineLog log, IPipelineStep step, Action<IServiceCollection> configure)
+    /// <summary>
+    /// Builds an application against a supplied root and configuration. Repository discovery is
+    /// covered by <see cref="RittenProjectTests"/>; these tests stay hermetic so that they don't
+    /// depend on being run from inside a repository that happens to contain a ritten.json.
+    /// </summary>
+    private static PipelineHost BuildApplication(IPipelineLog log, IPipelineStep step, Action<IServiceCollection> configure)
     {
-        var builder = new RittenApplicationBuilder();
+        var builder = new PipelineHostBuilder(
+            Path.GetTempPath(),
+            new ConfigurationBuilder().Build(),
+            new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail));
 
-        // Registered ahead of Build(), which only supplies the Spectre reporter if nothing else has.
+        // Registered ahead of Build(), which only supplies its own reporter if nothing else has.
         builder.Services.AddSingleton(log);
         builder.Services.AddSingleton(step);
         builder.Services.AddSingleton<Pipeline>(new TestPipeline());

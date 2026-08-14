@@ -6,12 +6,7 @@ namespace Ritten.Contracts.FileSystem;
 public interface IFileSystem
 {
     /// <summary>
-    /// Gets the current working directory.
+    /// Gets the root of the project being built.
     /// </summary>
-    IDirectory CurrentDirectory { get; }
-
-    /// <summary>
-    /// Gets the root directory of the current file system.
-    /// </summary>
-    IDirectory RootDirectory { get; }
+    IDirectory ProjectRoot { get; }
 }

@@ -44,7 +44,7 @@ public class ValidateChangelog(
             return StepResult.Failed("Project info not found in state.");
         }
 
-        var changelogFile = fileSystem.CurrentDirectory.GetFile(options.Value.File);
+        var changelogFile = fileSystem.ProjectRoot.GetFile(options.Value.File);
         if (!changelogFile.Exists)
         {
             report.Section("Release").Failure($"The changelog file `{options.Value.File}` does not exist.");
