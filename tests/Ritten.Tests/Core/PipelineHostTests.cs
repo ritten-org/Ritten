@@ -40,28 +40,52 @@ public class PipelineHostTests
     [Fact]
     public void Build_RegistersOnlyTheRequestedJobsSteps()
     {
-        // Arrange
-        var builder = PipelineHostBuilderHelpers.Create("verify");
-
-        // Act — two jobs declared, only one requested.
+        // Arrange — two jobs declared, only one requested.
+        var builder = PipelineHostBuilderHelpers.Create();
         builder.AddJob("verify", job => job.UseStep<FirstStep>());
         builder.AddJob("deploy", job => job.UseStep<SecondStep>());
 
+        // Act
+        var result = builder.Build("verify");
+
         // Assert
-        builder.JobFound.ShouldBeTrue();
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Dispose();
         builder.Services.Count(d => d.ServiceType == typeof(IPipelineStep)).ShouldBe(1);
         builder.Services.ShouldContain(d => d.ImplementationType == typeof(FirstStep));
         builder.Services.ShouldNotContain(d => d.ImplementationType == typeof(SecondStep));
     }
 
+    [Fact]
+    public void Build_ReportsEveryUnmetRequirementAtOnce()
+    {
+        // Arrange — being told about all of them beats fixing them one run at a time.
+        var builder = PipelineHostBuilderHelpers.Create();
+        builder.AddJob("deploy", job => job
+            .Requires(null, "build.project")
+            .Requires("", "release.feed"));
+
+        // Act
+        var result = builder.Build("deploy");
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.Errors.Select(e => e.Message).ShouldBe([
+            "'build.project' not set in ritten.json.",
+            "'release.feed' not set in ritten.json."
+        ]);
+    }
+
     private static PipelineHost BuildHost(IPipelineStep step)
     {
-        var builder = PipelineHostBuilderHelpers.Create("verify");
+        var builder = PipelineHostBuilderHelpers.Create();
         builder.AddJob("verify", _ => { });
         builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
         builder.Services.AddSingleton(step);
 
-        return builder.Build();
+        var result = builder.Build("verify");
+        result.IsSuccess.ShouldBeTrue();
+        return result.Value;
     }
 }
 
