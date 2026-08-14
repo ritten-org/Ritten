@@ -12,15 +12,27 @@ namespace Ritten.Pipelines.DotNet;
 /// then packs, tags, creates the GitHub release, and lastly publishes to the NuGet feed.
 /// Every release step skips work a previous run already completed, so failed deploys can be rerun.
 /// </summary>
-public class DotNetPackageDeploy : Pipeline
+public class DotNetPackageDeploy : Pipeline<DotNetPackageSettings>
 {
-    /// <inheritdoc/>>
+    /// <inheritdoc/>
     public override string Name => "DotNet Package Deploy";
 
     /// <inheritdoc />
-    public override void Configure(IPipelineBuilder builder)
+    public override bool TryValidate(DotNetPackageSettings settings, out List<string> errors)
     {
-        builder.Services.AddDotNetPackageServices();
+        errors = [];
+        if (string.IsNullOrEmpty(settings.Project))
+        {
+            errors.Add($"'project' not set in {RittenProject.FileName}.");
+        }
+
+        return errors.Count == 0;
+    }
+
+    /// <inheritdoc />
+    public override void Configure(IPipelineBuilder builder, DotNetPackageSettings settings)
+    {
+        builder.Services.AddDotNetPackageServices(settings);
 
         builder
             .UseStep<CleanDirectories>()

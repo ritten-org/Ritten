@@ -5,18 +5,19 @@ using Ritten.Pipelines.DotNet.Steps;
 namespace Ritten.Pipelines.DotNet;
 
 /// <summary>
-/// The compile-and-test pipeline: cleans, checks formatting, then restores, builds, and tests.
-/// No release validation, for repositories or branches that don't ship.
+/// The compile-and-test pipeline.
 /// </summary>
-public class DotNetPackageVerify : Pipeline
+public class DotNetPackageVerify : Pipeline<DotNetPackageSettings>
 {
-    /// <inheritdoc/>>
+    /// <inheritdoc/>
     public override string Name => "DotNet Package Verify";
 
     /// <inheritdoc />
-    public override void Configure(IPipelineBuilder builder)
+    public override void Configure(IPipelineBuilder builder, DotNetPackageSettings settings)
     {
-        builder.Services.AddDotNetPackageServices();
+        builder.Services
+            .AddDotNet(settings)
+            .AddBuildReporting();
 
         builder
             .UseStep<CleanDirectories>()

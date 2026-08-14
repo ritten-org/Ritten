@@ -9,15 +9,27 @@ namespace Ritten.Pipelines.DotNet;
 /// The pull request pipeline: cleans, checks formatting, validates the package version and
 /// changelog entry, then restores, builds, and tests.
 /// </summary>
-public class DotNetPackageBuild : Pipeline
+public class DotNetPackageBuild : Pipeline<DotNetPackageSettings>
 {
-    /// <inheritdoc/>>
+    /// <inheritdoc/>
     public override string Name => "DotNet Package Build";
 
     /// <inheritdoc />
-    public override void Configure(IPipelineBuilder builder)
+    public override bool TryValidate(DotNetPackageSettings settings, out List<string> errors)
     {
-        builder.Services.AddDotNetPackageServices();
+        errors = [];
+        if (string.IsNullOrEmpty(settings.Project))
+        {
+            errors.Add($"'project' not set in {RittenProject.FileName}.");
+        }
+
+        return errors.Count == 0;
+    }
+
+    /// <inheritdoc />
+    public override void Configure(IPipelineBuilder builder, DotNetPackageSettings settings)
+    {
+        builder.Services.AddDotNetPackageServices(settings);
 
         builder
             .UseStep<CleanDirectories>()

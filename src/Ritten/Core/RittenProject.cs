@@ -1,42 +1,70 @@
+using System.Text.Json;
+
 namespace Ritten.Core;
 
 /// <summary>
-/// The definition of a Ritten build project.
+/// A located Ritten build project: where it is, and the settings it declares.
 /// </summary>
-internal sealed partial class RittenProject
+internal sealed class RittenProject
 {
     /// <summary>
-    /// The project file of the package being shipped, relative to the project root.
+    /// The configuration file that marks the root of a project.
     /// </summary>
-    public string? Project { get; init; }
+    public const string FileName = "ritten.json";
+
+    private static readonly JsonSerializerOptions _serializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        RespectNullableAnnotations = true,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true
+    };
 
     /// <summary>
-    /// The directory the project is located in.
+    /// The directory containing the project's <c>ritten.json</c>.
     /// </summary>
     public required string Directory { get; init; }
 
     /// <summary>
-    /// The build configuration used to build, test, and pack.
+    /// The raw contents of the project's <c>ritten.json</c>.
     /// </summary>
-    public required string Configuration { get; init; }
+    private JsonElement Settings { get; init; }
 
     /// <summary>
-    /// The changelog file, relative to the project root.
+    /// The path of the project's <c>ritten.json</c>, for error messages.
     /// </summary>
-    public required string Changelog { get; init; }
+    public string FilePath => Path.Combine(Directory, FileName);
 
     /// <summary>
-    /// The project's web URL. When set, the changelog's version links are validated against it.
+    /// Reads the project's settings as the given pipeline's settings type.
     /// </summary>
-    public string? Repository { get; init; }
+    /// <exception cref="JsonException">The file contains a key the pipeline doesn't recognize.</exception>
+    public TSettings GetSettings<TSettings>() => Settings.Deserialize<TSettings>(_serializerOptions)
+                                                 ?? throw new InvalidOperationException("Unable to read project settings.");
 
     /// <summary>
-    /// The prefix for release tag names, so that tags are <c>TagPrefix + version</c>, e.g. <c>v1.2.0</c>.
+    /// Walks up from the given directory looking for a project, or returns <c>null</c> if there
+    /// isn't one.
     /// </summary>
-    public required string TagPrefix { get; init; }
+    /// <exception cref="JsonException">The project file is not valid JSON.</exception>
+    public static async Task<RittenProject?> Resolve(string directory)
+    {
+        var current = new DirectoryInfo(Path.GetFullPath(directory));
+        while (current is not null)
+        {
+            var path = Path.Combine(current.FullName, FileName);
+            if (File.Exists(path))
+            {
+                await using var stream = File.OpenRead(path);
+                var settings = await JsonSerializer.DeserializeAsync<JsonElement>(stream, _serializerOptions);
 
-    /// <summary>
-    /// The V3 index URL of the NuGet feed the package is validated against and published to.
-    /// </summary>
-    public string Feed { get; init; } = "https://api.nuget.org/v3/index.json";
+                return new RittenProject { Directory = current.FullName, Settings = settings };
+            }
+
+            current = current.Parent;
+        }
+
+        return null;
+    }
 }

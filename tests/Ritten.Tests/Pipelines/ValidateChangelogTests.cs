@@ -8,6 +8,7 @@ using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Extensions;
 using Ritten.Pipelines;
+using Ritten.Pipelines.DotNet;
 using Ritten.Reporting;
 using Ritten.Tests.Support;
 
@@ -17,7 +18,7 @@ public class ValidateChangelogTests
 {
     // The real client, so these tests exercise the actual parser and link generator.
     private static readonly IChangelog Changelogs = new ServiceCollection()
-        .AddChangelogs()
+        .AddChangelogs(new DotNetPackageSettings())
         .BuildServiceProvider()
         .GetRequiredService<IChangelog>();
 

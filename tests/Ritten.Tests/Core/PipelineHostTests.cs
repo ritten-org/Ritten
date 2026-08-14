@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Core;
@@ -14,11 +15,10 @@ public class PipelineHostTests
     {
         // Arrange
         var step = PipelineStepHelpers.CreateMock();
-
-        using var app = BuildApplication(Substitute.For<IPipelineLog>(), step, _ => { });
+        using var host = BuildHost(step);
 
         // Act
-        var exitCode = await app.Run(TestContext.Current.CancellationToken);
+        var exitCode = await host.Run(TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(PipelineExitCodes.Success);
@@ -26,123 +26,51 @@ public class PipelineHostTests
     }
 
     [Fact]
-    public async Task Run_WithInvalidConfiguration_ReturnsConfigurationErrorBeforeRunningAnySteps()
+    public async Task Run_WithFailingStep_ReturnsFailure()
     {
         // Arrange
-        var log = Substitute.For<IPipelineLog>();
         var step = PipelineStepHelpers.CreateMock();
-
-        using var app = BuildApplication(log, step, services => services
-            .AddOptions<ProjectSettings>()
-            .Configure(o => o.ProjectFile = "")
-            .Validate(o => !string.IsNullOrEmpty(o.ProjectFile), "DotNet:ProjectFile must be set.")
-            .ValidateOnStart());
+        step.Run(Arg.Any<CancellationToken>()).Returns(StepResult.Failed("Nope."));
+        using var host = BuildHost(step);
 
         // Act
-        var exitCode = await app.Run(TestContext.Current.CancellationToken);
+        var exitCode = await host.Run(TestContext.Current.CancellationToken);
 
         // Assert
-        exitCode.ShouldBe(PipelineExitCodes.ConfigurationError);
-        await step.DidNotReceive().Run(Arg.Any<CancellationToken>());
-        log.Received().Log(PipelineLogLevel.Error, Arg.Is<string>(m => m.Contains("DotNet:ProjectFile must be set.")));
+        exitCode.ShouldBe(PipelineExitCodes.Failed);
     }
 
-    [Fact]
-    public async Task Run_WithSeveralInvalidOptionsTypes_ReportsEveryFailure()
+    private static PipelineHost BuildHost(IPipelineStep step)
     {
-        // Arrange
-        var log = Substitute.For<IPipelineLog>();
-
-        using var app = BuildApplication(log, PipelineStepHelpers.CreateMock(), services =>
+        var project = new RittenProject
         {
-            services.AddOptions<ProjectSettings>()
-                .Configure(o => o.ProjectFile = "")
-                .Validate(o => !string.IsNullOrEmpty(o.ProjectFile), "DotNet:ProjectFile must be set.")
-                .ValidateOnStart();
+            Directory = Path.GetTempPath(),
+            Settings = JsonSerializer.Deserialize<JsonElement>("{}")
+        };
 
-            services.AddOptions<FeedSettings>()
-                .Configure(o => o.Feed = "")
-                .Validate(o => !string.IsNullOrEmpty(o.Feed), "NuGet:Feed must be set.")
-                .ValidateOnStart();
-        });
-
-        // Act
-        var exitCode = await app.Run(TestContext.Current.CancellationToken);
-
-        // Assert
-        exitCode.ShouldBe(PipelineExitCodes.ConfigurationError);
-        log.Received().Log(PipelineLogLevel.Error, Arg.Is<string>(m => m.Contains("DotNet:ProjectFile must be set.")));
-        log.Received().Log(PipelineLogLevel.Error, Arg.Is<string>(m => m.Contains("NuGet:Feed must be set.")));
-    }
-
-    [Fact]
-    public async Task Run_WithValidConfiguration_RunsTheSteps()
-    {
-        // Arrange
-        var step = PipelineStepHelpers.CreateMock();
-
-        using var app = BuildApplication(Substitute.For<IPipelineLog>(), step, services => services
-            .AddOptions<ProjectSettings>()
-            .Configure(o => o.ProjectFile = "src/Thing/Thing.csproj")
-            .Validate(o => !string.IsNullOrEmpty(o.ProjectFile), "DotNet:ProjectFile must be set.")
-            .ValidateOnStart());
-
-        // Act
-        var exitCode = await app.Run(TestContext.Current.CancellationToken);
-
-        // Assert
-        exitCode.ShouldBe(PipelineExitCodes.Success);
-        await step.Received().Run(Arg.Any<CancellationToken>());
-    }
-
-    /// <summary>
-    /// Builds an application against a supplied root and configuration. Repository discovery is
-    /// covered by <see cref="RittenProjectTests"/>; these tests stay hermetic so that they don't
-    /// depend on being run from inside a repository that happens to contain a ritten.json.
-    /// </summary>
-    private static PipelineHost BuildApplication(IPipelineLog log, IPipelineStep step, Action<IServiceCollection> configure)
-    {
-        var builder = new PipelineHostBuilder(
-            Path.GetTempPath(),
-            new RittenProjectFile(),
-            new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail));
-
-        // Registered ahead of Build(), which only supplies its own reporter if nothing else has.
-        builder.Services.AddSingleton(log);
+        var builder = new PipelineHostBuilder(project, new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail));
+        builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
         builder.Services.AddSingleton(step);
         builder.Services.AddSingleton<Pipeline>(new TestPipeline());
-        configure(builder.Services);
 
         return builder.Build();
     }
-
-    private class ProjectSettings
-    {
-        public string ProjectFile { get; set; } = "";
-    }
-
-    private class FeedSettings
-    {
-        public string Feed { get; set; } = "";
-    }
 }
 
-class TestPipeline : Pipeline
+class TestSettings;
+
+class TestPipeline : Pipeline<TestSettings>
 {
     /// <inheritdoc />
     public override string Name => "Test";
 
     /// <inheritdoc />
-    public override void Configure(IPipelineBuilder builder)
-    {
+    public override void Configure(IPipelineBuilder builder, TestSettings settings) =>
         builder.UseStep<TestPipelineStep>();
-    }
 }
 
 class TestPipelineStep : IPipelineStep
 {
-    public Task<StepResult> Run(CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(StepResult.Successful);
-    }
+    public Task<StepResult> Run(CancellationToken cancellationToken = default) =>
+        Task.FromResult(StepResult.Successful);
 }

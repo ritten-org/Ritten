@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Changelogs;
 using Ritten.Commands;
 using Ritten.Contracts;
-using Ritten.Core;
+using Ritten.Core.Settings;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.NuGet;
@@ -33,114 +33,71 @@ public static class ServiceCollectionExtensions
         }
 
         /// <summary>
-        /// Adds <see cref="IChangelog"/> to the service collection.
+        /// Adds changelog validation.
         /// </summary>
-        public IServiceCollection AddChangelogs()
+        public IServiceCollection AddChangelogs(IChangelogSettings settings)
         {
             services.TryAddSingleton<IChangelog, ChangelogClient>();
+            services.Configure<ChangelogOptions>(o =>
+            {
+                o.File = settings.Changelog;
+                o.RepositoryUrl = settings.Repository;
+            });
+            services.Configure<ChangelogOptions>(ChangelogOptions.ConfigureFromEnvironment);
             return services;
         }
 
         /// <summary>
-        /// Adds <see cref="IDotNet"/> to the service collection.
+        /// Adds the .NET client and build settings, configured from the project's settings.
         /// </summary>
-        public IServiceCollection AddDotNet()
+        public IServiceCollection AddDotNet(IDotNetSettings settings)
         {
             services.AddCommandRunner();
             services.TryAddSingleton<IDotNet, DotNetClient>();
+            services.Configure<DotNetOptions>(o =>
+            {
+                o.Configuration = settings.Configuration;
+                o.ProjectFile = settings.Project ?? "";
+            });
             return services;
         }
 
         /// <summary>
-        /// Adds <see cref="IGit"/> to the service collection.
+        /// Adds release tagging, configured from the project's settings.
         /// </summary>
-        public IServiceCollection AddGit()
+        public IServiceCollection AddGit(ITagSettings settings)
         {
             services.AddCommandRunner();
             services.TryAddSingleton<IGit, GitClient>();
+            services.Configure<GitOptions>(o => o.TagPrefix = settings.TagPrefix);
+            services.Configure<GitOptions>(GitOptions.ConfigureFromEnvironment);
             return services;
         }
 
         /// <summary>
-        /// Adds <see cref="INuGet"/> to the service collection.
+        /// Adds NuGet publishing, configured from the project's settings.
         /// </summary>
-        public IServiceCollection AddNuGet()
+        public IServiceCollection AddNuGet(INuGetSettings settings)
         {
             services.AddCommandRunner();
             services.TryAddSingleton<INuGet, NuGetClient>();
+            services.Configure<NuGetOptions>(o => o.Feed = settings.Feed);
+            services.Configure<NuGetOptions>(NuGetOptions.ConfigureFromEnvironment);
             return services;
         }
 
         /// <summary>
-        /// Registers the services and options that the standard .NET package pipelines need.
+        /// Registers everything the standard .NET package pipelines share.
         /// </summary>
-        public IServiceCollection AddDotNetPackageServices()
+        public IServiceCollection AddDotNetPackageServices(DotNetPackageSettings settings)
         {
-            services
-                .AddCommandRunner()
-                .AddChangelogs()
-                .AddDotNet()
-                .AddGit()
-                .AddNuGet()
+            return services
+                .AddChangelogs(settings)
+                .AddDotNet(settings)
+                .AddGit(settings)
+                .AddNuGet(settings)
                 .AddGitHubActionsRuntime()
                 .AddBuildReporting();
-
-            if (services.Any(d => d.ServiceType == typeof(DotNetPackageServicesMarker)))
-            {
-                return services;
-            }
-
-            services.AddSingleton<DotNetPackageServicesMarker>();
-
-            services.AddOptions<DotNetOptions>()
-                .Configure<RittenProjectFile>((o, file) =>
-                {
-                    o.Configuration = file.Configuration;
-                    o.ProjectFile = file.Project ?? "";
-                })
-                .Validate(d => !string.IsNullOrEmpty(d.Configuration), "'configuration' in ritten.json must be a build configuration, for example \"Release\".")
-                .ValidateOnStart();
-
-            services.AddOptions<ChangelogOptions>()
-                .Configure(ChangelogOptions.ConfigureFromEnvironment)
-                .Configure<RittenProjectFile>((o, file) =>
-                {
-                    o.File = file.Changelog;
-                    o.RepositoryUrl = file.Repository;
-                })
-                .Validate(c => !string.IsNullOrEmpty(c.File), "'changelog' in ritten.json must be the path to the changelog, relative to the project root.")
-                .ValidateOnStart();
-
-            services.AddOptions<NuGetOptions>()
-                .Configure(NuGetOptions.ConfigureFromEnvironment)
-                .Configure<RittenProjectFile>((o, file) => o.Feed = file.Feed)
-                .Validate(n => !string.IsNullOrEmpty(n.Feed), "'feed' in ritten.json must be the V3 index URL of the feed to publish to.")
-                .ValidateOnStart();
-
-            services.AddOptions<GitOptions>()
-                .Configure(GitOptions.ConfigureFromEnvironment)
-                .Configure<RittenProjectFile>((o, file) => o.TagPrefix = file.TagPrefix);
-
-            return services;
-        }
-
-        /// <summary>
-        /// Requires a <c>project</c> in <c>ritten.json</c>. Only the pipelines that ship a package
-        /// read it, so the verify pipeline doesn't ask for one.
-        /// </summary>
-        public IServiceCollection RequireDotNetProject()
-        {
-            if (services.Any(d => d.ServiceType == typeof(DotNetProjectMarker)))
-            {
-                return services;
-            }
-
-            services.AddSingleton<DotNetProjectMarker>();
-            services.AddOptions<DotNetOptions>()
-                .Validate(d => !string.IsNullOrEmpty(d.ProjectFile), "'project' in ritten.json must be the project file of the package being shipped, relative to the project root.")
-                .ValidateOnStart();
-
-            return services;
         }
 
         /// <summary>
@@ -163,13 +120,8 @@ public static class ServiceCollectionExtensions
         }
     }
 
-    // Composite registrations can't use TryAdd, because options delegates and enumerable
-    // registrations are additive. They key idempotence off a private marker instead of off a
-    // service they happen to register, so that a consumer registering their own implementation
-    // of one of those services can't silently suppress the rest of the block.
-    private sealed class DotNetPackageServicesMarker;
-
-    private sealed class DotNetProjectMarker;
-
+    // Enumerable registrations are additive, so this one can't use TryAdd. It keys idempotence
+    // off a private marker rather than off a service it happens to register, so that a consumer
+    // supplying their own implementation can't silently suppress the rest of the block.
     private sealed class BuildReportingMarker;
 }

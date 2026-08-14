@@ -1,11 +1,12 @@
 using System.Text.Json;
 using Ritten.Core;
+using Ritten.Pipelines.DotNet;
 
 namespace Ritten.Tests.Core;
 
 public class RittenProjectTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), $"ritten-repo-{Guid.NewGuid():N}");
+    private readonly string _root = Path.Combine(Path.GetTempPath(), $"ritten-project-{Guid.NewGuid():N}");
 
     public void Dispose()
     {
@@ -17,146 +18,119 @@ public class RittenProjectTests : IDisposable
     }
 
     [Fact]
-    public void Find_ReturnsTheDirectoryContainingTheFile()
+    public async Task Resolve_ReturnsTheDirectoryContainingTheFile()
     {
-        // Arrange
         WriteRittenJson(_root);
 
-        // Act
-        var found = RittenProject.Find(_root);
+        var project = await Resolve(_root);
 
-        // Assert
-        found.ShouldBe(_root);
+        project.ShouldNotBeNull().Directory.ShouldBe(_root);
     }
 
     [Fact]
-    public void Find_WalksUpFromASubdirectory()
+    public async Task Resolve_WalksUpFromASubdirectory()
     {
-        // Arrange
         WriteRittenJson(_root);
         var nested = Directory.CreateDirectory(Path.Combine(_root, "src", "Thing", "bin")).FullName;
 
-        // Act
-        var found = RittenProject.Find(nested);
+        var project = await Resolve(nested);
 
-        // Assert
-        found.ShouldBe(_root);
+        project.ShouldNotBeNull().Directory.ShouldBe(_root);
     }
 
     [Fact]
-    public void Find_PrefersTheNearestFile()
+    public async Task Resolve_PrefersTheNearestFile()
     {
-        // Arrange — a nested repository shadows the outer one.
+        // A nested project shadows the outer one.
         WriteRittenJson(_root);
         var nested = Directory.CreateDirectory(Path.Combine(_root, "nested")).FullName;
         WriteRittenJson(nested);
 
-        // Act
-        var found = RittenProject.Find(Path.Combine(nested, "src"));
+        var project = await Resolve(Path.Combine(nested, "src"));
 
-        // Assert
-        found.ShouldBe(nested);
+        project.ShouldNotBeNull().Directory.ShouldBe(nested);
     }
 
     [Fact]
-    public void Find_ReturnsNullWhenNoFileExistsUpToTheFilesystemRoot()
+    public async Task Resolve_ReturnsNullWhenNoFileExistsUpToTheFilesystemRoot()
     {
-        // Arrange
         Directory.CreateDirectory(_root);
 
-        // Act
-        var found = RittenProject.Find(_root);
+        var project = await Resolve(_root);
 
-        // Assert
-        found.ShouldBeNull();
+        project.ShouldBeNull();
     }
 
     [Fact]
-    public void Read_BindsCamelCaseKeys()
+    public async Task Resolve_ThrowsOnMalformedJson()
     {
-        // Arrange
+        WriteRittenJson(_root, "{ not json");
+
+        // PipelineHost turns this into a configuration error rather than a crash.
+        await Should.ThrowAsync<JsonException>(async () => await Resolve(_root));
+    }
+
+    [Fact]
+    public async Task Bind_ReadsCamelCaseKeys()
+    {
         WriteRittenJson(_root, """{ "project": "src/Thing/Thing.csproj", "changelog": "HISTORY.md" }""");
 
-        // Act
-        var file = RittenProject.Read(_root);
+        var settings = await Bind(_root);
 
-        // Assert
-        file.Project.ShouldBe("src/Thing/Thing.csproj");
-        file.Changelog.ShouldBe("HISTORY.md");
+        settings.Project.ShouldBe("src/Thing/Thing.csproj");
+        settings.Changelog.ShouldBe("HISTORY.md");
     }
 
     [Fact]
-    public void Read_AppliesDefaultsForOmittedKeys()
+    public async Task Bind_AppliesDefaultsForOmittedKeys()
     {
-        // Arrange
         WriteRittenJson(_root);
 
-        // Act
-        var file = RittenProject.Read(_root);
+        var settings = await Bind(_root);
 
-        // Assert
-        file.Project.ShouldBeNull();
-        file.Configuration.ShouldBe("Release");
-        file.Changelog.ShouldBe("CHANGELOG.md");
-        file.TagPrefix.ShouldBe("v");
-        file.Feed.ShouldBe("https://api.nuget.org/v3/index.json");
+        settings.Project.ShouldBeNull();
+        settings.Configuration.ShouldBe("Release");
+        settings.Changelog.ShouldBe("CHANGELOG.md");
+        settings.TagPrefix.ShouldBe("v");
+        settings.Feed.ShouldBe("https://api.nuget.org/v3/index.json");
     }
 
     [Fact]
-    public void Read_RejectsAnUnrecognisedKey()
+    public async Task Bind_RejectsAKeyThePipelineDoesNotRecognise()
     {
-        // Arrange — a typo must not be silently ignored, or it surfaces later as "project must be set".
+        // A typo must not be silently ignored, or it surfaces later as "project must be set".
+        // Because the settings type belongs to the pipeline, this also catches a key that would
+        // have been valid for a different kind of project.
         WriteRittenJson(_root, """{ "projct": "src/Thing/Thing.csproj" }""");
+        var project = await Resolve(_root);
 
-        // Act
-        Action act = () => RittenProject.Read(_root);
+        var act = () => project!.GetSettings(typeof(DotNetPackageSettings));
 
-        // Assert
         act.ShouldThrow<JsonException>().Message.ShouldContain("projct");
     }
 
     [Fact]
-    public void Read_RejectsAPascalCaseKey()
+    public async Task Bind_AllowsCommentsAndTrailingCommas()
     {
-        // Arrange
-        WriteRittenJson(_root, """{ "Project": "src/Thing/Thing.csproj" }""");
-
-        // Act
-        Action act = () => RittenProject.Read(_root);
-
-        // Assert
-        act.ShouldThrow<JsonException>();
-    }
-
-    [Fact]
-    public void Read_AllowsCommentsAndTrailingCommas()
-    {
-        // Arrange — it's a hand-edited file.
+        // It's a hand-edited file.
         WriteRittenJson(_root, """
             {
-                // The package this repository ships.
+                // The package this project ships.
                 "project": "src/Thing/Thing.csproj",
             }
             """);
 
-        // Act
-        var file = RittenProject.Read(_root);
+        var settings = await Bind(_root);
 
-        // Assert
-        file.Project.ShouldBe("src/Thing/Thing.csproj");
+        settings.Project.ShouldBe("src/Thing/Thing.csproj");
     }
 
-    [Fact]
-    public void Read_ThrowsOnMalformedJson()
+    private static Task<RittenProject?> Resolve(string directory) => RittenProject.Resolve(directory);
+
+    private static async Task<DotNetPackageSettings> Bind(string directory)
     {
-        // Arrange
-        WriteRittenJson(_root, "{ not json");
-
-        // Act
-        Action act = () => RittenProject.Read(_root);
-
-        // Assert — PipelineHost turns this into a configuration error rather than a crash.
-        act.ShouldThrow<JsonException>();
+        var project = await Resolve(directory);
+        return (DotNetPackageSettings)project.ShouldNotBeNull().GetSettings(typeof(DotNetPackageSettings));
     }
 
     private static void WriteRittenJson(string directory, string content = "{}")
