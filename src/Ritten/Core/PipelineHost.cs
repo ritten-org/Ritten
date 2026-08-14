@@ -27,12 +27,13 @@ public class PipelineHost : IDisposable
     }
 
     /// <summary>
-    /// Creates, configures, and runs the specified pipeline, returning its exit code.
+    /// Runs one job of the specified pipeline, returning its exit code.
     /// </summary>
-    /// <typeparam name="TPipeline">The pipeline type to run.</typeparam>
+    /// <typeparam name="TPipeline">The pipeline the job belongs to.</typeparam>
     /// <typeparam name="TSettings">The settings taken by the pipeline.</typeparam>
+    /// <param name="job">The job to run.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public static async Task<int> Run<TPipeline, TSettings>(CancellationToken cancellationToken = default) where TPipeline : Pipeline<TSettings>, new()
+    public static async Task<int> Run<TPipeline, TSettings>(string job, CancellationToken cancellationToken = default) where TPipeline : Pipeline<TSettings>, new()
     {
         var reporter = new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail);
         var pipeline = new TPipeline();
@@ -44,12 +45,14 @@ public class PipelineHost : IDisposable
         }
         catch (JsonException exception)
         {
-            return ConfigurationError(reporter, $"Could not read {RittenProject.FileName}: {exception.Message}", exception);
+            reporter.Error($"Could not read {RittenProject.FileName}: {exception.Message}", exception);
+            return PipelineExitCodes.ConfigurationError;
         }
 
         if (project is null)
         {
-            return ConfigurationError(reporter, $"No {RittenProject.FileName} found in '{Environment.CurrentDirectory}' or any parent directory.");
+            reporter.Error($"{Environment.CurrentDirectory} is not a valid Ritten project.");
+            return PipelineExitCodes.ConfigurationError;
         }
 
         TSettings settings;
@@ -59,26 +62,21 @@ public class PipelineHost : IDisposable
         }
         catch (JsonException exception)
         {
-            return ConfigurationError(reporter, $"Could not read '{project.FilePath}': {exception.Message}", exception);
-        }
-
-        // Requirements are the pipeline's, not the file's: two pipelines can share a settings type
-        // and still disagree about what has to be filled in.
-        if (!pipeline.TryValidate(settings, out var failures))
-        {
-            foreach (var failure in failures)
-            {
-                reporter.Error(failure);
-            }
-
+            reporter.Error($"Could not read '{project.FilePath}'", exception);
             return PipelineExitCodes.ConfigurationError;
         }
 
-        var builder = new PipelineHostBuilder(project, reporter);
+        var builder = new PipelineHostBuilder(project, pipeline.Name, reporter);
         pipeline.Configure(builder, settings);
-        builder.Services.AddSingleton<Pipeline>(pipeline);
 
-        using var host = builder.Build();
+        var result = builder.Build(job);
+        if (result.IsError)
+        {
+            reporter.Errors(result.Errors);
+            return PipelineExitCodes.ConfigurationError;
+        }
+
+        using var host = result.Value;
         return await host.Run(cancellationToken);
     }
 
@@ -87,19 +85,5 @@ public class PipelineHost : IDisposable
         var runner = _services.GetRequiredService<IPipelineRunner>();
         var result = await runner.Run(cancellationToken);
         return result.ExitCode;
-    }
-
-    /// <summary>
-    /// A malformed or mistyped project file is the author's mistake, not a crash.
-    /// </summary>
-    private static int ConfigurationError(IPipelineLog log, string message, Exception? exception = null)
-    {
-        log.Error(message);
-        if (exception is not null)
-        {
-            log.Log(PipelineLogLevel.Verbose, null, exception);
-        }
-
-        return PipelineExitCodes.ConfigurationError;
     }
 }

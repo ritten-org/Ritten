@@ -12,23 +12,14 @@ public abstract class Pipeline
 }
 
 /// <summary>
-/// A self-describing pipeline.
+/// A pipeline configured by <typeparamref name="TSettings"/>.
 /// </summary>
 public abstract class Pipeline<TSettings> : Pipeline
 {
     /// <summary>
-    /// Validates the given settings against this pipeline's requirements.
+    /// Declares the services and jobs for this pipeline.
     /// </summary>
-    public virtual bool TryValidate(TSettings settings, out List<string> errors)
-    {
-        errors = [];
-        return true;
-    }
-
-    /// <summary>
-    /// Configures the services and steps for this pipeline.
-    /// </summary>
-    /// <param name="builder">The builder used to register services and declare steps.</param>
+    /// <param name="builder">The builder used to register services and declare jobs.</param>
     /// <param name="settings">The settings read from the project's <c>ritten.json</c>.</param>
     public abstract void Configure(IPipelineBuilder builder, TSettings settings);
 }

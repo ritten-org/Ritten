@@ -35,12 +35,12 @@ public static class ServiceCollectionExtensions
         /// <summary>
         /// Adds changelog validation.
         /// </summary>
-        public IServiceCollection AddChangelogs(IChangelogSettings settings)
+        public IServiceCollection AddChangelogs(ChangelogSettings settings)
         {
             services.TryAddSingleton<IChangelog, ChangelogClient>();
             services.Configure<ChangelogOptions>(o =>
             {
-                o.File = settings.Changelog;
+                o.File = settings.File;
                 o.RepositoryUrl = settings.Repository;
             });
             services.Configure<ChangelogOptions>(ChangelogOptions.ConfigureFromEnvironment);
@@ -50,7 +50,7 @@ public static class ServiceCollectionExtensions
         /// <summary>
         /// Adds the .NET client and build settings, configured from the project's settings.
         /// </summary>
-        public IServiceCollection AddDotNet(IDotNetSettings settings)
+        public IServiceCollection AddDotNet(DotNetBuildSettings settings)
         {
             services.AddCommandRunner();
             services.TryAddSingleton<IDotNet, DotNetClient>();
@@ -65,11 +65,11 @@ public static class ServiceCollectionExtensions
         /// <summary>
         /// Adds release tagging, configured from the project's settings.
         /// </summary>
-        public IServiceCollection AddGit(ITagSettings settings)
+        public IServiceCollection AddGit(string tagPrefix)
         {
             services.AddCommandRunner();
             services.TryAddSingleton<IGit, GitClient>();
-            services.Configure<GitOptions>(o => o.TagPrefix = settings.TagPrefix);
+            services.Configure<GitOptions>(o => o.TagPrefix = tagPrefix);
             services.Configure<GitOptions>(GitOptions.ConfigureFromEnvironment);
             return services;
         }
@@ -77,11 +77,11 @@ public static class ServiceCollectionExtensions
         /// <summary>
         /// Adds NuGet publishing, configured from the project's settings.
         /// </summary>
-        public IServiceCollection AddNuGet(INuGetSettings settings)
+        public IServiceCollection AddNuGet(string feed)
         {
             services.AddCommandRunner();
             services.TryAddSingleton<INuGet, NuGetClient>();
-            services.Configure<NuGetOptions>(o => o.Feed = settings.Feed);
+            services.Configure<NuGetOptions>(o => o.Feed = feed);
             services.Configure<NuGetOptions>(NuGetOptions.ConfigureFromEnvironment);
             return services;
         }
@@ -92,10 +92,10 @@ public static class ServiceCollectionExtensions
         public IServiceCollection AddDotNetPackageServices(DotNetPackageSettings settings)
         {
             return services
-                .AddChangelogs(settings)
-                .AddDotNet(settings)
-                .AddGit(settings)
-                .AddNuGet(settings)
+                .AddChangelogs(settings.Changelog)
+                .AddDotNet(settings.Build)
+                .AddGit(settings.Release.TagPrefix)
+                .AddNuGet(settings.Release.Feed)
                 .AddGitHubActionsRuntime()
                 .AddBuildReporting();
         }

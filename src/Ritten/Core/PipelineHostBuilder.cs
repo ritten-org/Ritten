@@ -14,15 +14,19 @@ namespace Ritten.Core;
 public class PipelineHostBuilder : IPipelineBuilder
 {
     private readonly SpectreProgressReporter _reporter;
+    private readonly string _pipelineName;
+    private readonly Dictionary<string, Action<IJobBuilder>> _jobs = [];
 
     /// <summary>
     /// Creates a new instance of the <see cref="PipelineHostBuilder"/>.
     /// </summary>
     /// <param name="project">The project being built.</param>
+    /// <param name="pipelineName">The name of the pipeline being configured.</param>
     /// <param name="reporter">The reporter that renders pipeline progress.</param>
-    internal PipelineHostBuilder(RittenProject project, SpectreProgressReporter reporter)
+    internal PipelineHostBuilder(RittenProject project, string pipelineName, SpectreProgressReporter reporter)
     {
         _reporter = reporter;
+        _pipelineName = pipelineName;
         Services.AddSingleton(project);
     }
 
@@ -30,18 +34,24 @@ public class PipelineHostBuilder : IPipelineBuilder
     public IServiceCollection Services { get; } = new ServiceCollection();
 
     /// <inheritdoc />
-    public IPipelineBuilder UseStep<TStep>() where TStep : class, IPipelineStep
+    public IPipelineBuilder AddJob(string name, Action<IJobBuilder> configure)
     {
-        Services.AddTransient<IPipelineStep, TStep>();
+        _jobs.Add(name, configure);
         return this;
     }
 
     /// <summary>
-    /// Builds the <see cref="PipelineHost" />.
+    /// Builds the <see cref="PipelineHost" /> for the given job.
     /// </summary>
     /// <returns>The configured pipeline application.</returns>
-    public PipelineHost Build()
+    public Result<PipelineHost> Build(string job)
     {
+        if (!_jobs.TryGetValue(job, out var configure))
+        {
+            return Result.Error($"The {_pipelineName} pipeline has no job named '{job}'.");
+        }
+
+        Services.AddSingleton(new PipelineJob(_pipelineName, job));
         Services.AddSingleton(TimeProvider.System);
 
         Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
@@ -52,6 +62,14 @@ public class PipelineHostBuilder : IPipelineBuilder
         Services.AddSingleton<IProgressReporter>(_reporter);
         Services.TryAddSingleton<IPipelineLog>(_reporter);
 
+        var builder = new JobBuilder(Services);
+        configure(builder);
+
+        if (builder.Errors.Count > 0)
+        {
+            return builder.Errors;
+        }
+
         var provider = Services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateScopes = true,
@@ -59,5 +77,26 @@ public class PipelineHostBuilder : IPipelineBuilder
         });
 
         return new PipelineHost(provider);
+    }
+
+    private sealed class JobBuilder(IServiceCollection services) : IJobBuilder
+    {
+        public List<Error> Errors { get; } = [];
+
+        public IJobBuilder Requires(string? value, string key)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                Errors.Add($"'{key}' not set in {RittenProject.FileName}.");
+            }
+
+            return this;
+        }
+
+        public IJobBuilder UseStep<TStep>() where TStep : class, IPipelineStep
+        {
+            services.AddTransient<IPipelineStep, TStep>();
+            return this;
+        }
     }
 }

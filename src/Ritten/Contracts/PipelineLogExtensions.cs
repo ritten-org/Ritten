@@ -1,3 +1,5 @@
+using Ritten.Core;
+
 namespace Ritten.Contracts;
 
 /// <summary>
@@ -32,5 +34,21 @@ public static class PipelineLogExtensions
         /// this is for failures that happen outside a step.
         /// </summary>
         public void Error(string message, Exception? exception = null) => log.Log(PipelineLogLevel.Error, message, exception);
+
+        /// <summary>
+        /// Writes an error.
+        /// </summary>
+        public void Error(Error error) => log.Log(PipelineLogLevel.Error, error.Message);
+
+        /// <summary>
+        /// Writes multiple errors.
+        /// </summary>
+        public void Errors(IEnumerable<Error> errors)
+        {
+            foreach (var error in errors)
+            {
+                log.Error(error);
+            }
+        }
     }
 }

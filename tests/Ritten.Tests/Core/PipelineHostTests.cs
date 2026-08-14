@@ -1,10 +1,7 @@
-using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Core;
-using Ritten.Reporting;
 using Ritten.Tests.Core.Helpers;
-using Spectre.Console;
 
 namespace Ritten.Tests.Core;
 
@@ -40,36 +37,41 @@ public class PipelineHostTests
         exitCode.ShouldBe(PipelineExitCodes.Failed);
     }
 
+    [Fact]
+    public void Build_RegistersOnlyTheRequestedJobsSteps()
+    {
+        // Arrange
+        var builder = PipelineHostBuilderHelpers.Create("verify");
+
+        // Act — two jobs declared, only one requested.
+        builder.AddJob("verify", job => job.UseStep<FirstStep>());
+        builder.AddJob("deploy", job => job.UseStep<SecondStep>());
+
+        // Assert
+        builder.JobFound.ShouldBeTrue();
+        builder.Services.Count(d => d.ServiceType == typeof(IPipelineStep)).ShouldBe(1);
+        builder.Services.ShouldContain(d => d.ImplementationType == typeof(FirstStep));
+        builder.Services.ShouldNotContain(d => d.ImplementationType == typeof(SecondStep));
+    }
+
     private static PipelineHost BuildHost(IPipelineStep step)
     {
-        var project = new RittenProject
-        {
-            Directory = Path.GetTempPath(),
-            Settings = JsonSerializer.Deserialize<JsonElement>("{}")
-        };
-
-        var builder = new PipelineHostBuilder(project, new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail));
+        var builder = PipelineHostBuilderHelpers.Create("verify");
+        builder.AddJob("verify", _ => { });
         builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
         builder.Services.AddSingleton(step);
-        builder.Services.AddSingleton<Pipeline>(new TestPipeline());
 
         return builder.Build();
     }
 }
 
-class TestSettings;
-
-class TestPipeline : Pipeline<TestSettings>
+class FirstStep : IPipelineStep
 {
-    /// <inheritdoc />
-    public override string Name => "Test";
-
-    /// <inheritdoc />
-    public override void Configure(IPipelineBuilder builder, TestSettings settings) =>
-        builder.UseStep<TestPipelineStep>();
+    public Task<StepResult> Run(CancellationToken cancellationToken = default) =>
+        Task.FromResult(StepResult.Successful);
 }
 
-class TestPipelineStep : IPipelineStep
+class SecondStep : IPipelineStep
 {
     public Task<StepResult> Run(CancellationToken cancellationToken = default) =>
         Task.FromResult(StepResult.Successful);

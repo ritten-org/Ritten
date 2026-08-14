@@ -1,10 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
-using Ritten.Contracts;
 
 namespace Ritten.Core;
 
 /// <summary>
-/// Provides methods for configuring services and declaring steps for a pipeline.
+/// Provides methods for configuring services and declaring the jobs of a pipeline.
 /// </summary>
 public interface IPipelineBuilder
 {
@@ -14,8 +13,10 @@ public interface IPipelineBuilder
     IServiceCollection Services { get; }
 
     /// <summary>
-    /// Appends a step to the pipeline. Steps run in the order they are declared.
+    /// Declares a job.
     /// </summary>
-    /// <typeparam name="TStep">The step type. It is automatically registered in the service collection.</typeparam>
-    IPipelineBuilder UseStep<TStep>() where TStep : class, IPipelineStep;
+    /// <param name="name">The job's name, as given on the command line.</param>
+    /// <param name="configure">Declares the job's requirements and steps.</param>
+    /// <remarks>A run executes exactly one job, so only the requested job's steps are registered.</remarks>
+    IPipelineBuilder AddJob(string name, Action<IJobBuilder> configure);
 }

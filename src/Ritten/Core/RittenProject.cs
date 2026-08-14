@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Ritten.Core;
 
@@ -15,6 +16,7 @@ internal sealed class RittenProject
     private static readonly JsonSerializerOptions _serializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
         PropertyNameCaseInsensitive = true,
         RespectNullableAnnotations = true,
         ReadCommentHandling = JsonCommentHandling.Skip,

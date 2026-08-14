@@ -22,7 +22,7 @@ public class RittenProjectTests : IDisposable
     {
         WriteRittenJson(_root);
 
-        var project = await Resolve(_root);
+        var project = await RittenProject.Resolve(_root);
 
         project.ShouldNotBeNull().Directory.ShouldBe(_root);
     }
@@ -33,7 +33,7 @@ public class RittenProjectTests : IDisposable
         WriteRittenJson(_root);
         var nested = Directory.CreateDirectory(Path.Combine(_root, "src", "Thing", "bin")).FullName;
 
-        var project = await Resolve(nested);
+        var project = await RittenProject.Resolve(nested);
 
         project.ShouldNotBeNull().Directory.ShouldBe(_root);
     }
@@ -46,7 +46,7 @@ public class RittenProjectTests : IDisposable
         var nested = Directory.CreateDirectory(Path.Combine(_root, "nested")).FullName;
         WriteRittenJson(nested);
 
-        var project = await Resolve(Path.Combine(nested, "src"));
+        var project = await RittenProject.Resolve(Path.Combine(nested, "src"));
 
         project.ShouldNotBeNull().Directory.ShouldBe(nested);
     }
@@ -56,7 +56,7 @@ public class RittenProjectTests : IDisposable
     {
         Directory.CreateDirectory(_root);
 
-        var project = await Resolve(_root);
+        var project = await RittenProject.Resolve(_root);
 
         project.ShouldBeNull();
     }
@@ -67,70 +67,112 @@ public class RittenProjectTests : IDisposable
         WriteRittenJson(_root, "{ not json");
 
         // PipelineHost turns this into a configuration error rather than a crash.
-        await Should.ThrowAsync<JsonException>(async () => await Resolve(_root));
+        await Should.ThrowAsync<JsonException>(async () => await RittenProject.Resolve(_root));
     }
 
     [Fact]
-    public async Task Bind_ReadsCamelCaseKeys()
+    public async Task GetSettings_ReadsSections()
     {
-        WriteRittenJson(_root, """{ "project": "src/Thing/Thing.csproj", "changelog": "HISTORY.md" }""");
+        WriteRittenJson(_root, """
+            {
+                "build": { "project": "src/Thing/Thing.csproj", "configuration": "Debug" },
+                "changelog": { "file": "HISTORY.md", "repository": "https://example.com/thing" },
+                "release": { "tagPrefix": "release-", "feed": "https://example.com/index.json" }
+            }
+            """);
 
-        var settings = await Bind(_root);
+        var settings = await GetSettings(_root);
 
-        settings.Project.ShouldBe("src/Thing/Thing.csproj");
-        settings.Changelog.ShouldBe("HISTORY.md");
+        settings.Build.Project.ShouldBe("src/Thing/Thing.csproj");
+        settings.Build.Configuration.ShouldBe("Debug");
+        settings.Changelog.File.ShouldBe("HISTORY.md");
+        settings.Changelog.Repository.ShouldBe("https://example.com/thing");
+        settings.Release.TagPrefix.ShouldBe("release-");
+        settings.Release.Feed.ShouldBe("https://example.com/index.json");
     }
 
     [Fact]
-    public async Task Bind_AppliesDefaultsForOmittedKeys()
+    public async Task GetSettings_AppliesDefaultsForOmittedSections()
     {
         WriteRittenJson(_root);
 
-        var settings = await Bind(_root);
+        var settings = await GetSettings(_root);
 
-        settings.Project.ShouldBeNull();
-        settings.Configuration.ShouldBe("Release");
-        settings.Changelog.ShouldBe("CHANGELOG.md");
-        settings.TagPrefix.ShouldBe("v");
-        settings.Feed.ShouldBe("https://api.nuget.org/v3/index.json");
+        settings.Build.Project.ShouldBeNull();
+        settings.Build.Configuration.ShouldBe("Release");
+        settings.Changelog.File.ShouldBe("CHANGELOG.md");
+        settings.Changelog.Repository.ShouldBeNull();
+        settings.Release.TagPrefix.ShouldBe("v");
+        settings.Release.Feed.ShouldBe("https://api.nuget.org/v3/index.json");
     }
 
     [Fact]
-    public async Task Bind_RejectsAKeyThePipelineDoesNotRecognise()
+    public async Task GetSettings_AppliesDefaultsForKeysOmittedWithinASection()
     {
-        // A typo must not be silently ignored, or it surfaces later as "project must be set".
-        // Because the settings type belongs to the pipeline, this also catches a key that would
-        // have been valid for a different kind of project.
-        WriteRittenJson(_root, """{ "projct": "src/Thing/Thing.csproj" }""");
-        var project = await Resolve(_root);
+        WriteRittenJson(_root, """{ "build": { "project": "src/Thing/Thing.csproj" } }""");
 
-        var act = () => project!.GetSettings(typeof(DotNetPackageSettings));
+        var settings = await GetSettings(_root);
+
+        settings.Build.Project.ShouldBe("src/Thing/Thing.csproj");
+        settings.Build.Configuration.ShouldBe("Release");
+    }
+
+    [Fact]
+    public async Task GetSettings_RejectsAnUnrecognisedSection()
+    {
+        // A typo must not be silently ignored, or it surfaces later as "build.project not set".
+        WriteRittenJson(_root, """{ "biuld": { "project": "src/Thing/Thing.csproj" } }""");
+        var project = await RittenProject.Resolve(_root);
+
+        var act = () => project!.GetSettings<DotNetPackageSettings>();
+
+        act.ShouldThrow<JsonException>().Message.ShouldContain("biuld");
+    }
+
+    [Fact]
+    public async Task GetSettings_RejectsAnUnrecognisedKeyWithinASection()
+    {
+        WriteRittenJson(_root, """{ "build": { "projct": "src/Thing/Thing.csproj" } }""");
+        var project = await RittenProject.Resolve(_root);
+
+        var act = () => project!.GetSettings<DotNetPackageSettings>();
 
         act.ShouldThrow<JsonException>().Message.ShouldContain("projct");
     }
 
     [Fact]
-    public async Task Bind_AllowsCommentsAndTrailingCommas()
+    public async Task GetSettings_RejectsAKeyBelongingToAnotherKindOfProject()
+    {
+        // Because the settings type belongs to the pipeline, a key that would be valid for an
+        // npm project is an error in a .NET one.
+        WriteRittenJson(_root, """{ "build": { "directory": "packages/thing" } }""");
+        var project = await RittenProject.Resolve(_root);
+
+        var act = () => project!.GetSettings<DotNetPackageSettings>();
+
+        act.ShouldThrow<JsonException>().Message.ShouldContain("directory");
+    }
+
+    [Fact]
+    public async Task GetSettings_AllowsCommentsAndTrailingCommas()
     {
         // It's a hand-edited file.
         WriteRittenJson(_root, """
             {
                 // The package this project ships.
-                "project": "src/Thing/Thing.csproj",
+                "build": { "project": "src/Thing/Thing.csproj", },
             }
             """);
 
-        var settings = await Bind(_root);
+        var settings = await GetSettings(_root);
 
-        settings.Project.ShouldBe("src/Thing/Thing.csproj");
+        settings.Build.Project.ShouldBe("src/Thing/Thing.csproj");
     }
 
-    private static Task<RittenProject?> Resolve(string directory) => RittenProject.Resolve(directory);
-
-    private static async Task<DotNetPackageSettings> Bind(string directory)
+    private static async Task<DotNetPackageSettings> GetSettings(string directory)
     {
-        var project = await Resolve(directory);
-        return (DotNetPackageSettings)project.ShouldNotBeNull().GetSettings(typeof(DotNetPackageSettings));
+        var project = await RittenProject.Resolve(directory);
+        return project.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
     }
 
     private static void WriteRittenJson(string directory, string content = "{}")

@@ -149,7 +149,7 @@ public class DefaultPipelineRunnerTests
         // Arrange
         var log = Substitute.For<IPipelineLog>();
         var reporter = Substitute.For<IProgressReporter>();
-        reporter.OnPipelineStarted(Arg.Any<Pipeline>(), Arg.Any<CancellationToken>())
+        reporter.OnPipelineStarted(Arg.Any<PipelineJob>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("Reporter is broken."));
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(
@@ -205,7 +205,7 @@ public class DefaultPipelineRunnerTests
         // Assert
         Received.InOrder(() =>
         {
-            reporter.OnPipelineStarted(Arg.Any<Pipeline>(), Arg.Any<CancellationToken>());
+            reporter.OnPipelineStarted(Arg.Any<PipelineJob>(), Arg.Any<CancellationToken>());
             step.Run(Arg.Any<CancellationToken>());
         });
     }
@@ -262,7 +262,7 @@ public class DefaultPipelineRunnerTests
     {
         // Arrange
         var reporter = Substitute.For<IProgressReporter>();
-        reporter.OnPipelineStarted(Arg.Any<Pipeline>(), Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
+        reporter.OnPipelineStarted(Arg.Any<PipelineJob>(), Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
 
         var step = PipelineStepHelpers.CreateMock();
 

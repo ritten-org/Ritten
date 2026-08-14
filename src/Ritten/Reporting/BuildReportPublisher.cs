@@ -21,7 +21,7 @@ internal class BuildReportPublisher(
 ) : IProgressReporter
 {
     /// <inheritdoc />
-    public async Task OnPipelineStarted(Pipeline pipeline, CancellationToken cancellationToken)
+    public async Task OnPipelineStarted(PipelineJob job, CancellationToken cancellationToken)
     {
         if (!options.Value.IsPullRequest)
         {
@@ -30,7 +30,7 @@ internal class BuildReportPublisher(
 
         try
         {
-            await comments.CreateOrUpdate($"## ⏳ {options.Value.WorkflowName}\n\n{pipeline.Name} pipeline in progress…", cancellationToken);
+            await comments.CreateOrUpdate($"## ⏳ {options.Value.WorkflowName}\n\n{job.Name} job in progress…", cancellationToken);
         }
         catch (Exception ex)
         {

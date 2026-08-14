@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Ritten.Core;
 using Ritten.Core.FileSystem;
 
@@ -31,7 +30,6 @@ public class ProjectFileSystemTests
 
     private static RittenProject Project(string directory) => new()
     {
-        Directory = directory,
-        Settings = JsonSerializer.Deserialize<JsonElement>("{}")
+        Directory = directory
     };
 }

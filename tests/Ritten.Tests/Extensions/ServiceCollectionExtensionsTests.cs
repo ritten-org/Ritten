@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Changelogs;
 using Ritten.Commands;
+using Ritten.Core.Settings;
 using Ritten.DotNet;
 using Ritten.Extensions;
 using Ritten.Git;
@@ -22,12 +23,9 @@ public class ServiceCollectionExtensionsTests
 {
     private static readonly DotNetPackageSettings Settings = new()
     {
-        Project = "src/Thing/Thing.csproj",
-        Configuration = "Debug",
-        Changelog = "HISTORY.md",
-        Repository = "https://example.com/thing",
-        TagPrefix = "release-",
-        Feed = "https://example.com/index.json"
+        Build = new DotNetBuildSettings { Project = "src/Thing/Thing.csproj", Configuration = "Debug" },
+        Changelog = new ChangelogSettings { File = "HISTORY.md", Repository = "https://example.com/thing" },
+        Release = new ReleaseSettings { TagPrefix = "release-", Feed = "https://example.com/index.json" }
     };
 
     [Fact]
@@ -35,10 +33,10 @@ public class ServiceCollectionExtensionsTests
     {
         var services = Services()
             .AddCommandRunner().AddCommandRunner()
-            .AddChangelogs(Settings).AddChangelogs(Settings)
-            .AddDotNet(Settings).AddDotNet(Settings)
-            .AddGit(Settings).AddGit(Settings)
-            .AddNuGet(Settings).AddNuGet(Settings)
+            .AddChangelogs(Settings.Changelog).AddChangelogs(Settings.Changelog)
+            .AddDotNet(Settings.Build).AddDotNet(Settings.Build)
+            .AddGit(Settings.Release.TagPrefix).AddGit(Settings.Release.TagPrefix)
+            .AddNuGet(Settings.Release.Feed).AddNuGet(Settings.Release.Feed)
             .AddGitHubActionsRuntime().AddGitHubActionsRuntime()
             .AddBuildReporting().AddBuildReporting();
 
@@ -56,7 +54,7 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void AddGit_RegistersItsCommandRunnerDependency()
     {
-        var services = Services().AddGit(Settings);
+        var services = Services().AddGit(Settings.Release.TagPrefix);
 
         services.Count(d => d.ServiceType == typeof(ICommandRunner)).ShouldBe(1);
     }
@@ -64,7 +62,7 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void AddDotNet_RegistersItsCommandRunnerDependency()
     {
-        var services = Services().AddDotNet(Settings);
+        var services = Services().AddDotNet(Settings.Build);
 
         services.Count(d => d.ServiceType == typeof(ICommandRunner)).ShouldBe(1);
     }
@@ -99,10 +97,10 @@ public class ServiceCollectionExtensionsTests
     public void EachCapability_MapsOnlyItsOwnSliceOfTheSettings()
     {
         var provider = Services()
-            .AddDotNet(Settings)
-            .AddChangelogs(Settings)
-            .AddGit(Settings)
-            .AddNuGet(Settings)
+            .AddDotNet(Settings.Build)
+            .AddChangelogs(Settings.Changelog)
+            .AddGit(Settings.Release.TagPrefix)
+            .AddNuGet(Settings.Release.Feed)
             .BuildServiceProvider();
 
         provider.GetRequiredService<IOptions<DotNetOptions>>().Value.ProjectFile.ShouldBe("src/Thing/Thing.csproj");

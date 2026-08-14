@@ -6,7 +6,7 @@ internal class DefaultPipelineRunner(
     IPipelineLog log,
     IEnumerable<IProgressReporter> reporters,
     IEnumerable<IPipelineStep> steps,
-    Pipeline pipeline
+    PipelineJob job
 ) : IPipelineRunner
 {
 
@@ -15,7 +15,7 @@ internal class DefaultPipelineRunner(
 
     public async Task<PipelineResult> Run(CancellationToken cancellationToken)
     {
-        await NotifyReporters(r => r.OnPipelineStarted(pipeline, cancellationToken));
+        await NotifyReporters(r => r.OnPipelineStarted(job, cancellationToken));
         var stepResults = await RunSteps(cancellationToken);
 
         var exitCode = cancellationToken.IsCancellationRequested

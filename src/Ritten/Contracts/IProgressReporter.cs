@@ -8,9 +8,9 @@ namespace Ritten.Contracts;
 public interface IProgressReporter
 {
     /// <summary>
-    /// Called when the pipeline is about to start.
+    /// Called when the job is about to start.
     /// </summary>
-    Task OnPipelineStarted(Pipeline pipeline, CancellationToken cancellationToken = default);
+    Task OnPipelineStarted(PipelineJob job, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Called when a step is about to run.

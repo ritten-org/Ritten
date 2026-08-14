@@ -5,10 +5,10 @@ using NuGet.Versioning;
 using Ritten.Changelogs;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
+using Ritten.Core.Settings;
 using Ritten.DotNet;
 using Ritten.Extensions;
 using Ritten.Pipelines;
-using Ritten.Pipelines.DotNet;
 using Ritten.Reporting;
 using Ritten.Tests.Support;
 
@@ -18,7 +18,7 @@ public class ValidateChangelogTests
 {
     // The real client, so these tests exercise the actual parser and link generator.
     private static readonly IChangelog Changelogs = new ServiceCollection()
-        .AddChangelogs(new DotNetPackageSettings())
+        .AddChangelogs(new ChangelogSettings())
         .BuildServiceProvider()
         .GetRequiredService<IChangelog>();
 

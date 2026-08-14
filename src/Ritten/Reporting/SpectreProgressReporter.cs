@@ -14,9 +14,9 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
     private readonly Stopwatch _pipelineTimer = new();
 
     /// <inheritdoc />
-    public Task OnPipelineStarted(Pipeline pipeline, CancellationToken cancellationToken)
+    public Task OnPipelineStarted(PipelineJob job, CancellationToken cancellationToken)
     {
-        console.Write(new Rule($"[bold]{Markup.Escape(pipeline.Name)}[/]").LeftJustified());
+        console.Write(new Rule($"[bold]{Markup.Escape(job.Pipeline)}[/] [grey]·[/] [bold]{Markup.Escape(job.Name)}[/]").LeftJustified());
         _pipelineTimer.Restart();
         return Task.CompletedTask;
     }

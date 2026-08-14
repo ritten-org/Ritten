@@ -1,54 +1,63 @@
+using Ritten.Core;
 using Ritten.Pipelines.DotNet;
-
+using Ritten.Tests.Core.Helpers;
 namespace Ritten.Tests.Pipelines;
 
 /// <summary>
-/// The three .NET package pipelines share a settings type but not its requirements: only the ones
-/// that ship a package need to know which project to pack.
+/// The .NET package pipeline's jobs read the same project settings but don't share requirements:
+/// only the jobs that ship a package need to know which project to pack.
 /// </summary>
 public class DotNetPackagePipelineTests
 {
+    [Theory]
+    [InlineData("verify")]
+    [InlineData("build")]
+    [InlineData("deploy")]
+    public void EveryJobTheCliOffers_IsDeclared(string job)
+    {
+        Configure(job, new DotNetPackageSettings()).JobFound.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void AnUnknownJob_IsNotFound()
+    {
+        Configure("publish", new DotNetPackageSettings()).JobFound.ShouldBeFalse();
+    }
+
     [Fact]
     public void Verify_DoesNotRequireAProject()
     {
-        var failures = new DotNetPackageVerify().Validate(new DotNetPackageSettings());
-
-        failures.ShouldBeEmpty();
+        Configure("verify", new DotNetPackageSettings()).Errors.ShouldBeEmpty();
     }
 
-    [Fact]
-    public void Build_RequiresAProject()
+    [Theory]
+    [InlineData("build")]
+    [InlineData("deploy")]
+    public void ShippingJobs_RequireAProject(string job)
     {
-        var failures = new DotNetPackageBuild().Validate(new DotNetPackageSettings());
+        var errors = Configure(job, new DotNetPackageSettings()).Errors;
 
-        failures.ShouldHaveSingleItem().ShouldContain("'project' in ritten.json");
+        errors.ShouldHaveSingleItem().ShouldContain("'build.project'");
     }
 
-    [Fact]
-    public void Deploy_RequiresAProject()
+    [Theory]
+    [InlineData("build")]
+    [InlineData("deploy")]
+    public void ShippingJobs_AcceptSettingsWithAProject(string job)
     {
-        var failures = new DotNetPackageDeploy().Validate(new DotNetPackageSettings());
+        var settings = new DotNetPackageSettings
+        {
+            Build = new DotNetBuildSettings { Project = "src/Thing/Thing.csproj" }
+        };
 
-        failures.ShouldHaveSingleItem().ShouldContain("'project' in ritten.json");
+        Configure(job, settings).Errors.ShouldBeEmpty();
     }
 
-    [Fact]
-    public void Build_AcceptsSettingsWithAProject()
+    private static PipelineHostBuilder Configure(string job, DotNetPackageSettings settings)
     {
-        var settings = new DotNetPackageSettings { Project = "src/Thing/Thing.csproj" };
-
-        new DotNetPackageBuild().Validate(settings).ShouldBeEmpty();
-    }
-
-    [Fact]
-    public void Settings_DeclareTheCapabilitiesThePipelinesUse()
-    {
-        var settings = new DotNetPackageSettings();
-
-        // The interfaces are what let the capability-scoped registrations accept these settings.
-        settings.ShouldBeAssignableTo<Ritten.Core.Settings.IDotNetSettings>();
-        settings.ShouldBeAssignableTo<Ritten.Core.Settings.IChangelogSettings>();
-        settings.ShouldBeAssignableTo<Ritten.Core.Settings.ITagSettings>();
-        settings.ShouldBeAssignableTo<Ritten.Core.Settings.INuGetSettings>();
+        var pipeline = new DotNetPackagePipeline();
+        var builder = PipelineHostBuilderHelpers.Create(job, pipeline.Name);
+        pipeline.Configure(builder, settings);
+        return builder;
     }
 }
