@@ -93,7 +93,7 @@ public class DefaultPipelineRunnerTests
     public async Task RunPipeline_StepFailsButAsksToContinue_StillFailsThePipeline()
     {
         // Arrange
-        var failed = new StepResult(PipelineExitCodes.Failed, Continue: true, "Failed, but not fatally.");
+        var failed = new StepResult(PipelineExitCodes.Failed, Continue: true, ["Failed, but not fatally."]);
         var step1 = PipelineStepHelpers.CreateMock();
         step1.Run(Arg.Any<CancellationToken>()).Returns(failed);
         var step2 = PipelineStepHelpers.CreateMock();
@@ -136,7 +136,7 @@ public class DefaultPipelineRunnerTests
         var summary = await sut.Run(CancellationToken.None);
 
         // Assert
-        summary.Steps.ShouldHaveSingleItem().Message.ShouldBe("Something broke.");
+        summary.Steps.ShouldHaveSingleItem().Errors.ShouldHaveSingleItem("Something broke.");
         log.Received().Log(
             PipelineLogLevel.Verbose,
             Arg.Any<string>(),
