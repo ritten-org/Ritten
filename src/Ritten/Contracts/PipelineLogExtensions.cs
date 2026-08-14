@@ -20,17 +20,17 @@ public static class PipelineLogExtensions
         /// <summary>
         /// Writes a diagnostic message that is only shown with --verbose.
         /// </summary>
-        public void Verbose(string message) => log.Log(PipelineLogLevel.Verbose, message);
+        public void Verbose(string message, Exception? exception = null) => log.Log(PipelineLogLevel.Verbose, message, exception);
 
         /// <summary>
         /// Writes a warning about something that went wrong without failing the pipeline.
         /// </summary>
-        public void Warning(string message) => log.Log(PipelineLogLevel.Warning, message);
+        public void Warning(string message, Exception? exception = null) => log.Log(PipelineLogLevel.Warning, message, exception);
 
         /// <summary>
         /// Writes an error. Step failures are reported through <see cref="StepResult"/> instead;
         /// this is for failures that happen outside a step.
         /// </summary>
-        public void Error(string message) => log.Log(PipelineLogLevel.Error, message);
+        public void Error(string message, Exception? exception = null) => log.Log(PipelineLogLevel.Error, message, exception);
     }
 }

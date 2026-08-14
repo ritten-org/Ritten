@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Core.Runner;
 
@@ -44,12 +43,11 @@ public class RittenApplication : IDisposable
     {
         var log = _services.GetRequiredService<IPipelineLog>();
 
-        if (!TryValidate(out var failures))
+        if (!ConfigurationValidator.TryValidate(_services, out var failures))
         {
-            log.Error(failures.Count == 1 ? "Configuration error:" : $"Configuration errors ({failures.Count}):");
             foreach (var failure in failures)
             {
-                log.Error($"  • {failure}");
+                log.Error(failure);
             }
 
             return PipelineExitCodes.ConfigurationError;
@@ -59,38 +57,4 @@ public class RittenApplication : IDisposable
         var result = await runner.Run(cancellationToken);
         return result.ExitCode;
     }
-
-    /// <summary>
-    /// Validates every options type registered with <c>ValidateOnStart()</c>. A generic host would
-    /// run this as part of starting; Ritten has no host, so it drives the validator itself, before
-    /// the first step runs rather than whenever a step first reads its options.
-    /// </summary>
-    private bool TryValidate(out IReadOnlyList<string> failures)
-    {
-        failures = [];
-        if (_services.GetService<IStartupValidator>() is not { } validator)
-        {
-            return true;
-        }
-
-        try
-        {
-            validator.Validate();
-            return true;
-        }
-        catch (Exception exception)
-        {
-            failures = [.. Flatten(exception)];
-            return false;
-        }
-    }
-
-    // One failing options type surfaces as an OptionsValidationException;
-    // several are wrapped in an AggregateException.
-    private static IEnumerable<string> Flatten(Exception exception) => exception switch
-    {
-        AggregateException aggregate => aggregate.InnerExceptions.SelectMany(Flatten),
-        OptionsValidationException validation => validation.Failures,
-        _ => [exception.Message]
-    };
 }

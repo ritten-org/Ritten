@@ -34,8 +34,7 @@ internal class BuildReportPublisher(
         }
         catch (Exception ex)
         {
-            log.Warning($"Failed to post the pending pull request comment: {ex.Message}");
-            log.Verbose(ex.ToString());
+            log.Warning("Failed to post the pending pull request comment.", ex);
         }
     }
 
@@ -57,8 +56,7 @@ internal class BuildReportPublisher(
             }
             catch (Exception ex)
             {
-                log.Warning($"Failed to publish the build report via {sink.GetType().Name}: {ex.Message}");
-                log.Verbose(ex.ToString());
+                log.Warning($"Failed to publish the build report via {sink.GetType().Name}", ex);
             }
         }
     }

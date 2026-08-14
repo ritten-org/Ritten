@@ -8,7 +8,7 @@ namespace Ritten.Reporting;
 /// <summary>
 /// Renders pipeline progress to the terminal using Spectre.Console.
 /// </summary>
-internal sealed class SpectreProgressReporter(IAnsiConsole console) : IProgressReporter, IPipelineLog
+internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogLevel minimumLogLevel) : IProgressReporter, IPipelineLog
 {
     private readonly Stopwatch _stepTimer = new();
     private readonly Stopwatch _pipelineTimer = new();
@@ -66,18 +66,48 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console) : IProgressR
     }
 
     /// <inheritdoc />
-    public void Log(PipelineLogLevel level, string message)
+    public bool IsEnabled(PipelineLogLevel level) => level >= minimumLogLevel;
+
+    /// <inheritdoc />
+    public void Log(PipelineLogLevel level, string? message, Exception? exception = null)
     {
-        var text = Markup.Escape(message);
-        console.MarkupLine(level switch
+        if (!IsEnabled(level))
         {
-            PipelineLogLevel.Status => $"  [grey]{text}[/]",
-            PipelineLogLevel.Verbose => $"    [grey italic]{text}[/]",
-            PipelineLogLevel.Warning => $"    [yellow]{text}[/]",
-            PipelineLogLevel.Error => $"  [red]{text}[/]",
-            _ => $"    [grey]{text}[/]"
-        });
+            return;
+        }
+
+        if (message != null)
+        {
+            var text = Markup.Escape(message);
+            console.MarkupLine(level switch
+            {
+                PipelineLogLevel.Status => $"  [grey]{text}[/]",
+                PipelineLogLevel.Verbose => $"    [grey italic]{text}[/]",
+                PipelineLogLevel.Warning => $"  [yellow]⚠ {text}[/]",
+                PipelineLogLevel.Error => $"  [red]✗ {text}[/]",
+                _ => $"    [grey]{text}[/]"
+            });
+        }
+
+        if (exception != null)
+        {
+            var format = minimumLogLevel switch
+            {
+                // --verbose
+                PipelineLogLevel.Verbose => ExceptionFormats.Default | ExceptionFormats.ShowLinks,
+
+                // Default
+                PipelineLogLevel.Detail => ExceptionFormats.ShortenEverything,
+
+                // --quiet
+                _ => ExceptionFormats.NoStackTrace,
+            };
+
+            var paddedEx = new Padder(exception.GetRenderable(format)).PadLeft(4).PadTop(0).PadBottom(0).PadRight(0);
+            console.Write(paddedEx);
+        }
     }
+
 
     private static string FormatDuration(TimeSpan elapsed) =>
         elapsed.TotalMinutes >= 1 ? $"{elapsed.TotalMinutes:0.0}m" : $"{elapsed.TotalSeconds:0.0}s";

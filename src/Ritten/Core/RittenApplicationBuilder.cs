@@ -52,7 +52,7 @@ public class RittenApplicationBuilder : IPipelineBuilder
         Services.TryAddSingleton<IFileSystem>(_ => new PhysicalFileSystem(Environment.CurrentDirectory));
         Services.TryAddSingleton<IPipelineState, DefaultPipelineState>();
 
-        var reporter = new SpectreProgressReporter(AnsiConsole.Console);
+        var reporter = new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail);
         Services.AddSingleton<IProgressReporter>(reporter);
         Services.TryAddSingleton<IPipelineLog>(reporter);
 

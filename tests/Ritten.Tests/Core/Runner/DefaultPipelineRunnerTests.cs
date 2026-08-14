@@ -137,7 +137,10 @@ public class DefaultPipelineRunnerTests
 
         // Assert
         summary.Steps.ShouldHaveSingleItem().Message.ShouldBe("Something broke.");
-        log.Received().Log(PipelineLogLevel.Verbose, Arg.Is<string>(m => m.Contains("InvalidOperationException")));
+        log.Received().Log(
+            PipelineLogLevel.Verbose,
+            Arg.Any<string>(),
+            Arg.Is<Exception>(e => e.Message == "Something broke."));
     }
 
     [Fact]
@@ -160,7 +163,10 @@ public class DefaultPipelineRunnerTests
 
         // Assert
         summary.ExitCode.ShouldBe(PipelineExitCodes.Success);
-        log.Received().Log(PipelineLogLevel.Warning, Arg.Is<string>(m => m.Contains("Reporter is broken.")));
+        log.Received().Log(
+            PipelineLogLevel.Warning,
+            Arg.Any<string>(),
+            Arg.Is<Exception>(e => e.Message == "Reporter is broken."));
     }
 
     [Fact]

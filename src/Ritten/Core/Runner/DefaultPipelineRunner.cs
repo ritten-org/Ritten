@@ -67,7 +67,7 @@ internal class DefaultPipelineRunner(
         }
         catch (Exception ex)
         {
-            log.Verbose(ex.ToString());
+            log.Verbose("Unhandled error running step", ex);
             return StepResult.Failed(ex.Message);
         }
     }
@@ -82,8 +82,7 @@ internal class DefaultPipelineRunner(
             }
             catch (Exception ex)
             {
-                log.Warning($"Progress reporter {reporter.GetType().Name} failed: {ex.Message}");
-                log.Verbose(ex.ToString());
+                log.Warning($"Progress reporter {reporter.GetType().Name} failed.", ex);
             }
         }
     }
