@@ -19,7 +19,7 @@ public record StepResult(int ExitCode, bool Continue, IReadOnlyCollection<Error>
     /// <summary>
     /// Indicates that cancellation was requested, and the pipeline should stop execution.
     /// </summary>
-    public static readonly StepResult StoppedAfterCancel = new(PipelineExitCodes.Cancelled, false, null);
+    public static readonly StepResult StoppedAfterCancel = new(PipelineExitCodes.Cancelled, false, [new Error("Stopped after cancel.")]);
 
     /// <summary>
     /// Indicates that the step failed with an error.

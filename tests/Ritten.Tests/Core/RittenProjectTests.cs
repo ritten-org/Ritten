@@ -72,7 +72,6 @@ public class RittenProjectTests : IDisposable
         project.IsError.ShouldBeTrue();
         var error = project.Errors.ShouldHaveSingleItem();
         error.Message.ShouldContain("Could not read");
-        // The exception survives for anyone running with --verbose.
         error.Cause.ShouldBeOfType<JsonException>();
     }
 
@@ -133,7 +132,10 @@ public class RittenProjectTests : IDisposable
         var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
 
         settings.IsError.ShouldBeTrue();
-        settings.Errors.ShouldHaveSingleItem().Message.ShouldContain("biuld");
+        var error = settings.Errors.ShouldHaveSingleItem();
+        error.Message.ShouldContain(RittenProject.FileName);
+        // The message names the file; the cause names the key, for anyone running with --verbose.
+        error.Cause.ShouldBeOfType<JsonException>().Message.ShouldContain("biuld");
     }
 
     [Fact]
@@ -145,7 +147,10 @@ public class RittenProjectTests : IDisposable
         var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
 
         settings.IsError.ShouldBeTrue();
-        settings.Errors.ShouldHaveSingleItem().Message.ShouldContain("projct");
+        var error = settings.Errors.ShouldHaveSingleItem();
+        error.Message.ShouldContain(RittenProject.FileName);
+        // The message names the file; the cause names the key, for anyone running with --verbose.
+        error.Cause.ShouldBeOfType<JsonException>().Message.ShouldContain("projct");
     }
 
     [Fact]
@@ -159,7 +164,10 @@ public class RittenProjectTests : IDisposable
         var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
 
         settings.IsError.ShouldBeTrue();
-        settings.Errors.ShouldHaveSingleItem().Message.ShouldContain("directory");
+        var error = settings.Errors.ShouldHaveSingleItem();
+        error.Message.ShouldContain(RittenProject.FileName);
+        // The message names the file; the cause names the key, for anyone running with --verbose.
+        error.Cause.ShouldBeOfType<JsonException>().Message.ShouldContain("directory");
     }
 
     [Fact]

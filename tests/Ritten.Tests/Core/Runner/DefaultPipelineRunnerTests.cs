@@ -1,6 +1,8 @@
 using Ritten.Contracts;
 using Ritten.Core;
+using Ritten.Reporting;
 using Ritten.Tests.Core.Helpers;
+using Spectre.Console;
 
 namespace Ritten.Tests.Core.Runner;
 
@@ -277,5 +279,27 @@ public class DefaultPipelineRunnerTests
         // Assert
         await act.ShouldNotThrowAsync();
         await step.Received().Run(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RunPipeline_CancelledStep_IsRenderedWithoutTheReporterFailing()
+    {
+        // A cancelled step is a failure by exit code, so the reporter walks its errors. It used
+        // to have none, which IsFailure's MemberNotNullWhen promised was impossible.
+        using var cts = new CancellationTokenSource();
+        var log = Substitute.For<IPipelineLog>();
+        var step = PipelineStepHelpers.CreateMock();
+        step.When(s => s.Run(Arg.Any<CancellationToken>())).Do(_ =>
+        {
+            cts.Cancel();
+            throw new OperationCanceledException(cts.Token);
+        });
+
+        var reporter = new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail);
+
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step], reporters: [reporter], log: log);
+        await sut.Run(cts.Token);
+
+        log.DidNotReceive().Log(PipelineLogLevel.Warning, Arg.Any<string>(), Arg.Any<Exception>());
     }
 }
