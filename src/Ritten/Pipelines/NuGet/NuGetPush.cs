@@ -25,6 +25,9 @@ public class NuGetPush(
 ) : IPipelineStep
 {
     /// <inheritdoc />
+    public string Name => "dotnet nuget push";
+
+    /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(options.Value.ApiKey))

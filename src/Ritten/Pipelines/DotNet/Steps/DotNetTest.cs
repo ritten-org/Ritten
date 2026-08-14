@@ -25,6 +25,9 @@ public class DotNetTest(
     private const int MaxFailures = 20;
 
     /// <inheritdoc />
+    public string Name => "dotnet test";
+
+    /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var resultsDirectory = fileSystem.ProjectRoot

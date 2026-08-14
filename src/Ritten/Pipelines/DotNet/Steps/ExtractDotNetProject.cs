@@ -17,6 +17,9 @@ namespace Ritten.Pipelines.DotNet.Steps;
 public class ExtractDotNetProject(IPipelineLog log, IOptions<DotNetOptions> options, IFileSystem fileSystem, IPipelineState state, IDotNet dotnet) : IPipelineStep
 {
     /// <inheritdoc />
+    public string Name => "Extract project";
+
+    /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var csproj = fileSystem.ProjectRoot.GetFile(options.Value.ProjectFile);

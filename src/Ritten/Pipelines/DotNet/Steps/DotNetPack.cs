@@ -18,6 +18,9 @@ namespace Ritten.Pipelines.DotNet.Steps;
 public class DotNetPack(IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IFileSystem fileSystem, IPipelineState state, IDotNet dotnet) : IPipelineStep
 {
     /// <inheritdoc />
+    public string Name => "dotnet pack";
+
+    /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var result = await dotnet.Pack(

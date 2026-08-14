@@ -30,6 +30,9 @@ public class ValidateChangelog(
 ) : IPipelineStep
 {
     /// <inheritdoc />
+    public string Name => "Validate changelog";
+
+    /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         if (options.Value.Skip)

@@ -21,6 +21,9 @@ public class DotNetFormatCheck(
 ) : IPipelineStep
 {
     /// <inheritdoc />
+    public string Name => "dotnet format";
+
+    /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var reportDirectory = fileSystem.ProjectRoot

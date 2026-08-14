@@ -27,6 +27,9 @@ public class CreateGitHubRelease(
 ) : IPipelineStep
 {
     /// <inheritdoc />
+    public string Name => "gh release create";
+
+    /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         if (state.Get<Project>() is not { } project)

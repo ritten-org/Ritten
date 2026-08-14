@@ -18,6 +18,9 @@ namespace Ritten.Pipelines.Git;
 public class CreateGitTag(IPipelineLog log, IOptions<GitOptions> options, IPipelineState state, IGit git) : IPipelineStep
 {
     /// <inheritdoc />
+    public string Name => "git tag";
+
+    /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         if (state.Get<Project>() is not { } project)

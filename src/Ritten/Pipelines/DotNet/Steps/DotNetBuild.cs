@@ -16,6 +16,9 @@ public class DotNetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuild
     private const int MaxDiagnostics = 30;
 
     /// <inheritdoc />
+    public string Name => "dotnet build";
+
+    /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var result = await dotnet.Build(

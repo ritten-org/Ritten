@@ -29,6 +29,9 @@ public class ValidateNuGetVersion(
 ) : IPipelineStep
 {
     /// <inheritdoc />
+    public string Name => "Validate package version";
+
+    /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         if (options.Value.SkipVersionCheck)
