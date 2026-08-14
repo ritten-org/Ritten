@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Run Build Pipeline
-        run: dotnet run --project build/src/Ritten.Build/Ritten.Build.csproj -- build
+        run: dotnet run --project src/Ritten -- build
         shell: bash
         env:
           # Dependabot can't bump versions or write changelog entries, so its PRs skip those checks.
@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Run Deploy Pipeline
-        run: dotnet run --project build/src/Ritten.Build/Ritten.Build.csproj -- deploy
+        run: dotnet run --project src/Ritten -- deploy
         shell: bash
         env:
           RITTEN_NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
