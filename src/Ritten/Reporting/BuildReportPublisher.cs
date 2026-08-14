@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Core;
@@ -13,7 +12,7 @@ namespace Ritten.Reporting;
 /// build report to every registered sink when it finishes.
 /// </summary>
 internal class BuildReportPublisher(
-    ILogger<BuildReportPublisher> logger,
+    IPipelineLog log,
     IOptions<GitHubOptions> options,
     IBuildReport report,
     MarkdownReportRenderer renderer,
@@ -35,7 +34,8 @@ internal class BuildReportPublisher(
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to post the pending pull request comment.");
+            log.Warning($"Failed to post the pending pull request comment: {ex.Message}");
+            log.Verbose(ex.ToString());
         }
     }
 
@@ -57,7 +57,8 @@ internal class BuildReportPublisher(
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to publish the build report via {Sink}.", sink.GetType().Name);
+                log.Warning($"Failed to publish the build report via {sink.GetType().Name}: {ex.Message}");
+                log.Verbose(ex.ToString());
             }
         }
     }

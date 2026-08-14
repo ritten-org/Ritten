@@ -1,10 +1,9 @@
-using Microsoft.Extensions.Logging;
 using Ritten.Contracts;
 
 namespace Ritten.Core.Runner;
 
 internal class DefaultPipelineRunner(
-    ILogger<DefaultPipelineRunner> logger,
+    IPipelineLog log,
     IEnumerable<IProgressReporter> reporters,
     IEnumerable<IPipelineStep> steps,
     Pipeline pipeline
@@ -19,19 +18,10 @@ internal class DefaultPipelineRunner(
         await NotifyReporters(r => r.OnPipelineStarted(pipeline, cancellationToken));
         var stepResults = await RunSteps(cancellationToken);
 
-        int exitCode;
-        if (cancellationToken.IsCancellationRequested)
-        {
-            exitCode = PipelineExitCodes.StoppedAfterCancel;
-        }
-        else if (stepResults.Count == 0)
-        {
-            exitCode = PipelineExitCodes.Success;
-        }
-        else
-        {
-            exitCode = stepResults[^1].ExitCode;
-        }
+        var exitCode = cancellationToken.IsCancellationRequested
+            ? PipelineExitCodes.Cancelled
+            : stepResults.FirstOrDefault(s => s.IsFailure)?.ExitCode ?? PipelineExitCodes.Success;
+
         var result = new PipelineResult(exitCode, stepResults);
         await NotifyReporters(r => r.OnPipelineCompleted(result, cancellationToken));
 
@@ -71,9 +61,13 @@ internal class DefaultPipelineRunner(
         {
             return await step.Run(cancellationToken);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return StepResult.StoppedAfterCancel;
+        }
         catch (Exception ex)
         {
-            logger.LogCritical(ex, "Unhandled error during step {Step}.", step.Name);
+            log.Verbose(ex.ToString());
             return StepResult.Failed(ex.Message);
         }
     }
@@ -88,7 +82,8 @@ internal class DefaultPipelineRunner(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Progress reporter error. Continuing...");
+                log.Warning($"Progress reporter {reporter.GetType().Name} failed: {ex.Message}");
+                log.Verbose(ex.ToString());
             }
         }
     }

@@ -1,16 +1,16 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Octokit;
+using Ritten.Contracts;
 
 namespace Ritten.Runtimes.GitHubActions;
 
-internal class CommentService(ILogger<CommentService> logger, IOptions<GitHubOptions> options, IGitHubClient client) : ICommentService
+internal class CommentService(IPipelineLog log, IOptions<GitHubOptions> options, IGitHubClient client) : ICommentService
 {
     public async Task CreateOrUpdate(string body, CancellationToken cancellationToken = default)
     {
         if (options.Value.RepositoryId is not { } repositoryId)
         {
-            logger.LogInformation("Repository ID not available; skipping pull request comment.");
+            log.Detail("Repository ID not available; skipping pull request comment.");
             return;
         }
 
@@ -26,12 +26,12 @@ internal class CommentService(ILogger<CommentService> logger, IOptions<GitHubOpt
         var existing = comments.FirstOrDefault(c => c.Body.StartsWith(Marker, StringComparison.Ordinal));
         if (existing == null)
         {
-            logger.LogInformation("Creating comment on PR #{PullRequestNumber}.", pullRequestNumber);
+            log.Detail($"Creating comment on PR #{pullRequestNumber}.");
             await client.Issue.Comment.Create(repositoryId, pullRequestNumber, fullBody);
         }
         else
         {
-            logger.LogInformation("Updating existing comment on PR #{PullRequestNumber}.", pullRequestNumber);
+            log.Detail($"Updating existing comment on PR #{pullRequestNumber}.");
             await client.Issue.Comment.Update(repositoryId, existing.Id, fullBody);
         }
     }

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.Core.Runner;
@@ -11,12 +10,12 @@ internal static class DefaultPipelineRunnerHelpers
         IPipelineStep[]? steps = null,
         IProgressReporter[]? reporters = null,
         Pipeline? pipeline = null,
-        ILogger<DefaultPipelineRunner>? logger = null
+        IPipelineLog? log = null
     )
     {
-        logger ??= Substitute.For<ILogger<DefaultPipelineRunner>>();
+        log ??= Substitute.For<IPipelineLog>();
         pipeline ??= Substitute.For<Pipeline>();
 
-        return new DefaultPipelineRunner(logger, reporters ?? [], steps ?? [], pipeline);
+        return new DefaultPipelineRunner(log, reporters ?? [], steps ?? [], pipeline);
     }
 }

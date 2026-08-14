@@ -1,19 +1,27 @@
 namespace Ritten.Contracts;
 
+/// <summary>
+/// The process exit codes a pipeline run can produce.
+/// </summary>
 internal static class PipelineExitCodes
 {
     /// <summary>
-    /// Indicates the pipeline terminated successfully.
+    /// Indicates every step completed successfully.
     /// </summary>
     public const int Success = 0;
 
     /// <summary>
-    /// Indicates the pipeline stopped because of an error.
+    /// Indicates a step failed.
     /// </summary>
-    public const int StoppedOnError = -1;
+    public const int Failed = 1;
 
     /// <summary>
-    /// Indicates the pipeline stopped due to outside cancellation.
+    /// Indicates the pipeline never started because its configuration is invalid.
     /// </summary>
-    public const int StoppedAfterCancel = -3;
+    public const int ConfigurationError = 2;
+
+    /// <summary>
+    /// Indicates the run was cancelled. Follows the shell convention of 128 + SIGINT.
+    /// </summary>
+    public const int Cancelled = 130;
 }

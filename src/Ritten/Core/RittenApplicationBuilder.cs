@@ -1,8 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core.FileSystem;
@@ -17,25 +15,22 @@ namespace Ritten.Core;
 /// </summary>
 public class RittenApplicationBuilder : IPipelineBuilder
 {
-    private readonly HostApplicationBuilder _innerBuilder;
     /// <summary>
-    /// Creates a new instance of the <see cref="RittenApplicationBuilder"/> with the given options.
+    /// Creates a new instance of the <see cref="RittenApplicationBuilder"/>.
     /// </summary>
-    /// <param name="options">The options to configure the pipeline application.</param>
-    internal RittenApplicationBuilder(RittenApplicationOptions options)
+    internal RittenApplicationBuilder()
     {
-        _innerBuilder = new HostApplicationBuilder(new HostApplicationBuilderSettings
-        {
-            Args = options.Args,
-            ApplicationName = options.ApplicationName,
-            EnvironmentName = options.EnvironmentName,
-            ContentRootPath = options.ContentRootPath ?? AppContext.BaseDirectory,
-            Configuration = new ConfigurationManager(),
-        });
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(Environment.CurrentDirectory)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .AddEnvironmentVariables()
+            .Build();
+
+        Services.AddSingleton<IConfiguration>(configuration);
     }
 
     /// <inheritdoc />
-    public IServiceCollection Services => _innerBuilder.Services;
+    public IServiceCollection Services { get; } = new ServiceCollection();
 
     /// <inheritdoc />
     public IPipelineBuilder UseStep<TStep>() where TStep : class, IPipelineStep
@@ -61,9 +56,12 @@ public class RittenApplicationBuilder : IPipelineBuilder
         Services.AddSingleton<IProgressReporter>(reporter);
         Services.TryAddSingleton<IPipelineLog>(reporter);
 
-        _innerBuilder.Logging.ClearProviders();
+        var provider = Services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateScopes = true,
+            ValidateOnBuild = true
+        });
 
-        var host = _innerBuilder.Build();
-        return new RittenApplication(host);
+        return new RittenApplication(provider);
     }
 }

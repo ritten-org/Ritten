@@ -16,12 +16,12 @@ public record StepResult(int ExitCode, bool Continue, string Message)
     /// <summary>
     /// Indicates that cancellation was requested, and the pipeline should stop execution.
     /// </summary>
-    public static readonly StepResult StoppedAfterCancel = new(PipelineExitCodes.StoppedAfterCancel, false, "Stopped after cancel");
+    public static readonly StepResult StoppedAfterCancel = new(PipelineExitCodes.Cancelled, false, "Stopped after cancel");
 
     /// <summary>
     /// Indicates that the step failed with a human-readable error message.
     /// </summary>
-    public static StepResult Failed(string message) => new(PipelineExitCodes.StoppedOnError, false, message);
+    public static StepResult Failed(string message) => new(PipelineExitCodes.Failed, false, message);
 
     /// <summary>
     /// Gets whether this result represents a failure.

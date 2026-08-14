@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 using Ritten.Changelogs;
 using Ritten.Commands;
 using Ritten.Contracts;
@@ -85,31 +84,33 @@ public static class ServiceCollectionExtensions
                 .AddGitHubActionsRuntime()
                 .AddBuildReporting();
 
-            if (services.Any(d => d.ServiceType == typeof(IConfigureOptions<PipelineOptions>)))
+            if (services.Any(d => d.ServiceType == typeof(DotNetPackageServicesMarker)))
             {
                 return services;
             }
 
+            services.AddSingleton<DotNetPackageServicesMarker>();
+
             services.AddOptions<PipelineOptions>()
                 .BindConfiguration("Pipeline")
-                .Validate(p => !string.IsNullOrEmpty(p.ArtifactsDirectory))
-                .Validate(p => !string.IsNullOrEmpty(p.TempDirectory))
+                .Validate(p => !string.IsNullOrEmpty(p.ArtifactsDirectory), "Pipeline:ArtifactsDirectory must be set to the directory build artifacts are written to, relative to the repository root.")
+                .Validate(p => !string.IsNullOrEmpty(p.TempDirectory), "Pipeline:TempDirectory must be set to the directory intermediate pipeline output is written to, relative to the repository root.")
                 .ValidateOnStart();
 
             services.AddOptions<DotNetOptions>()
                 .BindConfiguration("DotNet")
-                .Validate(d => !string.IsNullOrEmpty(d.Configuration))
-                .Validate(d => !string.IsNullOrEmpty(d.ProjectFile))
+                .Validate(d => !string.IsNullOrEmpty(d.Configuration), "DotNet:Configuration must be set to the build configuration to use, for example 'Release'.")
+                .Validate(d => !string.IsNullOrEmpty(d.ProjectFile), "DotNet:ProjectFile must be set to the project file of the package being shipped, relative to the repository root.")
                 .ValidateOnStart();
 
             services.AddOptions<ChangelogOptions>()
                 .BindConfiguration("Changelog")
-                .Validate(c => !string.IsNullOrEmpty(c.File))
+                .Validate(c => !string.IsNullOrEmpty(c.File), "Changelog:File must be set to the changelog file, relative to the repository root.")
                 .ValidateOnStart();
 
             services.AddOptions<NuGetOptions>()
                 .BindConfiguration("NuGet")
-                .Validate(n => !string.IsNullOrEmpty(n.Feed))
+                .Validate(n => !string.IsNullOrEmpty(n.Feed), "NuGet:Feed must be set to the V3 index URL of the feed to publish to.")
                 .ValidateOnStart();
 
             services.AddOptions<GitOptions>()
@@ -125,15 +126,24 @@ public static class ServiceCollectionExtensions
         public IServiceCollection AddBuildReporting()
         {
             services.AddGitHubActionsRuntime();
-            if (services.Any(d => d.ServiceType == typeof(IBuildReport)))
+            if (services.Any(d => d.ServiceType == typeof(BuildReportingMarker)))
             {
                 return services;
             }
 
+            services.AddSingleton<BuildReportingMarker>();
             services.AddSingleton<IBuildReport, BuildReport>();
             services.AddSingleton<MarkdownReportRenderer>();
             services.AddSingleton<IProgressReporter, BuildReportPublisher>();
             return services;
         }
     }
+
+    // Composite registrations can't use TryAdd, because options delegates and enumerable
+    // registrations are additive. They key idempotence off a private marker instead of off a
+    // service they happen to register, so that a consumer registering their own implementation
+    // of one of those services can't silently suppress the rest of the block.
+    private sealed class DotNetPackageServicesMarker;
+
+    private sealed class BuildReportingMarker;
 }

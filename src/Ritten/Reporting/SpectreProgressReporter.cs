@@ -66,16 +66,18 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console) : IProgressR
     }
 
     /// <inheritdoc />
-    public void Status(string message) =>
-        console.MarkupLine($"  [grey]{Markup.Escape(message)}[/]");
-
-    /// <inheritdoc />
-    public void Detail(string message) =>
-        console.MarkupLine($"    [grey]{Markup.Escape(message)}[/]");
-
-    /// <inheritdoc />
-    public void Verbose(string message) =>
-        console.MarkupLine($"    [grey italic]{Markup.Escape(message)}[/]");
+    public void Log(PipelineLogLevel level, string message)
+    {
+        var text = Markup.Escape(message);
+        console.MarkupLine(level switch
+        {
+            PipelineLogLevel.Status => $"  [grey]{text}[/]",
+            PipelineLogLevel.Verbose => $"    [grey italic]{text}[/]",
+            PipelineLogLevel.Warning => $"    [yellow]{text}[/]",
+            PipelineLogLevel.Error => $"  [red]{text}[/]",
+            _ => $"    [grey]{text}[/]"
+        });
+    }
 
     private static string FormatDuration(TimeSpan elapsed) =>
         elapsed.TotalMinutes >= 1 ? $"{elapsed.TotalMinutes:0.0}m" : $"{elapsed.TotalSeconds:0.0}s";
