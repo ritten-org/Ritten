@@ -23,8 +23,7 @@ internal static class ServiceCollectionExtensions
             services.AddSingleton<GitHubActionsRuntimeMarker>();
 
             services.AddOptions<GitHubOptions>()
-                .Configure(GitHubOptions.ConfigureFromEnvironment)
-                .BindConfiguration("GitHub");
+                .Configure(GitHubOptions.ConfigureFromEnvironment);
 
             services.AddSingleton<IGitHubClient>(provider =>
             {

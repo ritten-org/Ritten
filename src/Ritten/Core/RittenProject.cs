@@ -1,45 +1,42 @@
-using Microsoft.Extensions.Configuration;
-
 namespace Ritten.Core;
 
 /// <summary>
-/// Locates the project Ritten is running against.
+/// The definition of a Ritten build project.
 /// </summary>
-internal static class RittenProject
+internal sealed partial class RittenProject
 {
     /// <summary>
-    /// The configuration file that marks the root of a project.
+    /// The project file of the package being shipped, relative to the project root.
     /// </summary>
-    public const string FileName = "ritten.json";
+    public string? Project { get; init; }
 
     /// <summary>
-    /// Walks up from the given directory looking for the directory that contains
-    /// <see cref="FileName"/>, or returns <c>null</c> if there isn't one.
+    /// The directory the project is located in.
     /// </summary>
-    public static string? Find(string startDirectory)
-    {
-        var directory = new DirectoryInfo(Path.GetFullPath(startDirectory));
-
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, FileName)))
-            {
-                return directory.FullName;
-            }
-
-            directory = directory.Parent;
-        }
-
-        return null;
-    }
+    public required string Directory { get; init; }
 
     /// <summary>
-    /// Reads the configuration for the project rooted at the given directory.
+    /// The build configuration used to build, test, and pack.
     /// </summary>
-    /// <exception cref="Exception">The configuration file could not be read.</exception>
-    public static IConfiguration ReadConfiguration(string rootDirectory) => new ConfigurationBuilder()
-        .SetBasePath(rootDirectory)
-        .AddJsonFile(FileName, optional: false, reloadOnChange: false)
-        .AddEnvironmentVariables()
-        .Build();
+    public required string Configuration { get; init; }
+
+    /// <summary>
+    /// The changelog file, relative to the project root.
+    /// </summary>
+    public required string Changelog { get; init; }
+
+    /// <summary>
+    /// The project's web URL. When set, the changelog's version links are validated against it.
+    /// </summary>
+    public string? Repository { get; init; }
+
+    /// <summary>
+    /// The prefix for release tag names, so that tags are <c>TagPrefix + version</c>, e.g. <c>v1.2.0</c>.
+    /// </summary>
+    public required string TagPrefix { get; init; }
+
+    /// <summary>
+    /// The V3 index URL of the NuGet feed the package is validated against and published to.
+    /// </summary>
+    public string Feed { get; init; } = "https://api.nuget.org/v3/index.json";
 }

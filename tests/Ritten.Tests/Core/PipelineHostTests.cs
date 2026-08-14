@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Core;
@@ -105,7 +104,7 @@ public class PipelineHostTests
     {
         var builder = new PipelineHostBuilder(
             Path.GetTempPath(),
-            new ConfigurationBuilder().Build(),
+            new RittenProjectFile(),
             new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail));
 
         // Registered ahead of Build(), which only supplies its own reporter if nothing else has.

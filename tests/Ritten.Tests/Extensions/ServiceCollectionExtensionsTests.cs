@@ -1,9 +1,9 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Changelogs;
 using Ritten.Commands;
+using Ritten.Core;
 using Ritten.DotNet;
 using Ritten.Extensions;
 using Ritten.Git;
@@ -85,7 +85,7 @@ public class ServiceCollectionExtensionsTests
     private static IServiceCollection Services()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        services.AddSingleton(new RittenProjectFile());
         return services;
     }
 }

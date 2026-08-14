@@ -1,7 +1,7 @@
 namespace Ritten.Pipelines.Git;
 
 /// <summary>
-/// Settings for the git tagging steps. Bound from the <c>Git</c> configuration section.
+/// Settings for the git tagging steps.
 /// </summary>
 public class GitOptions
 {
@@ -15,4 +15,16 @@ public class GitOptions
     /// The commit to tag; <c>HEAD</c> when not set.
     /// </summary>
     public string? CommitSha { get; set; }
+
+    /// <summary>
+    /// Configures the given options based on the current environment.
+    /// </summary>
+    public static void ConfigureFromEnvironment(GitOptions options) =>
+        ConfigureFromEnvironment(options, Environment.GetEnvironmentVariable);
+
+    /// <summary>
+    /// Configures the given options from the given environment.
+    /// </summary>
+    internal static void ConfigureFromEnvironment(GitOptions options, Func<string, string?> envVar) =>
+        options.CommitSha = envVar("RITTEN_COMMIT_SHA");
 }

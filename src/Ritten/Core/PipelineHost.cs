@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Core.Runner;
@@ -35,24 +34,14 @@ public class PipelineHost : IDisposable
     {
         var reporter = new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail);
 
-        if (RittenProject.Find(Environment.CurrentDirectory) is not { } rootPath)
+        var project = await RittenProject.Resolve(Environment.CurrentDirectory);
+        if (project is null)
         {
-            reporter.Error($"No {RittenProject.FileName} found in '{Environment.CurrentDirectory}' or any parent directory.");
+            reporter.Error($"'{Environment.CurrentDirectory}' is not a valid Ritten project.");
             return PipelineExitCodes.ConfigurationError;
         }
 
-        IConfiguration configuration;
-        try
-        {
-            configuration = RittenProject.ReadConfiguration(rootPath);
-        }
-        catch (Exception exception)
-        {
-            reporter.Error($"Could not read '{Path.Combine(rootPath, RittenProject.FileName)}'.", exception);
-            return PipelineExitCodes.ConfigurationError;
-        }
-
-        var builder = new PipelineHostBuilder(rootPath, configuration, reporter);
+        var builder = new PipelineHostBuilder(project, reporter);
         var pipeline = new TPipeline();
         pipeline.Configure(builder);
         builder.Services.AddSingleton<Pipeline>(pipeline);

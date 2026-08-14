@@ -2,7 +2,6 @@ namespace Ritten.Pipelines.NuGet;
 
 /// <summary>
 /// Settings for the NuGet feed the package is validated against and published to.
-/// Bound from the <c>NuGet</c> configuration section.
 /// </summary>
 public class NuGetOptions
 {
@@ -21,4 +20,19 @@ public class NuGetOptions
     /// Skips the published-version check entirely (e.g. for dependabot pull requests).
     /// </summary>
     public bool SkipVersionCheck { get; set; }
+
+    /// <summary>
+    /// Configures the given options based on the current environment.
+    /// </summary>
+    public static void ConfigureFromEnvironment(NuGetOptions options) =>
+        ConfigureFromEnvironment(options, Environment.GetEnvironmentVariable);
+
+    /// <summary>
+    /// Configures the given options from the given environment.
+    /// </summary>
+    internal static void ConfigureFromEnvironment(NuGetOptions options, Func<string, string?> envVar)
+    {
+        options.ApiKey = envVar("RITTEN_NUGET_API_KEY");
+        options.SkipVersionCheck = bool.TryParse(envVar("RITTEN_SKIP_VERSION_CHECK"), out var skip) && skip;
+    }
 }

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Ritten.Core;
 
 namespace Ritten.Tests.Core;
@@ -71,29 +72,91 @@ public class RittenProjectTests : IDisposable
     }
 
     [Fact]
-    public void ReadConfiguration_BindsTheFile()
+    public void Read_BindsCamelCaseKeys()
     {
         // Arrange
-        WriteRittenJson(_root, """{ "Changelog": { "File": "HISTORY.md" } }""");
+        WriteRittenJson(_root, """{ "project": "src/Thing/Thing.csproj", "changelog": "HISTORY.md" }""");
 
         // Act
-        var configuration = RittenProject.ReadConfiguration(_root);
+        var file = RittenProject.Read(_root);
 
         // Assert
-        configuration["Changelog:File"].ShouldBe("HISTORY.md");
+        file.Project.ShouldBe("src/Thing/Thing.csproj");
+        file.Changelog.ShouldBe("HISTORY.md");
     }
 
     [Fact]
-    public void ReadConfiguration_ThrowsOnMalformedJson()
+    public void Read_AppliesDefaultsForOmittedKeys()
+    {
+        // Arrange
+        WriteRittenJson(_root);
+
+        // Act
+        var file = RittenProject.Read(_root);
+
+        // Assert
+        file.Project.ShouldBeNull();
+        file.Configuration.ShouldBe("Release");
+        file.Changelog.ShouldBe("CHANGELOG.md");
+        file.TagPrefix.ShouldBe("v");
+        file.Feed.ShouldBe("https://api.nuget.org/v3/index.json");
+    }
+
+    [Fact]
+    public void Read_RejectsAnUnrecognisedKey()
+    {
+        // Arrange — a typo must not be silently ignored, or it surfaces later as "project must be set".
+        WriteRittenJson(_root, """{ "projct": "src/Thing/Thing.csproj" }""");
+
+        // Act
+        Action act = () => RittenProject.Read(_root);
+
+        // Assert
+        act.ShouldThrow<JsonException>().Message.ShouldContain("projct");
+    }
+
+    [Fact]
+    public void Read_RejectsAPascalCaseKey()
+    {
+        // Arrange
+        WriteRittenJson(_root, """{ "Project": "src/Thing/Thing.csproj" }""");
+
+        // Act
+        Action act = () => RittenProject.Read(_root);
+
+        // Assert
+        act.ShouldThrow<JsonException>();
+    }
+
+    [Fact]
+    public void Read_AllowsCommentsAndTrailingCommas()
+    {
+        // Arrange — it's a hand-edited file.
+        WriteRittenJson(_root, """
+            {
+                // The package this repository ships.
+                "project": "src/Thing/Thing.csproj",
+            }
+            """);
+
+        // Act
+        var file = RittenProject.Read(_root);
+
+        // Assert
+        file.Project.ShouldBe("src/Thing/Thing.csproj");
+    }
+
+    [Fact]
+    public void Read_ThrowsOnMalformedJson()
     {
         // Arrange
         WriteRittenJson(_root, "{ not json");
 
         // Act
-        var act = () => RittenProject.ReadConfiguration(_root);
+        Action act = () => RittenProject.Read(_root);
 
-        // Assert — RittenApplication turns this into a configuration error rather than a crash.
-        act.ShouldThrow<Exception>();
+        // Assert — PipelineHost turns this into a configuration error rather than a crash.
+        act.ShouldThrow<JsonException>();
     }
 
     private static void WriteRittenJson(string directory, string content = "{}")

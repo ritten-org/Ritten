@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Changelogs;
 using Ritten.Commands;
 using Ritten.Contracts;
+using Ritten.Core;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.NuGet;
@@ -91,30 +92,53 @@ public static class ServiceCollectionExtensions
 
             services.AddSingleton<DotNetPackageServicesMarker>();
 
-            services.AddOptions<PipelineOptions>()
-                .BindConfiguration("Pipeline")
-                .Validate(p => !string.IsNullOrEmpty(p.ArtifactsDirectory), "Pipeline:ArtifactsDirectory must be set to the directory build artifacts are written to, relative to the repository root.")
-                .Validate(p => !string.IsNullOrEmpty(p.TempDirectory), "Pipeline:TempDirectory must be set to the directory intermediate pipeline output is written to, relative to the repository root.")
-                .ValidateOnStart();
-
             services.AddOptions<DotNetOptions>()
-                .BindConfiguration("DotNet")
-                .Validate(d => !string.IsNullOrEmpty(d.Configuration), "DotNet:Configuration must be set to the build configuration to use, for example 'Release'.")
-                .Validate(d => !string.IsNullOrEmpty(d.ProjectFile), "DotNet:ProjectFile must be set to the project file of the package being shipped, relative to the repository root.")
+                .Configure<RittenProjectFile>((o, file) =>
+                {
+                    o.Configuration = file.Configuration;
+                    o.ProjectFile = file.Project ?? "";
+                })
+                .Validate(d => !string.IsNullOrEmpty(d.Configuration), "'configuration' in ritten.json must be a build configuration, for example \"Release\".")
                 .ValidateOnStart();
 
             services.AddOptions<ChangelogOptions>()
-                .BindConfiguration("Changelog")
-                .Validate(c => !string.IsNullOrEmpty(c.File), "Changelog:File must be set to the changelog file, relative to the repository root.")
+                .Configure(ChangelogOptions.ConfigureFromEnvironment)
+                .Configure<RittenProjectFile>((o, file) =>
+                {
+                    o.File = file.Changelog;
+                    o.RepositoryUrl = file.Repository;
+                })
+                .Validate(c => !string.IsNullOrEmpty(c.File), "'changelog' in ritten.json must be the path to the changelog, relative to the project root.")
                 .ValidateOnStart();
 
             services.AddOptions<NuGetOptions>()
-                .BindConfiguration("NuGet")
-                .Validate(n => !string.IsNullOrEmpty(n.Feed), "NuGet:Feed must be set to the V3 index URL of the feed to publish to.")
+                .Configure(NuGetOptions.ConfigureFromEnvironment)
+                .Configure<RittenProjectFile>((o, file) => o.Feed = file.Feed)
+                .Validate(n => !string.IsNullOrEmpty(n.Feed), "'feed' in ritten.json must be the V3 index URL of the feed to publish to.")
                 .ValidateOnStart();
 
             services.AddOptions<GitOptions>()
-                .BindConfiguration("Git");
+                .Configure(GitOptions.ConfigureFromEnvironment)
+                .Configure<RittenProjectFile>((o, file) => o.TagPrefix = file.TagPrefix);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Requires a <c>project</c> in <c>ritten.json</c>. Only the pipelines that ship a package
+        /// read it, so the verify pipeline doesn't ask for one.
+        /// </summary>
+        public IServiceCollection RequireDotNetProject()
+        {
+            if (services.Any(d => d.ServiceType == typeof(DotNetProjectMarker)))
+            {
+                return services;
+            }
+
+            services.AddSingleton<DotNetProjectMarker>();
+            services.AddOptions<DotNetOptions>()
+                .Validate(d => !string.IsNullOrEmpty(d.ProjectFile), "'project' in ritten.json must be the project file of the package being shipped, relative to the project root.")
+                .ValidateOnStart();
 
             return services;
         }
@@ -144,6 +168,8 @@ public static class ServiceCollectionExtensions
     // service they happen to register, so that a consumer registering their own implementation
     // of one of those services can't silently suppress the rest of the block.
     private sealed class DotNetPackageServicesMarker;
+
+    private sealed class DotNetProjectMarker;
 
     private sealed class BuildReportingMarker;
 }

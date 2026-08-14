@@ -23,5 +23,4 @@ jobs:
         run: dotnet run --project build/src/Ritten.Build/Ritten.Build.csproj -- verify
         shell: bash
         env:
-          DotNet__ProjectFile: 'build/src/Ritten.Build/Ritten.Build.csproj'
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Contracts;
@@ -14,20 +13,17 @@ namespace Ritten.Core;
 /// </summary>
 public class PipelineHostBuilder : IPipelineBuilder
 {
-    private readonly string _rootPath;
     private readonly SpectreProgressReporter _reporter;
 
     /// <summary>
     /// Creates a new instance of the <see cref="PipelineHostBuilder"/>.
     /// </summary>
-    /// <param name="rootPath">The root of the project being built.</param>
-    /// <param name="configuration">The configuration read from the repository.</param>
+    /// <param name="project">The project being built.</param>
     /// <param name="reporter">The reporter that renders pipeline progress.</param>
-    internal PipelineHostBuilder(string rootPath, IConfiguration configuration, SpectreProgressReporter reporter)
+    internal PipelineHostBuilder(RittenProject project, SpectreProgressReporter reporter)
     {
-        _rootPath = rootPath;
         _reporter = reporter;
-        Services.AddSingleton(configuration);
+        Services.AddSingleton(project);
     }
 
     /// <inheritdoc />
@@ -50,7 +46,7 @@ public class PipelineHostBuilder : IPipelineBuilder
 
         Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
 
-        Services.TryAddSingleton<IFileSystem>(_ => new PhysicalFileSystem(_rootPath));
+        Services.TryAddSingleton<IFileSystem, ProjectFileSystem>();
         Services.TryAddSingleton<IPipelineState, DefaultPipelineState>();
 
         Services.AddSingleton<IProgressReporter>(_reporter);

@@ -1,5 +1,4 @@
 {
-    "Changelog": {
-        "RepositoryUrl": "https://github.com/ritten-org/Ritten"
-    }
+    "project": "src/Ritten/Ritten.csproj",
+    "repository": "https://github.com/ritten-org/Ritten"
 }

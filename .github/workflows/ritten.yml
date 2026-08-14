@@ -23,11 +23,10 @@ jobs:
         run: dotnet run --project build/src/Ritten.Build/Ritten.Build.csproj -- build
         shell: bash
         env:
-          DotNet__ProjectFile: 'src/Ritten/Ritten.csproj'
           # Dependabot can't bump versions or write changelog entries, so its PRs skip those checks.
           # Pushes to main always run them, so the badge reflects real releasability.
-          NuGet__SkipVersionCheck: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
-          Changelog__Skip: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
+          RITTEN_SKIP_VERSION_CHECK: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
+          RITTEN_SKIP_CHANGELOG: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
@@ -45,7 +44,6 @@ jobs:
         run: dotnet run --project build/src/Ritten.Build/Ritten.Build.csproj -- deploy
         shell: bash
         env:
-          NuGet__ApiKey: ${{ secrets.NUGET_API_KEY }}
-          DotNet__ProjectFile: 'src/Ritten/Ritten.csproj'
-          Git__CommitSha: ${{ github.sha }}
+          RITTEN_NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          RITTEN_COMMIT_SHA: ${{ github.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
