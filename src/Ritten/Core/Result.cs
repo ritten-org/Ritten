@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Ritten.Core;
@@ -12,19 +13,17 @@ public static class Result
     /// </summary>
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="value">The value the operation produced.</param>
-    public static Result<T> Success<T>(T value) => new(value);
+    public static Result<T> Success<T>(T value) where T : class => new(value);
 
     /// <summary>
     /// Creates a failed result carrying the given errors.
     /// </summary>
     /// <typeparam name="T">The type the operation would have produced.</typeparam>
     /// <param name="errors">Everything that was wrong, not just the first thing.</param>
-    public static Result<T> Error<T>(List<Error> errors) => new(errors);
+    public static Result<T> Error<T>(IEnumerable<Error> errors) where T : class => new(errors);
 
     /// <summary>
-    /// Creates a single <see cref="Ritten.Core.Error"/>, which converts implicitly to a failed
-    /// <see cref="Result{T}"/> of any type. Lets a method return
-    /// <c>Result.Error("…")</c> without naming its own return type again.
+    /// Creates a single <see cref="Ritten.Core.Error"/>, which converts implicitly to a failed <see cref="Result{T}"/> of any type.
     /// </summary>
     /// <param name="message">A message describing what was wrong.</param>
     public static Error Error(string message) => new(message);
@@ -46,12 +45,12 @@ public class Result<T> where T : class
     /// Creates a failed result carrying the given errors.
     /// </summary>
     /// <param name="errors">Everything that was wrong, not just the first thing.</param>
-    public Result(List<Error> errors) : this(default, errors) { }
+    public Result(IEnumerable<Error> errors) : this(null, errors) { }
 
-    private Result(T? value, List<Error>? errors)
+    private Result(T? value, IEnumerable<Error>? errors)
     {
         Value = value;
-        Errors = errors;
+        Errors = errors?.ToImmutableList();
     }
 
     /// <summary>
@@ -62,7 +61,7 @@ public class Result<T> where T : class
     /// <summary>
     /// Everything that went wrong, or <c>null</c> if the operation succeeded.
     /// </summary>
-    public List<Error>? Errors { get; }
+    public IReadOnlyCollection<Error>? Errors { get; }
 
     /// <summary>
     /// Whether the operation failed, in which case <see cref="Errors"/> says why.
