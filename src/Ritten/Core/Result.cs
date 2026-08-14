@@ -34,7 +34,7 @@ public static class Result
 /// Either a value or the reasons one couldn't be produced.
 /// </summary>
 /// <typeparam name="T">The type of the value produced on success.</typeparam>
-public class Result<T>
+public class Result<T> where T : class
 {
     /// <summary>
     /// Creates a successful result carrying the given value.
