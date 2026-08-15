@@ -21,6 +21,11 @@ public enum PipelineLogLevel
     Status,
 
     /// <summary>
+    /// An action deliberately not taken.
+    /// </summary>
+    Skipped,
+
+    /// <summary>
     /// Something went wrong without failing the pipeline. Always visible.
     /// </summary>
     Warning,

@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.Extensions.Options;
 using Octokit;
+using Ritten.Contracts;
 using Ritten.Runtimes.GitHubActions;
 
 namespace Ritten.Tests.GitHub;
@@ -12,7 +13,7 @@ public class ReleaseServiceTests
 
     public ReleaseServiceTests()
     {
-        _service = new ReleaseService(Options.Create(new GitHubOptions { RepositoryId = 42 }), _client);
+        _service = new ReleaseService(Substitute.For<IPipelineLog>(), Options.Create(new GitHubOptions { RepositoryId = 42 }), _client);
     }
 
     [Fact]
@@ -44,7 +45,7 @@ public class ReleaseServiceTests
     [Fact]
     public async Task Throws_WhenTheRepositoryIdIsUnavailable()
     {
-        var service = new ReleaseService(Options.Create(new GitHubOptions()), _client);
+        var service = new ReleaseService(Substitute.For<IPipelineLog>(), Options.Create(new GitHubOptions()), _client);
 
         await Should.ThrowAsync<InvalidOperationException>(() => service.Exists("v1.0.0", TestContext.Current.CancellationToken));
     }

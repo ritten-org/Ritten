@@ -18,14 +18,14 @@ internal class DryRunGit(IPipelineLog log, IGit inner) : IGit
     /// <inheritdoc />
     public Task CreateTag(string tag, string? commit = null, CancellationToken cancellationToken = default)
     {
-        log.Status($"Would create tag {tag}{(commit is null ? "" : $" at {commit}")}.");
+        log.Skipped($"Would create tag {tag}{(commit is null ? "" : $" at {commit}")}.");
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task PushTag(string remote, string tag, CancellationToken cancellationToken = default)
     {
-        log.Status($"Would push tag {tag} to {remote}.");
+        log.Skipped($"Would push tag {tag} to {remote}.");
         return Task.CompletedTask;
     }
 }

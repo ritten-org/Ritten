@@ -25,6 +25,11 @@ public static class PipelineLogExtensions
         public void Verbose(string message, Exception? exception = null) => log.Log(PipelineLogLevel.Verbose, message, exception);
 
         /// <summary>
+        /// Writes a note that an action was deliberately not taken.
+        /// </summary>
+        public void Skipped(string message) => log.Log(PipelineLogLevel.Skipped, message);
+
+        /// <summary>
         /// Writes a warning about something that went wrong without failing the pipeline.
         /// </summary>
         public void Warning(string message, Exception? exception = null) => log.Log(PipelineLogLevel.Warning, message, exception);

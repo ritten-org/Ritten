@@ -17,7 +17,7 @@ internal class DryRunNuGet(IPipelineLog log, INuGet inner) : INuGet
     /// <inheritdoc />
     public Task Push(NuGetFeed feed, IFile package, CancellationToken cancellationToken = default)
     {
-        log.Status($"Would push {package.Name} to {feed.Url}.");
+        log.Skipped($"Would push {package.Name} to {feed.Url}.");
         return Task.CompletedTask;
     }
 }

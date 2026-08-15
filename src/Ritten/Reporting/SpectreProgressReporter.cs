@@ -102,7 +102,8 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
             var text = Markup.Escape(message);
             var (indent, markup) = level switch
             {
-                PipelineLogLevel.Status => (2, $"[grey]{text}[/]"),
+                PipelineLogLevel.Status => (4, $"[grey]{text}[/]"),
+                PipelineLogLevel.Skipped => (4, $"[mediumpurple]⊘ {text}[/]"),
                 PipelineLogLevel.Verbose => (4, $"[grey italic]{text}[/]"),
                 PipelineLogLevel.Warning => (2, $"[yellow]⚠ {text}[/]"),
                 PipelineLogLevel.Error => (2, $"[red]✗ {text}[/]"),

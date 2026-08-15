@@ -43,7 +43,7 @@ Command Job(string name, string description)
             ? PipelineLogLevel.Verbose
             : parseResult.GetValue(quiet)
                 ? PipelineLogLevel.Warning
-                : PipelineLogLevel.Detail;;
+                : PipelineLogLevel.Detail;
         var isDryRun = parseResult.GetValue(dryRun);
         return PipelineHost.Run<DotNetPackagePipeline, DotNetPackageSettings>(name, logLevel, isDryRun, cancellationToken);
     });

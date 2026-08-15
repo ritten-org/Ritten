@@ -39,7 +39,7 @@ public class CreateGitHubRelease(
 
         if (project.IsPrerelease)
         {
-            log.Detail($"Skipping GitHub Release for prerelease version {project.Version}; tag has still been pushed.");
+            log.Skipped($"Skipping GitHub Release for prerelease version {project.Version}; tag has still been pushed.");
             return StepResult.Successful;
         }
 
@@ -48,7 +48,7 @@ public class CreateGitHubRelease(
         // A failed deploy may have already created the release; rerunning should carry on, not crash.
         if (await releases.Exists(tag, cancellationToken))
         {
-            log.Detail($"GitHub Release {tag} already exists; skipping.");
+            log.Skipped($"GitHub Release {tag} already exists; skipping.");
             return StepResult.Successful;
         }
 
@@ -57,7 +57,6 @@ public class CreateGitHubRelease(
             return StepResult.Failed("Changelog entry not found in state.");
         }
 
-        log.Detail($"Creating GitHub Release {tag}.");
         await releases.Create(tag, tag, changelogs.RenderEntry(entry), cancellationToken);
         return StepResult.Successful;
     }

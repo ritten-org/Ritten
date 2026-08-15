@@ -11,7 +11,7 @@ internal class DryRunCommentService(IPipelineLog log) : ICommentService
     /// <inheritdoc />
     public Task CreateOrUpdate(string body, CancellationToken cancellationToken = default)
     {
-        log.Status("Would post the build report as a pull request comment.");
+        log.Skipped("Would post the build report as a pull request comment.");
         return Task.CompletedTask;
     }
 }

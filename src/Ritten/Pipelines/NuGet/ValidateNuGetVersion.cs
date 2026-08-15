@@ -33,7 +33,7 @@ public class ValidateNuGetVersion(
     {
         if (options.Value.SkipVersionCheck)
         {
-            log.Detail("Skipping version check.");
+            log.Skipped("Skipping version check.");
             return StepResult.Successful;
         }
 

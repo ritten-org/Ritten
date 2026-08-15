@@ -33,7 +33,7 @@ public class CreateGitTag(IPipelineLog log, IOptions<GitOptions> options, IPipel
         // A failed deploy may have already pushed the tag; rerunning should carry on, not crash.
         if (await git.RemoteTagExists("origin", tag, cancellationToken))
         {
-            log.Detail($"Tag {tag} already exists on origin; skipping.");
+            log.Skipped($"Tag {tag} already exists on origin; skipping.");
             return StepResult.Successful;
         }
 
@@ -43,7 +43,6 @@ public class CreateGitTag(IPipelineLog log, IOptions<GitOptions> options, IPipel
         }
         else
         {
-            log.Detail($"Creating git tag {tag}.");
             await git.CreateTag(tag, options.Value.CommitSha, cancellationToken);
         }
 

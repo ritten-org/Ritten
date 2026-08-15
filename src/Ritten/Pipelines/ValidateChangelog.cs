@@ -37,7 +37,7 @@ public class ValidateChangelog(
     {
         if (options.Value.Skip)
         {
-            log.Detail("Skipping changelog check.");
+            log.Skipped("Skipping changelog check.");
             return StepResult.Successful;
         }
 
