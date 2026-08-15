@@ -9,26 +9,26 @@ using Ritten.Runtimes.GitHubActions;
 namespace Ritten.Pipelines.DotNet;
 
 /// <summary>
-/// Defines the pipeline jobs for building and maintaining .NET packages.
+/// Defines the pipeline jobs for building and maintaining .NET tools.
 /// </summary>
 public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
 {
     /// <inheritdoc/>
-    public override string Name => "DotNet Package";
+    public override string Name => "dotnet tool";
 
     /// <inheritdoc />
     public override void Configure(IPipelineBuilder builder, DotNetToolSettings settings)
     {
         builder.Services.AddDotNetToolServices(settings);
 
-        builder.AddJob("verify", job => job
+        builder.AddJob("build", job => job
             .UseStep<Clean>()
             .UseStep<DotnetRestore>()
             .UseStep<DotnetFormat>()
             .UseStep<DotnetBuild>()
             .UseStep<DotnetTest>());
 
-        builder.AddJob("build", job => job
+        builder.AddJob("check", job => job
             .Requires(settings.Build.Project)
             .UseStep<Clean>()
             .UseStep<ReadProject>()

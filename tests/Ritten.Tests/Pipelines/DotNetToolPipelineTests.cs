@@ -6,7 +6,7 @@ using Ritten.Tests.Core.Helpers;
 namespace Ritten.Tests.Pipelines;
 
 /// <summary>
-/// The .NET package pipeline's jobs read the same project settings but don't share requirements:
+/// The .NET tool pipeline's jobs read the same project settings but don't share requirements:
 /// only the jobs that ship a package need to know which project to pack.
 /// </summary>
 public class DotNetToolPipelineTests
@@ -17,8 +17,8 @@ public class DotNetToolPipelineTests
     };
 
     [Theory]
-    [InlineData("verify")]
     [InlineData("build")]
+    [InlineData("check")]
     [InlineData("deploy")]
     public void EveryJobTheCliOffers_Builds(string job)
     {
@@ -39,16 +39,16 @@ public class DotNetToolPipelineTests
     }
 
     [Fact]
-    public void Verify_DoesNotRequireAProject()
+    public void Build_DoesNotRequireAProject()
     {
-        var result = Build("verify", new DotNetToolSettings());
+        var result = Build("build", new DotNetToolSettings());
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.Dispose();
     }
 
     [Theory]
-    [InlineData("build")]
+    [InlineData("check")]
     [InlineData("deploy")]
     public void ShippingJobs_RequireAProject(string job)
     {
@@ -59,7 +59,7 @@ public class DotNetToolPipelineTests
     }
 
     [Theory]
-    [InlineData("build")]
+    [InlineData("check")]
     [InlineData("deploy")]
     public void ShippingJobs_AcceptSettingsWithAProject(string job)
     {
