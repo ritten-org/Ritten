@@ -2,6 +2,7 @@ using System.CommandLine;
 using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.Pipelines.DotNet;
+using Ritten.Runtimes.GitHubActions;
 
 var verbose = new Option<bool>($"--{PipelineArguments.Verbose}", "-v")
 {
@@ -45,8 +46,10 @@ Command Job(string name, string description)
     var command = new Command(name, description);
     command.SetAction((parseResult, cancellationToken) =>
     {
-        // --verbose wins if both are given: someone asking to see more has the more specific intent.
-        var logLevel = parseResult.GetValue(verbose)
+        // Re-running with debug logging is an in-the-moment request to see more, so it outranks
+        // a --quiet that's been sitting in a workflow file since whenever. --verbose wins over
+        // --quiet for the same reason: the more specific intent.
+        var logLevel = parseResult.GetValue(verbose) || GitHubEnvironment.IsDebug()
             ? PipelineLogLevel.Verbose
             : parseResult.GetValue(quiet)
                 ? PipelineLogLevel.Warning

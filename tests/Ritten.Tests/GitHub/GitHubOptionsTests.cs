@@ -109,6 +109,24 @@ public class GitHubOptionsTests
         options.WorkflowName.ShouldBe("Configured Workflow");
     }
 
+    [Theory]
+    // The runner sets RUNNER_DEBUG=1; ACTIONS_STEP_DEBUG is the secret asking for it, and never
+    // reaches the step, so reading that instead would silently never fire.
+    [InlineData("1", true)]
+    [InlineData("0", false)]
+    [InlineData("true", false)]
+    [InlineData(null, false)]
+    public void IsDebug_ReadsWhatTheRunnerActuallySets(string? value, bool expected)
+    {
+        var environment = new Dictionary<string, string>();
+        if (value is not null)
+        {
+            environment[GitHubEnvironment.RunnerDebug] = value;
+        }
+
+        GitHubEnvironment.IsDebug(environment.GetValueOrDefault).ShouldBe(expected);
+    }
+
     private static GitHubOptions Configure(Dictionary<string, string> environment)
     {
         var options = new GitHubOptions();

@@ -39,4 +39,19 @@ internal static class GitHubEnvironment
     /// The name of the workflow being run.
     /// </summary>
     public const string Workflow = "GITHUB_WORKFLOW";
+
+    /// <summary>
+    /// Set to <c>1</c> when step debug logging is on.
+    /// </summary>
+    public const string RunnerDebug = "RUNNER_DEBUG";
+
+    /// <summary>
+    /// Whether the run asked for debug logging, as "Re-run with debug logging" does.
+    /// </summary>
+    public static bool IsDebug() => IsDebug(Environment.GetEnvironmentVariable);
+
+    /// <summary>
+    /// Whether the given environment asked for debug logging.
+    /// </summary>
+    internal static bool IsDebug(Func<string, string?> envVar) => envVar(RunnerDebug) == "1";
 }
