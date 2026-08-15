@@ -82,7 +82,8 @@ public class RittenProjectTests : IDisposable
         WriteRittenJson(_root, """
             {
                 "build": { "project": "src/Thing/Thing.csproj", "configuration": "Debug" },
-                "changelog": { "file": "HISTORY.md", "repository": "https://example.com/thing" },
+                "repository": "https://example.com/thing",
+                "changelog": { "file": "HISTORY.md" },
                 "release": { "tagPrefix": "release-", "feed": "https://example.com/index.json" }
             }
             """);
@@ -91,8 +92,8 @@ public class RittenProjectTests : IDisposable
 
         settings.Build.Project.ShouldBe("src/Thing/Thing.csproj");
         settings.Build.Configuration.ShouldBe("Debug");
+        settings.Repository.ShouldBe("https://example.com/thing");
         settings.Changelog.File.ShouldBe("HISTORY.md");
-        settings.Changelog.Repository.ShouldBe("https://example.com/thing");
         settings.Release.TagPrefix.ShouldBe("release-");
         settings.Release.Feed.ShouldBe("https://example.com/index.json");
     }
@@ -106,8 +107,8 @@ public class RittenProjectTests : IDisposable
 
         settings.Build.Project.ShouldBeNull();
         settings.Build.Configuration.ShouldBe("Release");
+        settings.Repository.ShouldBeNull();
         settings.Changelog.File.ShouldBe("CHANGELOG.md");
-        settings.Changelog.Repository.ShouldBeNull();
         settings.Release.TagPrefix.ShouldBe("v");
         settings.Release.Feed.ShouldBe("https://api.nuget.org/v3/index.json");
     }

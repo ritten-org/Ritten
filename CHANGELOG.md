@@ -11,9 +11,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Steps can be synchronous.** Step classes can return a plain `StepResult` or `StepResult<T>` directly.
 - **`ritten status`.** Reports the current state of the project, including its version, release state, and the changelog,.
 - **Code coverage.** Tests collect coverage by default via the coverlet collector, and the line and branch rates are reported alongside the results. A `"coverage"` section in `ritten.json` with `line`/`branch` minimums makes the numbers enforced. Requires the `coverlet.collector` package in test projects.
+- **The repository URL is picked up automatically.** Ritten reads the URL from the project file's `RepositoryUrl`, or failing that the origin git remote, when it's not given explicitly.
 
 ### Changed
 
+- **The repository is now set using `repository`.** Rather than being a property of `changelog`, the `repository` setting now hangs off the document root.
 - **Determining the release state is its own step.** Similar to the changelog step refactor in the last iteration, this should help keep steps loosely coupled and composable.
 - **Validating the changelog links is its own step.** The links are a lint on the document, applying in every release state, while the entry requirement attaches to the release being prepared.
 - **Namespaces are organized by domain.** Each domain (Changelogs, DotNet, Git, NuGet, GitHub, and Releases) owns its client, steps, and options in one place, instead of being split between an infrastructure tree and a pipelines tree.

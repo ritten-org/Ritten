@@ -14,4 +14,9 @@ public class DotNetOptions
     /// The project file of the package being shipped, relative to the repository root.
     /// </summary>
     public string ProjectFile { get; set; } = "";
+
+    /// <summary>
+    /// The repository's web URL, when configured explicitly; wins over anything derived.
+    /// </summary>
+    public string? Repository { get; set; }
 }

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Core;
+using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.Reporting;
 
@@ -20,16 +21,18 @@ public class ChangelogLinksValidate(IPipelineLog log, IOptions<ChangelogOptions>
     /// <summary>
     /// Validates the changelog's version links.
     /// </summary>
+    /// <param name="project">The project the changelog belongs to (see <see cref="DotNet.Steps.ReadProject"/>).</param>
     /// <param name="changelog">The parsed changelog (see <see cref="ReadChangelog"/>).</param>
-    public StepResult Run(Changelog changelog)
+    public StepResult Run(Project project, Changelog changelog)
     {
-        if (string.IsNullOrEmpty(options.Value.RepositoryUrl))
+        if (string.IsNullOrEmpty(project.Repository))
         {
-            log.Skipped("No repository URL configured; links not validated.");
+            log.Skipped("No repository URL configured or derivable; links not validated.");
             return StepResult.Successful;
         }
 
-        var repository = new ChangelogRepository(options.Value.RepositoryUrl) { TagPrefix = release.Value.TagPrefix };
+        log.Verbose($"Validating links against {project.Repository}.");
+        var repository = new ChangelogRepository(project.Repository) { TagPrefix = release.Value.TagPrefix };
         var expected = changelogs.GenerateLinks(changelog, repository);
         if (!changelog.Links.SequenceEqual(expected))
         {

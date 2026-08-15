@@ -8,7 +8,7 @@ Ritten is a .NET tool. Pin it per repository so that everyone — and CI — run
 
 ```sh
 dotnet new tool-manifest
-dotnet tool install Ritten
+dotnet tool install ritten
 ```
 
 ## Usage
@@ -19,9 +19,6 @@ Describe the project in a `ritten.json` at its root:
 {
     "build": {
         "project": "src/Thing/Thing.csproj"
-    },
-    "changelog": {
-        "repository": "https://github.com/you/thing"
     }
 }
 ```

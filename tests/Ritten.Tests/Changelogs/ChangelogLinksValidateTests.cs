@@ -1,8 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using NuGet.Versioning;
 using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
 using Ritten.Contracts;
+using Ritten.DotNet;
 using Ritten.Pipelines;
 using Ritten.Reporting;
 using Ritten.Tests.Support;
@@ -11,8 +13,7 @@ namespace Ritten.Tests.Changelogs;
 
 /// <summary>
 /// The links are a deterministic function of the file's own entries, so this lint applies in
-/// every release state: drift is fixed in the pull request that caused it, not discovered by
-/// whoever cuts the next release.
+/// every release state. The repository URL arrives already resolved on the project.
 /// </summary>
 public class ChangelogLinksValidateTests
 {
@@ -28,7 +29,6 @@ public class ChangelogLinksValidateTests
 
     public ChangelogLinksValidateTests()
     {
-        _options.RepositoryUrl = "https://github.com/example/repo";
         _report.Section("Release").Returns(_releaseSection);
     }
 
@@ -46,7 +46,7 @@ public class ChangelogLinksValidateTests
             [1.2.0]: https://github.com/example/repo/releases/tag/v1.2.0
             """);
 
-        var result = Step().Run(changelog);
+        var result = Step().Run(Project(), changelog);
 
         result.IsFailure.ShouldBeFalse();
     }
@@ -65,7 +65,7 @@ public class ChangelogLinksValidateTests
             [1.2.0]: https://github.com/example/repo/releases/tag/v1.0.0
             """);
 
-        var result = Step().Run(changelog);
+        var result = Step().Run(Project(), changelog);
 
         result.IsFailure.ShouldBeTrue();
         _releaseSection.Tone.ShouldBe(ReportTone.Failure);
@@ -89,7 +89,7 @@ public class ChangelogLinksValidateTests
             [1.2.0]: https://github.com/example/repo/releases/tag/v1.0.0
             """);
 
-        var result = Step().Run(changelog);
+        var result = Step().Run(Project(), changelog);
 
         var error = result.Errors.ShouldNotBeNull().ShouldHaveSingleItem();
         var block = error.Verbatim.ShouldNotBeNull();
@@ -98,9 +98,8 @@ public class ChangelogLinksValidateTests
     }
 
     [Fact]
-    public void SkipsLinkValidationWithoutARepositoryUrl()
+    public void SkipsLinkValidationWhenTheProjectHasNoRepository()
     {
-        _options.RepositoryUrl = null;
         var changelog = Changelogs.Parse(
             """
             # Changelog
@@ -112,10 +111,13 @@ public class ChangelogLinksValidateTests
             [1.2.0]: https://example.com/completely-wrong
             """);
 
-        var result = Step().Run(changelog);
+        var result = Step().Run(Project(repository: null), changelog);
 
         result.IsFailure.ShouldBeFalse();
     }
+
+    private static Project Project(string? repository = "https://github.com/example/repo") =>
+        new() { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0"), Repository = repository };
 
     private ChangelogLinksValidate Step() =>
         new(Substitute.For<IPipelineLog>(), Options.Create(_options), Options.Create(TestOptions.Git()), _report, Changelogs);

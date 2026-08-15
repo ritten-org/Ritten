@@ -3,6 +3,7 @@ using NuGet.Versioning;
 using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core;
+using Ritten.Git;
 
 namespace Ritten.DotNet;
 
@@ -16,7 +17,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         // Directory.Build.props, conditions, and SDK defaults are all resolved.
         var command = Command
             .Create("dotnet")
-            .WithArguments("msbuild", file.AbsolutePath, "-getProperty:PackageId", "-getProperty:Version")
+            .WithArguments("msbuild", file.AbsolutePath, "-getProperty:PackageId", "-getProperty:Version", "-getProperty:RepositoryUrl")
             .ThrowOnError();
         var result = await commands.Run(command, cancellationToken);
 
@@ -41,10 +42,15 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
             return errors;
         }
 
+        var repository = properties.TryGetProperty("RepositoryUrl", out var repositoryUrl)
+            ? RepositoryUrls.ToWebUrl(repositoryUrl.GetString())
+            : null;
+
         return new Project
         {
             Name = packageId,
-            Version = NuGetVersion.Parse(version)
+            Version = NuGetVersion.Parse(version),
+            Repository = repository
         };
     }
 

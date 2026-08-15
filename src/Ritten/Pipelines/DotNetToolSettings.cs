@@ -7,6 +7,11 @@ namespace Ritten.Pipelines;
 public sealed record DotNetToolSettings
 {
     /// <summary>
+    /// The repository's web URL; read from the project file or the origin remote when not set.
+    /// </summary>
+    public string? Repository { get; init; }
+
+    /// <summary>
     /// What to build, and how.
     /// </summary>
     public DotNetBuildSettings Build { get; init; } = new();

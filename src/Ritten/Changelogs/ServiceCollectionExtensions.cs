@@ -17,11 +17,7 @@ public static class ServiceCollectionExtensions
         public IServiceCollection AddChangelogs(ChangelogSettings settings)
         {
             services.TryAddSingleton<IChangelog, ChangelogClient>();
-            services.Configure<ChangelogOptions>(o =>
-            {
-                o.File = settings.File;
-                o.RepositoryUrl = settings.Repository;
-            });
+            services.Configure<ChangelogOptions>(o => o.File = settings.File);
             return services;
         }
     }

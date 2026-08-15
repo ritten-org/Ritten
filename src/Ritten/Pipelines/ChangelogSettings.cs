@@ -9,9 +9,4 @@ public sealed record ChangelogSettings
     /// The changelog file, relative to the project root.
     /// </summary>
     public string File { get; init; } = "CHANGELOG.md";
-
-    /// <summary>
-    /// The project's web URL. When set, the changelog's version links are validated against it.
-    /// </summary>
-    public string? Repository { get; init; }
 }

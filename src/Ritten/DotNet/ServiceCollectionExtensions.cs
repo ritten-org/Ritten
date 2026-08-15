@@ -15,7 +15,7 @@ public static class ServiceCollectionExtensions
         /// <summary>
         /// Adds the .NET client and build settings, configured from the project's settings.
         /// </summary>
-        public IServiceCollection AddDotNet(DotNetBuildSettings settings)
+        public IServiceCollection AddDotNet(DotNetBuildSettings settings, string? repository = null)
         {
             services.AddCommandRunner();
             services.TryAddSingleton<IDotNet, DotNetClient>();
@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
             {
                 o.Configuration = settings.Configuration;
                 o.ProjectFile = settings.Project ?? "";
+                o.Repository = repository;
             });
             return services;
         }

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
+using Ritten.Git;
 
 namespace Ritten.DotNet.Steps;
 
@@ -11,8 +12,9 @@ namespace Ritten.DotNet.Steps;
 /// <param name="options">The pipeline's build options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
+/// <param name="git">The git client.</param>
 [Step("read project", StepKind.Work)]
-public class ReadProject(IPipelineLog log, IOptions<DotNetOptions> options, IFileSystem fileSystem, IDotNet dotnet)
+public class ReadProject(IPipelineLog log, IOptions<DotNetOptions> options, IFileSystem fileSystem, IDotNet dotnet, IGit git)
 {
     /// <summary>
     /// Reads the configured project file.
@@ -31,7 +33,14 @@ public class ReadProject(IPipelineLog log, IOptions<DotNetOptions> options, IFil
             return StepResult.Failed(project.Errors);
         }
 
+        // Resolved once, here, so no consumer coalesces sources again: the explicit setting
+        // wins, then the project file's RepositoryUrl, then the origin remote.
+        var repository = options.Value.Repository
+            ?? project.Value.Repository
+            ?? RepositoryUrls.ToWebUrl(await git.GetRemoteUrl("origin", cancellationToken));
+
         log.Detail($"Extracted project info: {project.Value.Name} (v{project.Value.Version})");
-        return project.Value;
+        log.Verbose($"Repository: {repository ?? "unknown"}.");
+        return project.Value with { Repository = repository };
     }
 }

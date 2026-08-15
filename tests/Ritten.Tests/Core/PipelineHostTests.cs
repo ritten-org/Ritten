@@ -66,7 +66,7 @@ public class PipelineHostTests
         var builder = PipelineHostBuilderHelpers.Create();
         builder.AddJob("deploy", job => job
             .Requires(settings.Build.Project)
-            .Requires(settings.Changelog.Repository));
+            .Requires(settings.Repository));
 
         // Act
         var result = builder.Build("deploy");
@@ -75,7 +75,7 @@ public class PipelineHostTests
         result.IsError.ShouldBeTrue();
         result.Errors.Select(e => e.Message).ShouldBe([
             "'build.project' not set in ritten.json.",
-            "'changelog.repository' not set in ritten.json."
+            "'repository' not set in ritten.json."
         ]);
     }
 
