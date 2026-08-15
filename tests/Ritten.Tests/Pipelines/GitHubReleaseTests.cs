@@ -12,7 +12,7 @@ namespace Ritten.Tests.Pipelines;
 
 public class GitHubReleaseTests
 {
-    private static readonly ReleaseState Releasable = ReleaseState.Releasable(null, null);
+    private static readonly ReleaseState Releasable = new ReleaseState(Published: false, LatestInLine: true, null, null);
 
     private readonly IReleaseService _releases = Substitute.For<IReleaseService>();
     private readonly IChangelog _changelogs = Substitute.For<IChangelog>();
@@ -56,7 +56,7 @@ public class GitHubReleaseTests
     public async Task DoesNotMarkABackportAsTheLatestRelease()
     {
         // 1.2.0 shipping below 2.0.0 must not displace 2.0.0 as the repository's latest release.
-        var backport = ReleaseState.Releasable(NuGetVersion.Parse("1.1.0"), NuGetVersion.Parse("2.0.0"));
+        var backport = new ReleaseState(Published: false, LatestInLine: true, NuGetVersion.Parse("1.1.0"), NuGetVersion.Parse("2.0.0"));
 
         await Step().Run(Project("1.2.0"), _changelog, backport, TestContext.Current.CancellationToken);
 

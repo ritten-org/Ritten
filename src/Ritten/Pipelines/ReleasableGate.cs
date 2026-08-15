@@ -16,7 +16,7 @@ public class ReleasableGate(IPipelineLog log)
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     public Task<StepResult> Run(ReleaseState release, CancellationToken cancellationToken = default)
     {
-        if (release.Kind == ReleaseStateKind.LatestInLine)
+        if (release.Published)
         {
             log.Skipped($"Version {release.LatestVersionInLine} is already published; nothing to deploy.");
             return Task.FromResult(StepResult.NothingToDo);

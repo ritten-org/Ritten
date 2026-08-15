@@ -13,8 +13,8 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-    name: Build
+  check:
+    name: Check
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -22,7 +22,7 @@ jobs:
     if: github.event_name == 'pull_request' || github.event_name == 'push'
     concurrency:
       # A newer push to the same PR or branch supersedes any run still going.
-      group: build-${{ github.ref }}
+      group: check-${{ github.ref }}
       cancel-in-progress: true
     steps:
       - name: Checkout repository
@@ -36,14 +36,11 @@ jobs:
       - name: Restore tools
         run: dotnet tool restore
 
-      - name: Run build
-        run: dotnet ritten build
+      - name: Run check
+        run: dotnet ritten check
         shell: bash
         env:
-          # Dependabot can't bump versions or write changelog entries, so its PRs skip those checks.
-          # Pushes to main always run them, so the badge reflects real releasability.
-          RITTEN_SKIP_VERSION_CHECK: ${{ github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' }}
-          RITTEN_SKIP_CHANGELOG: ${{ github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' }}
+          # No dependabot special-casing: a PR that ships nothing passes as "at rest".
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
