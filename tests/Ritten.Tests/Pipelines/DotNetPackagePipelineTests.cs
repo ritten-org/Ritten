@@ -1,3 +1,4 @@
+using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.Pipelines.DotNet;
 using Ritten.Tests.Core.Helpers;
@@ -68,10 +69,54 @@ public class DotNetPackagePipelineTests
         result.Value.Dispose();
     }
 
-    private static Result<PipelineHost> Build(string job, DotNetPackageSettings settings)
+    [Fact]
+    public void Deploy_RefusesUpFrontWithoutTheCredentialsItNeeds()
+    {
+        // Before anything runs, rather than after a tag has already been pushed.
+        var result = Build("deploy", Complete, environment: PipelineHostBuilderHelpers.Empty);
+
+        result.IsError.ShouldBeTrue();
+        result.Errors.Select(e => e.Message).ShouldBe([
+            "RITTEN_NUGET_API_KEY is not set.",
+            "GITHUB_REPOSITORY_ID is not set."
+        ]);
+    }
+
+    [Fact]
+    public void Deploy_NeedsNoCredentialsToRehearse()
+    {
+        // A dry run stands in for the clients that would have used them.
+        var result = Build("deploy", Complete, environment: PipelineHostBuilderHelpers.Empty, dryRun: true);
+
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Dispose();
+    }
+
+    [Fact]
+    public void Deploy_WarnsWhenARehearsalWouldPassButTheRealRunWouldNot()
+    {
+        // A rehearsal that passes where the real thing fails is worse than no rehearsal.
+        var log = Substitute.For<IPipelineLog>();
+        var builder = PipelineHostBuilderHelpers.Create(
+            log: log, environment: PipelineHostBuilderHelpers.Empty, dryRun: true);
+
+        new DotNetPackagePipeline().Configure(builder, Complete);
+        builder.Build("deploy").Value.ShouldNotBeNull().Dispose();
+
+        log.Received().Log(
+            PipelineLogLevel.Warning,
+            Arg.Is<string>(m => m.Contains("RITTEN_NUGET_API_KEY")),
+            Arg.Any<Exception>());
+    }
+
+    private static Result<PipelineHost> Build(
+        string job,
+        DotNetPackageSettings settings,
+        Func<string, string?>? environment = null,
+        bool dryRun = false)
     {
         var pipeline = new DotNetPackagePipeline();
-        var builder = PipelineHostBuilderHelpers.Create(pipeline.Name);
+        var builder = PipelineHostBuilderHelpers.Create(pipeline.Name, environment, dryRun);
         pipeline.Configure(builder, settings);
         return builder.Build(job);
     }

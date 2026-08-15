@@ -24,6 +24,8 @@ public class PipelineHostBuilder : IPipelineBuilder
     private readonly Dictionary<string, Action<IJobBuilder>> _jobs = [];
     private readonly bool _dryRun;
     private readonly bool _autoApprove;
+    private readonly Func<string, string?> _environment;
+    private readonly IPipelineLog _log;
 
     /// <summary>
     /// Creates a new instance of the <see cref="PipelineHostBuilder"/>.
@@ -33,12 +35,16 @@ public class PipelineHostBuilder : IPipelineBuilder
     /// <param name="reporter">The reporter that renders pipeline progress.</param>
     /// <param name="dryRun">Whether to wrap the clients that reach outside the working directory.</param>
     /// <param name="autoApprove">Whether a job that would stop and ask has been approved up front.</param>
-    internal PipelineHostBuilder(RittenProject project, string pipelineName, SpectreProgressReporter reporter, bool dryRun = false, bool autoApprove = false)
+    /// <param name="environment">Reads environment variables; the process environment when not given.</param>
+    /// <param name="log">Where the builder writes; the reporter when not given.</param>
+    internal PipelineHostBuilder(RittenProject project, string pipelineName, SpectreProgressReporter reporter, bool dryRun = false, bool autoApprove = false, Func<string, string?>? environment = null, IPipelineLog? log = null)
     {
         _reporter = reporter;
         _pipelineName = pipelineName;
         _dryRun = dryRun;
         _autoApprove = autoApprove;
+        _environment = environment ?? Environment.GetEnvironmentVariable;
+        _log = log ?? reporter;
         Services.AddSingleton(project);
     }
 
@@ -72,10 +78,10 @@ public class PipelineHostBuilder : IPipelineBuilder
         Services.TryAddSingleton<IPipelineState, DefaultPipelineState>();
 
         Services.AddSingleton<IProgressReporter>(_reporter);
-        Services.TryAddSingleton<IPipelineLog>(_reporter);
+        Services.TryAddSingleton(_log);
         Services.TryAddSingleton<IPipelinePrompt>(_ => new ConsolePrompt(AnsiConsole.Console));
 
-        var builder = new JobBuilder(Services);
+        var builder = new JobBuilder(Services, _log, _environment, _dryRun);
         configure(builder);
 
         if (_dryRun)
@@ -151,7 +157,7 @@ public class PipelineHostBuilder : IPipelineBuilder
             _ => throw new InvalidOperationException($"Cannot decorate {typeof(TService).Name}: it has no implementation.")
         };
 
-    private sealed class JobBuilder(IServiceCollection services) : IJobBuilder
+    private sealed class JobBuilder(IServiceCollection services, IPipelineLog log, Func<string, string?> environment, bool dryRun) : IJobBuilder
     {
         /// <summary>
         /// Turns <c>settings.Build.Project</c> into <c>build.project</c>.
@@ -171,6 +177,27 @@ public class PipelineHostBuilder : IPipelineBuilder
             if (string.IsNullOrEmpty(value))
             {
                 Errors.Add($"'{SettingKey(expression)}' not set in {RittenProject.FileName}.");
+            }
+
+            return this;
+        }
+
+        public IJobBuilder RequiresEnvironment(string variable)
+        {
+            if (!string.IsNullOrEmpty(environment(variable)))
+            {
+                return this;
+            }
+
+            if (dryRun)
+            {
+                // A rehearsal can finish without it, but finding out that the real run couldn't
+                // is most of what a rehearsal is for. Warned, not failed.
+                log.Warning($"{variable} is not set; a real run would stop before starting.");
+            }
+            else
+            {
+                Errors.Add($"{variable} is not set.");
             }
 
             return this;

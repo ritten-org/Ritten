@@ -13,13 +13,11 @@ namespace Ritten.Pipelines.NuGet;
 /// pipeline state (see <see cref="DotnetPack"/>); uses <see cref="Project"/> for the report
 /// when present.
 /// </summary>
-/// <param name="job">The job being run.</param>
 /// <param name="options">The pipeline's NuGet options.</param>
 /// <param name="state">The pipeline state.</param>
 /// <param name="nuget">The NuGet client.</param>
 /// <param name="report">The build report.</param>
 public class NugetPush(
-    PipelineJob job,
     IOptions<NuGetOptions> options,
     IPipelineState state,
     INuGet nuget,
@@ -32,11 +30,6 @@ public class NugetPush(
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        if (!job.DryRun && string.IsNullOrEmpty(options.Value.ApiKey))
-        {
-            return StepResult.Failed($"The NuGet API key is not configured; set {RittenEnvironment.NuGetApiKey} for the deploy job.");
-        }
-
         if (state.Get<PackResult>() is not { } packed)
         {
             return StepResult.Failed("Pack result not found in state.");

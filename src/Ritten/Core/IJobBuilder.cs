@@ -16,6 +16,12 @@ public interface IJobBuilder
     IJobBuilder Requires(string? value, [CallerArgumentExpression(nameof(value))] string expression = "");
 
     /// <summary>
+    /// Requires an environment variable to be set, unless this is a dry run.
+    /// </summary>
+    /// <param name="variable">The name of the environment variable.</param>
+    IJobBuilder RequiresEnvironment(string variable);
+
+    /// <summary>
     /// Appends a step to the job. Steps run in the order they are declared.
     /// </summary>
     /// <typeparam name="TStep">The step type. It is automatically registered in the service collection.</typeparam>
