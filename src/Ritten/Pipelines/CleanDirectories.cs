@@ -13,7 +13,7 @@ namespace Ritten.Pipelines;
 public class CleanDirectories(IPipelineLog log, IOptions<PipelineOptions> options, IFileSystem fileSystem) : IPipelineStep
 {
     /// <inheritdoc />
-    public string Name => "Clean directories";
+    public string Name => "clean";
 
     /// <inheritdoc />
     public Task<StepResult> Run(CancellationToken cancellationToken = default)

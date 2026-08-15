@@ -30,7 +30,7 @@ public class ValidateChangelog(
 ) : IPipelineStep
 {
     /// <inheritdoc />
-    public string Name => "Validate changelog";
+    public string Name => "changelog";
 
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
