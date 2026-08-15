@@ -1,6 +1,6 @@
 using Ritten.Contracts;
 using Ritten.Core;
-using Ritten.Pipelines.DotNet;
+using Ritten.Pipelines;
 using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Pipelines;

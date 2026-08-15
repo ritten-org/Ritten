@@ -1,7 +1,8 @@
+using Ritten.Changelogs;
+using Ritten.DotNet;
+using Ritten.Git;
+using Ritten.NuGet;
 using Ritten.Pipelines;
-using Ritten.Pipelines.DotNet;
-using Ritten.Pipelines.Git;
-using Ritten.Pipelines.NuGet;
 
 namespace Ritten.Tests.Support;
 

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Ritten.Core;
 using Ritten.Pipelines;
-using Ritten.Pipelines.DotNet;
+using Ritten.Releases;
 
 namespace Ritten.Tests.Core;
 

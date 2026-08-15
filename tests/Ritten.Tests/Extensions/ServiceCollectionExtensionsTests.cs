@@ -3,19 +3,14 @@ using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Changelogs;
 using Ritten.Commands;
-using Ritten.Core.Settings;
 using Ritten.DotNet;
-using Ritten.Extensions;
 using Ritten.Git;
+using Ritten.GitHub;
 using Ritten.NuGet;
 using Ritten.Pipelines;
-using Ritten.Pipelines.DotNet;
-using Ritten.Pipelines.Git;
-using Ritten.Pipelines.NuGet;
+using Ritten.Releases;
 using Ritten.Reporting;
 using Ritten.Reporting.Sinks;
-using Ritten.Runtimes;
-using Ritten.Runtimes.GitHubActions;
 
 namespace Ritten.Tests.Extensions;
 

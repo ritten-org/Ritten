@@ -2,7 +2,7 @@ using System.Net;
 using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Contracts;
-using Ritten.Runtimes.GitHubActions;
+using Ritten.GitHub;
 
 namespace Ritten.Tests.GitHub;
 

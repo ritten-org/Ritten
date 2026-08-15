@@ -6,10 +6,9 @@ using Ritten.Core.FileSystem;
 using Ritten.Core.Rules;
 using Ritten.Core.Runner;
 using Ritten.Git;
+using Ritten.GitHub;
 using Ritten.NuGet;
 using Ritten.Reporting;
-using Ritten.Runtimes;
-using Ritten.Runtimes.GitHubActions;
 using Spectre.Console;
 
 namespace Ritten.Core;

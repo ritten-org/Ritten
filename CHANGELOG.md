@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - **Determining the release state is its own step.** Similar to the changelog step refactor in the last iteration, this should help keep steps loosely coupled and composable.
 - **Validating the changelog links is its own step.** The links are a lint on the document, applying in every release state, while the entry requirement attaches to the release being prepared.
+- **Namespaces are organized by domain.** Each domain (Changelogs, DotNet, Git, NuGet, GitHub, and Releases) owns its client, steps, and options in one place, instead of being split between an infrastructure tree and a pipelines tree.
 
 ## [0.0.2] - 2026-08-15
 

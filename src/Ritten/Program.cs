@@ -1,8 +1,8 @@
 using System.CommandLine;
 using Ritten.Contracts;
 using Ritten.Core;
-using Ritten.Pipelines.DotNet;
-using Ritten.Runtimes.GitHubActions;
+using Ritten.GitHub;
+using Ritten.Pipelines;
 
 var verbose = new Option<bool>($"--{PipelineArguments.Verbose}", "-v")
 {

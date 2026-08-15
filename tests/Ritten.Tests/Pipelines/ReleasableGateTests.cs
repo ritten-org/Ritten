@@ -1,6 +1,7 @@
 using NuGet.Versioning;
 using Ritten.Contracts;
-using Ritten.Pipelines;
+using Ritten.Pipelines.Steps;
+using Ritten.Releases;
 
 namespace Ritten.Tests.Pipelines;
 
