@@ -137,6 +137,11 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
 
         command = command.AndArguments("--logger", "trx", "--results-directory", args.ResultsDirectory.AbsolutePath);
 
+        if (args.CollectCoverage)
+        {
+            command = command.AndArguments("--collect", "XPlat Code Coverage");
+        }
+
         var result = await commands.Run(command, cancellationToken);
 
         var runs = new List<TestRun>();

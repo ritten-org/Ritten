@@ -20,4 +20,9 @@ public sealed record DotNetToolSettings
     /// How a release is tagged and where it's published.
     /// </summary>
     public ReleaseSettings Release { get; init; } = new();
+
+    /// <summary>
+    /// Code coverage collection and thresholds.
+    /// </summary>
+    public CoverageSettings? Coverage { get; init; }
 }

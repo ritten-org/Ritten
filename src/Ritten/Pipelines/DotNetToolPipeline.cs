@@ -1,5 +1,6 @@
 using Ritten.Changelogs.Steps;
 using Ritten.Core;
+using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.Git.Steps;
 using Ritten.GitHub;
@@ -22,12 +23,22 @@ public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
     {
         builder.Services.AddDotNetToolServices(settings);
 
+        builder.AddJob("status", job => job
+            .Requires(settings.Build.Project)
+            .UseStep<ReadProject>()
+            .UseStep<ReadChangelog>()
+            .UseStep<NugetRead>()
+            .UseStep<StatusReport>()
+        );
+
         builder.AddJob("build", job => job
             .UseStep<Clean>()
             .UseStep<DotnetRestore>()
             .UseStep<DotnetFormat>()
             .UseStep<DotnetBuild>()
-            .UseStep<DotnetTest>());
+            .UseStep<DotnetTest>()
+            .UseCoverage(settings.Coverage)
+        );
 
         builder.AddJob("check", job => job
             .Requires(settings.Build.Project)
@@ -42,7 +53,9 @@ public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
             .UseStep<DotnetFormat>()
             .UseStep<DotnetBuild>()
             .UseStep<DotnetTest>()
-            .UseStep<DotnetPack>());
+            .UseCoverage(settings.Coverage)
+            .UseStep<DotnetPack>()
+        );
 
         builder.AddJob("deploy", job => job
             .Requires(settings.Build.Project)
@@ -59,10 +72,12 @@ public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
             .UseStep<DotnetRestore>()
             .UseStep<DotnetBuild>()
             .UseStep<DotnetTest>()
+            .UseCoverage(settings.Coverage)
             .UseStep<ApprovalGate>()
             .UseStep<DotnetPack>()
             .UseStep<GitTag>()
             .UseStep<GitHubRelease>()
-            .UseStep<NugetPush>());
+            .UseStep<NugetPush>()
+        );
     }
 }

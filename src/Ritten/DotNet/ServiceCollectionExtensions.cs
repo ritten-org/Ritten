@@ -26,5 +26,19 @@ public static class ServiceCollectionExtensions
             });
             return services;
         }
+
+        /// <summary>
+        /// Adds coverage collection and thresholds, configured from the project's settings.
+        /// </summary>
+        public IServiceCollection AddCoverage(CoverageSettings? settings)
+        {
+            services.Configure<CoverageOptions>(o =>
+            {
+                o.Enabled = settings is not null;
+                o.MinimumLine = settings?.Line;
+                o.MinimumBranch = settings?.Branch;
+            });
+            return services;
+        }
     }
 }

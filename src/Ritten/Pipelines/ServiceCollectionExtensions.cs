@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
             return services
                 .AddChangelogs(settings.Changelog)
                 .AddDotNet(settings.Build)
+                .AddCoverage(settings.Coverage)
                 .AddGit(settings.Release.TagPrefix)
                 .AddNuGet(settings.Release.Feed, settings.Release.Lines)
                 .AddGitHubActionsRuntime()

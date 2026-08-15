@@ -134,6 +134,27 @@ public class RittenProjectTests : IDisposable
     }
 
     [Fact]
+    public async Task GetSettings_ReadsTheCoverageSection()
+    {
+        WriteRittenJson(_root, """{ "coverage": { "line": 80.5 } }""");
+
+        var settings = await GetSettings(_root);
+
+        settings.Coverage.ShouldNotBeNull().Line.ShouldBe(80.5m);
+        settings.Coverage.Branch.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task GetSettings_LeavesCoverageOffWithoutItsSection()
+    {
+        WriteRittenJson(_root);
+
+        var settings = await GetSettings(_root);
+
+        settings.Coverage.ShouldBeNull();
+    }
+
+    [Fact]
     public async Task GetSettings_RejectsAnUnrecognisedEnumValue()
     {
         WriteRittenJson(_root, """{ "release": { "lines": "patch" } }""");

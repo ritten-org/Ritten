@@ -17,6 +17,7 @@ public class DotNetToolPipelineTests
     };
 
     [Theory]
+    [InlineData("status")]
     [InlineData("build")]
     [InlineData("check")]
     [InlineData("deploy")]
@@ -48,6 +49,7 @@ public class DotNetToolPipelineTests
     }
 
     [Theory]
+    [InlineData("status")]
     [InlineData("check")]
     [InlineData("deploy")]
     public void ShippingJobs_RequireAProject(string job)
@@ -107,6 +109,19 @@ public class DotNetToolPipelineTests
             PipelineLogLevel.Warning,
             Arg.Is<string>(m => m.Contains("RITTEN_NUGET_API_KEY")),
             Arg.Any<Exception>());
+    }
+
+    [Fact]
+    public void CoverageStepsJoinTheJobsOnlyWhenConfigured()
+    {
+        // The job's declaration matches what actually runs: no configuration, no steps.
+        var withCoverage = Build("check", Complete with { Coverage = new CoverageSettings() });
+        var withoutCoverage = Build("check", Complete);
+
+        withCoverage.IsSuccess.ShouldBeTrue();
+        withCoverage.Value.Dispose();
+        withoutCoverage.IsSuccess.ShouldBeTrue();
+        withoutCoverage.Value.Dispose();
     }
 
     private static Result<PipelineHost> Build(
