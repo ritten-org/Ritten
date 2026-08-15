@@ -9,6 +9,8 @@ on:
         default: false
   pull_request:
     branches: [ main ]
+  push:
+    branches: [ main ]
 
 jobs:
   build:
