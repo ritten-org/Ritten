@@ -36,7 +36,7 @@ public class ExtractDotNetProject(IPipelineLog log, IOptions<DotNetOptions> opti
 
         state.Set(project.Value);
 
-        log.Status($"Extracted project info: {project.Value.Name} (v{project.Value.Version})");
+        log.Detail($"Extracted project info: {project.Value.Name} (v{project.Value.Version})");
         return StepResult.Successful;
     }
 }
