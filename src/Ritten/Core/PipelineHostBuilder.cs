@@ -45,7 +45,16 @@ public class PipelineHostBuilder : IPipelineBuilder
         _autoApprove = autoApprove;
         _environment = environment ?? Environment.GetEnvironmentVariable;
         _log = log ?? reporter;
+
+        // Applies to every run.
         Services.AddSingleton(project);
+        Services.AddSingleton(TimeProvider.System);
+        Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
+        Services.TryAddSingleton<IFileSystem, ProjectFileSystem>();
+        Services.TryAddSingleton<IPipelineState, DefaultPipelineState>();
+        Services.AddSingleton<IProgressReporter>(_reporter);
+        Services.TryAddSingleton(_log);
+        Services.TryAddSingleton<IPipelinePrompt>(_ => new ConsolePrompt(AnsiConsole.Console));
     }
 
     /// <inheritdoc />
@@ -70,16 +79,6 @@ public class PipelineHostBuilder : IPipelineBuilder
         }
 
         Services.AddSingleton(new PipelineJob(_pipelineName, job, _dryRun, _autoApprove));
-        Services.AddSingleton(TimeProvider.System);
-
-        Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
-
-        Services.TryAddSingleton<IFileSystem, ProjectFileSystem>();
-        Services.TryAddSingleton<IPipelineState, DefaultPipelineState>();
-
-        Services.AddSingleton<IProgressReporter>(_reporter);
-        Services.TryAddSingleton(_log);
-        Services.TryAddSingleton<IPipelinePrompt>(_ => new ConsolePrompt(AnsiConsole.Console));
 
         var builder = new JobBuilder(Services, _log, _environment, _dryRun);
         configure(builder);
