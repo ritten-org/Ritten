@@ -22,8 +22,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Restore tools
+        run: dotnet tool restore
+
       - name: Run build
-        run: dotnet run --project src/Ritten -- build
+        run: dotnet ritten build
         shell: bash
         env:
           # Dependabot can't bump versions or write changelog entries, so its PRs skip those checks.
@@ -49,8 +52,11 @@ jobs:
         with:
           user: ${{ secrets.NUGET_USER }}
 
+      - name: Restore tools
+        run: dotnet tool restore
+
       - name: Run deployment
-        run: dotnet run --project src/Ritten -- deploy --auto-approve ${{ inputs['dry-run'] && '--dry-run' || '' }}
+        run: dotnet ritten deploy --auto-approve ${{ inputs['dry-run'] && '--dry-run' || '' }}
         shell: bash
         env:
           RITTEN_NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
