@@ -87,9 +87,9 @@ public static class ServiceCollectionExtensions
         }
 
         /// <summary>
-        /// Registers everything the standard .NET package pipelines share.
+        /// Registers everything the standard .NET tool pipelines share.
         /// </summary>
-        public IServiceCollection AddDotNetPackageServices(DotNetPackageSettings settings)
+        public IServiceCollection AddDotNetToolServices(DotNetToolSettings settings)
         {
             return services
                 .AddChangelogs(settings.Changelog)

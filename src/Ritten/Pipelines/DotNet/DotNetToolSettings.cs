@@ -6,7 +6,7 @@ namespace Ritten.Pipelines.DotNet;
 /// The <c>ritten.json</c> schema for the .NET package pipelines.
 /// against.
 /// </summary>
-public sealed record DotNetPackageSettings
+public sealed record DotNetToolSettings
 {
     /// <summary>
     /// What to build, and how.

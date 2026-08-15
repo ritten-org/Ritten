@@ -21,7 +21,7 @@ namespace Ritten.Tests.Extensions;
 
 public class ServiceCollectionExtensionsTests
 {
-    private static readonly DotNetPackageSettings Settings = new()
+    private static readonly DotNetToolSettings Settings = new()
     {
         Build = new DotNetBuildSettings { Project = "src/Thing/Thing.csproj", Configuration = "Debug" },
         Changelog = new ChangelogSettings { File = "HISTORY.md", Repository = "https://example.com/thing" },

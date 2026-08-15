@@ -129,7 +129,7 @@ public class RittenProjectTests : IDisposable
         WriteRittenJson(_root, """{ "biuld": { "project": "src/Thing/Thing.csproj" } }""");
         var project = await RittenProject.Resolve(_root);
 
-        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
+        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetToolSettings>();
 
         settings.IsError.ShouldBeTrue();
         var error = settings.Errors.ShouldHaveSingleItem();
@@ -145,7 +145,7 @@ public class RittenProjectTests : IDisposable
         WriteRittenJson(_root, """{ "build": { "projct": "src/Thing/Thing.csproj" } }""");
         var project = await RittenProject.Resolve(_root);
 
-        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
+        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetToolSettings>();
 
         settings.IsError.ShouldBeTrue();
         var error = settings.Errors.ShouldHaveSingleItem();
@@ -163,7 +163,7 @@ public class RittenProjectTests : IDisposable
         WriteRittenJson(_root, """{ "build": { "directory": "packages/thing" } }""");
         var project = await RittenProject.Resolve(_root);
 
-        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
+        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetToolSettings>();
 
         settings.IsError.ShouldBeTrue();
         var error = settings.Errors.ShouldHaveSingleItem();
@@ -189,10 +189,10 @@ public class RittenProjectTests : IDisposable
         settings.Build.Project.ShouldBe("src/Thing/Thing.csproj");
     }
 
-    private static async Task<DotNetPackageSettings> GetSettings(string directory)
+    private static async Task<DotNetToolSettings> GetSettings(string directory)
     {
         var project = await RittenProject.Resolve(directory);
-        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetPackageSettings>();
+        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetToolSettings>();
         settings.IsError.ShouldBeFalse();
         return settings.Value;
     }

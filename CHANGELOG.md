@@ -6,7 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [0.0.2]
 
-Nothing yet.
+### Changed
+
+- **The `build` job now packs the project.** This means packaging errors surface in pull requests instead of at deploy time.
 
 ## [0.0.1] - 2026-08-15
 

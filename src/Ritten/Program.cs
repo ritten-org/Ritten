@@ -34,7 +34,7 @@ var root = new RootCommand("The Ritten build pipeline.")
     quiet,
     dryRun,
     autoApprove,
-    Job("build", "Validates a pull request: formatting, version, changelog, compile, and tests."),
+    Job("build", "Validates a pull request: formatting, version, changelog, compile, tests, and pack."),
     Job("verify", "Compiles and tests, without any release validation."),
     Job("deploy", "Validates, packs, tags, creates the GitHub release, and publishes to NuGet.")
 };
@@ -54,7 +54,7 @@ Command Job(string name, string description)
             : parseResult.GetValue(quiet)
                 ? PipelineLogLevel.Warning
                 : PipelineLogLevel.Detail;
-        return PipelineHost.Run<DotNetPackagePipeline, DotNetPackageSettings>(
+        return PipelineHost.Run<DotNetToolPipeline, DotNetToolSettings>(
             name,
             logLevel,
             parseResult.GetValue(dryRun),

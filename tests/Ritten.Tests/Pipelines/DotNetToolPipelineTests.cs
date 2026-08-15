@@ -9,9 +9,9 @@ namespace Ritten.Tests.Pipelines;
 /// The .NET package pipeline's jobs read the same project settings but don't share requirements:
 /// only the jobs that ship a package need to know which project to pack.
 /// </summary>
-public class DotNetPackagePipelineTests
+public class DotNetToolPipelineTests
 {
-    private static readonly DotNetPackageSettings Complete = new()
+    private static readonly DotNetToolSettings Complete = new()
     {
         Build = new DotNetBuildSettings { Project = "src/Thing/Thing.csproj" }
     };
@@ -41,7 +41,7 @@ public class DotNetPackagePipelineTests
     [Fact]
     public void Verify_DoesNotRequireAProject()
     {
-        var result = Build("verify", new DotNetPackageSettings());
+        var result = Build("verify", new DotNetToolSettings());
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.Dispose();
@@ -52,7 +52,7 @@ public class DotNetPackagePipelineTests
     [InlineData("deploy")]
     public void ShippingJobs_RequireAProject(string job)
     {
-        var result = Build(job, new DotNetPackageSettings());
+        var result = Build(job, new DotNetToolSettings());
 
         result.IsError.ShouldBeTrue();
         result.Errors.ShouldHaveSingleItem().Message.ShouldContain("'build.project'");
@@ -100,7 +100,7 @@ public class DotNetPackagePipelineTests
         var builder = PipelineHostBuilderHelpers.Create(
             log: log, environment: PipelineHostBuilderHelpers.Empty, dryRun: true);
 
-        new DotNetPackagePipeline().Configure(builder, Complete);
+        new DotNetToolPipeline().Configure(builder, Complete);
         builder.Build("deploy").Value.ShouldNotBeNull().Dispose();
 
         log.Received().Log(
@@ -111,11 +111,11 @@ public class DotNetPackagePipelineTests
 
     private static Result<PipelineHost> Build(
         string job,
-        DotNetPackageSettings settings,
+        DotNetToolSettings settings,
         Func<string, string?>? environment = null,
         bool dryRun = false)
     {
-        var pipeline = new DotNetPackagePipeline();
+        var pipeline = new DotNetToolPipeline();
         var builder = PipelineHostBuilderHelpers.Create(pipeline.Name, environment, dryRun);
         pipeline.Configure(builder, settings);
         return builder.Build(job);

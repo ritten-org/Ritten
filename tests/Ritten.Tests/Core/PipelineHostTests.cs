@@ -62,7 +62,7 @@ public class PipelineHostTests
     {
         // Arrange — being told about all of them beats fixing them one run at a time. The keys are
         // inferred from the expressions, so they can't drift from the properties they describe.
-        var settings = new DotNetPackageSettings();
+        var settings = new DotNetToolSettings();
         var builder = PipelineHostBuilderHelpers.Create();
         builder.AddJob("deploy", job => job
             .Requires(settings.Build.Project)

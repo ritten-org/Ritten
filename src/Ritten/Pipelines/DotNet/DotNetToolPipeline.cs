@@ -9,23 +9,17 @@ using Ritten.Runtimes.GitHubActions;
 namespace Ritten.Pipelines.DotNet;
 
 /// <summary>
-/// Everything Ritten does for a .NET package, as three jobs:
-/// <list type="bullet">
-/// <item><c>verify</c> — compiles and tests, with no release validation, for branches that don't ship.</item>
-/// <item><c>build</c> — the pull request job: adds version and changelog validation.</item>
-/// <item><c>deploy</c> — packs, tags, creates the GitHub release, and publishes. Every release step
-/// skips work a previous run already completed, so failed deploys can be rerun.</item>
-/// </list>
+/// Defines the pipeline jobs for building and maintaining .NET packages.
 /// </summary>
-public class DotNetPackagePipeline : Pipeline<DotNetPackageSettings>
+public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
 {
     /// <inheritdoc/>
     public override string Name => "DotNet Package";
 
     /// <inheritdoc />
-    public override void Configure(IPipelineBuilder builder, DotNetPackageSettings settings)
+    public override void Configure(IPipelineBuilder builder, DotNetToolSettings settings)
     {
-        builder.Services.AddDotNetPackageServices(settings);
+        builder.Services.AddDotNetToolServices(settings);
 
         builder.AddJob("verify", job => job
             .UseStep<Clean>()
@@ -43,7 +37,8 @@ public class DotNetPackagePipeline : Pipeline<DotNetPackageSettings>
             .UseStep<DotnetFormat>()
             .UseStep<DotnetRestore>()
             .UseStep<DotnetBuild>()
-            .UseStep<DotnetTest>());
+            .UseStep<DotnetTest>()
+            .UseStep<DotnetPack>());
 
         builder.AddJob("deploy", job => job
             .Requires(settings.Build.Project)
