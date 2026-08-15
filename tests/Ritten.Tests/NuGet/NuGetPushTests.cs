@@ -25,19 +25,17 @@ public class NugetPushTests
     }
 
     [Fact]
-    public async Task PushesThePackedPackagesWithTheConfiguredFeed()
+    public async Task PushesThePackedPackagesToTheAuthenticatedFeed()
     {
+        var feed = new NuGetFeed(_options.Feed).WithApiKey("the-key");
         var packed = new PackResult { Packages = [_package] };
 
-        await Step().Run(packed, TheProject, TestContext.Current.CancellationToken);
+        await Step().Run(feed, packed, TheProject, TestContext.Current.CancellationToken);
 
-        await _nuget.Received().Push(
-            Arg.Is<NuGetFeed>(f => f.Url == _options.Feed && f.ApiKey == _options.ApiKey),
-            _package,
-            Arg.Any<CancellationToken>());
+        await _nuget.Received().Push(feed, _package, Arg.Any<CancellationToken>());
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
     }
 
     private NugetPush Step() =>
-        new(Options.Create(_options), _nuget, _report);
+        new(_nuget, _report);
 }

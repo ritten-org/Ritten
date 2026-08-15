@@ -17,4 +17,12 @@ public interface IPipelinePrompt
     /// <param name="consequence">What is about to happen, phrased so that declining is informed.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     Task<bool> Confirm(string consequence, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Asks for a secret value, read without echoing it to the terminal.
+    /// Returns null when nothing is entered.
+    /// </summary>
+    /// <param name="what">What is being asked for, shown as the prompt.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    Task<string?> Secret(string what, CancellationToken cancellationToken = default);
 }

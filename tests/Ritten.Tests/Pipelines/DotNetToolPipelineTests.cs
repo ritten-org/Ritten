@@ -72,43 +72,14 @@ public class DotNetToolPipelineTests
     }
 
     [Fact]
-    public void Deploy_RefusesUpFrontWithoutTheCredentialsItNeeds()
+    public void Deploy_BuildsWithoutAnyEnvironment()
     {
-        // Before anything runs, rather than after a tag has already been pushed.
+        // Credentials are resolved by the steps that use them, after the gates — so an offline
+        // deploy composes, and one that's at rest exits 0 without ever needing them.
         var result = Build("deploy", Complete, environment: PipelineHostBuilderHelpers.Empty);
-
-        result.IsError.ShouldBeTrue();
-        result.Errors.Select(e => e.Message).ShouldBe([
-            "RITTEN_NUGET_API_KEY is not set.",
-            "GITHUB_REPOSITORY_ID is not set."
-        ]);
-    }
-
-    [Fact]
-    public void Deploy_NeedsNoCredentialsToRehearse()
-    {
-        // A dry run stands in for the clients that would have used them.
-        var result = Build("deploy", Complete, environment: PipelineHostBuilderHelpers.Empty, dryRun: true);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.Dispose();
-    }
-
-    [Fact]
-    public void Deploy_WarnsWhenARehearsalWouldPassButTheRealRunWouldNot()
-    {
-        // A rehearsal that passes where the real thing fails is worse than no rehearsal.
-        var log = Substitute.For<IPipelineLog>();
-        var builder = PipelineHostBuilderHelpers.Create(
-            log: log, environment: PipelineHostBuilderHelpers.Empty, dryRun: true);
-
-        new DotNetToolPipeline().Configure(builder, Complete);
-        builder.Build("deploy").Value.ShouldNotBeNull().Dispose();
-
-        log.Received().Log(
-            PipelineLogLevel.Warning,
-            Arg.Is<string>(m => m.Contains("RITTEN_NUGET_API_KEY")),
-            Arg.Any<Exception>());
     }
 
     private static Result<PipelineHost> Build(
