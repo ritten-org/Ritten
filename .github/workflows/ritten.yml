@@ -33,8 +33,8 @@ jobs:
         env:
           # Dependabot can't bump versions or write changelog entries, so its PRs skip those checks.
           # Pushes to main always run them, so the badge reflects real releasability.
-          RITTEN_SKIP_VERSION_CHECK: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
-          RITTEN_SKIP_CHANGELOG: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
+          RITTEN_SKIP_VERSION_CHECK: ${{ github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' }}
+          RITTEN_SKIP_CHANGELOG: ${{ github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
