@@ -2,6 +2,11 @@ name: Ritten
 
 on:
   workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Rehearse the deploy without tagging, releasing, or publishing.'
+        type: boolean
+        default: false
   push:
     branches: [ main ]
   pull_request:
@@ -40,8 +45,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      # Read through `inputs`, which respects the declared boolean type. `github.event.inputs`
+      # would give the string "false", which is truthy — silently rehearsing every real deploy.
       - name: Run Deploy Pipeline
-        run: dotnet run --project src/Ritten -- deploy --auto-approve
+        run: dotnet run --project src/Ritten -- deploy --auto-approve ${{ inputs['dry-run'] && '--dry-run' || '' }}
         shell: bash
         env:
           RITTEN_NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
