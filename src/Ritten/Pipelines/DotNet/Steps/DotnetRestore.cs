@@ -7,11 +7,9 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// Runs <c>dotnet restore</c>.
 /// </summary>
 /// <param name="dotnet">The dotnet client.</param>
-public class DotnetRestore(IDotNet dotnet) : IPipelineStep
+[Step("dotnet restore", StepKind.Work)]
+public class DotnetRestore(IDotNet dotnet)
 {
-    /// <inheritdoc />
-    public string Name => "dotnet restore";
-
     /// <summary>
     /// Restores the solution's packages.
     /// </summary>

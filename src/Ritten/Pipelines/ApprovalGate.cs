@@ -9,14 +9,9 @@ namespace Ritten.Pipelines;
 /// <param name="job">The job being run.</param>
 /// <param name="log">The pipeline log.</param>
 /// <param name="prompt">The prompt used to ask.</param>
-public class ApprovalGate(PipelineJob job, IPipelineLog log, IPipelinePrompt prompt) : IPipelineStep
+[Step("approval gate", StepKind.Gate)]
+public class ApprovalGate(PipelineJob job, IPipelineLog log, IPipelinePrompt prompt)
 {
-    /// <inheritdoc />
-    public string Name => "approval gate";
-
-    /// <inheritdoc />
-    public StepKind Kind => StepKind.Gate;
-
     /// <summary>
     /// Asks for approval, unless the run already carries it.
     /// </summary>

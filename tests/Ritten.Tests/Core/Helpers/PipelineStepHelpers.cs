@@ -6,7 +6,8 @@ namespace Ritten.Tests.Core.Helpers;
 /// A configurable step for engine tests. The runner resolves step instances by their type, so
 /// tests that need several independent steps in one job use the A/B/C subclasses.
 /// </summary>
-public class TestStep : IPipelineStep
+[Step("test step", StepKind.Work)]
+public class TestStep
 {
     /// <summary>What the step does when run; successful when not set.</summary>
     public Func<CancellationToken, Task<StepResult>>? OnRun { get; set; }

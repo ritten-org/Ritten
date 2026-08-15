@@ -15,19 +15,14 @@ namespace Ritten.Pipelines.GitHub;
 /// <param name="options">The pipeline's release options.</param>
 /// <param name="releases">The GitHub release service.</param>
 /// <param name="changelogs">The changelog client.</param>
+[Step("gh release create", StepKind.Publish)]
 public class GitHubRelease(
     IPipelineLog log,
     IOptions<GitOptions> options,
     IReleaseService releases,
     IChangelog changelogs
-) : IPipelineStep
+)
 {
-    /// <inheritdoc />
-    public string Name => "gh release create";
-
-    /// <inheritdoc />
-    public StepKind Kind => StepKind.Publish;
-
     /// <summary>
     /// Creates the GitHub release.
     /// </summary>

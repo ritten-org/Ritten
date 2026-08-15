@@ -12,11 +12,9 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="options">The pipeline's build options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
-public class ReadProject(IPipelineLog log, IOptions<DotNetOptions> options, IFileSystem fileSystem, IDotNet dotnet) : IPipelineStep
+[Step("read project", StepKind.Work)]
+public class ReadProject(IPipelineLog log, IOptions<DotNetOptions> options, IFileSystem fileSystem, IDotNet dotnet)
 {
-    /// <inheritdoc />
-    public string Name => "read project";
-
     /// <summary>
     /// Reads the configured project file.
     /// </summary>

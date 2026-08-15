@@ -13,18 +13,9 @@ namespace Ritten.Pipelines.NuGet;
 /// <param name="options">The pipeline's NuGet options.</param>
 /// <param name="nuget">The NuGet client.</param>
 /// <param name="report">The build report.</param>
-public class NugetPush(
-    IOptions<NuGetOptions> options,
-    INuGet nuget,
-    IBuildReport report
-) : IPipelineStep
+[Step("dotnet nuget push", StepKind.Publish)]
+public class NugetPush(IOptions<NuGetOptions> options, INuGet nuget, IBuildReport report)
 {
-    /// <inheritdoc />
-    public string Name => "dotnet nuget push";
-
-    /// <inheritdoc />
-    public StepKind Kind => StepKind.Publish;
-
     /// <summary>
     /// Pushes the packed packages.
     /// </summary>

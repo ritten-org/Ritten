@@ -14,19 +14,14 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
+[Step("dotnet format", StepKind.Validation)]
 public class DotnetFormat(
     IOptions<PipelineOptions> options,
     IFileSystem fileSystem,
     IDotNet dotnet,
     IBuildReport report
-) : IPipelineStep
+)
 {
-    /// <inheritdoc />
-    public string Name => "dotnet format";
-
-    /// <inheritdoc />
-    public StepKind Kind => StepKind.Validation;
-
     /// <summary>
     /// Checks the solution's formatting without changing anything.
     /// </summary>

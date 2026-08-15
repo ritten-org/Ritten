@@ -10,11 +10,9 @@ namespace Ritten.Pipelines;
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's build options.</param>
 /// <param name="fileSystem">The file system.</param>
-public class Clean(IPipelineLog log, IOptions<PipelineOptions> options, IFileSystem fileSystem) : IPipelineStep
+[Step("clean", StepKind.Work)]
+public class Clean(IPipelineLog log, IOptions<PipelineOptions> options, IFileSystem fileSystem)
 {
-    /// <inheritdoc />
-    public string Name => "clean";
-
     /// <summary>
     /// Deletes the artifacts and temp directories.
     /// </summary>

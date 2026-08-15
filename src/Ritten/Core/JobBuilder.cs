@@ -54,7 +54,7 @@ internal sealed class JobBuilder(IServiceCollection services, IPipelineLog log, 
     }
 
     /// <inheritdoc/>
-    public IJobBuilder UseStep<TStep>() where TStep : class, IPipelineStep
+    public IJobBuilder UseStep<TStep>() where TStep : class
     {
         _stepTypes.Add(typeof(TStep));
         return this;

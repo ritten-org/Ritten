@@ -95,6 +95,49 @@ public class PipelineHostTests
     }
 
     [Fact]
+    public void Build_RejectsAStepWithoutAStepAttribute()
+    {
+        // Name and kind are required, not defaulted: an unclassified step is a mistake, not work.
+        var builder = PipelineHostBuilderHelpers.Create();
+        builder.AddJob("verify", job => job.UseStep<UnclassifiedStep>());
+
+        var result = builder.Build("verify");
+
+        result.IsError.ShouldBeTrue();
+        result.Errors.ShouldHaveSingleItem().Message.ShouldContain("[Step]");
+    }
+
+    [Fact]
+    public void Build_RejectsAJobThatPublishesWithoutAGate()
+    {
+        // The rule reports rather than repairs, so the job's declaration stays the whole truth.
+        var builder = PipelineHostBuilderHelpers.Create();
+        builder.AddJob("deploy", job => job.UseStep<PublishingStep>());
+        builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
+
+        var result = builder.Build("deploy");
+
+        result.IsError.ShouldBeTrue();
+        result.Errors.ShouldHaveSingleItem().Message.ShouldContain("gate");
+    }
+
+    [Fact]
+    public void Build_RunsRulesThePipelineRegisters()
+    {
+        var rule = Substitute.For<IJobRule>();
+        rule.Check(Arg.Any<IReadOnlyList<JobStep>>()).Returns([new Error("House rule broken.")]);
+        var builder = PipelineHostBuilderHelpers.Create();
+        builder.AddJob("verify", job => job.UseStep<FirstStep>());
+        builder.Services.AddSingleton(rule);
+        builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
+
+        var result = builder.Build("verify");
+
+        result.IsError.ShouldBeTrue();
+        result.Errors.ShouldHaveSingleItem().Message.ShouldBe("House rule broken.");
+    }
+
+    [Fact]
     public void Build_AcceptsAConsumerDeclaredAfterItsProducer()
     {
         var builder = PipelineHostBuilderHelpers.Create();
@@ -109,7 +152,7 @@ public class PipelineHostTests
         result.Value.Dispose();
     }
 
-    private static (PipelineHost Host, StepProbe Probe) BuildHost<TStep>() where TStep : class, IPipelineStep
+    private static (PipelineHost Host, StepProbe Probe) BuildHost<TStep>() where TStep : class
     {
         var probe = new StepProbe();
         var builder = PipelineHostBuilderHelpers.Create();
@@ -128,7 +171,8 @@ public sealed class StepProbe
     public List<string> Ran { get; } = [];
 }
 
-class ProbeStep(StepProbe probe) : IPipelineStep
+[Step("probe", StepKind.Work)]
+class ProbeStep(StepProbe probe)
 {
     public Task<StepResult> Run(CancellationToken cancellationToken)
     {
@@ -137,31 +181,49 @@ class ProbeStep(StepProbe probe) : IPipelineStep
     }
 }
 
-class FailingStep : IPipelineStep
+[Step("failing", StepKind.Work)]
+class FailingStep
 {
     public Task<StepResult> Run(CancellationToken cancellationToken) =>
         Task.FromResult(StepResult.Failed("Nope."));
 }
 
-class FirstStep : IPipelineStep
+[Step("first", StepKind.Work)]
+class FirstStep
 {
     public Task<StepResult> Run(CancellationToken cancellationToken = default) =>
         Task.FromResult(StepResult.Successful);
 }
 
-class SecondStep : IPipelineStep
+[Step("second", StepKind.Work)]
+class SecondStep
 {
     public Task<StepResult> Run(CancellationToken cancellationToken = default) =>
         Task.FromResult(StepResult.Successful);
 }
 
-class ProjectProducingStep : IPipelineStep
+class UnclassifiedStep
+{
+    public Task<StepResult> Run(CancellationToken cancellationToken) =>
+        Task.FromResult(StepResult.Successful);
+}
+
+[Step("publisher", StepKind.Publish)]
+class PublishingStep
+{
+    public Task<StepResult> Run(CancellationToken cancellationToken) =>
+        Task.FromResult(StepResult.Successful);
+}
+
+[Step("producer", StepKind.Work)]
+class ProjectProducingStep
 {
     public Task<StepResult<Project>> Run(CancellationToken cancellationToken) =>
         Task.FromResult<StepResult<Project>>(new Project { Name = "Thing", Version = NuGetVersion.Parse("1.0.0") });
 }
 
-class ProjectConsumingStep : IPipelineStep
+[Step("consumer", StepKind.Work)]
+class ProjectConsumingStep
 {
     public Task<StepResult> Run(Project project, CancellationToken cancellationToken) =>
         Task.FromResult(StepResult.Successful);

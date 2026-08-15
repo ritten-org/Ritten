@@ -233,13 +233,13 @@ public class DefaultPipelineRunnerTests
         // Arrange
         var journal = new List<object>();
         var reporter = Substitute.For<IProgressReporter>();
-        reporter.OnStepStarted(Arg.Any<IPipelineStep>(), Arg.Any<CancellationToken>())
+        reporter.OnStepStarted(Arg.Any<JobStep>(), Arg.Any<CancellationToken>())
             .Returns(_ =>
             {
                 journal.Add("step started");
                 return Task.CompletedTask;
             });
-        reporter.OnStepCompleted(Arg.Any<IPipelineStep>(), Arg.Any<StepResult>(), Arg.Any<CancellationToken>())
+        reporter.OnStepCompleted(Arg.Any<JobStep>(), Arg.Any<StepResult>(), Arg.Any<CancellationToken>())
             .Returns(_ =>
             {
                 journal.Add("step completed");
@@ -275,13 +275,15 @@ public class DefaultPipelineRunnerTests
         public string Text => text;
     }
 
-    private sealed class ProducingStep : IPipelineStep
+    [Step("producer", StepKind.Work)]
+    private sealed class ProducingStep
     {
         public Task<StepResult<ProducedValue>> Run(CancellationToken cancellationToken) =>
             Task.FromResult<StepResult<ProducedValue>>(new ProducedValue("the produced value"));
     }
 
-    private sealed class ConsumingStep : IPipelineStep
+    [Step("consumer", StepKind.Work)]
+    private sealed class ConsumingStep
     {
         public string? Received { get; private set; }
 

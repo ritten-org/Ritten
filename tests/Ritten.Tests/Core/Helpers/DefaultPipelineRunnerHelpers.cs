@@ -8,7 +8,7 @@ namespace Ritten.Tests.Core.Helpers;
 internal static class DefaultPipelineRunnerHelpers
 {
     public static DefaultPipelineRunner CreateRunner(
-        IPipelineStep[]? steps = null,
+        object[]? steps = null,
         IProgressReporter[]? reporters = null,
         PipelineJob? job = null,
         IPipelineLog? log = null

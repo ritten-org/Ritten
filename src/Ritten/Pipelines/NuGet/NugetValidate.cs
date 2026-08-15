@@ -15,19 +15,9 @@ namespace Ritten.Pipelines.NuGet;
 /// <param name="options">The pipeline's NuGet options.</param>
 /// <param name="report">The build report.</param>
 /// <param name="nuget">The NuGet client.</param>
-public class NugetValidate(
-    IPipelineLog log,
-    IOptions<NuGetOptions> options,
-    IBuildReport report,
-    INuGet nuget
-) : IPipelineStep
+[Step("nuget validate", StepKind.Validation)]
+public class NugetValidate(IPipelineLog log, IOptions<NuGetOptions> options, IBuildReport report, INuGet nuget)
 {
-    /// <inheritdoc />
-    public string Name => "nuget validate";
-
-    /// <inheritdoc />
-    public StepKind Kind => StepKind.Validation;
-
     /// <summary>
     /// Determines the release state of the given project's version against the feed.
     /// </summary>

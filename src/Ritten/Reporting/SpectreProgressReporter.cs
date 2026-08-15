@@ -25,7 +25,7 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
     }
 
     /// <inheritdoc />
-    public Task OnStepStarted(IPipelineStep step, CancellationToken cancellationToken)
+    public Task OnStepStarted(JobStep step, CancellationToken cancellationToken)
     {
         _stepTimer.Restart();
         _headingWritten = false;
@@ -41,7 +41,7 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
     }
 
     /// <inheritdoc />
-    public Task OnStepCompleted(IPipelineStep step, StepResult result, CancellationToken cancellationToken)
+    public Task OnStepCompleted(JobStep step, StepResult result, CancellationToken cancellationToken)
     {
         var elapsed = FormatDuration(_stepTimer.Elapsed);
 
@@ -141,7 +141,7 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
         writer.WriteLine();
     }
 
-    private void WriteHeading(IPipelineStep step)
+    private void WriteHeading(JobStep step)
     {
         var (glyph, color) = Style(step.Kind);
         Write(2, $"[{color}]{glyph}[/] [bold]{Markup.Escape(step.Name)}[/]");

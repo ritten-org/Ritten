@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **The `build` job now packs the project.** This means packaging errors surface in pull requests instead of at deploy time.
 - **Backports.** Versions are now validated against their own release line, so a fix can ship to an older major when a newer one is already out. Projects that treat the major number as a product version can set `"release": { "lines": "minor" }` to allow releasing to older minors too. Backported releases are not marked latest.
 - **Steps are now minimal-API-style methods.** A step's `Run` method can use parameter-based dependency injection to inject a value `T` returned by any earlier step, and returning `Task<StepResult<T>>` is how you provide that `T` in the first place. Task ordering is validated at runtime.
-- **Steps declare a kind.** Steps can now declare themselves as work, validation, gate, or publish, which is shown as a colored glyph beside each step in the terminal.
+- **Job-shape rules.** A job's shape is validated before anything runs: steps must run in produce-then-consume order, nothing irreversible can run before a gate, and validations must come ahead of any publish step.
 
 ### Changed
 
@@ -20,6 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **The `dotnet format` step now runs with `--no-restore`.** In combination with the above change, this stops Ritten trying to restore packages a second time.
 - **`check` now recognises when a version is the latest of its line.** When a version has already been published and is at the tip of its major/minor line, the project is considered "at rest", so new changes are expected to accrue under `[Unreleased]`, and no version bump is required.
 - **Running `deploy` on a project that has already been deployed now succeeds.** Deployments should be re-runnable in the case of intermittent issues, and even just for reassurance. The deploymeny reports if the version is already published and stops before tagging or pushing, and exits 0.
+- **Steps declarations are attribute-based.** Steps must now declare a `[Step]` attribute that describes them as work, validation, gate, or publish, which is shown as a colored glyph beside each step in the terminal.
+- **Reading the changelog is its own step.** This allows better decoupling between multiple steps that need to access the changelog without validating it.
 
 ### Removed
 

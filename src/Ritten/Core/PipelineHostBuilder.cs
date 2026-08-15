@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core.FileSystem;
+using Ritten.Core.Rules;
 using Ritten.Core.Runner;
 using Ritten.Git;
 using Ritten.NuGet;
@@ -51,6 +52,11 @@ public class PipelineHostBuilder : IPipelineBuilder
         Services.AddSingleton<IProgressReporter>(reporter);
         Services.TryAddSingleton(_log);
         Services.TryAddSingleton<IPipelinePrompt>(_ => new ConsolePrompt(AnsiConsole.Console));
+
+        // The invariants every job shape must hold; pipelines can register more.
+        Services.TryAddEnumerable(ServiceDescriptor.Singleton<IJobRule, ProduceBeforeConsume>());
+        Services.TryAddEnumerable(ServiceDescriptor.Singleton<IJobRule, GateBeforePublish>());
+        Services.TryAddEnumerable(ServiceDescriptor.Singleton<IJobRule, ValidationBeforePublish>());
     }
 
     /// <inheritdoc />
@@ -103,8 +109,8 @@ public class PipelineHostBuilder : IPipelineBuilder
             ValidateOnBuild = true
         });
 
-        // Whether a required parameter is consumption or a service can only be judged against the built container.
-        var errors = StepDescriptor.Validate(result.Value, provider).ToList();
+        var steps = result.Value.Select(descriptor => descriptor.Step).ToList();
+        var errors = provider.GetServices<IJobRule>().SelectMany(rule => rule.Check(steps)).ToList();
         if (errors.Count > 0)
         {
             provider.Dispose();

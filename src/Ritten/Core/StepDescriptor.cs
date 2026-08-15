@@ -5,10 +5,7 @@ using Ritten.Contracts;
 namespace Ritten.Core;
 
 /// <summary>
-/// A step's <c>Run</c> method, read once at composition: what it produces, and which parameters
-/// it needs. The signature is the contract, so this is the single place it's interpreted —
-/// <see cref="Describe"/> reads a step in isolation, <see cref="Validate"/> judges an ordered
-/// sequence of them, and <see cref="Invoke"/> runs one.
+/// A step's of a pipeline step and the details needed to run it.
 /// </summary>
 internal sealed class StepDescriptor
 {
@@ -23,13 +20,19 @@ internal sealed class StepDescriptor
     private readonly PropertyInfo _taskResult;
     private readonly IReadOnlyList<(Type Type, ParameterSource Source)> _parameters;
 
-    private StepDescriptor(Type stepType, MethodInfo run, Type? produces, IReadOnlyList<(Type, ParameterSource)> parameters)
+    private StepDescriptor(Type stepType, StepAttribute metadata, MethodInfo run, Type? produces, IReadOnlyList<(Type Type, ParameterSource Source)> parameters)
     {
         StepType = stepType;
         Produces = produces;
         _run = run;
         _parameters = parameters;
         _taskResult = run.ReturnType.GetProperty(nameof(Task<>.Result))!;
+
+        Step = new JobStep(
+            metadata.Name,
+            metadata.Kind,
+            produces,
+            [.. parameters.Where(p => p.Source == ParameterSource.Required).Select(p => p.Type)]);
     }
 
     /// <summary>
@@ -43,19 +46,22 @@ internal sealed class StepDescriptor
     public Type? Produces { get; }
 
     /// <summary>
-    /// The parameter types the step cannot run without: each must be produced by an earlier
-    /// step or resolvable as a service.
+    /// The step as rules and reporters see it, read entirely from the type.
     /// </summary>
-    public IEnumerable<Type> RequiredParameters =>
-        _parameters.Where(p => p.Source == ParameterSource.Required).Select(p => p.Type);
+    public JobStep Step { get; }
 
     /// <summary>
     /// Reads the <c>Run</c> method of the given step type. Only the signature itself is judged
-    /// here; whether its parameters can be satisfied depends on the job, via <see cref="Validate"/>.
+    /// here; whether its parameters can be satisfied depends on the job, judged by the rules.
     /// </summary>
     /// <param name="stepType">The step type to read.</param>
     public static Result<StepDescriptor> Describe(Type stepType)
     {
+        if (stepType.GetCustomAttribute<StepAttribute>() is not { } metadata)
+        {
+            return Result.Error($"{stepType.Name} must declare a [Step] attribute naming and classifying it.");
+        }
+
         var runs = stepType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .Where(m => m.Name == "Run")
             .ToList();
@@ -94,34 +100,9 @@ internal sealed class StepDescriptor
             .Select(parameter => (parameter.ParameterType, Classify(parameter, nullability)))
             .ToList();
 
-        return new StepDescriptor(stepType, run, produces, parameters);
+        return new StepDescriptor(stepType, metadata, run, produces, parameters);
     }
 
-    /// <summary>
-    /// Validates a job's steps in declaration order: every required parameter must be produced
-    /// by an earlier step or resolvable as a service.
-    /// </summary>
-    /// <param name="steps">The job's steps, in the order they run.</param>
-    /// <param name="services">The built container the job will run against.</param>
-    public static IEnumerable<Error> Validate(IReadOnlyList<StepDescriptor> steps, IServiceProvider services)
-    {
-        HashSet<Type> produced = [];
-        foreach (var step in steps)
-        {
-            foreach (var parameter in step.RequiredParameters)
-            {
-                if (!produced.Contains(parameter) && services.GetService(parameter) is null)
-                {
-                    yield return Result.Error($"{step.StepType.Name}.Run needs {parameter.Name}, which no earlier step produces and no registered service provides.");
-                }
-            }
-
-            if (step.Produces is { } type)
-            {
-                produced.Add(type);
-            }
-        }
-    }
 
     /// <summary>
     /// Runs the step, supplying its parameters from state and services, and storing what it
@@ -131,7 +112,7 @@ internal sealed class StepDescriptor
     /// <param name="services">The service provider for parameters no step produces.</param>
     /// <param name="state">The pipeline state for consumed and produced values.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public async Task<StepResult> Invoke(IPipelineStep step, IServiceProvider services, Dictionary<Type, object> state, CancellationToken cancellationToken)
+    public async Task<StepResult> Invoke(object step, IServiceProvider services, Dictionary<Type, object> state, CancellationToken cancellationToken)
     {
         var arguments = new object?[_parameters.Count];
         for (var i = 0; i < _parameters.Count; i++)

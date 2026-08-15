@@ -12,14 +12,9 @@ namespace Ritten.Pipelines.Git;
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's release options.</param>
 /// <param name="git">The git client.</param>
-public class GitTag(IPipelineLog log, IOptions<GitOptions> options, IGit git) : IPipelineStep
+[Step("git tag", StepKind.Publish)]
+public class GitTag(IPipelineLog log, IOptions<GitOptions> options, IGit git)
 {
-    /// <inheritdoc />
-    public string Name => "git tag";
-
-    /// <inheritdoc />
-    public StepKind Kind => StepKind.Publish;
-
     /// <summary>
     /// Tags the release and pushes the tag.
     /// </summary>

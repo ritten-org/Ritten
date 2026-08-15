@@ -15,18 +15,16 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
+[Step("dotnet test", StepKind.Work)]
 public class DotnetTest(
     IOptions<DotNetOptions> options,
     IOptions<PipelineOptions> pipeline,
     IFileSystem fileSystem,
     IDotNet dotnet,
     IBuildReport report
-) : IPipelineStep
+)
 {
     private const int MaxFailures = 20;
-
-    /// <inheritdoc />
-    public string Name => "dotnet test";
 
     /// <summary>
     /// Runs the solution's tests.

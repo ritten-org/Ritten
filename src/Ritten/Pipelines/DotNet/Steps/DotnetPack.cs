@@ -12,11 +12,9 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="pipeline">The pipeline's directory layout options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
-public class DotnetPack(IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IFileSystem fileSystem, IDotNet dotnet) : IPipelineStep
+[Step("dotnet pack", StepKind.Work)]
+public class DotnetPack(IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IFileSystem fileSystem, IDotNet dotnet)
 {
-    /// <inheritdoc />
-    public string Name => "dotnet pack";
-
     /// <summary>
     /// Packs the configured project.
     /// </summary>

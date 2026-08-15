@@ -42,14 +42,12 @@ internal class DefaultPipelineRunner(
                 break;
             }
 
-            var step = (IPipelineStep)services.GetRequiredService(descriptor.StepType);
+            await NotifyReporters(r => r.OnStepStarted(descriptor.Step, cancellationToken));
 
-            await NotifyReporters(r => r.OnStepStarted(step, cancellationToken));
-
-            var result = await RunStep(step, descriptor, state, cancellationToken);
+            var result = await RunStep(descriptor, state, cancellationToken);
             results.Add(result);
 
-            await NotifyReporters(r => r.OnStepCompleted(step, result, cancellationToken));
+            await NotifyReporters(r => r.OnStepCompleted(descriptor.Step, result, cancellationToken));
 
             if (!result.Continue)
             {
@@ -60,10 +58,11 @@ internal class DefaultPipelineRunner(
         return results;
     }
 
-    private async Task<StepResult> RunStep(IPipelineStep step, StepDescriptor descriptor, Dictionary<Type, object> state, CancellationToken cancellationToken)
+    private async Task<StepResult> RunStep(StepDescriptor descriptor, Dictionary<Type, object> state, CancellationToken cancellationToken)
     {
         try
         {
+            var step = services.GetRequiredService(descriptor.StepType);
             return await descriptor.Invoke(step, services, state, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

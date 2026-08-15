@@ -6,14 +6,9 @@ namespace Ritten.Pipelines;
 /// Ends a deploy successfully when this version has already been released.
 /// </summary>
 /// <param name="log">The pipeline log.</param>
-public class ReleasableGate(IPipelineLog log) : IPipelineStep
+[Step("releasable gate", StepKind.Gate)]
+public class ReleasableGate(IPipelineLog log)
 {
-    /// <inheritdoc />
-    public string Name => "releasable gate";
-
-    /// <inheritdoc />
-    public StepKind Kind => StepKind.Gate;
-
     /// <summary>
     /// Stops the job, successfully, when there is nothing to release.
     /// </summary>
