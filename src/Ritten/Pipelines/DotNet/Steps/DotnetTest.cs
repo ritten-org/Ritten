@@ -10,6 +10,7 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <summary>
 /// Runs the tests, reporting the aggregated counts on success and the individual failures otherwise.
 /// </summary>
+/// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's .NET options.</param>
 /// <param name="pipeline">The pipeline's directory layout options.</param>
 /// <param name="fileSystem">The file system.</param>
@@ -17,6 +18,7 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="report">The build report.</param>
 [Step("dotnet test", StepKind.Work)]
 public class DotnetTest(
+    IPipelineLog log,
     IOptions<DotNetOptions> options,
     IOptions<PipelineOptions> pipeline,
     IFileSystem fileSystem,
@@ -52,6 +54,13 @@ public class DotnetTest(
                     result.Skipped > 0
                         ? $"**{result.Passed}** tests passed, {result.Skipped} skipped."
                         : $"All **{result.Passed}** tests passed.");
+                log.Detail(result.Skipped > 0
+                    ? $"{result.Passed} tests passed, {result.Skipped} skipped."
+                    : $"All {result.Passed} tests passed.");
+            }
+            else
+            {
+                log.Detail("No tests ran.");
             }
 
             return StepResult.Successful;

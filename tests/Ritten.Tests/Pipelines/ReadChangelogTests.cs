@@ -76,5 +76,5 @@ public class ReadChangelogTests
     }
 
     private ReadChangelog Step() =>
-        new(Options.Create(_options), _fileSystem, _report, Changelogs);
+        new(Substitute.For<IPipelineLog>(), Options.Create(_options), _fileSystem, _report, Changelogs);
 }

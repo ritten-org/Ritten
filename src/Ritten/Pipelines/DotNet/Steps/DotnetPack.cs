@@ -8,12 +8,13 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <summary>
 /// Packs the configured project into the artifacts directory.
 /// </summary>
+/// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's .NET options.</param>
 /// <param name="pipeline">The pipeline's directory layout options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 [Step("dotnet pack", StepKind.Work)]
-public class DotnetPack(IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IFileSystem fileSystem, IDotNet dotnet)
+public class DotnetPack(IPipelineLog log, IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IFileSystem fileSystem, IDotNet dotnet)
 {
     /// <summary>
     /// Packs the configured project.
@@ -30,6 +31,11 @@ public class DotnetPack(IOptions<DotNetOptions> options, IOptions<PipelineOption
                 Output = fileSystem.ProjectRoot.GetDirectory(pipeline.Value.ArtifactsDirectory)
             },
             cancellationToken);
+
+        foreach (var package in result.Packages)
+        {
+            log.Detail($"Packed {package.Name}.");
+        }
 
         return result;
     }

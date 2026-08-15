@@ -19,10 +19,19 @@ public class Clean(IPipelineLog log, IOptions<PipelineOptions> options, IFileSys
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     public Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        log.Detail("Cleaning temp and artifact directories.");
-        var cd = fileSystem.ProjectRoot;
-        cd.GetDirectory(options.Value.ArtifactsDirectory).Delete();
-        cd.GetDirectory(options.Value.TempDirectory).Delete();
+        var root = fileSystem.ProjectRoot;
+        var deleted = new List<string>();
+        foreach (var name in new[] { options.Value.ArtifactsDirectory, options.Value.TempDirectory })
+        {
+            var directory = root.GetDirectory(name);
+            if (directory.Exists)
+            {
+                directory.Delete();
+                deleted.Add(name);
+            }
+        }
+
+        log.Detail(deleted.Count == 0 ? "Nothing to clean." : $"Deleted {string.Join(" and ", deleted)}.");
         return Task.FromResult(StepResult.Successful);
     }
 }

@@ -12,7 +12,7 @@ var verbose = new Option<bool>($"--{PipelineArguments.Verbose}", "-v")
 
 var quiet = new Option<bool>($"--{PipelineArguments.Quiet}", "-q")
 {
-    Description = "Show only failures.",
+    Description = "Show each step's outcome, but only failure detail.",
     Recursive = true
 };
 

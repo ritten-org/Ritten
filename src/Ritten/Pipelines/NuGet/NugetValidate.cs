@@ -47,7 +47,9 @@ public class NugetValidate(IPipelineLog log, IOptions<NuGetOptions> options, IBu
                 .Success(project.Version == latestPublished
                     ? $"Version **{project.Version}** is the latest published version; nothing new to release."
                     : $"Version **{project.Version}** is the latest on the {LineLabel(project.Version)} line; nothing new to release (latest overall: **{latestPublished}**).");
-            log.Detail($"Version {project.Version} is already published; the project is at rest.");
+            log.Detail(project.Version == latestPublished
+                ? $"Version {project.Version} is the latest published version; nothing new to release."
+                : $"Version {project.Version} is the latest on the {LineLabel(project.Version)} line; nothing new to release (latest overall: {latestPublished}).");
             return ReleaseState.LatestInLine(latestInLine, latestPublished);
         }
 
@@ -64,7 +66,11 @@ public class NugetValidate(IPipelineLog log, IOptions<NuGetOptions> options, IBu
                 : project.Version < latestPublished
                     ? $"Version **{project.Version}** is a backport to the {LineLabel(project.Version)} line (latest overall: **{latestPublished}**)."
                     : $"Version **{project.Version}** is valid (latest published: **{latestPublished}**).");
-        log.Detail($"Version {project.Version} is valid for {project.Name}.");
+        log.Detail(latestPublished == null
+            ? $"Version {project.Version} will be the first published version of {project.Name}."
+            : project.Version < latestPublished
+                ? $"Version {project.Version} is a backport to the {LineLabel(project.Version)} line (latest overall: {latestPublished})."
+                : $"Version {project.Version} is valid (latest published: {latestPublished}).");
         return ReleaseState.Releasable(latestInLine, latestPublished);
     }
 
