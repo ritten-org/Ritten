@@ -78,6 +78,30 @@ public class ValidateChangelogTests
     }
 
     [Fact]
+    public async Task OffersTheSameBlockToTheTerminalAsVerbatimContent()
+    {
+        // The terminal indents everything a step says, and a pasted leading space fails the very
+        // check that printed the block — so it travels as verbatim content, rendered at the margin.
+        SetChangelog(
+            """
+            # Changelog
+
+            ## [1.2.0] - 2026-08-01
+
+            - A change.
+
+            [1.2.0]: https://github.com/example/repo/releases/tag/v1.0.0
+            """);
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        var error = result.Errors.ShouldNotBeNull().ShouldHaveSingleItem();
+        var block = error.Verbatim.ShouldNotBeNull();
+        block.ShouldContain("[1.2.0]: https://github.com/example/repo/releases/tag/v1.2.0");
+        block.Split('\n').ShouldAllBe(line => line == line.TrimStart());
+    }
+
+    [Fact]
     public async Task SkipsLinkValidationWithoutARepositoryUrl()
     {
         _options.RepositoryUrl = null;

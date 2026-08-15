@@ -3,6 +3,7 @@ using NuGet.Versioning;
 using Ritten.Changelogs;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
+using Ritten.Core;
 using Ritten.DotNet;
 using Ritten.Pipelines.Git;
 using Ritten.Reporting;
@@ -87,9 +88,12 @@ public class ValidateChangelog(
                 report.Section("Release")
                     .Failure($"The version links in `{options.Value.File}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
 
-                return StepResult.Failed(
+                return StepResult.Failed(new Error(
                     $"The version links in {options.Value.File} are missing or out of date. " +
-                    $"Replace the link block at the bottom of the file with:\n\n{block}");
+                    "Replace the link block at the bottom of the file with:")
+                {
+                    Verbatim = block
+                });
             }
         }
 

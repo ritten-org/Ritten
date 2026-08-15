@@ -55,6 +55,7 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
             foreach (var error in result.Errors)
             {
                 Write(4, $"[red]{Markup.Escape(error.Message)}[/]");
+                WriteVerbatim(error.Verbatim);
             }
         }
         else if (IsEnabled(PipelineLogLevel.Status))
@@ -116,6 +117,26 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
         }
     }
 
+
+    /// <summary>
+    /// Writes content the reader is meant to copy: straight to the underlying writer.
+    /// </summary>
+    private void WriteVerbatim(string? text)
+    {
+        if (text is null)
+        {
+            return;
+        }
+
+        var writer = console.Profile.Out.Writer;
+        writer.WriteLine();
+        foreach (var line in text.Split('\n'))
+        {
+            writer.WriteLine(line.TrimEnd());
+        }
+
+        writer.WriteLine();
+    }
 
     private void WriteHeading(IPipelineStep step)
     {

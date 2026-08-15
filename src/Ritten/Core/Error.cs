@@ -8,6 +8,11 @@ namespace Ritten.Core;
 public record Error(string Message, Exception? Cause = null)
 {
     /// <summary>
+    /// Content the reader is meant to copy.
+    /// </summary>
+    public string? Verbatim { get; init; }
+
+    /// <summary>
     /// Converts a message to an <see cref="Error"/>, so that callers can collect plain strings.
     /// </summary>
     /// <param name="message">A message describing what was wrong.</param>
