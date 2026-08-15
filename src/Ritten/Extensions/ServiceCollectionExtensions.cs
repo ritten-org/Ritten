@@ -1,9 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 using Ritten.Changelogs;
 using Ritten.Commands;
 using Ritten.Contracts;
+using Ritten.Core.Settings;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.NuGet;
@@ -33,89 +33,71 @@ public static class ServiceCollectionExtensions
         }
 
         /// <summary>
-        /// Adds <see cref="IChangelog"/> to the service collection.
+        /// Adds changelog validation.
         /// </summary>
-        public IServiceCollection AddChangelogs()
+        public IServiceCollection AddChangelogs(ChangelogSettings settings)
         {
             services.TryAddSingleton<IChangelog, ChangelogClient>();
+            services.Configure<ChangelogOptions>(o =>
+            {
+                o.File = settings.File;
+                o.RepositoryUrl = settings.Repository;
+            });
+            services.Configure<ChangelogOptions>(ChangelogOptions.ConfigureFromEnvironment);
             return services;
         }
 
         /// <summary>
-        /// Adds <see cref="IDotNet"/> to the service collection.
+        /// Adds the .NET client and build settings, configured from the project's settings.
         /// </summary>
-        public IServiceCollection AddDotNet()
+        public IServiceCollection AddDotNet(DotNetBuildSettings settings)
         {
             services.AddCommandRunner();
             services.TryAddSingleton<IDotNet, DotNetClient>();
+            services.Configure<DotNetOptions>(o =>
+            {
+                o.Configuration = settings.Configuration;
+                o.ProjectFile = settings.Project ?? "";
+            });
             return services;
         }
 
         /// <summary>
-        /// Adds <see cref="IGit"/> to the service collection.
+        /// Adds release tagging, configured from the project's settings.
         /// </summary>
-        public IServiceCollection AddGit()
+        public IServiceCollection AddGit(string tagPrefix)
         {
             services.AddCommandRunner();
             services.TryAddSingleton<IGit, GitClient>();
+            services.Configure<GitOptions>(o => o.TagPrefix = tagPrefix);
+            services.Configure<GitOptions>(GitOptions.ConfigureFromEnvironment);
             return services;
         }
 
         /// <summary>
-        /// Adds <see cref="INuGet"/> to the service collection.
+        /// Adds NuGet publishing, configured from the project's settings.
         /// </summary>
-        public IServiceCollection AddNuGet()
+        public IServiceCollection AddNuGet(string feed)
         {
             services.AddCommandRunner();
             services.TryAddSingleton<INuGet, NuGetClient>();
+            services.Configure<NuGetOptions>(o => o.Feed = feed);
+            services.Configure<NuGetOptions>(NuGetOptions.ConfigureFromEnvironment);
             return services;
         }
 
         /// <summary>
-        /// Registers the services and options that the standard .NET package pipelines need.
+        /// Registers everything the standard .NET package pipelines share.
         /// </summary>
-        public IServiceCollection AddDotNetPackageServices()
+        public IServiceCollection AddDotNetPackageServices(DotNetPackageSettings settings)
         {
-            services
-                .AddCommandRunner()
-                .AddChangelogs()
-                .AddDotNet()
-                .AddGit()
-                .AddNuGet()
+            return services
+                .AddChangelogs(settings.Changelog)
+                .AddDotNet(settings.Build)
+                .AddGit(settings.Release.TagPrefix)
+                .AddNuGet(settings.Release.Feed)
                 .AddGitHubActionsRuntime()
                 .AddBuildReporting();
-
-            if (services.Any(d => d.ServiceType == typeof(IConfigureOptions<PipelineOptions>)))
-            {
-                return services;
-            }
-
-            services.AddOptions<PipelineOptions>()
-                .BindConfiguration("Pipeline")
-                .Validate(p => !string.IsNullOrEmpty(p.ArtifactsDirectory))
-                .Validate(p => !string.IsNullOrEmpty(p.TempDirectory))
-                .ValidateOnStart();
-
-            services.AddOptions<DotNetOptions>()
-                .BindConfiguration("DotNet")
-                .Validate(d => !string.IsNullOrEmpty(d.Configuration))
-                .Validate(d => !string.IsNullOrEmpty(d.ProjectFile))
-                .ValidateOnStart();
-
-            services.AddOptions<ChangelogOptions>()
-                .BindConfiguration("Changelog")
-                .Validate(c => !string.IsNullOrEmpty(c.File))
-                .ValidateOnStart();
-
-            services.AddOptions<NuGetOptions>()
-                .BindConfiguration("NuGet")
-                .Validate(n => !string.IsNullOrEmpty(n.Feed))
-                .ValidateOnStart();
-
-            services.AddOptions<GitOptions>()
-                .BindConfiguration("Git");
-
-            return services;
         }
 
         /// <summary>
@@ -125,15 +107,21 @@ public static class ServiceCollectionExtensions
         public IServiceCollection AddBuildReporting()
         {
             services.AddGitHubActionsRuntime();
-            if (services.Any(d => d.ServiceType == typeof(IBuildReport)))
+            if (services.Any(d => d.ServiceType == typeof(BuildReportingMarker)))
             {
                 return services;
             }
 
+            services.AddSingleton<BuildReportingMarker>();
             services.AddSingleton<IBuildReport, BuildReport>();
             services.AddSingleton<MarkdownReportRenderer>();
             services.AddSingleton<IProgressReporter, BuildReportPublisher>();
             return services;
         }
     }
+
+    // Enumerable registrations are additive, so this one can't use TryAdd. It keys idempotence
+    // off a private marker rather than off a service it happens to register, so that a consumer
+    // supplying their own implementation can't silently suppress the rest of the block.
+    private sealed class BuildReportingMarker;
 }

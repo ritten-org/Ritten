@@ -18,11 +18,13 @@ internal static class ServiceCollectionExtensions
     /// <param name="clientName">The product name used to identify this pipeline to the GitHub API.</param>
     public static IServiceCollection AddGitHubActionsRuntime(this IServiceCollection services, string? clientName = null)
     {
-        if (services.All(d => d.ServiceType != typeof(IGitHubClient)))
+        if (services.All(d => d.ServiceType != typeof(GitHubActionsRuntimeMarker)))
         {
+            services.AddSingleton<GitHubActionsRuntimeMarker>();
+
             services.AddOptions<GitHubOptions>()
-                .BindConfiguration("GitHub")
-                .Configure(o => GitHubEnvironmentDefaults.Apply(o, Environment.GetEnvironmentVariable));
+                .Configure(GitHubOptions.ConfigureFromEnvironment);
+
             services.AddSingleton<IGitHubClient>(provider =>
             {
                 var options = provider.GetRequiredService<IOptions<GitHubOptions>>().Value;
@@ -49,4 +51,9 @@ internal static class ServiceCollectionExtensions
 
         return services;
     }
+
+    /// <summary>
+    /// Private marker type so that consumers can't suppress the validation.
+    /// </summary>
+    private sealed class GitHubActionsRuntimeMarker;
 }

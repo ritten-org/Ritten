@@ -14,7 +14,7 @@ internal class CommandRunner(IPipelineLog log, IFileSystem fileSystem) : IComman
         process.StartInfo = new ProcessStartInfo
         {
             FileName = command.Path,
-            WorkingDirectory = Path.Combine(fileSystem.CurrentDirectory.AbsolutePath, command.WorkingDirectory ?? string.Empty),
+            WorkingDirectory = Path.Combine(fileSystem.ProjectRoot.AbsolutePath, command.WorkingDirectory ?? string.Empty),
             RedirectStandardInput = command.StandardInput is not null,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -45,7 +45,7 @@ internal class CommandRunner(IPipelineLog log, IFileSystem fileSystem) : IComman
 
         if (!command.ArgumentsRedacted)
         {
-            log.Verbose($"Running command: {command.Path} {string.Join(" ", command.Arguments)}");
+            log.Detail($"Running `{command.Path} {string.Join(" ", command.Arguments)}`");
         }
 
         process.Start();
@@ -80,7 +80,9 @@ internal class CommandRunner(IPipelineLog log, IFileSystem fileSystem) : IComman
             Task.Delay(TimeSpan.FromSeconds(2), CancellationToken.None)
         );
 
-        log.Verbose($"Exit code: {process.ExitCode}");
+        var exitLogLevel = process.ExitCode == 0 ? PipelineLogLevel.Verbose : PipelineLogLevel.Detail;
+        log.Log(exitLogLevel, $"Exit code: {process.ExitCode}");
+
         var result = new CommandResult(process.ExitCode, stdOut.ToString(), stdErr.ToString());
         if (command.ThrowsOnError && result.IsError)
         {

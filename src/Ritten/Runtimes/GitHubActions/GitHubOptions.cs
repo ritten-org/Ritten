@@ -47,4 +47,42 @@ public class GitHubOptions
     /// </summary>
     [MemberNotNullWhen(true, nameof(PullRequestNumber))]
     public bool IsPullRequest => PullRequestNumber != null;
+
+    /// <summary>
+    /// Configures the given options based on the current environment.
+    /// </summary>
+    public static void ConfigureFromEnvironment(GitHubOptions options) =>
+        ConfigureFromEnvironment(options, Environment.GetEnvironmentVariable);
+
+    /// <summary>
+    /// Configures the given options from the given environment
+    /// </summary>
+    internal static void ConfigureFromEnvironment(GitHubOptions options, Func<string, string?> envVar)
+    {
+        options.Token = envVar(GitHubEnvironment.Token) ?? envVar(GitHubEnvironment.DefaultToken);
+        options.RepositoryId = ParseRepositoryId(envVar(GitHubEnvironment.RepositoryId));
+        options.PullRequestNumber = ParsePullRequestNumber(envVar(GitHubEnvironment.Ref));
+        options.IsEnabled = !string.IsNullOrEmpty(envVar(GitHubEnvironment.Actions));
+        options.SummaryFile = envVar(GitHubEnvironment.StepSummary);
+
+        var workflow = envVar(GitHubEnvironment.Workflow);
+        if (workflow != null)
+        {
+            options.WorkflowName = workflow;
+        }
+    }
+
+    private static long? ParseRepositoryId(string? value) =>
+        long.TryParse(value, out var repositoryId) ? repositoryId : null;
+
+    private static int? ParsePullRequestNumber(string? githubRef)
+    {
+        // Pull request runs check out a ref of the form `refs/pull/<number>/merge`.
+        if (githubRef?.StartsWith("refs/pull/") != true)
+        {
+            return null;
+        }
+
+        return int.TryParse(githubRef.Split('/')[2], out var pullRequestNumber) ? pullRequestNumber : null;
+    }
 }

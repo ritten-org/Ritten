@@ -1,6 +1,8 @@
 using Ritten.Contracts;
 using Ritten.Core;
+using Ritten.Reporting;
 using Ritten.Tests.Core.Helpers;
+using Spectre.Console;
 
 namespace Ritten.Tests.Core.Runner;
 
@@ -64,7 +66,109 @@ public class DefaultPipelineRunnerTests
 
         // Assert
         await step1.DidNotReceive().Run(Arg.Any<CancellationToken>());
-        summary.ExitCode.ShouldBe(PipelineExitCodes.StoppedAfterCancel);
+        summary.ExitCode.ShouldBe(PipelineExitCodes.Cancelled);
+    }
+
+    [Fact]
+    public async Task RunPipeline_StepThrowsOperationCanceled_ReportsCancellationNotFailure()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        var step = PipelineStepHelpers.CreateMock();
+        step.When(s => s.Run(Arg.Any<CancellationToken>())).Do(_ =>
+        {
+            cts.Cancel();
+            throw new OperationCanceledException(cts.Token);
+        });
+
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step]);
+
+        // Act
+        var summary = await sut.Run(cts.Token);
+
+        // Assert
+        summary.ExitCode.ShouldBe(PipelineExitCodes.Cancelled);
+        summary.Steps.ShouldHaveSingleItem().ShouldBe(StepResult.StoppedAfterCancel);
+    }
+
+    [Fact]
+    public async Task RunPipeline_StepFailsButAsksToContinue_StillFailsThePipeline()
+    {
+        // Arrange
+        var failed = new StepResult(PipelineExitCodes.Failed, Continue: true, ["Failed, but not fatally."]);
+        var step1 = PipelineStepHelpers.CreateMock();
+        step1.Run(Arg.Any<CancellationToken>()).Returns(failed);
+        var step2 = PipelineStepHelpers.CreateMock();
+
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step1, step2]);
+
+        // Act
+        var summary = await sut.Run(CancellationToken.None);
+
+        // Assert
+        await step2.Received().Run(Arg.Any<CancellationToken>());
+        summary.ExitCode.ShouldBe(PipelineExitCodes.Failed);
+        summary.IsSuccess.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task RunPipeline_NoSteps_Succeeds()
+    {
+        // Arrange
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: []);
+
+        // Act
+        var summary = await sut.Run(CancellationToken.None);
+
+        // Assert
+        summary.ExitCode.ShouldBe(PipelineExitCodes.Success);
+    }
+
+    [Fact]
+    public async Task RunPipeline_StepThrows_WritesTheExceptionDetailToTheLog()
+    {
+        // Arrange
+        var log = Substitute.For<IPipelineLog>();
+        var step = PipelineStepHelpers.CreateMock();
+        step.Run(Arg.Any<CancellationToken>()).ThrowsAsync(new InvalidOperationException("Something broke."));
+
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step], log: log);
+
+        // Act
+        var summary = await sut.Run(CancellationToken.None);
+
+        // Assert
+        summary.Steps.ShouldHaveSingleItem().Errors.ShouldHaveSingleItem("Something broke.");
+        log.Received().Log(
+            PipelineLogLevel.Verbose,
+            Arg.Any<string>(),
+            Arg.Is<Exception>(e => e.Message == "Something broke."));
+    }
+
+    [Fact]
+    public async Task RunPipeline_ReporterError_WarnsWithoutFailingThePipeline()
+    {
+        // Arrange
+        var log = Substitute.For<IPipelineLog>();
+        var reporter = Substitute.For<IProgressReporter>();
+        reporter.OnPipelineStarted(Arg.Any<PipelineJob>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("Reporter is broken."));
+
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(
+            reporters: [reporter],
+            steps: [PipelineStepHelpers.CreateMock()],
+            log: log
+        );
+
+        // Act
+        var summary = await sut.Run(CancellationToken.None);
+
+        // Assert
+        summary.ExitCode.ShouldBe(PipelineExitCodes.Success);
+        log.Received().Log(
+            PipelineLogLevel.Warning,
+            Arg.Any<string>(),
+            Arg.Is<Exception>(e => e.Message == "Reporter is broken."));
     }
 
     [Fact]
@@ -82,7 +186,7 @@ public class DefaultPipelineRunnerTests
         var summary = await sut.Run(CancellationToken.None);
 
         // Assert
-        summary.ExitCode.ShouldBe(PipelineExitCodes.StoppedOnError);
+        summary.ExitCode.ShouldBe(PipelineExitCodes.Failed);
     }
 
     [Fact]
@@ -103,7 +207,7 @@ public class DefaultPipelineRunnerTests
         // Assert
         Received.InOrder(() =>
         {
-            reporter.OnPipelineStarted(Arg.Any<Pipeline>(), Arg.Any<CancellationToken>());
+            reporter.OnPipelineStarted(Arg.Any<PipelineJob>(), Arg.Any<CancellationToken>());
             step.Run(Arg.Any<CancellationToken>());
         });
     }
@@ -160,7 +264,7 @@ public class DefaultPipelineRunnerTests
     {
         // Arrange
         var reporter = Substitute.For<IProgressReporter>();
-        reporter.OnPipelineStarted(Arg.Any<Pipeline>(), Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
+        reporter.OnPipelineStarted(Arg.Any<PipelineJob>(), Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
 
         var step = PipelineStepHelpers.CreateMock();
 
@@ -175,5 +279,27 @@ public class DefaultPipelineRunnerTests
         // Assert
         await act.ShouldNotThrowAsync();
         await step.Received().Run(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RunPipeline_CancelledStep_IsRenderedWithoutTheReporterFailing()
+    {
+        // A cancelled step is a failure by exit code, so the reporter walks its errors. It used
+        // to have none, which IsFailure's MemberNotNullWhen promised was impossible.
+        using var cts = new CancellationTokenSource();
+        var log = Substitute.For<IPipelineLog>();
+        var step = PipelineStepHelpers.CreateMock();
+        step.When(s => s.Run(Arg.Any<CancellationToken>())).Do(_ =>
+        {
+            cts.Cancel();
+            throw new OperationCanceledException(cts.Token);
+        });
+
+        var reporter = new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail);
+
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step], reporters: [reporter], log: log);
+        await sut.Run(cts.Token);
+
+        log.DidNotReceive().Log(PipelineLogLevel.Warning, Arg.Any<string>(), Arg.Any<Exception>());
     }
 }

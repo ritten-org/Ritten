@@ -2,6 +2,7 @@ using System.Text.Json;
 using NuGet.Versioning;
 using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
+using Ritten.Core;
 
 namespace Ritten.DotNet;
 
@@ -9,7 +10,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
 {
     private static readonly JsonSerializerOptions FormatReportJson = new() { PropertyNameCaseInsensitive = true };
 
-    public async Task<Project?> ReadProject(IFile file, CancellationToken cancellationToken = default)
+    public async Task<Result<Project>> ReadProject(IFile file, CancellationToken cancellationToken = default)
     {
         // MSBuild evaluates the project for real, so properties inherited from
         // Directory.Build.props, conditions, and SDK defaults are all resolved.
@@ -23,9 +24,21 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         var packageId = properties.GetProperty("PackageId").GetString();
         var version = properties.GetProperty("Version").GetString();
 
+        // Report both, rather than sending someone round the loop twice.
         if (string.IsNullOrEmpty(packageId) || string.IsNullOrEmpty(version))
         {
-            return null;
+            List<Error> errors = [];
+            if (string.IsNullOrEmpty(packageId))
+            {
+                errors.Add($"'{file.Name}' does not set a PackageId.");
+            }
+
+            if (string.IsNullOrEmpty(version))
+            {
+                errors.Add($"'{file.Name}' does not set a Version.");
+            }
+
+            return errors;
         }
 
         return new Project
@@ -178,7 +191,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         var documents = await JsonSerializer.DeserializeAsync<List<FormatReportDocument>>(stream, FormatReportJson, cancellationToken) ?? [];
         return documents
             .Where(d => d.FilePath != null)
-            .Select(d => Path.GetRelativePath(fileSystem.CurrentDirectory.AbsolutePath, d.FilePath!))
+            .Select(d => Path.GetRelativePath(fileSystem.ProjectRoot.AbsolutePath, d.FilePath!))
             .Distinct()
             .Order()
             .ToList();

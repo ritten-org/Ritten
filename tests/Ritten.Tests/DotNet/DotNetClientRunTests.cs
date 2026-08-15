@@ -18,7 +18,7 @@ public class DotNetClientRunTests
 
     public DotNetClientRunTests()
     {
-        _fileSystem.CurrentDirectory.AbsolutePath.Returns("/repo");
+        _fileSystem.ProjectRoot.AbsolutePath.Returns("/repo");
         _client = new DotNetClient(_commands, _fileSystem);
     }
 

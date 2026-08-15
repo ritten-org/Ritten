@@ -1,8 +1,9 @@
+using Ritten.Core;
+
 namespace Ritten.Pipelines.NuGet;
 
 /// <summary>
 /// Settings for the NuGet feed the package is validated against and published to.
-/// Bound from the <c>NuGet</c> configuration section.
 /// </summary>
 public class NuGetOptions
 {
@@ -13,7 +14,7 @@ public class NuGetOptions
 
     /// <summary>
     /// The API key used to push packages. Only needed by the deploy pipeline;
-    /// <see cref="NuGetPush"/> fails with a clear message if it's missing.
+    /// <see cref="NugetPush"/> fails with a clear message if it's missing.
     /// </summary>
     public string? ApiKey { get; set; }
 
@@ -21,4 +22,19 @@ public class NuGetOptions
     /// Skips the published-version check entirely (e.g. for dependabot pull requests).
     /// </summary>
     public bool SkipVersionCheck { get; set; }
+
+    /// <summary>
+    /// Configures the given options based on the current environment.
+    /// </summary>
+    public static void ConfigureFromEnvironment(NuGetOptions options) =>
+        ConfigureFromEnvironment(options, Environment.GetEnvironmentVariable);
+
+    /// <summary>
+    /// Configures the given options from the given environment.
+    /// </summary>
+    internal static void ConfigureFromEnvironment(NuGetOptions options, Func<string, string?> envVar)
+    {
+        options.ApiKey = envVar(RittenEnvironment.NuGetApiKey);
+        options.SkipVersionCheck = bool.TryParse(envVar(RittenEnvironment.SkipVersionCheck), out var skip) && skip;
+    }
 }

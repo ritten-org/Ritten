@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
+using Ritten.Core;
 using Ritten.DotNet;
 using Ritten.Reporting;
 
@@ -11,9 +12,12 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="options">The pipeline's build options.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
-public class DotNetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuildReport report) : IPipelineStep
+public class DotnetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuildReport report) : IPipelineStep
 {
     private const int MaxDiagnostics = 30;
+
+    /// <inheritdoc />
+    public string Name => "dotnet build";
 
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
@@ -27,18 +31,22 @@ public class DotNetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuild
         }
 
         var section = report.Section("Build").Failure("The solution failed to build.");
-        if (result.Diagnostics.Count > 0)
+        if (result.Diagnostics.Count == 0)
         {
-            var diagnostics = result.Diagnostics.Select(d => d.ToString()).ToList();
-            if (diagnostics.Count > MaxDiagnostics)
-            {
-                var omitted = diagnostics.Count - MaxDiagnostics;
-                diagnostics = [.. diagnostics.Take(MaxDiagnostics), $"…and {omitted} more"];
-            }
-
-            section.Details("Compiler output", $"```\n{string.Join('\n', diagnostics)}\n```");
+            return StepResult.Failed("The solution failed to build. Re-run with --verbose to see the compiler output.");
         }
 
-        return StepResult.Failed("Build failed.");
+        var diagnostics = result.Diagnostics.Select(d => d.ToString()).ToList();
+        if (diagnostics.Count > MaxDiagnostics)
+        {
+            var omitted = diagnostics.Count - MaxDiagnostics;
+            diagnostics = [.. diagnostics.Take(MaxDiagnostics), $"…and {omitted} more"];
+        }
+
+        section.Details("Compiler output", $"```\n{string.Join('\n', diagnostics)}\n```");
+
+        // The terminal gets what the pull request comment gets; the command output that
+        // produced it is hidden unless someone asks for --verbose.
+        return StepResult.Failed(diagnostics.Select(d => new Error(d)));
     }
 }

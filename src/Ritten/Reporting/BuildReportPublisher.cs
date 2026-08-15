@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Core;
@@ -13,7 +12,7 @@ namespace Ritten.Reporting;
 /// build report to every registered sink when it finishes.
 /// </summary>
 internal class BuildReportPublisher(
-    ILogger<BuildReportPublisher> logger,
+    IPipelineLog log,
     IOptions<GitHubOptions> options,
     IBuildReport report,
     MarkdownReportRenderer renderer,
@@ -22,7 +21,7 @@ internal class BuildReportPublisher(
 ) : IProgressReporter
 {
     /// <inheritdoc />
-    public async Task OnPipelineStarted(Pipeline pipeline, CancellationToken cancellationToken)
+    public async Task OnPipelineStarted(PipelineJob job, CancellationToken cancellationToken)
     {
         if (!options.Value.IsPullRequest)
         {
@@ -31,11 +30,11 @@ internal class BuildReportPublisher(
 
         try
         {
-            await comments.CreateOrUpdate($"## ⏳ {options.Value.WorkflowName}\n\n{pipeline.Name} pipeline in progress…", cancellationToken);
+            await comments.CreateOrUpdate($"## ⏳ {options.Value.WorkflowName}\n\n{job.Name} job in progress…", cancellationToken);
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to post the pending pull request comment.");
+            log.Warning("Failed to post the pending pull request comment.", ex);
         }
     }
 
@@ -57,7 +56,7 @@ internal class BuildReportPublisher(
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to publish the build report via {Sink}.", sink.GetType().Name);
+                log.Warning($"Failed to publish the build report via {sink.GetType().Name}", ex);
             }
         }
     }

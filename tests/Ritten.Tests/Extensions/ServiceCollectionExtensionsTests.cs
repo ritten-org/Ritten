@@ -1,13 +1,17 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Changelogs;
 using Ritten.Commands;
+using Ritten.Core.Settings;
 using Ritten.DotNet;
 using Ritten.Extensions;
 using Ritten.Git;
 using Ritten.NuGet;
+using Ritten.Pipelines;
+using Ritten.Pipelines.DotNet;
+using Ritten.Pipelines.Git;
+using Ritten.Pipelines.NuGet;
 using Ritten.Reporting;
 using Ritten.Reporting.Sinks;
 using Ritten.Runtimes;
@@ -17,15 +21,22 @@ namespace Ritten.Tests.Extensions;
 
 public class ServiceCollectionExtensionsTests
 {
+    private static readonly DotNetPackageSettings Settings = new()
+    {
+        Build = new DotNetBuildSettings { Project = "src/Thing/Thing.csproj", Configuration = "Debug" },
+        Changelog = new ChangelogSettings { File = "HISTORY.md", Repository = "https://example.com/thing" },
+        Release = new ReleaseSettings { TagPrefix = "release-", Feed = "https://example.com/index.json" }
+    };
+
     [Fact]
     public void Registrations_AreIdempotent()
     {
         var services = Services()
             .AddCommandRunner().AddCommandRunner()
-            .AddChangelogs().AddChangelogs()
-            .AddDotNet().AddDotNet()
-            .AddGit().AddGit()
-            .AddNuGet().AddNuGet()
+            .AddChangelogs(Settings.Changelog).AddChangelogs(Settings.Changelog)
+            .AddDotNet(Settings.Build).AddDotNet(Settings.Build)
+            .AddGit(Settings.Release.TagPrefix).AddGit(Settings.Release.TagPrefix)
+            .AddNuGet(Settings.Release.Feed).AddNuGet(Settings.Release.Feed)
             .AddGitHubActionsRuntime().AddGitHubActionsRuntime()
             .AddBuildReporting().AddBuildReporting();
 
@@ -43,7 +54,7 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void AddGit_RegistersItsCommandRunnerDependency()
     {
-        var services = Services().AddGit();
+        var services = Services().AddGit(Settings.Release.TagPrefix);
 
         services.Count(d => d.ServiceType == typeof(ICommandRunner)).ShouldBe(1);
     }
@@ -51,7 +62,7 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void AddDotNet_RegistersItsCommandRunnerDependency()
     {
-        var services = Services().AddDotNet();
+        var services = Services().AddDotNet(Settings.Build);
 
         services.Count(d => d.ServiceType == typeof(ICommandRunner)).ShouldBe(1);
     }
@@ -82,10 +93,23 @@ public class ServiceCollectionExtensionsTests
         provider.GetRequiredService<IOptions<GitHubOptions>>().Value.ClientName.ShouldBe("My.Pipeline");
     }
 
-    private static IServiceCollection Services()
+    [Fact]
+    public void EachCapability_MapsOnlyItsOwnSliceOfTheSettings()
     {
-        var services = new ServiceCollection();
-        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
-        return services;
+        var provider = Services()
+            .AddDotNet(Settings.Build)
+            .AddChangelogs(Settings.Changelog)
+            .AddGit(Settings.Release.TagPrefix)
+            .AddNuGet(Settings.Release.Feed)
+            .BuildServiceProvider();
+
+        provider.GetRequiredService<IOptions<DotNetOptions>>().Value.ProjectFile.ShouldBe("src/Thing/Thing.csproj");
+        provider.GetRequiredService<IOptions<DotNetOptions>>().Value.Configuration.ShouldBe("Debug");
+        provider.GetRequiredService<IOptions<ChangelogOptions>>().Value.File.ShouldBe("HISTORY.md");
+        provider.GetRequiredService<IOptions<ChangelogOptions>>().Value.RepositoryUrl.ShouldBe("https://example.com/thing");
+        provider.GetRequiredService<IOptions<GitOptions>>().Value.TagPrefix.ShouldBe("release-");
+        provider.GetRequiredService<IOptions<NuGetOptions>>().Value.Feed.ShouldBe("https://example.com/index.json");
     }
+
+    private static IServiceCollection Services() => new ServiceCollection();
 }

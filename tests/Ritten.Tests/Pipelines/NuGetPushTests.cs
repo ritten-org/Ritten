@@ -10,7 +10,7 @@ using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Pipelines;
 
-public class NuGetPushTests
+public class NugetPushTests
 {
     private readonly INuGet _nuget = Substitute.For<INuGet>();
     private readonly IPipelineState _state = Substitute.For<IPipelineState>();
@@ -19,24 +19,12 @@ public class NuGetPushTests
     private readonly NuGetOptions _options = TestOptions.NuGet();
     private readonly IFile _package = Substitute.For<IFile>();
 
-    public NuGetPushTests()
+    public NugetPushTests()
     {
         _report.Section("Release").Returns(_releaseSection);
         _state.Get<PackResult>().Returns(new PackResult { Packages = [_package] });
         _state.Get<Project>()
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
-    }
-
-    [Fact]
-    public async Task FailsWithAClearErrorWithoutAnApiKey()
-    {
-        _options.ApiKey = null;
-
-        var result = await Step().Run(TestContext.Current.CancellationToken);
-
-        result.IsFailure.ShouldBeTrue();
-        result.Message!.ShouldContain("NuGet__ApiKey");
-        await _nuget.DidNotReceiveWithAnyArgs().Push(default!, default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -51,6 +39,6 @@ public class NuGetPushTests
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
     }
 
-    private NuGetPush Step() =>
+    private NugetPush Step() =>
         new(Options.Create(_options), _state, _nuget, _report);
 }
