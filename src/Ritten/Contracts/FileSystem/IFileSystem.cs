@@ -9,4 +9,14 @@ public interface IFileSystem
     /// Gets the root of the project being built.
     /// </summary>
     IDirectory ProjectRoot { get; }
+
+    /// <summary>
+    /// Gets the directory build artifacts (e.g. packages) are written to.
+    /// </summary>
+    IDirectory Artifacts { get; }
+
+    /// <summary>
+    /// Gets the directory intermediate pipeline output is written to.
+    /// </summary>
+    IDirectory Temp { get; }
 }

@@ -2,7 +2,6 @@
   "build": {
     "project": "src/Ritten/Ritten.csproj"
   },
-  "coverage": {},
   "changelog": {
     "repository": "https://github.com/ritten-org/Ritten"
   }

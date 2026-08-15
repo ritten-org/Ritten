@@ -24,5 +24,5 @@ public sealed record DotNetToolSettings
     /// <summary>
     /// Code coverage collection and thresholds.
     /// </summary>
-    public CoverageSettings? Coverage { get; init; }
+    public CoverageSettings Coverage { get; init; } = new();
 }

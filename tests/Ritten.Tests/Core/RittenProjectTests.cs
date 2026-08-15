@@ -140,18 +140,20 @@ public class RittenProjectTests : IDisposable
 
         var settings = await GetSettings(_root);
 
-        settings.Coverage.ShouldNotBeNull().Line.ShouldBe(80.5m);
+        settings.Coverage.Line.ShouldBe(80.5m);
         settings.Coverage.Branch.ShouldBeNull();
     }
 
     [Fact]
-    public async Task GetSettings_LeavesCoverageOffWithoutItsSection()
+    public async Task GetSettings_AppliesCoverageDefaultsWithoutItsSection()
     {
+        // Coverage is always on; the section only sets minimums.
         WriteRittenJson(_root);
 
         var settings = await GetSettings(_root);
 
-        settings.Coverage.ShouldBeNull();
+        settings.Coverage.Line.ShouldBeNull();
+        settings.Coverage.Branch.ShouldBeNull();
     }
 
     [Fact]

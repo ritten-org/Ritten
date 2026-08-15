@@ -111,19 +111,6 @@ public class DotNetToolPipelineTests
             Arg.Any<Exception>());
     }
 
-    [Fact]
-    public void CoverageStepsJoinTheJobsOnlyWhenConfigured()
-    {
-        // The job's declaration matches what actually runs: no configuration, no steps.
-        var withCoverage = Build("check", Complete with { Coverage = new CoverageSettings() });
-        var withoutCoverage = Build("check", Complete);
-
-        withCoverage.IsSuccess.ShouldBeTrue();
-        withCoverage.Value.Dispose();
-        withoutCoverage.IsSuccess.ShouldBeTrue();
-        withoutCoverage.Value.Dispose();
-    }
-
     private static Result<PipelineHost> Build(
         string job,
         DotNetToolSettings settings,

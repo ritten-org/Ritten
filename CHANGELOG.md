@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - **Steps can be synchronous.** Step classes can return a plain `StepResult` or `StepResult<T>` directly.
+- **`ritten status`.** Reports the current state of the project, including its version, release state, and the changelog,.
+- **Code coverage.** Tests collect coverage by default via the coverlet collector, and the line and branch rates are reported alongside the results. A `"coverage"` section in `ritten.json` with `line`/`branch` minimums makes the numbers enforced. Requires the `coverlet.collector` package in test projects.
 
 ### Changed
 

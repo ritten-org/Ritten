@@ -1,7 +1,7 @@
 using System.Text;
-using Ritten.DotNet;
+using Ritten.CodeCoverage;
 
-namespace Ritten.Tests.DotNet;
+namespace Ritten.Tests.CodeCoverage;
 
 public class CoverageTests
 {

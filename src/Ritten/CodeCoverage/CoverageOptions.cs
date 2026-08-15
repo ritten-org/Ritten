@@ -1,15 +1,10 @@
-namespace Ritten.DotNet;
+namespace Ritten.CodeCoverage;
 
 /// <summary>
-/// Settings for coverage collection and its thresholds.
+/// Settings for judging collected coverage.
 /// </summary>
 public class CoverageOptions
 {
-    /// <summary>
-    /// Whether tests collect coverage at all.
-    /// </summary>
-    public bool Enabled { get; set; }
-
     /// <summary>
     /// The minimum line coverage percentage, or <c>null</c> to report without judging.
     /// </summary>

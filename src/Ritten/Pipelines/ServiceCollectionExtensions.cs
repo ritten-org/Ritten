@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Changelogs;
+using Ritten.CodeCoverage;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.GitHub;

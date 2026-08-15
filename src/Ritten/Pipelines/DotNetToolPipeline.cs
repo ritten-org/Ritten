@@ -1,6 +1,6 @@
 using Ritten.Changelogs.Steps;
+using Ritten.CodeCoverage;
 using Ritten.Core;
-using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.Git.Steps;
 using Ritten.GitHub;
@@ -37,7 +37,7 @@ public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
             .UseStep<DotnetFormat>()
             .UseStep<DotnetBuild>()
             .UseStep<DotnetTest>()
-            .UseCoverage(settings.Coverage)
+            .UseCoverage()
         );
 
         builder.AddJob("check", job => job
@@ -53,7 +53,7 @@ public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
             .UseStep<DotnetFormat>()
             .UseStep<DotnetBuild>()
             .UseStep<DotnetTest>()
-            .UseCoverage(settings.Coverage)
+            .UseCoverage()
             .UseStep<DotnetPack>()
         );
 
@@ -72,7 +72,7 @@ public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
             .UseStep<DotnetRestore>()
             .UseStep<DotnetBuild>()
             .UseStep<DotnetTest>()
-            .UseCoverage(settings.Coverage)
+            .UseCoverage()
             .UseStep<ApprovalGate>()
             .UseStep<DotnetPack>()
             .UseStep<GitTag>()

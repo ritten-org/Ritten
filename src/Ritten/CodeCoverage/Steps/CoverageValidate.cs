@@ -3,7 +3,7 @@ using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.Reporting;
 
-namespace Ritten.DotNet.Steps;
+namespace Ritten.CodeCoverage.Steps;
 
 /// <summary>
 /// Judges the collected <see cref="Coverage"/> against the configured minimums.

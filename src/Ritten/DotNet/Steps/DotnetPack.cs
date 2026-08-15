@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
-using Ritten.Pipelines;
 
 namespace Ritten.DotNet.Steps;
 
@@ -10,11 +9,10 @@ namespace Ritten.DotNet.Steps;
 /// </summary>
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's .NET options.</param>
-/// <param name="pipeline">The pipeline's directory layout options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 [Step("dotnet pack", StepKind.Work)]
-public class DotnetPack(IPipelineLog log, IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IFileSystem fileSystem, IDotNet dotnet)
+public class DotnetPack(IPipelineLog log, IOptions<DotNetOptions> options, IFileSystem fileSystem, IDotNet dotnet)
 {
     /// <summary>
     /// Packs the configured project.
@@ -28,7 +26,7 @@ public class DotnetPack(IPipelineLog log, IOptions<DotNetOptions> options, IOpti
                 Project = options.Value.ProjectFile,
                 Configuration = options.Value.Configuration,
                 NoBuild = true,
-                Output = fileSystem.ProjectRoot.GetDirectory(pipeline.Value.ArtifactsDirectory)
+                Output = fileSystem.Artifacts
             },
             cancellationToken);
 

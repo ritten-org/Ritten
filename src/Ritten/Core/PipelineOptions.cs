@@ -1,4 +1,4 @@
-namespace Ritten.Pipelines;
+namespace Ritten.Core;
 
 /// <summary>
 /// The directory layout every pipeline step shares.

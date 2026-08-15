@@ -1,17 +1,13 @@
 using System.Text;
-using Microsoft.Extensions.Options;
+using Ritten.CodeCoverage.Steps;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
-using Ritten.DotNet.Steps;
-using Ritten.Pipelines;
-using Ritten.Tests.Support;
 
-namespace Ritten.Tests.DotNet;
+namespace Ritten.Tests.CodeCoverage;
 
 public class ReadCoverageTests
 {
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
-    private readonly PipelineOptions _options = TestOptions.Pipeline();
 
     [Fact]
     public void CombinesEveryReportTheTestsProduced()
@@ -50,13 +46,12 @@ public class ReadCoverageTests
             return file;
         }).ToList();
 
-        _fileSystem.ProjectRoot
-            .GetDirectory(_options.TempDirectory)
+        _fileSystem.Temp
             .GetDirectory("test-results")
             .GetFiles("**/coverage.cobertura.xml")
             .Returns(files);
     }
 
     private ReadCoverage Step() =>
-        new(Substitute.For<IPipelineLog>(), Options.Create(_options), _fileSystem);
+        new(Substitute.For<IPipelineLog>(), _fileSystem);
 }

@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Options;
-using Ritten.DotNet;
-using Ritten.DotNet.Steps;
+using Ritten.CodeCoverage;
+using Ritten.CodeCoverage.Steps;
 using Ritten.Reporting;
 
-namespace Ritten.Tests.DotNet;
+namespace Ritten.Tests.CodeCoverage;
 
 /// <summary>
 /// Without minimums coverage is watched, not enforced, so a project can see its numbers before
@@ -16,7 +16,7 @@ public class CoverageValidateTests
 
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
     private readonly ReportSection _section = new("Coverage");
-    private readonly CoverageOptions _options = new() { Enabled = true };
+    private readonly CoverageOptions _options = new();
 
     public CoverageValidateTests()
     {

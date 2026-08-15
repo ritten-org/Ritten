@@ -2,7 +2,6 @@ using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core;
-using Ritten.Pipelines;
 using Ritten.Reporting;
 
 namespace Ritten.DotNet.Steps;
@@ -12,8 +11,6 @@ namespace Ritten.DotNet.Steps;
 /// </summary>
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's .NET options.</param>
-/// <param name="pipeline">The pipeline's directory layout options.</param>
-/// <param name="coverage">The pipeline's coverage options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
@@ -21,8 +18,6 @@ namespace Ritten.DotNet.Steps;
 public class DotnetTest(
     IPipelineLog log,
     IOptions<DotNetOptions> options,
-    IOptions<PipelineOptions> pipeline,
-    IOptions<CoverageOptions> coverage,
     IFileSystem fileSystem,
     IDotNet dotnet,
     IBuildReport report
@@ -35,9 +30,7 @@ public class DotnetTest(
     /// </summary>
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        var resultsDirectory = fileSystem.ProjectRoot
-            .GetDirectory(pipeline.Value.TempDirectory)
-            .GetDirectory("test-results");
+        var resultsDirectory = fileSystem.Temp.GetDirectory("test-results");
 
         var result = await dotnet.Test(
             new TestArgs
@@ -45,7 +38,7 @@ public class DotnetTest(
                 Configuration = options.Value.Configuration,
                 NoBuild = true,
                 ResultsDirectory = resultsDirectory,
-                CollectCoverage = coverage.Value.Enabled
+                CollectCoverage = true
             },
             cancellationToken);
 

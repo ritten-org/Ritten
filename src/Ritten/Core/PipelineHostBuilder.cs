@@ -44,6 +44,7 @@ public class PipelineHostBuilder : IPipelineBuilder
         _log = log ?? reporter;
 
         // Applies to every run.
+        Services.AddOptions();
         Services.AddSingleton(project);
         Services.AddSingleton(TimeProvider.System);
         Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();

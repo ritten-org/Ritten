@@ -1,6 +1,6 @@
 using System.Xml.Linq;
 
-namespace Ritten.DotNet;
+namespace Ritten.CodeCoverage;
 
 /// <summary>
 /// Aggregated code coverage, as raw counters so results combine exactly across test projects.
