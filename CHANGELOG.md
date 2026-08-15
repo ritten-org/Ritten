@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.0.3] - 2026-08-15
 
 ### Added
 
@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - **The repository is now set using `repository`.** Rather than being a property of `changelog`, the `repository` setting now hangs off the document root.
+- **Deployments no longer depend on GitHub Actions.** The GitHub release is created against the repository derived from the project, instead of the repository ID that only Actions provides, so `deploy` can run from anywhere.
+- **GitHub authentication is picked up ambiently.** When neither `GH_TOKEN` nor `GITHUB_TOKEN` is set, Ritten asks the gh CLI for its stored login before falling back to anonymous access, so a local `deploy` works if you're signed in to `gh`.
 - **Determining the release state is its own step.** Similar to the changelog step refactor in the last iteration, this should help keep steps loosely coupled and composable.
 - **Validating the changelog links is its own step.** The links are a lint on the document, applying in every release state, while the entry requirement attaches to the release being prepared.
 - **Namespaces are organized by domain.** Each domain (Changelogs, DotNet, Git, NuGet, GitHub, and Releases) owns its client, steps, and options in one place, instead of being split between an infrastructure tree and a pipelines tree.
@@ -51,6 +53,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
-[Unreleased]: https://github.com/ritten-org/Ritten/compare/v0.0.2...HEAD
+[0.0.3]: https://github.com/ritten-org/Ritten/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/ritten-org/Ritten/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/ritten-org/Ritten/releases/tag/v0.0.1

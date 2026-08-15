@@ -38,10 +38,15 @@ public class GitHubRelease(
             return StepResult.Successful;
         }
 
+        if (RepositoryPath.Parse(project.Repository) is not { } repository)
+        {
+            return StepResult.Failed("The GitHub repository can't be determined. Set `repository` in ritten.json, or `RepositoryUrl` in the project file.");
+        }
+
         var tag = $"{options.Value.TagPrefix}{project.Version}";
 
         // A failed deploy may have already created the release; rerunning should carry on, not crash.
-        if (await releases.Exists(tag, cancellationToken))
+        if (await releases.Exists(repository, tag, cancellationToken))
         {
             log.Skipped($"GitHub Release {tag} already exists; skipping.");
             return StepResult.Successful;
@@ -55,7 +60,7 @@ public class GitHubRelease(
         // A backport must not displace the repository's real latest release.
         var makeLatest = releaseState.LatestVersion is null || project.Version > releaseState.LatestVersion;
 
-        await releases.Create(tag, tag, changelogs.RenderEntry(entry), makeLatest, cancellationToken);
+        await releases.Create(repository, tag, tag, changelogs.RenderEntry(entry), makeLatest, cancellationToken);
         return StepResult.Successful;
     }
 }

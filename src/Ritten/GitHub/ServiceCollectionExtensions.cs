@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Octokit;
+using Ritten.Commands;
 using Ritten.Reporting.Sinks;
 
 namespace Ritten.GitHub;
@@ -25,16 +26,12 @@ internal static class ServiceCollectionExtensions
             services.AddOptions<GitHubOptions>()
                 .Configure(GitHubOptions.ConfigureFromEnvironment);
 
+            services.AddCommandRunner();
+            services.TryAddSingleton<ICredentialStore, AmbientCredentialStore>();
             services.AddSingleton<IGitHubClient>(provider =>
             {
                 var options = provider.GetRequiredService<IOptions<GitHubOptions>>().Value;
-                var client = new GitHubClient(new ProductHeaderValue(options.ClientName));
-                if (options.Token is { } token)
-                {
-                    client.Credentials = new Credentials(token);
-                }
-
-                return client;
+                return new GitHubClient(new ProductHeaderValue(options.ClientName), provider.GetRequiredService<ICredentialStore>());
             });
 
             services.TryAddSingleton<ICommentService, CommentService>();

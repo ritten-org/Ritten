@@ -8,16 +8,16 @@ namespace Ritten.GitHub;
 internal class DryRunReleaseService(IPipelineLog log) : IReleaseService
 {
     /// <inheritdoc />
-    public Task<bool> Exists(string tag, CancellationToken cancellationToken = default)
+    public Task<bool> Exists(RepositoryPath repository, string tag, CancellationToken cancellationToken = default)
     {
         // Nothing is being created, so nothing it created is in the way.
         return Task.FromResult(false);
     }
 
     /// <inheritdoc />
-    public Task Create(string tag, string title, string notes, bool makeLatest = true, CancellationToken cancellationToken = default)
+    public Task Create(RepositoryPath repository, string tag, string title, string notes, bool makeLatest = true, CancellationToken cancellationToken = default)
     {
-        log.Skipped($"Would create the GitHub release {title} for tag {tag}, {(makeLatest ? "marked latest" : "not marked latest")}.");
+        log.Skipped($"Would create the GitHub release {title} for tag {tag} in {repository}, {(makeLatest ? "marked latest" : "not marked latest")}.");
         return Task.CompletedTask;
     }
 }
