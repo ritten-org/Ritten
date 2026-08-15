@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Run Deploy Pipeline
-        run: dotnet run --project src/Ritten -- deploy
+        run: dotnet run --project src/Ritten -- deploy --auto-approve
         shell: bash
         env:
           RITTEN_NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

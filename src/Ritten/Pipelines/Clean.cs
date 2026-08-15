@@ -10,7 +10,7 @@ namespace Ritten.Pipelines;
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's build options.</param>
 /// <param name="fileSystem">The file system.</param>
-public class CleanDirectories(IPipelineLog log, IOptions<PipelineOptions> options, IFileSystem fileSystem) : IPipelineStep
+public class Clean(IPipelineLog log, IOptions<PipelineOptions> options, IFileSystem fileSystem) : IPipelineStep
 {
     /// <inheritdoc />
     public string Name => "clean";

@@ -19,7 +19,7 @@ namespace Ritten.Pipelines;
 /// <param name="state">The pipeline state.</param>
 /// <param name="report">The build report.</param>
 /// <param name="changelogs">The changelog client.</param>
-public class ValidateChangelog(
+public class ChangelogValidate(
     IPipelineLog log,
     IOptions<ChangelogOptions> options,
     IOptions<GitOptions> release,

@@ -11,14 +11,14 @@ namespace Ritten.Pipelines.GitHub;
 /// <summary>
 /// Creates the GitHub release for the version being shipped, with the changelog entry as its notes.
 /// Prereleases are skipped, and so is a release a previous run already created.
-/// Requires <see cref="Project"/> and <see cref="ChangelogEntry"/> in pipeline state (see <see cref="ExtractDotNetProject"/> and <see cref="ValidateChangelog"/>).
+/// Requires <see cref="Project"/> and <see cref="ChangelogEntry"/> in pipeline state (see <see cref="ReadProject"/> and <see cref="ChangelogValidate"/>).
 /// </summary>
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's release options.</param>
 /// <param name="state">The pipeline state.</param>
 /// <param name="releases">The GitHub release service.</param>
 /// <param name="changelogs">The changelog client.</param>
-public class CreateGitHubRelease(
+public class GitHubRelease(
     IPipelineLog log,
     IOptions<GitOptions> options,
     IPipelineState state,

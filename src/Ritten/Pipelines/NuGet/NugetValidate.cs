@@ -10,14 +10,14 @@ namespace Ritten.Pipelines.NuGet;
 /// <summary>
 /// Fails the pipeline when the project's version is already published, or isn't greater than the
 /// latest published version. Requires <see cref="Project"/> in pipeline state
-/// (see <see cref="ExtractDotNetProject"/>).
+/// (see <see cref="ReadProject"/>).
 /// </summary>
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's NuGet options.</param>
 /// <param name="state">The pipeline state.</param>
 /// <param name="report">The build report.</param>
 /// <param name="nuget">The NuGet client.</param>
-public class ValidateNuGetVersion(
+public class NugetValidate(
     IPipelineLog log,
     IOptions<NuGetOptions> options,
     IPipelineState state,

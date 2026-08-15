@@ -3,19 +3,25 @@ using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.Pipelines.DotNet;
 
-var verbose = new Option<bool>("--verbose", "-v")
+var verbose = new Option<bool>($"--{PipelineArguments.Verbose}", "-v")
 {
     Description = "Show every log entry in its highest detail.",
     Recursive = true
 };
 
-var quiet = new Option<bool>("--quiet", "-q")
+var quiet = new Option<bool>($"--{PipelineArguments.Quiet}", "-q")
 {
     Description = "Show only failures.",
     Recursive = true
 };
 
-var dryRun = new Option<bool>("--dry-run")
+var autoApprove = new Option<bool>($"--{PipelineArguments.AutoApprove}")
+{
+    Description = "Approve a job up front, for runs with nobody there to confirm.",
+    Recursive = true
+};
+
+var dryRun = new Option<bool>($"--{PipelineArguments.DryRun}")
 {
     Description = "Rehearse the job without pushing, tagging, releasing, or commenting.",
     Recursive = true
@@ -26,6 +32,7 @@ var root = new RootCommand("The Ritten build pipeline.")
     verbose,
     quiet,
     dryRun,
+    autoApprove,
     Job("build", "Validates a pull request: formatting, version, changelog, compile, and tests."),
     Job("verify", "Compiles and tests, without any release validation."),
     Job("deploy", "Validates, packs, tags, creates the GitHub release, and publishes to NuGet.")
@@ -44,8 +51,12 @@ Command Job(string name, string description)
             : parseResult.GetValue(quiet)
                 ? PipelineLogLevel.Warning
                 : PipelineLogLevel.Detail;
-        var isDryRun = parseResult.GetValue(dryRun);
-        return PipelineHost.Run<DotNetPackagePipeline, DotNetPackageSettings>(name, logLevel, isDryRun, cancellationToken);
+        return PipelineHost.Run<DotNetPackagePipeline, DotNetPackageSettings>(
+            name,
+            logLevel,
+            parseResult.GetValue(dryRun),
+            parseResult.GetValue(autoApprove),
+            cancellationToken);
     });
     return command;
 }

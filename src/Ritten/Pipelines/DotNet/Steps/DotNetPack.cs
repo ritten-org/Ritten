@@ -8,14 +8,14 @@ namespace Ritten.Pipelines.DotNet.Steps;
 
 /// <summary>
 /// Packs the configured project into the artifacts directory.
-/// Sets <see cref="PackResult"/> in pipeline state for <see cref="NuGetPush"/>.
+/// Sets <see cref="PackResult"/> in pipeline state for <see cref="NugetPush"/>.
 /// </summary>
 /// <param name="options">The pipeline's .NET options.</param>
 /// <param name="pipeline">The pipeline's directory layout options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="state">The pipeline state.</param>
 /// <param name="dotnet">The dotnet client.</param>
-public class DotNetPack(IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IFileSystem fileSystem, IPipelineState state, IDotNet dotnet) : IPipelineStep
+public class DotnetPack(IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IFileSystem fileSystem, IPipelineState state, IDotNet dotnet) : IPipelineStep
 {
     /// <inheritdoc />
     public string Name => "dotnet pack";

@@ -12,7 +12,7 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="options">The pipeline's build options.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
-public class DotNetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuildReport report) : IPipelineStep
+public class DotnetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuildReport report) : IPipelineStep
 {
     private const int MaxDiagnostics = 30;
 

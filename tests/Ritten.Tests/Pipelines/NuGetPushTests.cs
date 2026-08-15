@@ -10,7 +10,7 @@ using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Pipelines;
 
-public class NuGetPushTests
+public class NugetPushTests
 {
     private readonly INuGet _nuget = Substitute.For<INuGet>();
     private readonly IPipelineState _state = Substitute.For<IPipelineState>();
@@ -19,7 +19,7 @@ public class NuGetPushTests
     private readonly NuGetOptions _options = TestOptions.NuGet();
     private readonly IFile _package = Substitute.For<IFile>();
 
-    public NuGetPushTests()
+    public NugetPushTests()
     {
         _report.Section("Release").Returns(_releaseSection);
         _state.Get<PackResult>().Returns(new PackResult { Packages = [_package] });
@@ -62,6 +62,6 @@ public class NuGetPushTests
         result.IsFailure.ShouldBeFalse();
     }
 
-    private NuGetPush Step(bool dryRun = false) =>
+    private NugetPush Step(bool dryRun = false) =>
         new(new PipelineJob("Test", "deploy", dryRun), Options.Create(_options), _state, _nuget, _report);
 }

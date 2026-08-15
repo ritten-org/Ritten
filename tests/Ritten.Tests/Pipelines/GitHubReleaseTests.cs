@@ -9,14 +9,14 @@ using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Pipelines;
 
-public class CreateGitHubReleaseTests
+public class GitHubReleaseTests
 {
     private readonly IReleaseService _releases = Substitute.For<IReleaseService>();
     private readonly IChangelog _changelogs = Substitute.For<IChangelog>();
     private readonly IPipelineState _state = Substitute.For<IPipelineState>();
     private readonly ChangelogEntry _entry = new() { Version = NuGetVersion.Parse("1.2.0"), Added = ["A thing."] };
 
-    public CreateGitHubReleaseTests()
+    public GitHubReleaseTests()
     {
         SetVersion("1.2.0");
         _state.Get<ChangelogEntry>().Returns(_entry);
@@ -56,6 +56,6 @@ public class CreateGitHubReleaseTests
         _state.Get<Project>()
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse(version) });
 
-    private CreateGitHubRelease Step() =>
+    private GitHubRelease Step() =>
         new(Substitute.For<IPipelineLog>(), Options.Create(TestOptions.Git()), _state, _releases, _changelogs);
 }

@@ -27,35 +27,36 @@ public class DotNetPackagePipeline : Pipeline<DotNetPackageSettings>
         builder.Services.AddDotNetPackageServices(settings);
 
         builder.AddJob("verify", job => job
-            .UseStep<CleanDirectories>()
-            .UseStep<DotNetFormatCheck>()
-            .UseStep<DotNetRestore>()
-            .UseStep<DotNetBuild>()
-            .UseStep<DotNetTest>());
+            .UseStep<Clean>()
+            .UseStep<DotnetFormat>()
+            .UseStep<DotnetRestore>()
+            .UseStep<DotnetBuild>()
+            .UseStep<DotnetTest>());
 
         builder.AddJob("build", job => job
             .Requires(settings.Build.Project)
-            .UseStep<CleanDirectories>()
-            .UseStep<ExtractDotNetProject>()
-            .UseStep<ValidateNuGetVersion>()
-            .UseStep<ValidateChangelog>()
-            .UseStep<DotNetFormatCheck>()
-            .UseStep<DotNetRestore>()
-            .UseStep<DotNetBuild>()
-            .UseStep<DotNetTest>());
+            .UseStep<Clean>()
+            .UseStep<ReadProject>()
+            .UseStep<NugetValidate>()
+            .UseStep<ChangelogValidate>()
+            .UseStep<DotnetFormat>()
+            .UseStep<DotnetRestore>()
+            .UseStep<DotnetBuild>()
+            .UseStep<DotnetTest>());
 
         builder.AddJob("deploy", job => job
             .Requires(settings.Build.Project)
-            .UseStep<CleanDirectories>()
-            .UseStep<ExtractDotNetProject>()
-            .UseStep<ValidateNuGetVersion>()
-            .UseStep<ValidateChangelog>()
-            .UseStep<DotNetRestore>()
-            .UseStep<DotNetBuild>()
-            .UseStep<DotNetTest>()
-            .UseStep<DotNetPack>()
-            .UseStep<CreateGitTag>()
-            .UseStep<CreateGitHubRelease>()
-            .UseStep<NuGetPush>());
+            .UseStep<Clean>()
+            .UseStep<ReadProject>()
+            .UseStep<NugetValidate>()
+            .UseStep<ChangelogValidate>()
+            .UseStep<DotnetRestore>()
+            .UseStep<DotnetBuild>()
+            .UseStep<DotnetTest>()
+            .UseStep<Approve>()
+            .UseStep<DotnetPack>()
+            .UseStep<GitTag>()
+            .UseStep<GitHubRelease>()
+            .UseStep<NugetPush>());
     }
 }

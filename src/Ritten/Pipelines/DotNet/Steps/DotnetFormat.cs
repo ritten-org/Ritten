@@ -14,7 +14,7 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
-public class DotNetFormatCheck(
+public class DotnetFormat(
     IOptions<PipelineOptions> options,
     IFileSystem fileSystem,
     IDotNet dotnet,

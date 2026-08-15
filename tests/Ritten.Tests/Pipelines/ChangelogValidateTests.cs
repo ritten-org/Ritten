@@ -14,7 +14,7 @@ using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Pipelines;
 
-public class ValidateChangelogTests
+public class ChangelogValidateTests
 {
     // The real client, so these tests exercise the actual parser and link generator.
     private static readonly IChangelog Changelogs = new ServiceCollection()
@@ -28,7 +28,7 @@ public class ValidateChangelogTests
     private readonly ReportSection _releaseSection = new("Release");
     private readonly ChangelogOptions _options = TestOptions.Changelog();
 
-    public ValidateChangelogTests()
+    public ChangelogValidateTests()
     {
         _options.RepositoryUrl = "https://github.com/example/repo";
         _state.Get<Project>()
@@ -259,6 +259,6 @@ public class ValidateChangelogTests
         _fileSystem.ProjectRoot.GetFile(_options.File).Returns(file);
     }
 
-    private ValidateChangelog Step() =>
+    private ChangelogValidate Step() =>
         new(Substitute.For<IPipelineLog>(), Options.Create(_options), Options.Create(TestOptions.Git()), _fileSystem, _state, _report, Changelogs);
 }

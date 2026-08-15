@@ -13,7 +13,7 @@ namespace Ritten.Tests.Pipelines;
 /// The gate that stops a version being published twice. Pushing to a feed can't be undone — a
 /// version can be delisted but never unpublished — so this is the check that most needs to hold.
 /// </summary>
-public class ValidateNuGetVersionTests
+public class NugetValidateTests
 {
     private readonly IPipelineLog _log = Substitute.For<IPipelineLog>();
     private readonly INuGet _nuget = Substitute.For<INuGet>();
@@ -22,7 +22,7 @@ public class ValidateNuGetVersionTests
     private readonly ReportSection _releaseSection = new("Release");
     private readonly NuGetOptions _options = TestOptions.NuGet();
 
-    public ValidateNuGetVersionTests()
+    public NugetValidateTests()
     {
         _report.Section("Release").Returns(_releaseSection);
         _state.Get<Project>().Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
@@ -140,6 +140,6 @@ public class ValidateNuGetVersionTests
         _nuget.GetPublishedVersions(Arg.Any<NuGetFeed>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns([.. versions.Select(NuGetVersion.Parse)]);
 
-    private ValidateNuGetVersion Step() =>
+    private NugetValidate Step() =>
         new(_log, Options.Create(_options), _state, _report, _nuget);
 }

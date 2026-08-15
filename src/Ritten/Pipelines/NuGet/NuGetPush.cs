@@ -10,7 +10,7 @@ namespace Ritten.Pipelines.NuGet;
 
 /// <summary>
 /// Pushes the packed packages to the configured feed. Requires <see cref="PackResult"/> in
-/// pipeline state (see <see cref="DotNetPack"/>); uses <see cref="Project"/> for the report
+/// pipeline state (see <see cref="DotnetPack"/>); uses <see cref="Project"/> for the report
 /// when present.
 /// </summary>
 /// <param name="job">The job being run.</param>
@@ -18,7 +18,7 @@ namespace Ritten.Pipelines.NuGet;
 /// <param name="state">The pipeline state.</param>
 /// <param name="nuget">The NuGet client.</param>
 /// <param name="report">The build report.</param>
-public class NuGetPush(
+public class NugetPush(
     PipelineJob job,
     IOptions<NuGetOptions> options,
     IPipelineState state,

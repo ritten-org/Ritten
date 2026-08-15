@@ -10,6 +10,7 @@ using Ritten.NuGet;
 using Ritten.Reporting;
 using Ritten.Runtimes;
 using Ritten.Runtimes.GitHubActions;
+using Spectre.Console;
 
 namespace Ritten.Core;
 
@@ -22,6 +23,7 @@ public class PipelineHostBuilder : IPipelineBuilder
     private readonly string _pipelineName;
     private readonly Dictionary<string, Action<IJobBuilder>> _jobs = [];
     private readonly bool _dryRun;
+    private readonly bool _autoApprove;
 
     /// <summary>
     /// Creates a new instance of the <see cref="PipelineHostBuilder"/>.
@@ -30,11 +32,13 @@ public class PipelineHostBuilder : IPipelineBuilder
     /// <param name="pipelineName">The name of the pipeline being configured.</param>
     /// <param name="reporter">The reporter that renders pipeline progress.</param>
     /// <param name="dryRun">Whether to wrap the clients that reach outside the working directory.</param>
-    internal PipelineHostBuilder(RittenProject project, string pipelineName, SpectreProgressReporter reporter, bool dryRun = false)
+    /// <param name="autoApprove">Whether a job that would stop and ask has been approved up front.</param>
+    internal PipelineHostBuilder(RittenProject project, string pipelineName, SpectreProgressReporter reporter, bool dryRun = false, bool autoApprove = false)
     {
         _reporter = reporter;
         _pipelineName = pipelineName;
         _dryRun = dryRun;
+        _autoApprove = autoApprove;
         Services.AddSingleton(project);
     }
 
@@ -59,7 +63,7 @@ public class PipelineHostBuilder : IPipelineBuilder
             return Result.Error($"The {_pipelineName} pipeline has no job named '{job}'.");
         }
 
-        Services.AddSingleton(new PipelineJob(_pipelineName, job, _dryRun));
+        Services.AddSingleton(new PipelineJob(_pipelineName, job, _dryRun, _autoApprove));
         Services.AddSingleton(TimeProvider.System);
 
         Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
@@ -69,6 +73,7 @@ public class PipelineHostBuilder : IPipelineBuilder
 
         Services.AddSingleton<IProgressReporter>(_reporter);
         Services.TryAddSingleton<IPipelineLog>(_reporter);
+        Services.TryAddSingleton<IPipelinePrompt>(_ => new ConsolePrompt(AnsiConsole.Console));
 
         var builder = new JobBuilder(Services);
         configure(builder);

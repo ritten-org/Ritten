@@ -14,7 +14,7 @@ public class NuGetOptions
 
     /// <summary>
     /// The API key used to push packages. Only needed by the deploy pipeline;
-    /// <see cref="NuGetPush"/> fails with a clear message if it's missing.
+    /// <see cref="NugetPush"/> fails with a clear message if it's missing.
     /// </summary>
     public string? ApiKey { get; set; }
 

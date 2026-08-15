@@ -9,13 +9,13 @@ namespace Ritten.Pipelines.Git;
 /// <summary>
 /// Creates and pushes the release tag, skipping whatever a previous run already did so failed
 /// deploys can be rerun. Requires <see cref="Project"/> in pipeline state
-/// (see <see cref="ExtractDotNetProject"/>).
+/// (see <see cref="ReadProject"/>).
 /// </summary>
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's release options.</param>
 /// <param name="state">The pipeline state.</param>
 /// <param name="git">The git client.</param>
-public class CreateGitTag(IPipelineLog log, IOptions<GitOptions> options, IPipelineState state, IGit git) : IPipelineStep
+public class GitTag(IPipelineLog log, IOptions<GitOptions> options, IPipelineState state, IGit git) : IPipelineStep
 {
     /// <inheritdoc />
     public string Name => "git tag";

@@ -8,13 +8,13 @@ using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Pipelines;
 
-public class CreateGitTagTests
+public class GitTagTests
 {
     private readonly IGit _git = Substitute.For<IGit>();
     private readonly IPipelineState _state = Substitute.For<IPipelineState>();
     private readonly GitOptions _options = TestOptions.Git();
 
-    public CreateGitTagTests()
+    public GitTagTests()
     {
         _state.Get<Project>()
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
@@ -71,6 +71,6 @@ public class CreateGitTagTests
         await _git.Received().CreateTag("release/1.2.0", null, Arg.Any<CancellationToken>());
     }
 
-    private CreateGitTag Step() =>
+    private GitTag Step() =>
         new(Substitute.For<IPipelineLog>(), Options.Create(_options), _state, _git);
 }

@@ -14,10 +14,10 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="fileSystem">The file system.</param>
 /// <param name="state">The pipeline state.</param>
 /// <param name="dotnet">The dotnet client.</param>
-public class ExtractDotNetProject(IPipelineLog log, IOptions<DotNetOptions> options, IFileSystem fileSystem, IPipelineState state, IDotNet dotnet) : IPipelineStep
+public class ReadProject(IPipelineLog log, IOptions<DotNetOptions> options, IFileSystem fileSystem, IPipelineState state, IDotNet dotnet) : IPipelineStep
 {
     /// <inheritdoc />
-    public string Name => "Extract project";
+    public string Name => "read project";
 
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
