@@ -36,10 +36,10 @@ public class DotNetPackagePipeline : Pipeline<DotNetPackageSettings>
         builder.AddJob("build", job => job
             .Requires(settings.Build.Project)
             .UseStep<CleanDirectories>()
-            .UseStep<DotNetFormatCheck>()
             .UseStep<ExtractDotNetProject>()
             .UseStep<ValidateNuGetVersion>()
             .UseStep<ValidateChangelog>()
+            .UseStep<DotNetFormatCheck>()
             .UseStep<DotNetRestore>()
             .UseStep<DotNetBuild>()
             .UseStep<DotNetTest>());

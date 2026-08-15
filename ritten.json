@@ -1,8 +1,8 @@
 {
-    "build": {
-        "project": "src/Ritten/Ritten.csproj"
-    },
-    "changelog": {
-        "repository": "https://github.com/ritten-org/Ritten"
-    }
+  "build": {
+    "project": "src/Ritten/Ritten.csproj"
+  },
+  "changelog": {
+    "repository": "https://github.com/ritten-org/Ritten"
+  }
 }

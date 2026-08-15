@@ -4,6 +4,7 @@
     <File Path=".github\workflows\ritten.yml" />
     <File Path="Directory.Packages.props" />
     <File Path="install-tool.sh" />
+    <File Path="ritten.json" />
   </Folder>
   <Project Path="src\Ritten\Ritten.csproj" />
   <Project Path="tests\Ritten.Tests\Ritten.Tests.csproj" />
