@@ -12,8 +12,8 @@ namespace Ritten.NuGet.Steps;
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's NuGet options.</param>
 /// <param name="nuget">The NuGet client.</param>
-[Step("release state", StepKind.Work)]
-public class DetermineReleaseState(IPipelineLog log, IOptions<NuGetOptions> options, INuGet nuget)
+[Step("nuget read", StepKind.Work)]
+public class NugetRead(IPipelineLog log, IOptions<NuGetOptions> options, INuGet nuget)
 {
     /// <summary>
     /// Reads the feed and classifies the given project's version.

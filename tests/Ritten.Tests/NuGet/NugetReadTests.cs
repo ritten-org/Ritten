@@ -13,13 +13,13 @@ namespace Ritten.Tests.NuGet;
 /// The classification is total: every version maps to a state, coherent or not, and nothing
 /// here fails on policy — judging belongs to <see cref="NugetValidate"/>.
 /// </summary>
-public class DetermineReleaseStateTests
+public class NugetReadTests
 {
     private readonly IPipelineLog _log = Substitute.For<IPipelineLog>();
     private readonly INuGet _nuget = Substitute.For<INuGet>();
     private readonly NuGetOptions _options = TestOptions.NuGet();
 
-    public DetermineReleaseStateTests()
+    public NugetReadTests()
     {
         Published();
     }
@@ -184,6 +184,6 @@ public class DetermineReleaseStateTests
         _nuget.GetPublishedVersions(Arg.Any<NuGetFeed>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns([.. versions.Select(NuGetVersion.Parse)]);
 
-    private DetermineReleaseState Step() =>
+    private NugetRead Step() =>
         new(_log, Options.Create(_options), _nuget);
 }

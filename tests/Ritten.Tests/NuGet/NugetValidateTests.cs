@@ -11,7 +11,7 @@ namespace Ritten.Tests.NuGet;
 
 /// <summary>
 /// The gate that stops a version being published twice: it judges the state
-/// <see cref="DetermineReleaseState"/> classified, without touching the feed itself.
+/// <see cref="NugetRead"/> classified, without touching the feed itself.
 /// </summary>
 public class NugetValidateTests
 {
