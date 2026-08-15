@@ -22,6 +22,11 @@ public record StepResult(int ExitCode, bool Continue, IReadOnlyCollection<Error>
     public static readonly StepResult StoppedAfterCancel = new(PipelineExitCodes.Cancelled, false, [new Error("Stopped after cancel.")]);
 
     /// <summary>
+    /// Indicates that the step found no work left for the job: the pipeline stops here, successfully.
+    /// </summary>
+    public static readonly StepResult NothingToDo = new(PipelineExitCodes.Success, false, null);
+
+    /// <summary>
     /// Indicates that the step failed with an error.
     /// </summary>
     public static StepResult Failed(Error error) => new(PipelineExitCodes.Failed, false, [error]);

@@ -10,10 +10,10 @@ namespace Ritten.Pipelines;
 /// <param name="log">The pipeline log.</param>
 /// <param name="prompt">The prompt used to ask.</param>
 /// <param name="state">The pipeline state.</param>
-public class Approve(PipelineJob job, IPipelineLog log, IPipelinePrompt prompt, IPipelineState state) : IPipelineStep
+public class ApprovalGate(PipelineJob job, IPipelineLog log, IPipelinePrompt prompt, IPipelineState state) : IPipelineStep
 {
     /// <inheritdoc />
-    public string Name => "request approval";
+    public string Name => "approval gate";
 
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)

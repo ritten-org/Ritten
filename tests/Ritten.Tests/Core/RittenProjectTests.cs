@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Ritten.Core;
+using Ritten.Pipelines;
 using Ritten.Pipelines.DotNet;
 
 namespace Ritten.Tests.Core;
@@ -120,6 +121,28 @@ public class RittenProjectTests : IDisposable
 
         settings.Build.Project.ShouldBe("src/Thing/Thing.csproj");
         settings.Build.Configuration.ShouldBe("Release");
+    }
+
+    [Fact]
+    public async Task GetSettings_ReadsEnumValuesAsCamelCaseStrings()
+    {
+        WriteRittenJson(_root, """{ "release": { "lines": "minor" } }""");
+
+        var settings = await GetSettings(_root);
+
+        settings.Release.Lines.ShouldBe(ReleaseLine.Minor);
+    }
+
+    [Fact]
+    public async Task GetSettings_RejectsAnUnrecognisedEnumValue()
+    {
+        WriteRittenJson(_root, """{ "release": { "lines": "patch" } }""");
+        var project = await RittenProject.Resolve(_root);
+
+        var settings = project.Value.ShouldNotBeNull().GetSettings<DotNetToolSettings>();
+
+        settings.IsError.ShouldBeTrue();
+        settings.Errors.ShouldHaveSingleItem().Cause.ShouldBeOfType<JsonException>();
     }
 
     [Fact]

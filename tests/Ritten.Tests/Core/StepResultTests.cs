@@ -29,6 +29,14 @@ public class StepResultTests
     }
 
     [Fact]
+    public void NothingToDo_StopsThePipelineSuccessfully()
+    {
+        StepResult.NothingToDo.IsFailure.ShouldBeFalse();
+        StepResult.NothingToDo.Continue.ShouldBeFalse();
+        StepResult.NothingToDo.Errors.ShouldBeNull();
+    }
+
+    [Fact]
     public void Failed_KeepsEveryErrorItWasGiven()
     {
         var result = StepResult.Failed([new Error("First."), new Error("Second.")]);

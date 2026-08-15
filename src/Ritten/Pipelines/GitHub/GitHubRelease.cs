@@ -57,7 +57,11 @@ public class GitHubRelease(
             return StepResult.Failed("Changelog entry not found in state.");
         }
 
-        await releases.Create(tag, tag, changelogs.RenderEntry(entry), cancellationToken);
+        // A backport must not displace the repository's real latest release.
+        var latestOverall = state.Get<ReleaseState>()?.LatestVersion;
+        var makeLatest = latestOverall is null || project.Version > latestOverall;
+
+        await releases.Create(tag, tag, changelogs.RenderEntry(entry), makeLatest, cancellationToken);
         return StepResult.Successful;
     }
 }

@@ -3,6 +3,7 @@ using NuGet.Versioning;
 using Ritten.Changelogs;
 using Ritten.Contracts;
 using Ritten.DotNet;
+using Ritten.Pipelines;
 using Ritten.Pipelines.GitHub;
 using Ritten.Runtimes.GitHubActions;
 using Ritten.Tests.Support;
@@ -31,7 +32,7 @@ public class GitHubReleaseTests
         await Step().Run(TestContext.Current.CancellationToken);
 
         await _releases.DidNotReceiveWithAnyArgs().Exists(default!, TestContext.Current.CancellationToken);
-        await _releases.DidNotReceiveWithAnyArgs().Create(default!, default!, default!, TestContext.Current.CancellationToken);
+        await _releases.DidNotReceiveWithAnyArgs().Create(default!, default!, default!, default, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -41,7 +42,7 @@ public class GitHubReleaseTests
 
         await Step().Run(TestContext.Current.CancellationToken);
 
-        await _releases.DidNotReceiveWithAnyArgs().Create(default!, default!, default!, TestContext.Current.CancellationToken);
+        await _releases.DidNotReceiveWithAnyArgs().Create(default!, default!, default!, default, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -49,7 +50,19 @@ public class GitHubReleaseTests
     {
         await Step().Run(TestContext.Current.CancellationToken);
 
-        await _releases.Received().Create("v1.2.0", "v1.2.0", "### Added\n\n- A thing.", Arg.Any<CancellationToken>());
+        await _releases.Received().Create("v1.2.0", "v1.2.0", "### Added\n\n- A thing.", true, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DoesNotMarkABackportAsTheLatestRelease()
+    {
+        // 1.2.0 shipping below 2.0.0 must not displace 2.0.0 as the repository's latest release.
+        _state.Get<ReleaseState>()
+            .Returns(ReleaseState.Releasable(NuGetVersion.Parse("1.1.0"), NuGetVersion.Parse("2.0.0")));
+
+        await Step().Run(TestContext.Current.CancellationToken);
+
+        await _releases.Received().Create("v1.2.0", "v1.2.0", Arg.Any<string>(), false, Arg.Any<CancellationToken>());
     }
 
     private void SetVersion(string version) =>

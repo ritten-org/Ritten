@@ -33,7 +33,65 @@ public class ChangelogValidateTests
         _options.RepositoryUrl = "https://github.com/example/repo";
         _state.Get<Project>()
             .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
+        _state.Get<ReleaseState>()
+            .Returns(ReleaseState.Releasable(null, null));
         _report.Section("Release").Returns(_releaseSection);
+    }
+
+    [Fact]
+    public async Task AtRest_NeedsNoEntryForTheCurrentVersion()
+    {
+        // Nothing is being released, so nothing has to be documented yet.
+        AtRest();
+        SetChangelog(
+            """
+            # Changelog
+
+            ## [1.1.0] - 2026-08-01
+
+            - An older change.
+
+            [1.1.0]: https://github.com/example/repo/releases/tag/v1.1.0
+            """);
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeFalse();
+        _releaseSection.Tone.ShouldBe(ReportTone.Success);
+        _state.DidNotReceive().Set(Arg.Any<ChangelogEntry>());
+    }
+
+    [Fact]
+    public async Task AtRest_StillKeepsTheLinksCorrect()
+    {
+        // The links are deterministic in every state, so drift is never allowed to accumulate.
+        AtRest();
+        SetChangelog(
+            """
+            # Changelog
+
+            ## [1.1.0] - 2026-08-01
+
+            - An older change.
+
+            [1.1.0]: https://github.com/example/repo/releases/tag/v1.0.0
+            """);
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeTrue();
+        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("links");
+    }
+
+    [Fact]
+    public async Task FailsWithoutTheReleaseStateInState()
+    {
+        _state.Get<ReleaseState>().Returns((ReleaseState?)null);
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeTrue();
+        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("Release state");
     }
 
     [Fact]
@@ -250,6 +308,9 @@ public class ChangelogValidateTests
 
     private void Version(string version) => _state.Get<Project>()
         .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse(version) });
+
+    private void AtRest() => _state.Get<ReleaseState>()
+        .Returns(ReleaseState.LatestInLine(NuGetVersion.Parse("1.1.0"), NuGetVersion.Parse("1.1.0")));
 
     private void SetChangelog(string content)
     {

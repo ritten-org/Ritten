@@ -19,9 +19,14 @@ internal class ReleaseService(IPipelineLog log, IOptions<GitHubOptions> options,
         }
     }
 
-    public async Task Create(string tag, string title, string notes, CancellationToken cancellationToken = default)
+    public async Task Create(string tag, string title, string notes, bool makeLatest = true, CancellationToken cancellationToken = default)
     {
-        await client.Repository.Release.Create(RepositoryId, new NewRelease(tag) { Name = title, Body = notes });
+        await client.Repository.Release.Create(RepositoryId, new NewRelease(tag)
+        {
+            Name = title,
+            Body = notes,
+            MakeLatest = makeLatest ? MakeLatestQualifier.True : MakeLatestQualifier.False
+        });
         log.Detail($"Created the GitHub release {title} for tag {tag}.");
     }
 

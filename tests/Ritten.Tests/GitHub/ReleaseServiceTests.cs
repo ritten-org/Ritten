@@ -36,10 +36,19 @@ public class ReleaseServiceTests
     [Fact]
     public async Task Create_CreatesTheReleaseForTheTag()
     {
-        await _service.Create("v1.0.0", "v1.0.0", "The notes.", TestContext.Current.CancellationToken);
+        await _service.Create("v1.0.0", "v1.0.0", "The notes.", cancellationToken: TestContext.Current.CancellationToken);
 
         await _client.Repository.Release.Received().Create(42, Arg.Is<NewRelease>(r =>
-            r.TagName == "v1.0.0" && r.Name == "v1.0.0" && r.Body == "The notes."));
+            r.TagName == "v1.0.0" && r.Name == "v1.0.0" && r.Body == "The notes." && r.MakeLatest == MakeLatestQualifier.True));
+    }
+
+    [Fact]
+    public async Task Create_LeavesABackportUnmarkedAsLatest()
+    {
+        await _service.Create("v1.0.0", "v1.0.0", "The notes.", makeLatest: false, TestContext.Current.CancellationToken);
+
+        await _client.Repository.Release.Received().Create(42, Arg.Is<NewRelease>(r =>
+            r.MakeLatest == MakeLatestQualifier.False));
     }
 
     [Fact]

@@ -3,6 +3,7 @@ using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.NuGet;
+using Ritten.Pipelines;
 using Ritten.Pipelines.NuGet;
 using Ritten.Reporting;
 using Ritten.Tests.Support;
@@ -10,8 +11,7 @@ using Ritten.Tests.Support;
 namespace Ritten.Tests.Pipelines;
 
 /// <summary>
-/// The gate that stops a version being published twice. Pushing to a feed can't be undone — a
-/// version can be delisted but never unpublished — so this is the check that most needs to hold.
+/// The gate that stops a version being published twice.
 /// </summary>
 public class NugetValidateTests
 {
@@ -30,28 +30,100 @@ public class NugetValidateTests
     }
 
     [Fact]
-    public async Task FailsWhenTheVersionIsAlreadyPublished()
+    public async Task PassesAtRestWhenTheVersionIsTheLatestPublished()
     {
+        // Nothing is staged to release; new work accrues under [Unreleased] until a release is prepared.
         Published("1.0.0", "1.1.0", "1.2.0");
 
         var result = await Step().Run(TestContext.Current.CancellationToken);
 
+        result.IsFailure.ShouldBeFalse();
+        _state.Received().Set(Arg.Is<ReleaseState>(s => s.Kind == ReleaseStateKind.LatestInLine));
+        _releaseSection.Tone.ShouldBe(ReportTone.Success);
+        _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("latest published version");
+    }
+
+    [Fact]
+    public async Task PassesAtRestAtTheTipOfAnOlderLine()
+    {
+        // A release branch sitting at its line's tip is at rest, even with a newer major out.
+        Published("1.2.0", "2.0.0");
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeFalse();
+        _state.Received().Set(Arg.Is<ReleaseState>(s => s.Kind == ReleaseStateKind.LatestInLine));
+        _releaseSection.Tone.ShouldBe(ReportTone.Success);
+        _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("latest overall");
+    }
+
+    [Fact]
+    public async Task FailsWhenThePublishedVersionIsBehindItsOwnLine()
+    {
+        // 1.2.0 shipped, then the version was wound back while 1.3.0 went out: incoherent.
+        Published("1.2.0", "1.3.0");
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
         result.IsFailure.ShouldBeTrue();
-        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("1.2.0");
+        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("1.3.0");
         _releaseSection.Tone.ShouldBe(ReportTone.Failure);
         _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("already published");
     }
 
     [Fact]
-    public async Task FailsWhenTheVersionIsBehindTheLatestPublished()
+    public async Task AllowsABackportToAnOlderMajorLine()
     {
+        // 2.0.0 being out doesn't stop a security fix shipping to the 1.x line.
         Published("1.0.0", "2.0.0");
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeFalse();
+        _state.Received().Set(Arg.Is<ReleaseState>(s =>
+            s.Kind == ReleaseStateKind.Releasable && s.LatestVersionInLine == NuGetVersion.Parse("1.0.0")));
+        _releaseSection.Tone.ShouldBe(ReportTone.Success);
+        _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("backport");
+    }
+
+    [Fact]
+    public async Task FailsWhenTheVersionIsBehindItsOwnLine()
+    {
+        Published("1.0.0", "1.5.0");
 
         var result = await Step().Run(TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeTrue();
         _releaseSection.Tone.ShouldBe(ReportTone.Failure);
-        _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("2.0.0");
+        _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("1.5.0");
+    }
+
+    [Fact]
+    public async Task BlocksAnOlderMinorByDefault()
+    {
+        // Under SemVer, 1.2.6 with 1.3.4 out is a fix nobody needs — take 1.3.5 instead.
+        _state.Get<Project>().Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.6") });
+        Published("1.2.5", "1.3.4");
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeTrue();
+        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("1.3.4");
+    }
+
+    [Fact]
+    public async Task AllowsAnOlderMinorWhenLinesAreScopedToMinor()
+    {
+        // For projects that treat the major as a product version, minors are the real lines.
+        _options.Lines = ReleaseLine.Minor;
+        _state.Get<Project>().Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.6") });
+        Published("1.2.5", "1.3.4");
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeFalse();
+        _state.Received().Set(Arg.Is<ReleaseState>(s =>
+            s.Kind == ReleaseStateKind.Releasable && s.LatestVersionInLine == NuGetVersion.Parse("1.2.5")));
     }
 
     [Fact]
@@ -85,6 +157,8 @@ public class NugetValidateTests
         var result = await Step().Run(TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
+        _state.Received().Set(Arg.Is<ReleaseState>(s =>
+            s.Kind == ReleaseStateKind.Releasable && s.LatestVersionInLine == NuGetVersion.Parse("1.1.0")));
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
         _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("1.1.0");
     }
@@ -97,21 +171,10 @@ public class NugetValidateTests
         var result = await Step().Run(TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
+        _state.Received().Set(Arg.Is<ReleaseState>(s =>
+            s.Kind == ReleaseStateKind.Releasable && s.LatestVersionInLine == null && s.LatestVersion == null));
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
         _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("first published version");
-    }
-
-    [Fact]
-    public async Task SkipsTheCheckEntirelyWhenAskedTo()
-    {
-        // Dependabot can't bump a version, so its pull requests opt out.
-        _options.SkipVersionCheck = true;
-
-        var result = await Step().Run(TestContext.Current.CancellationToken);
-
-        result.IsFailure.ShouldBeFalse();
-        await _nuget.DidNotReceive().GetPublishedVersions(
-            Arg.Any<NuGetFeed>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

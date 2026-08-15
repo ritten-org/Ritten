@@ -35,16 +35,15 @@ public class ChangelogValidate(
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        if (options.Value.Skip)
-        {
-            log.Skipped("Skipping changelog check.");
-            return StepResult.Successful;
-        }
-
         var project = state.Get<Project>();
         if (project == null)
         {
             return StepResult.Failed("Project info not found in state.");
+        }
+
+        if (state.Get<ReleaseState>() is not { } releaseState)
+        {
+            return StepResult.Failed("Release state not found in state.");
         }
 
         var changelogFile = fileSystem.ProjectRoot.GetFile(options.Value.File);
@@ -56,24 +55,28 @@ public class ChangelogValidate(
 
         var changelog = await changelogs.Read(changelogFile, cancellationToken);
 
-        // A prerelease ships whatever is in [Unreleased]; a release needs an entry of its own.
-        // One or the other, never both — nothing writes a versioned heading before it ships.
-        var entry = project.IsPrerelease ? changelog.Unreleased : changelog.Entry(project.Version);
-        if (entry == null)
+        ChangelogEntry? entry = null;
+        if (releaseState.Kind == ReleaseStateKind.Releasable)
         {
-            report.Section("Release").Failure(project.IsPrerelease
-                ? "Missing [Unreleased] changelog entry."
-                : $"Missing changelog entry for **{project.Version}**.");
+            // A prerelease ships whatever is in [Unreleased]; a release needs an entry of its own.
+            // One or the other, never both — nothing writes a versioned heading before it ships.
+            entry = project.IsPrerelease ? changelog.Unreleased : changelog.Entry(project.Version);
+            if (entry == null)
+            {
+                report.Section("Release").Failure(project.IsPrerelease
+                    ? "Missing [Unreleased] changelog entry."
+                    : $"Missing changelog entry for **{project.Version}**.");
 
-            return StepResult.Failed(project.IsPrerelease
-                ? $"No [Unreleased] changelog entry found in {options.Value.File}."
-                : $"No changelog entry found for version {project.Version} in {options.Value.File}.");
-        }
+                return StepResult.Failed(project.IsPrerelease
+                    ? $"No [Unreleased] changelog entry found in {options.Value.File}."
+                    : $"No changelog entry found for version {project.Version} in {options.Value.File}.");
+            }
 
-        if (entry.IsEmpty)
-        {
-            report.Section("Release").Failure($"The changelog entry for **{project.Version}** is empty.");
-            return StepResult.Failed($"Changelog entry for version {project.Version} is empty.");
+            if (entry.IsEmpty)
+            {
+                report.Section("Release").Failure($"The changelog entry for **{project.Version}** is empty.");
+                return StepResult.Failed($"Changelog entry for version {project.Version} is empty.");
+            }
         }
 
         if (!string.IsNullOrEmpty(options.Value.RepositoryUrl))
@@ -95,6 +98,12 @@ public class ChangelogValidate(
             }
         }
 
+        if (releaseState.Kind == ReleaseStateKind.LatestInLine)
+        {
+            report.Section("Release").Success("New changes accrue under **[Unreleased]** until a release is prepared.");
+            log.Detail("This version is the latest in its line; no changelog entry required.");
+            return StepResult.Successful;
+        }
 
         // CreateGitHubRelease reads this for the release notes.
         state.Set(entry);

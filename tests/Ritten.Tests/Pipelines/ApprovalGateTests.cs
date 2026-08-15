@@ -5,13 +5,13 @@ using Ritten.Pipelines;
 
 namespace Ritten.Tests.Pipelines;
 
-public class ApproveTests
+public class ApprovalGateTests
 {
     private readonly IPipelineLog _log = Substitute.For<IPipelineLog>();
     private readonly IPipelinePrompt _prompt = Substitute.For<IPipelinePrompt>();
     private readonly IPipelineState _state = Substitute.For<IPipelineState>();
 
-    public ApproveTests()
+    public ApprovalGateTests()
     {
         _prompt.IsInteractive.Returns(true);
         _prompt.Confirm(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
@@ -82,6 +82,6 @@ public class ApproveTests
         await _prompt.DidNotReceive().Confirm(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    private Approve Step(bool dryRun = false, bool autoApprove = false) =>
+    private ApprovalGate Step(bool dryRun = false, bool autoApprove = false) =>
         new(new PipelineJob("Test", "deploy", dryRun, autoApprove), _log, _prompt, _state);
 }

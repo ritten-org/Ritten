@@ -15,9 +15,9 @@ internal class DryRunReleaseService(IPipelineLog log) : IReleaseService
     }
 
     /// <inheritdoc />
-    public Task Create(string tag, string title, string notes, CancellationToken cancellationToken = default)
+    public Task Create(string tag, string title, string notes, bool makeLatest = true, CancellationToken cancellationToken = default)
     {
-        log.Skipped($"Would create the GitHub release {title} for tag {tag}.");
+        log.Skipped($"Would create the GitHub release {title} for tag {tag}, {(makeLatest ? "marked latest" : "not marked latest")}.");
         return Task.CompletedTask;
     }
 }
