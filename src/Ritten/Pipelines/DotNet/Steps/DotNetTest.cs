@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
+using Ritten.Core;
 using Ritten.DotNet;
 using Ritten.Reporting;
 
@@ -59,15 +60,22 @@ public class DotNetTest(
         if (result.Failures.Count == 0)
         {
             report.Section("Tests").Failure("`dotnet test` failed — check the build logs for details.");
-        }
-        else
-        {
-            report.Section("Tests")
-                .Failure($"**{result.Failed}** {(result.Failed == 1 ? "test" : "tests")} failed ({result.Passed} passed, {result.Skipped} skipped).")
-                .Details("Failed tests", DescribeFailures(result.Failures));
+            return StepResult.Failed("Tests failed. Re-run with --verbose to see the output.");
         }
 
-        return StepResult.Failed("Tests failed.");
+        var summary = $"{result.Failed} {(result.Failed == 1 ? "test" : "tests")} failed ({result.Passed} passed, {result.Skipped} skipped)";
+        report.Section("Tests")
+            .Failure($"**{result.Failed}** {(result.Failed == 1 ? "test" : "tests")} failed ({result.Passed} passed, {result.Skipped} skipped).")
+            .Details("Failed tests", DescribeFailures(result.Failures));
+
+        return StepResult.Failed([
+            new Error($"{summary}:"),
+            .. result.Failures.Take(MaxFailures).Select(f => new Error(
+                f.Message.Length > 0 ? $"{f.TestName}: {f.Message}" : f.TestName)),
+            .. result.Failures.Count > MaxFailures
+                ? new[] { new Error($"…and {result.Failures.Count - MaxFailures} more") }
+                : []
+        ]);
     }
 
     private static string DescribeFailures(IReadOnlyList<TestFailure> failures)

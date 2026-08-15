@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
+using Ritten.Core;
 using Ritten.DotNet;
 using Ritten.Reporting;
 
@@ -36,17 +37,19 @@ public class DotNetFormatCheck(
             return StepResult.Successful;
         }
 
-        if (result.UnformattedFiles.Count > 0)
-        {
-            report.Section("Formatting").Failure(
-                $"{result.UnformattedFiles.Count} {(result.UnformattedFiles.Count == 1 ? "file isn't" : "files aren't")} formatted — run `dotnet format` and commit the result:\n" +
-                string.Join('\n', result.UnformattedFiles.Select(f => $"- `{f}`")));
-        }
-        else
+        if (result.UnformattedFiles.Count == 0)
         {
             report.Section("Formatting").Failure("`dotnet format --verify-no-changes` failed — check the build logs for details.");
+            return StepResult.Failed("Formatting check failed. Re-run with --verbose to see the output.");
         }
 
-        return StepResult.Failed("Code formatting check failed.");
+        var summary = $"{result.UnformattedFiles.Count} {(result.UnformattedFiles.Count == 1 ? "file isn't" : "files aren't")} formatted — run `dotnet format` and commit the result";
+        report.Section("Formatting").Failure(
+            $"{summary}:\n" + string.Join('\n', result.UnformattedFiles.Select(f => $"- `{f}`")));
+
+        return StepResult.Failed([
+            new Error($"{summary}:"),
+            .. result.UnformattedFiles.Select(f => new Error(f))
+        ]);
     }
 }

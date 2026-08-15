@@ -86,7 +86,10 @@ public class ValidateChangelog(
                 var block = string.Join('\n', expected.Select(l => l.ToMarkdown()));
                 report.Section("Release")
                     .Failure($"The version links in `{options.Value.File}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
-                return StepResult.Failed($"Changelog version links in {options.Value.File} are missing or out of date.");
+
+                return StepResult.Failed(
+                    $"The version links in {options.Value.File} are missing or out of date. " +
+                    $"Replace the link block at the bottom of the file with:\n\n{block}");
             }
         }
 
