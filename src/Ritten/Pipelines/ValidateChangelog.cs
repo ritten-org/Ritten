@@ -50,24 +50,28 @@ public class ValidateChangelog(
         var changelogFile = fileSystem.ProjectRoot.GetFile(options.Value.File);
         if (!changelogFile.Exists)
         {
-            report.Section("Release").Failure($"The changelog file `{options.Value.File}` does not exist.");
+            report.Section("Release").Failure("The changelog file does not exist.");
             return StepResult.Failed($"Could not find changelog file '{options.Value.File}'.");
         }
 
         var changelog = await changelogs.Read(changelogFile, cancellationToken);
 
         var isPrerelease = project.Version.IsPrerelease || project.Version < NuGetVersion.Parse("1.0.0");
-        var entry = isPrerelease ? changelog.Unreleased : changelog.Entry(project.Version);
-        if (entry is null)
+        if (isPrerelease)
         {
-            report.Section("Release").Failure($"There's no changelog entry for **{project.Version}** in `{options.Value.File}`.");
-            return StepResult.Failed($"No changelog entry found for version {project.Version} in {options.Value.File}.");
+            if (changelog.Unreleased == null)
+            {
+                report.Section("Release").Failure("Missing [Unreleased] changelog entry for pre-release version.");
+                return StepResult.Failed($"No changelog entry found for prerelease version {project.Version} in {options.Value.File}.");
+            }
+            state.Set(changelog.Unreleased);
         }
 
-        if (entry.IsEmpty)
+        var entry = changelog.Entry(project.Version);
+        if (entry == null)
         {
-            report.Section("Release").Failure($"The changelog entry for **{project.Version}** is empty.");
-            return StepResult.Failed($"Changelog entry for version {project.Version} is empty.");
+            report.Section("Release").Failure($"Missing changelog entry for **{project.Version}**.");
+            return StepResult.Failed($"No changelog entry found for version {project.Version} in {options.Value.File}.");
         }
 
         if (!string.IsNullOrEmpty(options.Value.RepositoryUrl))
@@ -83,7 +87,7 @@ public class ValidateChangelog(
             }
         }
 
-        state.Set(entry);
+
         report.Section("Release").Success($"Changelog entry for **{project.Version}** is present.");
         log.Detail($"Found changelog entry for {project.Version}.");
         return StepResult.Successful;

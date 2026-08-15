@@ -2,7 +2,6 @@ using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.NuGet;
-using Ritten.Pipelines.DotNet;
 using Ritten.Pipelines.DotNet.Steps;
 using Ritten.Reporting;
 
@@ -15,14 +14,12 @@ namespace Ritten.Pipelines.NuGet;
 /// </summary>
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's NuGet options.</param>
-/// <param name="dotnet">The pipeline's .NET options.</param>
 /// <param name="state">The pipeline state.</param>
 /// <param name="report">The build report.</param>
 /// <param name="nuget">The NuGet client.</param>
 public class ValidateNuGetVersion(
     IPipelineLog log,
     IOptions<NuGetOptions> options,
-    IOptions<DotNetOptions> dotnet,
     IPipelineState state,
     IBuildReport report,
     INuGet nuget
@@ -52,7 +49,7 @@ public class ValidateNuGetVersion(
         if (versions.Any(v => v == project.Version))
         {
             report.Section("Release")
-                .Failure($"Version **{project.Version}** is already published on the feed — bump `<Version>` in `{dotnet.Value.ProjectFile}`.");
+                .Failure($"Version **{project.Version}** is already published on the feed. Bump `<Version>` in the project file.");
             return StepResult.Failed($"Package version {project.Version} already exists on the feed.");
         }
 
@@ -60,7 +57,7 @@ public class ValidateNuGetVersion(
         if (latestVersion != null && project.Version <= latestVersion)
         {
             report.Section("Release")
-                .Failure($"Version **{project.Version}** isn't greater than the latest published version **{latestVersion}** — bump `<Version>` in `{dotnet.Value.ProjectFile}`.");
+                .Failure($"Version **{project.Version}** isn't greater than the latest published version **{latestVersion}**. Bump `<Version>` in the project file.");
             return StepResult.Failed($"Project version {project.Version} is not greater than the latest version {latestVersion}.");
         }
 
