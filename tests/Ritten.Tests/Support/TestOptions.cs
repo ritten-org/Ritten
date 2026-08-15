@@ -1,14 +1,12 @@
-using Ritten.Pipelines;
-using Ritten.Pipelines.DotNet;
-using Ritten.Pipelines.Git;
-using Ritten.Pipelines.NuGet;
+using Ritten.Changelogs;
+using Ritten.DotNet;
+using Ritten.Git;
+using Ritten.NuGet;
 
 namespace Ritten.Tests.Support;
 
 public static class TestOptions
 {
-    public static PipelineOptions Pipeline() => new();
-
     public static DotNetOptions DotNet() => new() { ProjectFile = "src/My.Package/My.Package.csproj" };
 
     public static ChangelogOptions Changelog() => new();

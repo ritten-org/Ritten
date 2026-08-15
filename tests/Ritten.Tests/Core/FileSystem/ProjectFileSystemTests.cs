@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Ritten.Core;
 using Ritten.Core.FileSystem;
 
@@ -12,7 +13,7 @@ public class ProjectFileSystemTests
         var directory = Directory.GetCurrentDirectory();
 
         // Act
-        var fileSystem = new ProjectFileSystem(Project(directory));
+        var fileSystem = new ProjectFileSystem(Project(directory), Options.Create(new PipelineOptions()));
 
         // Assert
         fileSystem.ProjectRoot.AbsolutePath.ShouldBe(directory);
@@ -22,7 +23,7 @@ public class ProjectFileSystemTests
     public void ProjectRoot_IsAbsolute()
     {
         // Act
-        var fileSystem = new ProjectFileSystem(Project("."));
+        var fileSystem = new ProjectFileSystem(Project("."), Options.Create(new PipelineOptions()));
 
         // Assert
         Path.IsPathRooted(fileSystem.ProjectRoot.AbsolutePath).ShouldBeTrue();

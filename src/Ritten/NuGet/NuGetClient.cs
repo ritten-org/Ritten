@@ -5,7 +5,6 @@ using NuGet.Versioning;
 using Ritten.Commands;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
-using Ritten.Extensions;
 
 namespace Ritten.NuGet;
 

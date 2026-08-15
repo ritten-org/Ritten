@@ -26,4 +26,9 @@ public record TestArgs
     /// The directory TRX results are written to and read back from; created if it doesn't exist.
     /// </summary>
     public required IDirectory ResultsDirectory { get; init; }
+
+    /// <summary>
+    /// Collects code coverage while the tests run, via the coverlet collector.
+    /// </summary>
+    public bool CollectCoverage { get; init; }
 }

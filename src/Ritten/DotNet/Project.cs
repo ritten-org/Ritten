@@ -5,7 +5,7 @@ namespace Ritten.DotNet;
 /// <summary>
 /// The package information extracted from a .NET project file.
 /// </summary>
-public class Project
+public record Project
 {
     /// <summary>
     /// The package ID of the project.
@@ -16,6 +16,11 @@ public class Project
     /// The package version of the project.
     /// </summary>
     public required NuGetVersion Version { get; init; }
+
+    /// <summary>
+    /// The repository's web URL.
+    /// </summary>
+    public string? Repository { get; init; }
 
     /// <summary>
     /// Whether this version is a prerelease.

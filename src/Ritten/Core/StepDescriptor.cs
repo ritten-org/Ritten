@@ -17,16 +17,18 @@ internal sealed class StepDescriptor
     }
 
     private readonly MethodInfo _run;
-    private readonly PropertyInfo _taskResult;
+    private readonly bool _asynchronous;
+    private readonly PropertyInfo? _taskResult;
     private readonly IReadOnlyList<(Type Type, ParameterSource Source)> _parameters;
 
-    private StepDescriptor(Type stepType, StepAttribute metadata, MethodInfo run, Type? produces, IReadOnlyList<(Type Type, ParameterSource Source)> parameters)
+    private StepDescriptor(Type stepType, StepAttribute metadata, MethodInfo run, bool asynchronous, Type? produces, IReadOnlyList<(Type Type, ParameterSource Source)> parameters)
     {
         StepType = stepType;
         Produces = produces;
         _run = run;
+        _asynchronous = asynchronous;
         _parameters = parameters;
-        _taskResult = run.ReturnType.GetProperty(nameof(Task<>.Result))!;
+        _taskResult = asynchronous ? run.ReturnType.GetProperty(nameof(Task<>.Result)) : null;
 
         Step = new JobStep(
             metadata.Name,
@@ -70,29 +72,23 @@ internal sealed class StepDescriptor
             return Result.Error($"{stepType.Name} must declare exactly one public Run method.");
         }
 
+        // A step with nothing to await returns its result directly, like a minimal API handler.
         var run = runs[0];
-        var returned = run.ReturnType;
-        Type? produces = null;
-        if (returned.IsGenericType && returned.GetGenericTypeDefinition() == typeof(Task<>))
+        var payload = run.ReturnType;
+        var asynchronous = payload.IsGenericType && payload.GetGenericTypeDefinition() == typeof(Task<>);
+        if (asynchronous)
         {
-            var payload = returned.GetGenericArguments()[0];
-            if (payload.IsGenericType && payload.GetGenericTypeDefinition() == typeof(StepResult<>))
-            {
-                produces = payload.GetGenericArguments()[0];
-            }
-            else if (payload != typeof(StepResult))
-            {
-                returned = typeof(void);
-            }
-        }
-        else
-        {
-            returned = typeof(void);
+            payload = payload.GetGenericArguments()[0];
         }
 
-        if (returned == typeof(void))
+        Type? produces = null;
+        if (payload.IsGenericType && payload.GetGenericTypeDefinition() == typeof(StepResult<>))
         {
-            return Result.Error($"{stepType.Name}.Run must return Task<StepResult> or Task<StepResult<T>>.");
+            produces = payload.GetGenericArguments()[0];
+        }
+        else if (payload != typeof(StepResult))
+        {
+            return Result.Error($"{stepType.Name}.Run must return StepResult, StepResult<T>, Task<StepResult>, or Task<StepResult<T>>.");
         }
 
         var nullability = new NullabilityInfoContext();
@@ -100,7 +96,7 @@ internal sealed class StepDescriptor
             .Select(parameter => (parameter.ParameterType, Classify(parameter, nullability)))
             .ToList();
 
-        return new StepDescriptor(stepType, metadata, run, produces, parameters);
+        return new StepDescriptor(stepType, metadata, run, asynchronous, produces, parameters);
     }
 
 
@@ -127,10 +123,10 @@ internal sealed class StepDescriptor
             };
         }
 
-        Task task;
+        object result;
         try
         {
-            task = (Task)_run.Invoke(step, arguments)!;
+            result = _run.Invoke(step, arguments)!;
         }
         catch (TargetInvocationException exception) when (exception.InnerException is not null)
         {
@@ -138,9 +134,13 @@ internal sealed class StepDescriptor
             throw;
         }
 
-        await task;
+        if (_asynchronous)
+        {
+            var task = (Task)result;
+            await task;
+            result = _taskResult!.GetValue(task)!;
+        }
 
-        var result = _taskResult.GetValue(task)!;
         if (result is IProducedResult production)
         {
             if (production.Value is { } value)

@@ -3,7 +3,7 @@ using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.DotNet;
-using Ritten.Pipelines.DotNet;
+using Ritten.Pipelines;
 using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Core;
@@ -66,7 +66,7 @@ public class PipelineHostTests
         var builder = PipelineHostBuilderHelpers.Create();
         builder.AddJob("deploy", job => job
             .Requires(settings.Build.Project)
-            .Requires(settings.Changelog.Repository));
+            .Requires(settings.Repository));
 
         // Act
         var result = builder.Build("deploy");
@@ -75,7 +75,7 @@ public class PipelineHostTests
         result.IsError.ShouldBeTrue();
         result.Errors.Select(e => e.Message).ShouldBe([
             "'build.project' not set in ritten.json.",
-            "'changelog.repository' not set in ritten.json."
+            "'repository' not set in ritten.json."
         ]);
     }
 
@@ -184,8 +184,8 @@ class ProbeStep(StepProbe probe)
 [Step("failing", StepKind.Work)]
 class FailingStep
 {
-    public Task<StepResult> Run(CancellationToken cancellationToken) =>
-        Task.FromResult(StepResult.Failed("Nope."));
+    // Synchronous on purpose: the failing-step test also covers the sync convention end to end.
+    public StepResult Run() => StepResult.Failed("Nope.");
 }
 
 [Step("first", StepKind.Work)]

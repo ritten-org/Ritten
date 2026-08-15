@@ -27,7 +27,7 @@ public class DotNetClientTests
         var project = await _client.ReadProject(ProjectFile("/repo/src/My.Package.csproj"), TestContext.Current.CancellationToken);
 
         _commands.Executed.ShouldHaveSingleItem().Arguments
-            .ShouldBe(["msbuild", "/repo/src/My.Package.csproj", "-getProperty:PackageId", "-getProperty:Version"]);
+            .ShouldBe(["msbuild", "/repo/src/My.Package.csproj", "-getProperty:PackageId", "-getProperty:Version", "-getProperty:RepositoryUrl"]);
         project.IsSuccess.ShouldBeTrue();
         project.Value.Name.ShouldBe("My.Package");
         project.Value.Version.ShouldBe(NuGetVersion.Parse("1.2.3-beta.1"));

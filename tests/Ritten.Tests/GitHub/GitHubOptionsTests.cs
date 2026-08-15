@@ -1,4 +1,4 @@
-using Ritten.Runtimes.GitHubActions;
+using Ritten.GitHub;
 
 namespace Ritten.Tests.GitHub;
 
@@ -14,7 +14,10 @@ public class GitHubOptionsTests
             ["GITHUB_REF"] = "refs/pull/42/merge",
             ["GITHUB_WORKFLOW"] = "My Workflow",
             ["GITHUB_ACTIONS"] = "true",
-            ["GITHUB_STEP_SUMMARY"] = "/tmp/summary.md"
+            ["GITHUB_STEP_SUMMARY"] = "/tmp/summary.md",
+            ["GITHUB_SERVER_URL"] = "https://github.com",
+            ["GITHUB_REPOSITORY"] = "example/repo",
+            ["GITHUB_RUN_ID"] = "987654"
         });
 
         options.Token.ShouldBe("token-1");
@@ -24,6 +27,19 @@ public class GitHubOptionsTests
         options.WorkflowName.ShouldBe("My Workflow");
         options.IsEnabled.ShouldBeTrue();
         options.SummaryFile.ShouldBe("/tmp/summary.md");
+        options.RunUrl.ShouldBe("https://github.com/example/repo/actions/runs/987654");
+    }
+
+    [Fact]
+    public void ConfigureFromEnvironment_LeavesTheRunUrlNullWhenAnyPartIsMissing()
+    {
+        var options = Configure(new Dictionary<string, string>
+        {
+            ["GITHUB_SERVER_URL"] = "https://github.com",
+            ["GITHUB_REPOSITORY"] = "example/repo"
+        });
+
+        options.RunUrl.ShouldBeNull();
     }
 
     [Fact]
@@ -66,6 +82,7 @@ public class GitHubOptionsTests
         options.WorkflowName.ShouldBe("Pipeline");
         options.IsEnabled.ShouldBeFalse();
         options.SummaryFile.ShouldBeNull();
+        options.RunUrl.ShouldBeNull();
     }
 
     [Fact]
@@ -87,7 +104,8 @@ public class GitHubOptionsTests
             RepositoryId = 99,
             PullRequestNumber = 7,
             IsEnabled = true,
-            SummaryFile = "/stale/summary.md"
+            SummaryFile = "/stale/summary.md",
+            RunUrl = "https://github.com/example/repo/actions/runs/1"
         };
 
         GitHubOptions.ConfigureFromEnvironment(options, _ => null);
@@ -97,6 +115,7 @@ public class GitHubOptionsTests
         options.PullRequestNumber.ShouldBeNull();
         options.IsEnabled.ShouldBeFalse();
         options.SummaryFile.ShouldBeNull();
+        options.RunUrl.ShouldBeNull();
     }
 
     [Fact]

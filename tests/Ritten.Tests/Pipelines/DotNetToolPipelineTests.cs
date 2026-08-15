@@ -1,6 +1,6 @@
 using Ritten.Contracts;
 using Ritten.Core;
-using Ritten.Pipelines.DotNet;
+using Ritten.Pipelines;
 using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Pipelines;
@@ -17,6 +17,7 @@ public class DotNetToolPipelineTests
     };
 
     [Theory]
+    [InlineData("status")]
     [InlineData("build")]
     [InlineData("check")]
     [InlineData("deploy")]
@@ -48,6 +49,7 @@ public class DotNetToolPipelineTests
     }
 
     [Theory]
+    [InlineData("status")]
     [InlineData("check")]
     [InlineData("deploy")]
     public void ShippingJobs_RequireAProject(string job)

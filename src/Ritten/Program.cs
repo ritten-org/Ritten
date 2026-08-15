@@ -1,8 +1,8 @@
 using System.CommandLine;
 using Ritten.Contracts;
 using Ritten.Core;
-using Ritten.Pipelines.DotNet;
-using Ritten.Runtimes.GitHubActions;
+using Ritten.GitHub;
+using Ritten.Pipelines;
 
 var verbose = new Option<bool>($"--{PipelineArguments.Verbose}", "-v")
 {
@@ -34,6 +34,7 @@ var root = new RootCommand("The Ritten build pipeline.")
     quiet,
     dryRun,
     autoApprove,
+    Job("status", "Reports where the project stands: version, release state, and changelog."),
     Job("build", "Compiles and tests, without any release validation."),
     Job("check", "Validates a pull request: formatting, version, changelog, compile, tests, and pack."),
     Job("deploy", "Validates, packs, tags, creates the GitHub release, and publishes to NuGet.")

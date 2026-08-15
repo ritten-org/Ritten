@@ -4,6 +4,16 @@ namespace Ritten.Git;
 
 internal class GitClient(ICommandRunner commands) : IGit
 {
+    public async Task<string?> GetRemoteUrl(string remote, CancellationToken cancellationToken = default)
+    {
+        var result = await commands.Run(
+            Command.Create("git").WithArguments("remote", "get-url", remote),
+            cancellationToken);
+        return result.IsSuccess && !string.IsNullOrWhiteSpace(result.StandardOutput)
+            ? result.StandardOutput.Trim()
+            : null;
+    }
+
     public async Task<bool> TagExists(string tag, CancellationToken cancellationToken = default)
     {
         var result = await commands.Run(

@@ -3,19 +3,14 @@ using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Changelogs;
 using Ritten.Commands;
-using Ritten.Core.Settings;
 using Ritten.DotNet;
-using Ritten.Extensions;
 using Ritten.Git;
+using Ritten.GitHub;
 using Ritten.NuGet;
 using Ritten.Pipelines;
-using Ritten.Pipelines.DotNet;
-using Ritten.Pipelines.Git;
-using Ritten.Pipelines.NuGet;
+using Ritten.Releases;
 using Ritten.Reporting;
 using Ritten.Reporting.Sinks;
-using Ritten.Runtimes;
-using Ritten.Runtimes.GitHubActions;
 
 namespace Ritten.Tests.Extensions;
 
@@ -23,8 +18,9 @@ public class ServiceCollectionExtensionsTests
 {
     private static readonly DotNetToolSettings Settings = new()
     {
+        Repository = "https://example.com/thing",
         Build = new DotNetBuildSettings { Project = "src/Thing/Thing.csproj", Configuration = "Debug" },
-        Changelog = new ChangelogSettings { File = "HISTORY.md", Repository = "https://example.com/thing" },
+        Changelog = new ChangelogSettings { File = "HISTORY.md" },
         Release = new ReleaseSettings { TagPrefix = "release-", Feed = "https://example.com/index.json" }
     };
 
@@ -97,7 +93,7 @@ public class ServiceCollectionExtensionsTests
     public void EachCapability_MapsOnlyItsOwnSliceOfTheSettings()
     {
         var provider = Services()
-            .AddDotNet(Settings.Build)
+            .AddDotNet(Settings.Build, Settings.Repository)
             .AddChangelogs(Settings.Changelog)
             .AddGit(Settings.Release.TagPrefix)
             .AddNuGet(Settings.Release.Feed, ReleaseLine.Major)
@@ -105,8 +101,8 @@ public class ServiceCollectionExtensionsTests
 
         provider.GetRequiredService<IOptions<DotNetOptions>>().Value.ProjectFile.ShouldBe("src/Thing/Thing.csproj");
         provider.GetRequiredService<IOptions<DotNetOptions>>().Value.Configuration.ShouldBe("Debug");
+        provider.GetRequiredService<IOptions<DotNetOptions>>().Value.Repository.ShouldBe("https://example.com/thing");
         provider.GetRequiredService<IOptions<ChangelogOptions>>().Value.File.ShouldBe("HISTORY.md");
-        provider.GetRequiredService<IOptions<ChangelogOptions>>().Value.RepositoryUrl.ShouldBe("https://example.com/thing");
         provider.GetRequiredService<IOptions<GitOptions>>().Value.TagPrefix.ShouldBe("release-");
         provider.GetRequiredService<IOptions<NuGetOptions>>().Value.Feed.ShouldBe("https://example.com/index.json");
     }

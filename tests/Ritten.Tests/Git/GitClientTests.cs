@@ -37,6 +37,22 @@ public class GitClientTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task GetRemoteUrl_ReturnsTheRemotesUrl()
+    {
+        var url = await _git.GetRemoteUrl("origin", TestContext.Current.CancellationToken);
+
+        url.ShouldBe(_remote);
+    }
+
+    [Fact]
+    public async Task GetRemoteUrl_IsNullWhenTheRemoteDoesNotExist()
+    {
+        var url = await _git.GetRemoteUrl("nowhere", TestContext.Current.CancellationToken);
+
+        url.ShouldBeNull();
+    }
+
+    [Fact]
     public async Task TagExists_IsFalseForAMissingTag()
     {
         (await _git.TagExists("v9.9.9", TestContext.Current.CancellationToken)).ShouldBeFalse();

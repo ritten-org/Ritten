@@ -8,6 +8,10 @@ namespace Ritten.Git;
 internal class DryRunGit(IPipelineLog log, IGit inner) : IGit
 {
     /// <inheritdoc />
+    public Task<string?> GetRemoteUrl(string remote, CancellationToken cancellationToken = default) =>
+        inner.GetRemoteUrl(remote, cancellationToken);
+
+    /// <inheritdoc />
     public Task<bool> TagExists(string tag, CancellationToken cancellationToken = default) =>
         inner.TagExists(tag, cancellationToken);
 
