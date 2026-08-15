@@ -35,7 +35,6 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    environment: Development
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
