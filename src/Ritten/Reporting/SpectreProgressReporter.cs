@@ -12,6 +12,7 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
 {
     private readonly Stopwatch _stepTimer = new();
     private readonly Stopwatch _pipelineTimer = new();
+    private bool _headingWritten;
 
     /// <inheritdoc />
     public Task OnPipelineStarted(PipelineJob job, CancellationToken cancellationToken)
@@ -24,10 +25,16 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
     /// <inheritdoc />
     public Task OnStepStarted(IPipelineStep step, CancellationToken cancellationToken)
     {
+        _stepTimer.Restart();
+        _headingWritten = false;
+
         // The name opens the step and the outcome closes it, so that anything the step says
         // reads as its body. Chronology would put the name last, which reads backwards.
-        Write(2, $"[bold]{Markup.Escape(step.Name)}[/]");
-        _stepTimer.Restart();
+        if (IsEnabled(PipelineLogLevel.Status))
+        {
+            WriteHeading(step);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -38,13 +45,19 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
 
         if (result.IsFailure)
         {
+            // A failure is shown however quiet the run is, so it may still need its heading.
+            if (!_headingWritten)
+            {
+                WriteHeading(step);
+            }
+
             Write(2, $"[red]✗[/] [grey]{elapsed}[/]");
             foreach (var error in result.Errors)
             {
                 Write(4, $"[red]{Markup.Escape(error.Message)}[/]");
             }
         }
-        else
+        else if (IsEnabled(PipelineLogLevel.Status))
         {
             Write(2, $"[green]✓[/] [grey]{elapsed}[/]");
         }
@@ -103,6 +116,12 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
         }
     }
 
+
+    private void WriteHeading(IPipelineStep step)
+    {
+        Write(2, $"[bold]{Markup.Escape(step.Name)}[/]");
+        _headingWritten = true;
+    }
 
     /// <summary>
     /// Writes indented markup. A <see cref="Padder"/> rather than leading spaces, so that a line

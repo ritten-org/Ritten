@@ -56,22 +56,25 @@ public class ValidateChangelog(
 
         var changelog = await changelogs.Read(changelogFile, cancellationToken);
 
+        // A prerelease ships whatever is in [Unreleased]; a release needs an entry of its own.
+        // One or the other, never both — nothing writes a versioned heading before it ships.
         var isPrerelease = project.Version.IsPrerelease || project.Version < NuGetVersion.Parse("1.0.0");
-        if (isPrerelease)
-        {
-            if (changelog.Unreleased == null)
-            {
-                report.Section("Release").Failure("Missing [Unreleased] changelog entry for pre-release version.");
-                return StepResult.Failed($"No changelog entry found for prerelease version {project.Version} in {options.Value.File}.");
-            }
-            state.Set(changelog.Unreleased);
-        }
-
-        var entry = changelog.Entry(project.Version);
+        var entry = isPrerelease ? changelog.Unreleased : changelog.Entry(project.Version);
         if (entry == null)
         {
-            report.Section("Release").Failure($"Missing changelog entry for **{project.Version}**.");
-            return StepResult.Failed($"No changelog entry found for version {project.Version} in {options.Value.File}.");
+            report.Section("Release").Failure(isPrerelease
+                ? "Missing [Unreleased] changelog entry."
+                : $"Missing changelog entry for **{project.Version}**.");
+
+            return StepResult.Failed(isPrerelease
+                ? $"No [Unreleased] changelog entry found in {options.Value.File}."
+                : $"No changelog entry found for version {project.Version} in {options.Value.File}.");
+        }
+
+        if (entry.IsEmpty)
+        {
+            report.Section("Release").Failure($"The changelog entry for **{project.Version}** is empty.");
+            return StepResult.Failed($"Changelog entry for version {project.Version} is empty.");
         }
 
         if (!string.IsNullOrEmpty(options.Value.RepositoryUrl))
@@ -87,6 +90,9 @@ public class ValidateChangelog(
             }
         }
 
+
+        // CreateGitHubRelease reads this for the release notes.
+        state.Set(entry);
 
         report.Section("Release").Success($"Changelog entry for **{project.Version}** is present.");
         log.Detail($"Found changelog entry for {project.Version}.");

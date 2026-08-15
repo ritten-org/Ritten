@@ -31,12 +31,13 @@ public class PipelineHost : IDisposable
     /// <typeparam name="TPipeline">The pipeline the job belongs to.</typeparam>
     /// <typeparam name="TSettings">The settings taken by the pipeline.</typeparam>
     /// <param name="job">The job to run.</param>
+    /// <param name="logLevel">The lowest level of message to print.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public static async Task<int> Run<TPipeline, TSettings>(string job, CancellationToken cancellationToken = default)
+    public static async Task<int> Run<TPipeline, TSettings>(string job, PipelineLogLevel logLevel = PipelineLogLevel.Detail, CancellationToken cancellationToken = default)
         where TPipeline : Pipeline<TSettings>, new()
         where TSettings : class
     {
-        var reporter = new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail);
+        var reporter = new SpectreProgressReporter(AnsiConsole.Console, logLevel);
         var pipeline = new TPipeline();
 
         var project = await RittenProject.Resolve(Environment.CurrentDirectory);

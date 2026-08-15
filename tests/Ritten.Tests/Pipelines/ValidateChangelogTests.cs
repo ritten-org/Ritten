@@ -97,6 +97,113 @@ public class ValidateChangelogTests
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
     }
 
+    [Fact]
+    public async Task PassesForAPrereleaseUsingTheUnreleasedEntry()
+    {
+        // Nothing writes a versioned heading before it ships, so a 0.x release reads [Unreleased].
+        Version("0.0.1");
+        SetChangelog(
+            """
+            # Changelog
+
+            ## [Unreleased]
+
+            - A change.
+
+            [Unreleased]: https://github.com/example/repo/commits/HEAD
+            """);
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeFalse();
+        _releaseSection.Tone.ShouldBe(ReportTone.Success);
+    }
+
+    [Fact]
+    public async Task FailsForAPrereleaseWithoutAnUnreleasedEntry()
+    {
+        Version("0.0.1");
+        SetChangelog(
+            """
+            # Changelog
+
+            ## [1.2.0] - 2026-08-01
+
+            - A change.
+
+            [1.2.0]: https://github.com/example/repo/releases/tag/v1.2.0
+            """);
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeTrue();
+        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("[Unreleased]");
+    }
+
+    [Fact]
+    public async Task PutsTheEntryInStateForTheGitHubRelease()
+    {
+        // CreateGitHubRelease reads it from state for the release notes, and fails without it.
+        SetChangelog(
+            """
+            # Changelog
+
+            ## [1.2.0] - 2026-08-01
+
+            - A change.
+
+            [1.2.0]: https://github.com/example/repo/releases/tag/v1.2.0
+            """);
+
+        await Step().Run(TestContext.Current.CancellationToken);
+
+        _state.Received().Set(Arg.Is<ChangelogEntry>(e =>
+            e.Version == NuGetVersion.Parse("1.2.0") && e.Body.Contains("A change.")));
+    }
+
+    [Fact]
+    public async Task PutsTheUnreleasedEntryInStateForAPrerelease()
+    {
+        Version("0.0.1");
+        SetChangelog(
+            """
+            # Changelog
+
+            ## [Unreleased]
+
+            - An unreleased change.
+
+            [Unreleased]: https://github.com/example/repo/commits/HEAD
+            """);
+
+        await Step().Run(TestContext.Current.CancellationToken);
+
+        _state.Received().Set(Arg.Is<ChangelogEntry>(e => e.Body.Contains("An unreleased change.")));
+    }
+
+    [Fact]
+    public async Task FailsWhenTheEntryIsEmpty()
+    {
+        // An empty entry would ship a release with empty notes.
+        Version("0.0.1");
+        SetChangelog(
+            """
+            # Changelog
+
+            ## [Unreleased]
+
+            [Unreleased]: https://github.com/example/repo/commits/HEAD
+            """);
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeTrue();
+        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("empty");
+    }
+
+    private void Version(string version) => _state.Get<Project>()
+        .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse(version) });
+
     private void SetChangelog(string content)
     {
         var file = Substitute.For<IFile>();
