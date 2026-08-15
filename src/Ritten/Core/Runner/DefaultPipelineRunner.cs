@@ -23,7 +23,7 @@ internal class DefaultPipelineRunner(
             : stepResults.FirstOrDefault(s => s.IsFailure)?.ExitCode ?? PipelineExitCodes.Success;
 
         var result = new PipelineResult(exitCode, stepResults);
-        await NotifyReporters(r => r.OnPipelineCompleted(result, cancellationToken));
+        await NotifyReporters(r => r.OnPipelineCompleted(result, cancellationToken), reverse: true);
 
         return result;
     }
@@ -72,9 +72,10 @@ internal class DefaultPipelineRunner(
         }
     }
 
-    private async Task NotifyReporters(Func<IProgressReporter, Task> action)
+    private async Task NotifyReporters(Func<IProgressReporter, Task> action, bool reverse = false)
     {
-        foreach (var reporter in _reporters)
+        var reporters = reverse ? _reporters.Reverse() : _reporters;
+        foreach (var reporter in reporters)
         {
             try
             {

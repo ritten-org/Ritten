@@ -7,8 +7,6 @@ on:
         description: 'Dry Run'
         type: boolean
         default: false
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
 
