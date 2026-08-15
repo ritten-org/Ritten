@@ -77,4 +77,29 @@ public class DotNetOutputParserTests
         diagnostics.ShouldHaveSingleItem().ToString()
             .ShouldBe("Program.cs(12,34): error CS0103: The name 'x' does not exist");
     }
+
+    [Fact]
+    public void ParseRestoredProjects_NamesEachRestoredProject()
+    {
+        var restored = DotNetOutputParser.ParseRestoredProjects(
+            """
+            Determining projects to restore...
+              Restored /repo/src/Thing/Thing.csproj (in 407 ms).
+              Restored /repo/tests/Thing.Tests/Thing.Tests.csproj (in 12 ms).
+            """);
+
+        restored.ShouldBe(["Thing", "Thing.Tests"]);
+    }
+
+    [Fact]
+    public void ParseRestoredProjects_FindsNothingWhenEverythingWasUpToDate()
+    {
+        var restored = DotNetOutputParser.ParseRestoredProjects(
+            """
+            Determining projects to restore...
+            All projects are up-to-date for restore.
+            """);
+
+        restored.ShouldBeEmpty();
+    }
 }

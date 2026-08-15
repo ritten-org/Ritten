@@ -45,7 +45,7 @@ internal class CommandRunner(IPipelineLog log, IFileSystem fileSystem) : IComman
 
         if (!command.ArgumentsRedacted)
         {
-            log.Detail($"Running `{command.Path} {string.Join(" ", command.Arguments)}`");
+            log.Verbose($"Running `{command.Path} {string.Join(" ", command.Arguments)}`");
         }
 
         process.Start();

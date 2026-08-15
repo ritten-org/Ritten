@@ -14,9 +14,9 @@ public interface IDotNet
     Task<Result<Project>> ReadProject(IFile file, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Runs <c>dotnet restore</c>, throwing a <see cref="Commands.CommandFailedException"/> on failure.
+    /// Runs <c>dotnet restore</c>, reporting which projects actually restored.
     /// </summary>
-    Task Restore(RestoreArgs args, CancellationToken cancellationToken = default);
+    Task<RestoreResult> Restore(RestoreArgs args, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Runs <c>dotnet build</c> and returns the outcome, with any compiler output.

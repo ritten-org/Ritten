@@ -9,6 +9,8 @@ on:
         default: false
   pull_request:
     branches: [ main ]
+  push:
+    branches: [ main ]
 
 jobs:
   build:
@@ -18,9 +20,18 @@ jobs:
       contents: read
       pull-requests: write
     if: github.event_name == 'pull_request' || github.event_name == 'push'
+    concurrency:
+      # A newer push to the same PR or branch supersedes any run still going.
+      group: build-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
 
       - name: Restore tools
         run: dotnet tool restore
@@ -31,8 +42,8 @@ jobs:
         env:
           # Dependabot can't bump versions or write changelog entries, so its PRs skip those checks.
           # Pushes to main always run them, so the badge reflects real releasability.
-          RITTEN_SKIP_VERSION_CHECK: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
-          RITTEN_SKIP_CHANGELOG: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
+          RITTEN_SKIP_VERSION_CHECK: ${{ github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' }}
+          RITTEN_SKIP_CHANGELOG: ${{ github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
@@ -42,9 +53,18 @@ jobs:
     permissions:
       contents: write
       id-token: write
+    concurrency:
+      # Deploys queue rather than interleave.
+      group: deploy
+      cancel-in-progress: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
 
       - name: NuGet login
         uses: NuGet/login@v1

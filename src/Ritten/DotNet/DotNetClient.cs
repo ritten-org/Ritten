@@ -48,7 +48,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         };
     }
 
-    public async Task Restore(RestoreArgs args, CancellationToken cancellationToken = default)
+    public async Task<RestoreResult> Restore(RestoreArgs args, CancellationToken cancellationToken = default)
     {
         var command = Command.Create("dotnet").WithArguments("restore");
         if (args.Project is not null)
@@ -56,7 +56,11 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
             command = command.AndArguments(args.Project);
         }
 
-        await commands.Run(command.ThrowOnError(), cancellationToken);
+        var result = await commands.Run(command.ThrowOnError(), cancellationToken);
+        return new RestoreResult
+        {
+            RestoredProjects = DotNetOutputParser.ParseRestoredProjects(result.StandardOutput)
+        };
     }
 
     public async Task<PackResult> Pack(PackArgs args, CancellationToken cancellationToken = default)
@@ -158,6 +162,10 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         var command = Command
             .Create("dotnet")
             .WithArguments("format", "--verify-no-changes", "--report", args.ReportDirectory.AbsolutePath);
+        if (args.NoRestore)
+        {
+            command = command.AndArguments("--no-restore");
+        }
         var result = await commands.Run(command, cancellationToken);
         if (result.IsSuccess)
         {

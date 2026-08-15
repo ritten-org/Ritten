@@ -1,11 +1,52 @@
 using Ritten.Contracts;
 using Ritten.Reporting;
 using Spectre.Console;
+using Spectre.Console.Testing;
 
 namespace Ritten.Tests.Reporting;
 
 public class SpectreProgressReporterTests
 {
+    [Fact]
+    public async Task QuietStillShowsTheJobsStructure()
+    {
+        // Headings, outcomes, and timings are the job's shape, not chatter.
+        var console = new TestConsole();
+        var sut = new SpectreProgressReporter(console, PipelineLogLevel.Warning);
+        var step = new JobStep("git tag", StepKind.Publish, null, []);
+
+        await sut.OnStepStarted(step, TestContext.Current.CancellationToken);
+        await sut.OnStepCompleted(step, StepResult.Successful, TestContext.Current.CancellationToken);
+
+        console.Output.ShouldContain("git tag");
+        console.Output.ShouldContain("✓");
+    }
+
+    [Fact]
+    public void QuietSilencesWhatStepsSay()
+    {
+        var console = new TestConsole();
+        var sut = new SpectreProgressReporter(console, PipelineLogLevel.Warning);
+
+        sut.Log(PipelineLogLevel.Detail, "Restored everything.");
+
+        console.Output.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task FailuresRenderTheirErrorsAtEveryLevel()
+    {
+        var console = new TestConsole();
+        var sut = new SpectreProgressReporter(console, PipelineLogLevel.Warning);
+        var step = new JobStep("changelog", StepKind.Validation, null, []);
+
+        await sut.OnStepStarted(step, TestContext.Current.CancellationToken);
+        await sut.OnStepCompleted(step, StepResult.Failed("The entry is missing."), TestContext.Current.CancellationToken);
+
+        console.Output.ShouldContain("✗");
+        console.Output.ShouldContain("The entry is missing.");
+    }
+
     [Theory]
     // --verbose shows everything.
     [InlineData(PipelineLogLevel.Verbose, PipelineLogLevel.Verbose, true)]

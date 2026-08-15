@@ -22,6 +22,11 @@ public record StepResult(int ExitCode, bool Continue, IReadOnlyCollection<Error>
     public static readonly StepResult StoppedAfterCancel = new(PipelineExitCodes.Cancelled, false, [new Error("Stopped after cancel.")]);
 
     /// <summary>
+    /// Indicates that the step found no work left for the job: the pipeline stops here, successfully.
+    /// </summary>
+    public static readonly StepResult NothingToDo = new(PipelineExitCodes.Success, false, null);
+
+    /// <summary>
     /// Indicates that the step failed with an error.
     /// </summary>
     public static StepResult Failed(Error error) => new(PipelineExitCodes.Failed, false, [error]);
@@ -36,4 +41,44 @@ public record StepResult(int ExitCode, bool Continue, IReadOnlyCollection<Error>
     /// </summary>
     [MemberNotNullWhen(true, nameof(Errors))]
     public bool IsFailure => ExitCode != PipelineExitCodes.Success;
+}
+
+/// <summary>
+/// The result of a producing step.
+/// </summary>
+/// <typeparam name="T">The type of value the step produces.</typeparam>
+public sealed class StepResult<T> : IProducedResult where T : notnull
+{
+    private StepResult(StepResult outcome, T? value)
+    {
+        Outcome = outcome;
+        Value = value;
+    }
+
+    /// <summary>
+    /// The outcome of the step.
+    /// </summary>
+    public StepResult Outcome { get; }
+
+    /// <summary>
+    /// The produced value, present when the step succeeded.
+    /// </summary>
+    public T? Value { get; }
+
+    object? IProducedResult.Value => Value;
+
+    /// <summary>
+    /// Succeeds with the produced value.
+    /// </summary>
+    /// <param name="value">The value the step produced.</param>
+    public static implicit operator StepResult<T>(T value) => new(StepResult.Successful, value);
+
+    /// <summary>
+    /// Carries a result that produced nothing: a failure, or a successful early stop.
+    /// </summary>
+    /// <param name="result">The valueless outcome.</param>
+    public static implicit operator StepResult<T>(StepResult result) =>
+        result is { IsFailure: false, Continue: true }
+            ? throw new InvalidOperationException($"A step producing {typeof(T).Name} must return the value to succeed.")
+            : new StepResult<T>(result, default);
 }

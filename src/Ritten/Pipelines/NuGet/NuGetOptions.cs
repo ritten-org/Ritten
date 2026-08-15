@@ -19,9 +19,9 @@ public class NuGetOptions
     public string? ApiKey { get; set; }
 
     /// <summary>
-    /// Skips the published-version check entirely (e.g. for dependabot pull requests).
+    /// How published versions are grouped into release lines when validating the project's version.
     /// </summary>
-    public bool SkipVersionCheck { get; set; }
+    public ReleaseLine Lines { get; set; } = ReleaseLine.Major;
 
     /// <summary>
     /// Configures the given options based on the current environment.
@@ -32,9 +32,6 @@ public class NuGetOptions
     /// <summary>
     /// Configures the given options from the given environment.
     /// </summary>
-    internal static void ConfigureFromEnvironment(NuGetOptions options, Func<string, string?> envVar)
-    {
+    internal static void ConfigureFromEnvironment(NuGetOptions options, Func<string, string?> envVar) =>
         options.ApiKey = envVar(RittenEnvironment.NuGetApiKey);
-        options.SkipVersionCheck = bool.TryParse(envVar(RittenEnvironment.SkipVersionCheck), out var skip) && skip;
-    }
 }

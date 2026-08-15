@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Ritten.DotNet;
 
 /// <summary>
-/// Extracts compiler and MSBuild diagnostics from <c>dotnet build</c> output.
+/// Extracts structured facts from <c>dotnet</c> command output.
 /// </summary>
 internal static partial class DotNetOutputParser
 {
@@ -33,4 +33,23 @@ internal static partial class DotNetOutputParser
     // forms like `error NU1101: message` and `MSBUILD : error MSB1009: message`.
     [GeneratedRegex(@"^(?:(?<file>.+?)\((?<line>\d+),(?<column>\d+)\))?.*?\b(?<severity>error|warning)\b\s+(?<code>[A-Za-z]+\d+):\s*(?<message>.+?)(?:\s+\[[^\]]+\])?$")]
     private static partial Regex DiagnosticLine();
+
+    /// <summary>
+    /// Extracts the projects a <c>dotnet restore</c> actually restored. An up-to-date restore
+    /// mentions none.
+    /// </summary>
+    public static IReadOnlyList<string> ParseRestoredProjects(string output)
+    {
+        return output
+            .Replace("\r\n", "\n")
+            .Split('\n')
+            .Select(line => RestoredLine().Match(line.Trim()))
+            .Where(m => m.Success)
+            .Select(m => Path.GetFileNameWithoutExtension(m.Groups["path"].Value))
+            .ToList();
+    }
+
+    // Matches `Restored /path/to/Thing.csproj (in 407 ms).`
+    [GeneratedRegex(@"^Restored (?<path>.+?proj) \(in .+\)\.?$")]
+    private static partial Regex RestoredLine();
 }

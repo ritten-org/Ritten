@@ -25,5 +25,10 @@ public interface IJobBuilder
     /// Appends a step to the job. Steps run in the order they are declared.
     /// </summary>
     /// <typeparam name="TStep">The step type. It is automatically registered in the service collection.</typeparam>
-    IJobBuilder UseStep<TStep>() where TStep : class, IPipelineStep;
+    /// <remarks>
+    /// A step is any class with a <see cref="StepAttribute"/> and a single public <c>Run</c> method whose signature
+    /// matches <c>Task&lt;StepResult&lt;T&gt;&gt; Run(..., CancellationToken cancellationToken = default)</c>.
+    /// Both are validated when the job is built.
+    /// </remarks>
+    IJobBuilder UseStep<TStep>() where TStep : class;
 }

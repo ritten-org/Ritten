@@ -12,14 +12,14 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <param name="options">The pipeline's build options.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
-public class DotnetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuildReport report) : IPipelineStep
+[Step("dotnet build", StepKind.Work)]
+public class DotnetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuildReport report)
 {
     private const int MaxDiagnostics = 30;
 
-    /// <inheritdoc />
-    public string Name => "dotnet build";
-
-    /// <inheritdoc />
+    /// <summary>
+    /// Builds the solution.
+    /// </summary>
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var result = await dotnet.Build(

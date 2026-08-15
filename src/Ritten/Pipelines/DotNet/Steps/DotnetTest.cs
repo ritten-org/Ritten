@@ -10,25 +10,27 @@ namespace Ritten.Pipelines.DotNet.Steps;
 /// <summary>
 /// Runs the tests, reporting the aggregated counts on success and the individual failures otherwise.
 /// </summary>
+/// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's .NET options.</param>
 /// <param name="pipeline">The pipeline's directory layout options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
+[Step("dotnet test", StepKind.Work)]
 public class DotnetTest(
+    IPipelineLog log,
     IOptions<DotNetOptions> options,
     IOptions<PipelineOptions> pipeline,
     IFileSystem fileSystem,
     IDotNet dotnet,
     IBuildReport report
-) : IPipelineStep
+)
 {
     private const int MaxFailures = 20;
 
-    /// <inheritdoc />
-    public string Name => "dotnet test";
-
-    /// <inheritdoc />
+    /// <summary>
+    /// Runs the solution's tests.
+    /// </summary>
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var resultsDirectory = fileSystem.ProjectRoot
@@ -52,6 +54,13 @@ public class DotnetTest(
                     result.Skipped > 0
                         ? $"**{result.Passed}** tests passed, {result.Skipped} skipped."
                         : $"All **{result.Passed}** tests passed.");
+                log.Detail(result.Skipped > 0
+                    ? $"{result.Passed} tests passed, {result.Skipped} skipped."
+                    : $"All {result.Passed} tests passed.");
+            }
+            else
+            {
+                log.Detail("No tests ran.");
             }
 
             return StepResult.Successful;

@@ -15,6 +15,7 @@ internal sealed class RittenProject
 
     private static readonly JsonSerializerOptions _serializerOptions = new()
     {
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
         PropertyNameCaseInsensitive = true,

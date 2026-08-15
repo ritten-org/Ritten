@@ -1,9 +1,9 @@
-using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core.FileSystem;
+using Ritten.Core.Rules;
 using Ritten.Core.Runner;
 using Ritten.Git;
 using Ritten.NuGet;
@@ -19,7 +19,6 @@ namespace Ritten.Core;
 /// </summary>
 public class PipelineHostBuilder : IPipelineBuilder
 {
-    private readonly SpectreProgressReporter _reporter;
     private readonly string _pipelineName;
     private readonly Dictionary<string, Action<IJobBuilder>> _jobs = [];
     private readonly bool _dryRun;
@@ -39,7 +38,6 @@ public class PipelineHostBuilder : IPipelineBuilder
     /// <param name="log">Where the builder writes; the reporter when not given.</param>
     internal PipelineHostBuilder(RittenProject project, string pipelineName, SpectreProgressReporter reporter, bool dryRun = false, bool autoApprove = false, Func<string, string?>? environment = null, IPipelineLog? log = null)
     {
-        _reporter = reporter;
         _pipelineName = pipelineName;
         _dryRun = dryRun;
         _autoApprove = autoApprove;
@@ -51,10 +49,14 @@ public class PipelineHostBuilder : IPipelineBuilder
         Services.AddSingleton(TimeProvider.System);
         Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
         Services.TryAddSingleton<IFileSystem, ProjectFileSystem>();
-        Services.TryAddSingleton<IPipelineState, DefaultPipelineState>();
-        Services.AddSingleton<IProgressReporter>(_reporter);
+        Services.AddSingleton<IProgressReporter>(reporter);
         Services.TryAddSingleton(_log);
         Services.TryAddSingleton<IPipelinePrompt>(_ => new ConsolePrompt(AnsiConsole.Console));
+
+        // The invariants every job shape must hold; pipelines can register more.
+        Services.TryAddEnumerable(ServiceDescriptor.Singleton<IJobRule, ProduceBeforeConsume>());
+        Services.TryAddEnumerable(ServiceDescriptor.Singleton<IJobRule, GateBeforePublish>());
+        Services.TryAddEnumerable(ServiceDescriptor.Singleton<IJobRule, ValidationBeforePublish>());
     }
 
     /// <inheritdoc />
@@ -82,6 +84,12 @@ public class PipelineHostBuilder : IPipelineBuilder
 
         var builder = new JobBuilder(Services, _log, _environment, _dryRun);
         configure(builder);
+        var result = builder.Build();
+        if (result.IsError)
+        {
+            return result.Errors;
+        }
+        Services.AddSingleton(result.Value);
 
         if (_dryRun)
         {
@@ -95,16 +103,19 @@ public class PipelineHostBuilder : IPipelineBuilder
             Replace<ICommentService, DryRunCommentService>();
         }
 
-        if (builder.Errors.Count > 0)
-        {
-            return builder.Errors;
-        }
-
         var provider = Services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateScopes = true,
             ValidateOnBuild = true
         });
+
+        var steps = result.Value.Select(descriptor => descriptor.Step).ToList();
+        var errors = provider.GetServices<IJobRule>().SelectMany(rule => rule.Check(steps)).ToList();
+        if (errors.Count > 0)
+        {
+            provider.Dispose();
+            return errors;
+        }
 
         return new PipelineHost(provider);
     }
@@ -155,57 +166,4 @@ public class PipelineHostBuilder : IPipelineBuilder
             { ImplementationType: { } type } => (TService)ActivatorUtilities.CreateInstance(provider, type),
             _ => throw new InvalidOperationException($"Cannot decorate {typeof(TService).Name}: it has no implementation.")
         };
-
-    private sealed class JobBuilder(IServiceCollection services, IPipelineLog log, Func<string, string?> environment, bool dryRun) : IJobBuilder
-    {
-        /// <summary>
-        /// Turns <c>settings.Build.Project</c> into <c>build.project</c>.
-        /// </summary>
-        private static string SettingKey(string expression)
-        {
-            var segments = expression.Split('.');
-            return string.Join('.', segments
-                .Skip(segments.Length > 1 ? 1 : 0)
-                .Select(JsonNamingPolicy.CamelCase.ConvertName));
-        }
-
-        public List<Error> Errors { get; } = [];
-
-        public IJobBuilder Requires(string? value, string expression = "")
-        {
-            if (string.IsNullOrEmpty(value))
-            {
-                Errors.Add($"'{SettingKey(expression)}' not set in {RittenProject.FileName}.");
-            }
-
-            return this;
-        }
-
-        public IJobBuilder RequiresEnvironment(string variable)
-        {
-            if (!string.IsNullOrEmpty(environment(variable)))
-            {
-                return this;
-            }
-
-            if (dryRun)
-            {
-                // A rehearsal can finish without it, but finding out that the real run couldn't
-                // is most of what a rehearsal is for. Warned, not failed.
-                log.Warning($"{variable} is not set; a real run would stop before starting.");
-            }
-            else
-            {
-                Errors.Add($"{variable} is not set.");
-            }
-
-            return this;
-        }
-
-        public IJobBuilder UseStep<TStep>() where TStep : class, IPipelineStep
-        {
-            services.AddTransient<IPipelineStep, TStep>();
-            return this;
-        }
-    }
 }

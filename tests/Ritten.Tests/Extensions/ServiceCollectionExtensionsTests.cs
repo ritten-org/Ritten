@@ -21,7 +21,7 @@ namespace Ritten.Tests.Extensions;
 
 public class ServiceCollectionExtensionsTests
 {
-    private static readonly DotNetPackageSettings Settings = new()
+    private static readonly DotNetToolSettings Settings = new()
     {
         Build = new DotNetBuildSettings { Project = "src/Thing/Thing.csproj", Configuration = "Debug" },
         Changelog = new ChangelogSettings { File = "HISTORY.md", Repository = "https://example.com/thing" },
@@ -36,7 +36,7 @@ public class ServiceCollectionExtensionsTests
             .AddChangelogs(Settings.Changelog).AddChangelogs(Settings.Changelog)
             .AddDotNet(Settings.Build).AddDotNet(Settings.Build)
             .AddGit(Settings.Release.TagPrefix).AddGit(Settings.Release.TagPrefix)
-            .AddNuGet(Settings.Release.Feed).AddNuGet(Settings.Release.Feed)
+            .AddNuGet(Settings.Release.Feed, ReleaseLine.Major).AddNuGet(Settings.Release.Feed, ReleaseLine.Major)
             .AddGitHubActionsRuntime().AddGitHubActionsRuntime()
             .AddBuildReporting().AddBuildReporting();
 
@@ -100,7 +100,7 @@ public class ServiceCollectionExtensionsTests
             .AddDotNet(Settings.Build)
             .AddChangelogs(Settings.Changelog)
             .AddGit(Settings.Release.TagPrefix)
-            .AddNuGet(Settings.Release.Feed)
+            .AddNuGet(Settings.Release.Feed, ReleaseLine.Major)
             .BuildServiceProvider();
 
         provider.GetRequiredService<IOptions<DotNetOptions>>().Value.ProjectFile.ShouldBe("src/Thing/Thing.csproj");

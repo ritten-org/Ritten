@@ -15,4 +15,11 @@ public sealed record ReleaseSettings
     /// The V3 index URL of the NuGet feed the package is validated against and published to.
     /// </summary>
     public string Feed { get; init; } = "https://api.nuget.org/v3/index.json";
+
+    /// <summary>
+    /// How published versions are grouped into release lines:
+    /// <c>major</c> (the default) allows publishing fixes to an older major version,
+    /// and <c>minor</c> also allows older minors, for projects that treat the major number as a product version.
+    /// </summary>
+    public ReleaseLine Lines { get; init; } = ReleaseLine.Major;
 }

@@ -10,18 +10,28 @@ namespace Ritten.Pipelines;
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's build options.</param>
 /// <param name="fileSystem">The file system.</param>
-public class Clean(IPipelineLog log, IOptions<PipelineOptions> options, IFileSystem fileSystem) : IPipelineStep
+[Step("clean", StepKind.Work)]
+public class Clean(IPipelineLog log, IOptions<PipelineOptions> options, IFileSystem fileSystem)
 {
-    /// <inheritdoc />
-    public string Name => "clean";
-
-    /// <inheritdoc />
+    /// <summary>
+    /// Deletes the artifacts and temp directories.
+    /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     public Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        log.Detail("Cleaning temp and artifact directories.");
-        var cd = fileSystem.ProjectRoot;
-        cd.GetDirectory(options.Value.ArtifactsDirectory).Delete();
-        cd.GetDirectory(options.Value.TempDirectory).Delete();
+        var root = fileSystem.ProjectRoot;
+        var deleted = new List<string>();
+        foreach (var name in new[] { options.Value.ArtifactsDirectory, options.Value.TempDirectory })
+        {
+            var directory = root.GetDirectory(name);
+            if (directory.Exists)
+            {
+                directory.Delete();
+                deleted.Add(name);
+            }
+        }
+
+        log.Detail(deleted.Count == 0 ? "Nothing to clean." : $"Deleted {string.Join(" and ", deleted)}.");
         return Task.FromResult(StepResult.Successful);
     }
 }

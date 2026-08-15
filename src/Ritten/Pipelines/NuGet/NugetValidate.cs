@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.NuGet;
@@ -8,64 +9,74 @@ using Ritten.Reporting;
 namespace Ritten.Pipelines.NuGet;
 
 /// <summary>
-/// Fails the pipeline when the project's version is already published, or isn't greater than the
-/// latest published version. Requires <see cref="Project"/> in pipeline state
-/// (see <see cref="ReadProject"/>).
+/// Determines the project's <see cref="ReleaseState"/> against the NuGet feed.
 /// </summary>
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's NuGet options.</param>
-/// <param name="state">The pipeline state.</param>
 /// <param name="report">The build report.</param>
 /// <param name="nuget">The NuGet client.</param>
-public class NugetValidate(
-    IPipelineLog log,
-    IOptions<NuGetOptions> options,
-    IPipelineState state,
-    IBuildReport report,
-    INuGet nuget
-) : IPipelineStep
+[Step("nuget validate", StepKind.Validation)]
+public class NugetValidate(IPipelineLog log, IOptions<NuGetOptions> options, IBuildReport report, INuGet nuget)
 {
-    /// <inheritdoc />
-    public string Name => "nuget validate";
-
-    /// <inheritdoc />
-    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Determines the release state of the given project's version against the feed.
+    /// </summary>
+    /// <param name="project">The project being validated (see <see cref="ReadProject"/>).</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    public async Task<StepResult<ReleaseState>> Run(Project project, CancellationToken cancellationToken = default)
     {
-        if (options.Value.SkipVersionCheck)
-        {
-            log.Skipped("Skipping version check.");
-            return StepResult.Successful;
-        }
-
-        var project = state.Get<Project>();
-        if (project == null)
-        {
-            return StepResult.Failed("Project info not found in state.");
-        }
-
         var feed = new NuGetFeed(options.Value.Feed);
-        var versions = await nuget.GetPublishedVersions(feed, project.Name, cancellationToken);
+        var publishedVersions = await nuget.GetPublishedVersions(feed, project.Name, cancellationToken);
+        var latestPublished = publishedVersions.DefaultIfEmpty().Max();
+        var latestInLine = publishedVersions.Where(v => SameLine(v, project.Version)).DefaultIfEmpty().Max();
 
-        if (versions.Any(v => v == project.Version))
+        // Name the line only when it isn't the whole story; single-line projects stay unqualified.
+        var line = latestInLine == latestPublished ? "" : $" on the {LineLabel(project.Version)} line";
+
+        if (publishedVersions.Any(v => v == project.Version) && latestInLine is not null && latestPublished is not null)
         {
+            // A published version can't be ahead of its line's latest.
+            if (project.Version < latestInLine)
+            {
+                report.Section("Release")
+                    .Failure($"Version **{project.Version}** is already published, and **{latestInLine}** is newer{line}. Bump `<Version>` in the project file.");
+                return StepResult.Failed($"Version {project.Version} is already published, and {latestInLine} is newer{line}.");
+            }
+
             report.Section("Release")
-                .Failure($"Version **{project.Version}** is already published on the feed. Bump `<Version>` in the project file.");
-            return StepResult.Failed($"Package version {project.Version} already exists on the feed.");
+                .Success(project.Version == latestPublished
+                    ? $"Version **{project.Version}** is the latest published version; nothing new to release."
+                    : $"Version **{project.Version}** is the latest on the {LineLabel(project.Version)} line; nothing new to release (latest overall: **{latestPublished}**).");
+            log.Detail(project.Version == latestPublished
+                ? $"Version {project.Version} is the latest published version; nothing new to release."
+                : $"Version {project.Version} is the latest on the {LineLabel(project.Version)} line; nothing new to release (latest overall: {latestPublished}).");
+            return ReleaseState.LatestInLine(latestInLine, latestPublished);
         }
 
-        var latestVersion = versions.DefaultIfEmpty().Max();
-        if (latestVersion != null && project.Version <= latestVersion)
+        if (latestInLine != null && project.Version <= latestInLine)
         {
             report.Section("Release")
-                .Failure($"Version **{project.Version}** isn't greater than the latest published version **{latestVersion}**. Bump `<Version>` in the project file.");
-            return StepResult.Failed($"Project version {project.Version} is not greater than the latest version {latestVersion}.");
+                .Failure($"Version **{project.Version}** must be higher than **{latestInLine}**, the latest published version{line}. Bump `<Version>` in the project file.");
+            return StepResult.Failed($"Project version {project.Version} must be higher than {latestInLine}, the latest published version{line}.");
         }
 
         report.Section("Release")
-            .Success(latestVersion == null
+            .Success(latestPublished == null
                 ? $"Version **{project.Version}** will be the first published version of {project.Name}."
-                : $"Version **{project.Version}** is valid (latest published: **{latestVersion}**).");
-        log.Detail($"Version {project.Version} is valid for {project.Name}.");
-        return StepResult.Successful;
+                : project.Version < latestPublished
+                    ? $"Version **{project.Version}** is a backport to the {LineLabel(project.Version)} line (latest overall: **{latestPublished}**)."
+                    : $"Version **{project.Version}** is valid (latest published: **{latestPublished}**).");
+        log.Detail(latestPublished == null
+            ? $"Version {project.Version} will be the first published version of {project.Name}."
+            : project.Version < latestPublished
+                ? $"Version {project.Version} is a backport to the {LineLabel(project.Version)} line (latest overall: {latestPublished})."
+                : $"Version {project.Version} is valid (latest published: {latestPublished}).");
+        return ReleaseState.Releasable(latestInLine, latestPublished);
     }
+
+    private bool SameLine(NuGetVersion a, NuGetVersion b) =>
+        a.Major == b.Major && (options.Value.Lines == ReleaseLine.Major || a.Minor == b.Minor);
+
+    private string LineLabel(NuGetVersion version) =>
+        options.Value.Lines == ReleaseLine.Major ? $"{version.Major}.x" : $"{version.Major}.{version.Minor}.x";
 }

@@ -43,7 +43,6 @@ public static class ServiceCollectionExtensions
                 o.File = settings.File;
                 o.RepositoryUrl = settings.Repository;
             });
-            services.Configure<ChangelogOptions>(ChangelogOptions.ConfigureFromEnvironment);
             return services;
         }
 
@@ -77,25 +76,29 @@ public static class ServiceCollectionExtensions
         /// <summary>
         /// Adds NuGet publishing, configured from the project's settings.
         /// </summary>
-        public IServiceCollection AddNuGet(string feed)
+        public IServiceCollection AddNuGet(string feed, ReleaseLine lines)
         {
             services.AddCommandRunner();
             services.TryAddSingleton<INuGet, NuGetClient>();
-            services.Configure<NuGetOptions>(o => o.Feed = feed);
+            services.Configure<NuGetOptions>(o =>
+            {
+                o.Feed = feed;
+                o.Lines = lines;
+            });
             services.Configure<NuGetOptions>(NuGetOptions.ConfigureFromEnvironment);
             return services;
         }
 
         /// <summary>
-        /// Registers everything the standard .NET package pipelines share.
+        /// Registers everything the standard .NET tool pipelines share.
         /// </summary>
-        public IServiceCollection AddDotNetPackageServices(DotNetPackageSettings settings)
+        public IServiceCollection AddDotNetToolServices(DotNetToolSettings settings)
         {
             return services
                 .AddChangelogs(settings.Changelog)
                 .AddDotNet(settings.Build)
                 .AddGit(settings.Release.TagPrefix)
-                .AddNuGet(settings.Release.Feed)
+                .AddNuGet(settings.Release.Feed, settings.Release.Lines)
                 .AddGitHubActionsRuntime()
                 .AddBuildReporting();
         }

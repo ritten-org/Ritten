@@ -29,9 +29,9 @@ Describe the project in a `ritten.json` at its root:
 Then run a job from anywhere in the repository:
 
 ```sh
-dotnet ritten verify   # compile and test
-dotnet ritten build    # verify, plus version and changelog validation
-dotnet ritten deploy   # build, then pack, tag, release, and publish
+dotnet ritten build    # compile and test
+dotnet ritten check    # build, plus release validation: formatting, version, and changelog
+dotnet ritten deploy   # check, then pack, tag, release, and publish
 ```
 
 ## License

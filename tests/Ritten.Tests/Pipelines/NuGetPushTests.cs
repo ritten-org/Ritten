@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
-using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.NuGet;
@@ -12,8 +11,9 @@ namespace Ritten.Tests.Pipelines;
 
 public class NugetPushTests
 {
+    private static readonly Project TheProject = new() { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") };
+
     private readonly INuGet _nuget = Substitute.For<INuGet>();
-    private readonly IPipelineState _state = Substitute.For<IPipelineState>();
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
     private readonly ReportSection _releaseSection = new("Release");
     private readonly NuGetOptions _options = TestOptions.NuGet();
@@ -22,15 +22,14 @@ public class NugetPushTests
     public NugetPushTests()
     {
         _report.Section("Release").Returns(_releaseSection);
-        _state.Get<PackResult>().Returns(new PackResult { Packages = [_package] });
-        _state.Get<Project>()
-            .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
     }
 
     [Fact]
     public async Task PushesThePackedPackagesWithTheConfiguredFeed()
     {
-        await Step().Run(TestContext.Current.CancellationToken);
+        var packed = new PackResult { Packages = [_package] };
+
+        await Step().Run(packed, TheProject, TestContext.Current.CancellationToken);
 
         await _nuget.Received().Push(
             Arg.Is<NuGetFeed>(f => f.Url == _options.Feed && f.ApiKey == _options.ApiKey),
@@ -40,5 +39,5 @@ public class NugetPushTests
     }
 
     private NugetPush Step() =>
-        new(Options.Create(_options), _state, _nuget, _report);
+        new(Options.Create(_options), _nuget, _report);
 }

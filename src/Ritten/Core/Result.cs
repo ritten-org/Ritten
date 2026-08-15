@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Ritten.Core;
@@ -26,8 +26,14 @@ public static class Result
     /// Creates a single <see cref="Ritten.Core.Error"/>, which converts implicitly to a failed <see cref="Result{T}"/> of any type.
     /// </summary>
     /// <param name="message">A message describing what was wrong.</param>
+    public static Error Error(string message) => Error(message, null);
+
+    /// <summary>
+    /// Creates a single <see cref="Ritten.Core.Error"/>, which converts implicitly to a failed <see cref="Result{T}"/> of any type.
+    /// </summary>
+    /// <param name="message">A message describing what was wrong.</param>
     /// <param name="cause">The exception behind the failure, when there was one.</param>
-    public static Error Error(string message, Exception? cause = null) => new(message, cause);
+    public static Error Error(string message, Exception? cause) => new(message, cause);
 }
 
 /// <summary>
@@ -51,7 +57,7 @@ public class Result<T> where T : class
     private Result(T? value, IEnumerable<Error>? errors)
     {
         Value = value;
-        Errors = errors?.ToImmutableList();
+        Errors = errors is null ? null : [.. errors];
     }
 
     /// <summary>
@@ -62,7 +68,7 @@ public class Result<T> where T : class
     /// <summary>
     /// Everything that went wrong, or <c>null</c> if the operation succeeded.
     /// </summary>
-    public IReadOnlyCollection<Error>? Errors { get; }
+    public ReadOnlyCollection<Error>? Errors { get; }
 
     /// <summary>
     /// Whether the operation failed, in which case <see cref="Errors"/> says why.
@@ -89,6 +95,12 @@ public class Result<T> where T : class
     /// </summary>
     /// <param name="errors">Everything that was wrong.</param>
     public static implicit operator Result<T>(List<Error> errors) => new(errors);
+
+    /// <summary>
+    /// Converts a list of errors to a failed result, so that a method can simply return them.
+    /// </summary>
+    /// <param name="errors">Everything that was wrong.</param>
+    public static implicit operator Result<T>(ReadOnlyCollection<Error> errors) => new(errors);
 
     /// <summary>
     /// Converts a single error to a failed result, so that a method can simply return it.

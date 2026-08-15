@@ -2,26 +2,25 @@ using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
-using Ritten.Pipelines.NuGet;
 
 namespace Ritten.Pipelines.DotNet.Steps;
 
 /// <summary>
 /// Packs the configured project into the artifacts directory.
-/// Sets <see cref="PackResult"/> in pipeline state for <see cref="NugetPush"/>.
 /// </summary>
+/// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's .NET options.</param>
 /// <param name="pipeline">The pipeline's directory layout options.</param>
 /// <param name="fileSystem">The file system.</param>
-/// <param name="state">The pipeline state.</param>
 /// <param name="dotnet">The dotnet client.</param>
-public class DotnetPack(IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IFileSystem fileSystem, IPipelineState state, IDotNet dotnet) : IPipelineStep
+[Step("dotnet pack", StepKind.Work)]
+public class DotnetPack(IPipelineLog log, IOptions<DotNetOptions> options, IOptions<PipelineOptions> pipeline, IFileSystem fileSystem, IDotNet dotnet)
 {
-    /// <inheritdoc />
-    public string Name => "dotnet pack";
-
-    /// <inheritdoc />
-    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Packs the configured project.
+    /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    public async Task<StepResult<PackResult>> Run(CancellationToken cancellationToken = default)
     {
         var result = await dotnet.Pack(
             new PackArgs
@@ -33,7 +32,11 @@ public class DotnetPack(IOptions<DotNetOptions> options, IOptions<PipelineOption
             },
             cancellationToken);
 
-        state.Set(result);
-        return StepResult.Successful;
+        foreach (var package in result.Packages)
+        {
+            log.Detail($"Packed {package.Name}.");
+        }
+
+        return result;
     }
 }

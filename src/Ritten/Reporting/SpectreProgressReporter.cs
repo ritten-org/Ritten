@@ -12,7 +12,6 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
 {
     private readonly Stopwatch _stepTimer = new();
     private readonly Stopwatch _pipelineTimer = new();
-    private bool _headingWritten;
 
     /// <inheritdoc />
     public Task OnPipelineStarted(PipelineJob job, CancellationToken cancellationToken)
@@ -25,34 +24,26 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
     }
 
     /// <inheritdoc />
-    public Task OnStepStarted(IPipelineStep step, CancellationToken cancellationToken)
+    public Task OnStepStarted(JobStep step, CancellationToken cancellationToken)
     {
         _stepTimer.Restart();
-        _headingWritten = false;
 
         // The name opens the step and the outcome closes it, so that anything the step says
         // reads as its body. Chronology would put the name last, which reads backwards.
-        if (IsEnabled(PipelineLogLevel.Status))
-        {
-            WriteHeading(step);
-        }
+        // Headings and outcomes are the job's structure, not chatter: they render at every
+        // level, and --quiet silences only what the steps say in between.
+        WriteHeading(step);
 
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task OnStepCompleted(IPipelineStep step, StepResult result, CancellationToken cancellationToken)
+    public Task OnStepCompleted(JobStep step, StepResult result, CancellationToken cancellationToken)
     {
         var elapsed = FormatDuration(_stepTimer.Elapsed);
 
         if (result.IsFailure)
         {
-            // A failure is shown however quiet the run is, so it may still need its heading.
-            if (!_headingWritten)
-            {
-                WriteHeading(step);
-            }
-
             Write(2, $"[red]✗[/] [grey]{elapsed}[/]");
             foreach (var error in result.Errors)
             {
@@ -60,7 +51,7 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
                 WriteVerbatim(error.Verbatim);
             }
         }
-        else if (IsEnabled(PipelineLogLevel.Status))
+        else
         {
             Write(2, $"[green]✓[/] [grey]{elapsed}[/]");
         }
@@ -141,11 +132,22 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
         writer.WriteLine();
     }
 
-    private void WriteHeading(IPipelineStep step)
+    private void WriteHeading(JobStep step)
     {
-        Write(2, $"[bold]{Markup.Escape(step.Name)}[/]");
-        _headingWritten = true;
+        var (glyph, color) = Style(step.Kind);
+        Write(2, $"[{color}]{glyph}[/] [bold]{Markup.Escape(step.Name)}[/]");
     }
+
+    /// <summary>
+    /// Each kind keeps a stable glyph and colour, so a job's shape reads at a glance.
+    /// </summary>
+    private static (string Glyph, string Color) Style(StepKind kind) => kind switch
+    {
+        StepKind.Validation => ("○", "deepskyblue1"),
+        StepKind.Gate => ("◆", "yellow"),
+        StepKind.Publish => ("▲", "fuchsia"),
+        _ => ("·", "grey")
+    };
 
     /// <summary>
     /// Writes indented markup. A <see cref="Padder"/> rather than leading spaces, so that a line
