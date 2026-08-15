@@ -184,8 +184,8 @@ class ProbeStep(StepProbe probe)
 [Step("failing", StepKind.Work)]
 class FailingStep
 {
-    public Task<StepResult> Run(CancellationToken cancellationToken) =>
-        Task.FromResult(StepResult.Failed("Nope."));
+    // Synchronous on purpose: the failing-step test also covers the sync convention end to end.
+    public StepResult Run() => StepResult.Failed("Nope.");
 }
 
 [Step("first", StepKind.Work)]

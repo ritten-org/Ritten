@@ -12,21 +12,21 @@ namespace Ritten.Tests.Pipelines;
 public class ReleasableGateTests
 {
     [Fact]
-    public async Task ContinuesWhenTheProjectIsReleasable()
+    public void ContinuesWhenTheProjectIsReleasable()
     {
-        var result = await Step().Run(new ReleaseState(Published: false, LatestInLine: true, null, null), TestContext.Current.CancellationToken);
+        var result = Step().Run(new ReleaseState(Published: false, LatestInLine: true, null, null));
 
         result.IsFailure.ShouldBeFalse();
         result.Continue.ShouldBeTrue();
     }
 
     [Fact]
-    public async Task StopsSuccessfullyWhenThisVersionIsAlreadyReleased()
+    public void StopsSuccessfullyWhenThisVersionIsAlreadyReleased()
     {
         // `deploy && deploy` exits 0 both times: the second run has nothing to do, and says so.
         var release = new ReleaseState(Published: true, LatestInLine: true, NuGetVersion.Parse("1.2.0"), NuGetVersion.Parse("1.2.0"));
 
-        var result = await Step().Run(release, TestContext.Current.CancellationToken);
+        var result = Step().Run(release);
 
         result.IsFailure.ShouldBeFalse();
         result.Continue.ShouldBeFalse();

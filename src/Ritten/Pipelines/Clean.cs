@@ -16,8 +16,7 @@ public class Clean(IPipelineLog log, IOptions<PipelineOptions> options, IFileSys
     /// <summary>
     /// Deletes the artifacts and temp directories.
     /// </summary>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public Task<StepResult> Run(CancellationToken cancellationToken = default)
+    public StepResult Run()
     {
         var root = fileSystem.ProjectRoot;
         var deleted = new List<string>();
@@ -32,6 +31,6 @@ public class Clean(IPipelineLog log, IOptions<PipelineOptions> options, IFileSys
         }
 
         log.Detail(deleted.Count == 0 ? "Nothing to clean." : $"Deleted {string.Join(" and ", deleted)}.");
-        return Task.FromResult(StepResult.Successful);
+        return StepResult.Successful;
     }
 }

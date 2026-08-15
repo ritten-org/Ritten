@@ -35,7 +35,7 @@ public class ChangelogValidateTests
     }
 
     [Fact]
-    public async Task APublishedVersionNeedsNoEntry()
+    public void APublishedVersionNeedsNoEntry()
     {
         // Nothing is being released, so nothing has to be documented yet.
         var changelog = Changelogs.Parse(
@@ -47,14 +47,14 @@ public class ChangelogValidateTests
             - An older change.
             """);
 
-        var result = await Step().Run(Project("1.2.0"), AlreadyPublished, changelog, TestContext.Current.CancellationToken);
+        var result = Step().Run(Project("1.2.0"), AlreadyPublished, changelog);
 
         result.IsFailure.ShouldBeFalse();
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
     }
 
     [Fact]
-    public async Task PassesWhenTheEntryIsPresent()
+    public void PassesWhenTheEntryIsPresent()
     {
         var changelog = Changelogs.Parse(
             """
@@ -65,14 +65,14 @@ public class ChangelogValidateTests
             - A change.
             """);
 
-        var result = await Step().Run(Project("1.2.0"), Releasable, changelog, TestContext.Current.CancellationToken);
+        var result = Step().Run(Project("1.2.0"), Releasable, changelog);
 
         result.IsFailure.ShouldBeFalse();
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
     }
 
     [Fact]
-    public async Task FailsWhenTheEntryIsMissing()
+    public void FailsWhenTheEntryIsMissing()
     {
         var changelog = Changelogs.Parse(
             """
@@ -83,7 +83,7 @@ public class ChangelogValidateTests
             - An older change.
             """);
 
-        var result = await Step().Run(Project("1.2.0"), Releasable, changelog, TestContext.Current.CancellationToken);
+        var result = Step().Run(Project("1.2.0"), Releasable, changelog);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("1.2.0");
@@ -91,7 +91,7 @@ public class ChangelogValidateTests
     }
 
     [Fact]
-    public async Task PassesForAPrereleaseUsingTheUnreleasedEntry()
+    public void PassesForAPrereleaseUsingTheUnreleasedEntry()
     {
         // Nothing writes a versioned heading before it ships, so a 0.x release reads [Unreleased].
         var changelog = Changelogs.Parse(
@@ -103,14 +103,14 @@ public class ChangelogValidateTests
             - A change.
             """);
 
-        var result = await Step().Run(Project("1.0.0-beta.1"), Releasable, changelog, TestContext.Current.CancellationToken);
+        var result = Step().Run(Project("1.0.0-beta.1"), Releasable, changelog);
 
         result.IsFailure.ShouldBeFalse();
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
     }
 
     [Fact]
-    public async Task FailsForAPrereleaseWithoutAnUnreleasedEntry()
+    public void FailsForAPrereleaseWithoutAnUnreleasedEntry()
     {
         var changelog = Changelogs.Parse(
             """
@@ -121,14 +121,14 @@ public class ChangelogValidateTests
             - A change.
             """);
 
-        var result = await Step().Run(Project("1.0.0-beta.1"), Releasable, changelog, TestContext.Current.CancellationToken);
+        var result = Step().Run(Project("1.0.0-beta.1"), Releasable, changelog);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("[Unreleased]");
     }
 
     [Fact]
-    public async Task FailsWhenTheEntryIsEmpty()
+    public void FailsWhenTheEntryIsEmpty()
     {
         // An empty entry would ship a release with empty notes.
         var changelog = Changelogs.Parse(
@@ -138,14 +138,14 @@ public class ChangelogValidateTests
             ## [Unreleased]
             """);
 
-        var result = await Step().Run(Project("1.0.0-beta.1"), Releasable, changelog, TestContext.Current.CancellationToken);
+        var result = Step().Run(Project("1.0.0-beta.1"), Releasable, changelog);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("empty");
     }
 
     [Fact]
-    public async Task TreatsAnUnlabelledZeroPointVersionAsARelease()
+    public void TreatsAnUnlabelledZeroPointVersionAsARelease()
     {
         // 0.0.1 has no prerelease label, so a feed serves it as the latest stable version and
         // people get it without asking for prereleases. It earns its own entry like any release.
@@ -158,7 +158,7 @@ public class ChangelogValidateTests
             - A change.
             """);
 
-        var result = await Step().Run(Project("0.0.1"), Releasable, changelog, TestContext.Current.CancellationToken);
+        var result = Step().Run(Project("0.0.1"), Releasable, changelog);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("0.0.1");

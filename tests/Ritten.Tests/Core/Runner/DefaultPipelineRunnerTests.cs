@@ -278,8 +278,8 @@ public class DefaultPipelineRunnerTests
     [Step("producer", StepKind.Work)]
     private sealed class ProducingStep
     {
-        public Task<StepResult<ProducedValue>> Run(CancellationToken cancellationToken) =>
-            Task.FromResult<StepResult<ProducedValue>>(new ProducedValue("the produced value"));
+        // Synchronous on purpose: a directly returned value must reach the next step the same way.
+        public StepResult<ProducedValue> Run() => new ProducedValue("the produced value");
     }
 
     [Step("consumer", StepKind.Work)]

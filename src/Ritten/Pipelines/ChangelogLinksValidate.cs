@@ -22,13 +22,12 @@ public class ChangelogLinksValidate(IPipelineLog log, IOptions<ChangelogOptions>
     /// Validates the changelog's version links.
     /// </summary>
     /// <param name="changelog">The parsed changelog (see <see cref="ReadChangelog"/>).</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public Task<StepResult> Run(Changelog changelog, CancellationToken cancellationToken = default)
+    public StepResult Run(Changelog changelog)
     {
         if (string.IsNullOrEmpty(options.Value.RepositoryUrl))
         {
             log.Skipped("No repository URL configured; links not validated.");
-            return Task.FromResult(StepResult.Successful);
+            return StepResult.Successful;
         }
 
         var repository = new ChangelogRepository(options.Value.RepositoryUrl) { TagPrefix = release.Value.TagPrefix };
@@ -39,15 +38,13 @@ public class ChangelogLinksValidate(IPipelineLog log, IOptions<ChangelogOptions>
             report.Section("Release")
                 .Failure($"The version links in `{options.Value.File}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
 
-            return Task.FromResult(StepResult.Failed(new Error(
-                $"The version links in {options.Value.File} are missing or out of date. " +
-                "Replace the link block at the bottom of the file with:")
+            return new Error($"The version links in {options.Value.File} are missing or out of date. Expected:")
             {
                 Verbatim = block
-            }));
+            };
         }
 
         log.Detail("The version links are up to date.");
-        return Task.FromResult(StepResult.Successful);
+        return StepResult.Successful;
     }
 }

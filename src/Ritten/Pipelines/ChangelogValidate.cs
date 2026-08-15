@@ -19,14 +19,13 @@ public class ChangelogValidate(IPipelineLog log, IBuildReport report)
     /// <param name="project">The project being validated.</param>
     /// <param name="releaseState">The release state determined against the feed.</param>
     /// <param name="changelog">The parsed changelog (see <see cref="ReadChangelog"/>).</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public Task<StepResult> Run(Project project, ReleaseState releaseState, Changelog changelog, CancellationToken cancellationToken = default)
+    public StepResult Run(Project project, ReleaseState releaseState, Changelog changelog)
     {
         if (releaseState.Published)
         {
             report.Section("Release").Success("New changes accrue under **[Unreleased]** until a release is prepared.");
             log.Detail("This version is already published; no changelog entry required.");
-            return Task.FromResult(StepResult.Successful);
+            return StepResult.Successful;
         }
 
         // A prerelease ships whatever is in [Unreleased]; a release needs an entry of its own.
@@ -38,19 +37,19 @@ public class ChangelogValidate(IPipelineLog log, IBuildReport report)
                 ? "Missing [Unreleased] changelog entry."
                 : $"Missing changelog entry for **{project.Version}**.");
 
-            return Task.FromResult(StepResult.Failed(project.IsPrerelease
+            return StepResult.Failed(project.IsPrerelease
                 ? "No [Unreleased] entry found in changelog."
-                : $"No entry for version {project.Version} found in changelog."));
+                : $"No entry for version {project.Version} found in changelog.");
         }
 
         if (entry.IsEmpty)
         {
             report.Section("Release").Failure($"The changelog entry for **{project.Version}** is empty.");
-            return Task.FromResult(StepResult.Failed($"Changelog entry for version {project.Version} is empty."));
+            return StepResult.Failed($"Changelog entry for version {project.Version} is empty.");
         }
 
         report.Section("Release").Success($"Changelog entry for **{project.Version}** is present.");
         log.Detail($"Found changelog entry for {project.Version}.");
-        return Task.FromResult(StepResult.Successful);
+        return StepResult.Successful;
     }
 }

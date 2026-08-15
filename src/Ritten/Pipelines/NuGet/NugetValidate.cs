@@ -19,8 +19,7 @@ public class NugetValidate(IOptions<NuGetOptions> options, IBuildReport report)
     /// </summary>
     /// <param name="project">The project being validated.</param>
     /// <param name="releaseState">The release state determined against the feed.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public Task<StepResult> Run(Project project, ReleaseState releaseState, CancellationToken cancellationToken = default)
+    public StepResult Run(Project project, ReleaseState releaseState)
     {
         // Name the line only when it isn't the whole story; single-line projects stay unqualified.
         var line = releaseState.OnLatestLine ? "" : $" on the {options.Value.Lines.Label(project.Version)} line";
@@ -31,14 +30,12 @@ public class NugetValidate(IOptions<NuGetOptions> options, IBuildReport report)
             {
                 report.Section("Release")
                     .Failure($"Version **{project.Version}** is already published, and **{releaseState.LatestVersionInLine}** is newer{line}. Bump `<Version>` in the project file.");
-                return Task.FromResult(StepResult.Failed(
-                    $"Version {project.Version} is already published, and {releaseState.LatestVersionInLine} is newer{line}."));
+                return StepResult.Failed($"Version {project.Version} is already published, and {releaseState.LatestVersionInLine} is newer{line}.");
             }
 
             report.Section("Release")
                 .Failure($"Version **{project.Version}** must be higher than **{releaseState.LatestVersionInLine}**, the latest published version{line}. Bump `<Version>` in the project file.");
-            return Task.FromResult(StepResult.Failed(
-                $"Project version {project.Version} must be higher than {releaseState.LatestVersionInLine}, the latest published version{line}."));
+            return StepResult.Failed($"Project version {project.Version} must be higher than {releaseState.LatestVersionInLine}, the latest published version{line}.");
         }
 
         if (releaseState.Published)
@@ -47,7 +44,7 @@ public class NugetValidate(IOptions<NuGetOptions> options, IBuildReport report)
                 .Success(releaseState.OnLatestLine
                     ? $"Version **{project.Version}** is the latest published version; nothing new to release."
                     : $"Version **{project.Version}** is the latest on the {options.Value.Lines.Label(project.Version)} line; nothing new to release (latest overall: **{releaseState.LatestVersion}**).");
-            return Task.FromResult(StepResult.Successful);
+            return StepResult.Successful;
         }
 
         report.Section("Release")
@@ -56,6 +53,6 @@ public class NugetValidate(IOptions<NuGetOptions> options, IBuildReport report)
                 : project.Version < releaseState.LatestVersion
                     ? $"Version **{project.Version}** is a backport to the {options.Value.Lines.Label(project.Version)} line (latest overall: **{releaseState.LatestVersion}**)."
                     : $"Version **{project.Version}** is valid (latest published: **{releaseState.LatestVersion}**).");
-        return Task.FromResult(StepResult.Successful);
+        return StepResult.Successful;
     }
 }

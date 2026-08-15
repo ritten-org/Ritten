@@ -34,7 +34,7 @@ public class ChangelogLinksValidateTests
     }
 
     [Fact]
-    public async Task PassesWhenTheLinksAreCorrect()
+    public void PassesWhenTheLinksAreCorrect()
     {
         var changelog = Changelogs.Parse(
             """
@@ -47,13 +47,13 @@ public class ChangelogLinksValidateTests
             [1.2.0]: https://github.com/example/repo/releases/tag/v1.2.0
             """);
 
-        var result = await Step().Run(changelog, TestContext.Current.CancellationToken);
+        var result = Step().Run(changelog);
 
         result.IsFailure.ShouldBeFalse();
     }
 
     [Fact]
-    public async Task FailsWithThePasteableBlockWhenTheLinksAreStale()
+    public void FailsWithThePasteableBlockWhenTheLinksAreStale()
     {
         var changelog = Changelogs.Parse(
             """
@@ -66,7 +66,7 @@ public class ChangelogLinksValidateTests
             [1.2.0]: https://github.com/example/repo/releases/tag/v1.0.0
             """);
 
-        var result = await Step().Run(changelog, TestContext.Current.CancellationToken);
+        var result = Step().Run(changelog);
 
         result.IsFailure.ShouldBeTrue();
         _releaseSection.Tone.ShouldBe(ReportTone.Failure);
@@ -75,7 +75,7 @@ public class ChangelogLinksValidateTests
     }
 
     [Fact]
-    public async Task OffersTheSameBlockToTheTerminalAsVerbatimContent()
+    public void OffersTheSameBlockToTheTerminalAsVerbatimContent()
     {
         // The terminal indents everything a step says, and a pasted leading space fails the very
         // check that printed the block — so it travels as verbatim content, rendered at the margin.
@@ -90,7 +90,7 @@ public class ChangelogLinksValidateTests
             [1.2.0]: https://github.com/example/repo/releases/tag/v1.0.0
             """);
 
-        var result = await Step().Run(changelog, TestContext.Current.CancellationToken);
+        var result = Step().Run(changelog);
 
         var error = result.Errors.ShouldNotBeNull().ShouldHaveSingleItem();
         var block = error.Verbatim.ShouldNotBeNull();
@@ -99,7 +99,7 @@ public class ChangelogLinksValidateTests
     }
 
     [Fact]
-    public async Task SkipsLinkValidationWithoutARepositoryUrl()
+    public void SkipsLinkValidationWithoutARepositoryUrl()
     {
         _options.RepositoryUrl = null;
         var changelog = Changelogs.Parse(
@@ -113,7 +113,7 @@ public class ChangelogLinksValidateTests
             [1.2.0]: https://example.com/completely-wrong
             """);
 
-        var result = await Step().Run(changelog, TestContext.Current.CancellationToken);
+        var result = Step().Run(changelog);
 
         result.IsFailure.ShouldBeFalse();
     }

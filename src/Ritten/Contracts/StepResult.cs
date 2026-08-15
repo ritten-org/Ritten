@@ -41,6 +41,11 @@ public record StepResult(int ExitCode, bool Continue, IReadOnlyCollection<Error>
     /// </summary>
     [MemberNotNullWhen(true, nameof(Errors))]
     public bool IsFailure => ExitCode != PipelineExitCodes.Success;
+
+    /// <summary>
+    /// Converts an error into a failed step result.
+    /// </summary>
+    public static implicit operator StepResult(Error error) => Failed(error);
 }
 
 /// <summary>
@@ -81,4 +86,9 @@ public sealed class StepResult<T> : IProducedResult where T : notnull
         result is { IsFailure: false, Continue: true }
             ? throw new InvalidOperationException($"A step producing {typeof(T).Name} must return the value to succeed.")
             : new StepResult<T>(result, default);
+
+    /// <summary>
+    /// Converts an error into a failed step result.
+    /// </summary>
+    public static implicit operator StepResult<T>(Error error) => StepResult.Failed(error);
 }

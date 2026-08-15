@@ -13,15 +13,14 @@ public class ReleasableGate(IPipelineLog log)
     /// Stops the job, successfully, when there is nothing to release.
     /// </summary>
     /// <param name="release">The release state determined against the feed.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public Task<StepResult> Run(ReleaseState release, CancellationToken cancellationToken = default)
+    public StepResult Run(ReleaseState release)
     {
         if (release.Published)
         {
             log.Skipped($"Version {release.LatestVersionInLine} is already published; nothing to deploy.");
-            return Task.FromResult(StepResult.NothingToDo);
+            return StepResult.NothingToDo;
         }
 
-        return Task.FromResult(StepResult.Successful);
+        return StepResult.Successful;
     }
 }
