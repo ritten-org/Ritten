@@ -12,4 +12,9 @@ public record FormatArgs
     /// created if it doesn't exist.
     /// </summary>
     public required IDirectory ReportDirectory { get; init; }
+
+    /// <summary>
+    /// Whether to disable restoring packages on format.
+    /// </summary>
+    public bool NoRestore { get; init; }
 }

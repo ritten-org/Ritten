@@ -23,8 +23,8 @@ public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
 
         builder.AddJob("verify", job => job
             .UseStep<Clean>()
-            .UseStep<DotnetFormat>()
             .UseStep<DotnetRestore>()
+            .UseStep<DotnetFormat>()
             .UseStep<DotnetBuild>()
             .UseStep<DotnetTest>());
 
@@ -34,8 +34,8 @@ public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
             .UseStep<ReadProject>()
             .UseStep<NugetValidate>()
             .UseStep<ChangelogValidate>()
-            .UseStep<DotnetFormat>()
             .UseStep<DotnetRestore>()
+            .UseStep<DotnetFormat>()
             .UseStep<DotnetBuild>()
             .UseStep<DotnetTest>()
             .UseStep<DotnetPack>());

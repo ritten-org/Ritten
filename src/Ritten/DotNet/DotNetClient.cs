@@ -158,6 +158,10 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         var command = Command
             .Create("dotnet")
             .WithArguments("format", "--verify-no-changes", "--report", args.ReportDirectory.AbsolutePath);
+        if (args.NoRestore)
+        {
+            command = command.AndArguments("--no-restore");
+        }
         var result = await commands.Run(command, cancellationToken);
         if (result.IsSuccess)
         {

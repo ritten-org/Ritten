@@ -31,7 +31,7 @@ public class DotnetFormat(
             .GetDirectory(options.Value.TempDirectory)
             .GetDirectory("format");
 
-        var result = await dotnet.CheckFormat(new FormatArgs { ReportDirectory = reportDirectory }, cancellationToken);
+        var result = await dotnet.CheckFormat(new FormatArgs { ReportDirectory = reportDirectory, NoRestore = true }, cancellationToken);
         if (result.Succeeded)
         {
             return StepResult.Successful;
