@@ -59,8 +59,6 @@ public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
 
         builder.AddJob("deploy", job => job
             .Requires(settings.Build.Project)
-            .RequiresEnvironment(RittenEnvironment.NuGetApiKey)
-            .RequiresEnvironment(GitHubEnvironment.RepositoryId)
             .UseStep<Clean>()
             .UseStep<ReadProject>()
             .UseStep<ReadChangelog>()
@@ -74,6 +72,7 @@ public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
             .UseStep<DotnetTest>()
             .UseCoverage()
             .UseStep<ApprovalGate>()
+            .UseStep<NugetAuthenticate>()
             .UseStep<DotnetPack>()
             .UseStep<GitTag>()
             .UseStep<GitHubRelease>()

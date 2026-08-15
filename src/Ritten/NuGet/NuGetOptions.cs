@@ -15,8 +15,8 @@ public class NuGetOptions
     public string Feed { get; set; } = "https://api.nuget.org/v3/index.json";
 
     /// <summary>
-    /// The API key used to push packages. Only needed by the deploy pipeline;
-    /// <see cref="NugetPush"/> fails with a clear message if it's missing.
+    /// The API key used to push packages. Only needed when deploying;
+    /// <see cref="NugetAuthenticate"/> asks at the terminal when it's missing.
     /// </summary>
     public string? ApiKey { get; set; }
 

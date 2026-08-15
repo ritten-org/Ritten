@@ -25,4 +25,16 @@ internal sealed class ConsolePrompt(IAnsiConsole console) : IPipelinePrompt
         console.WriteLine();
         return string.Equals(answer.Trim(), "yes", StringComparison.OrdinalIgnoreCase);
     }
+
+    /// <inheritdoc />
+    public async Task<string?> Secret(string what, CancellationToken cancellationToken = default)
+    {
+        console.WriteLine();
+        var answer = await console.PromptAsync(
+            new TextPrompt<string>($"  {Markup.Escape(what)}").Secret().AllowEmpty(),
+            cancellationToken);
+
+        console.WriteLine();
+        return string.IsNullOrWhiteSpace(answer) ? null : answer.Trim();
+    }
 }
