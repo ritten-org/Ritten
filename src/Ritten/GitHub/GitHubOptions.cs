@@ -38,6 +38,11 @@ public class GitHubOptions
     public bool IsEnabled { get; set; }
 
     /// <summary>
+    /// The web page for the current workflow run, where the logs live.
+    /// </summary>
+    public string? RunUrl { get; set; }
+
+    /// <summary>
     /// The path to the GitHub Actions job summary file, if available.
     /// </summary>
     public string? SummaryFile { get; set; }
@@ -64,6 +69,7 @@ public class GitHubOptions
         options.PullRequestNumber = ParsePullRequestNumber(envVar(GitHubEnvironment.Ref));
         options.IsEnabled = !string.IsNullOrEmpty(envVar(GitHubEnvironment.Actions));
         options.SummaryFile = envVar(GitHubEnvironment.StepSummary);
+        options.RunUrl = BuildRunUrl(envVar(GitHubEnvironment.ServerUrl), envVar(GitHubEnvironment.Repository), envVar(GitHubEnvironment.RunId));
 
         var workflow = envVar(GitHubEnvironment.Workflow);
         if (workflow != null)
@@ -71,6 +77,11 @@ public class GitHubOptions
             options.WorkflowName = workflow;
         }
     }
+
+    private static string? BuildRunUrl(string? serverUrl, string? repository, string? runId) =>
+        string.IsNullOrEmpty(serverUrl) || string.IsNullOrEmpty(repository) || string.IsNullOrEmpty(runId)
+            ? null
+            : $"{serverUrl}/{repository}/actions/runs/{runId}";
 
     private static long? ParseRepositoryId(string? value) =>
         long.TryParse(value, out var repositoryId) ? repositoryId : null;

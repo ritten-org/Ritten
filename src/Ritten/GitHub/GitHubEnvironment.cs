@@ -41,6 +41,21 @@ internal static class GitHubEnvironment
     public const string Workflow = "GITHUB_WORKFLOW";
 
     /// <summary>
+    /// The URL of the GitHub server, e.g. <c>https://github.com</c>.
+    /// </summary>
+    public const string ServerUrl = "GITHUB_SERVER_URL";
+
+    /// <summary>
+    /// The owner and name of the repository, e.g. <c>owner/repo</c>.
+    /// </summary>
+    public const string Repository = "GITHUB_REPOSITORY";
+
+    /// <summary>
+    /// The ID of the current workflow run; stable across re-run attempts.
+    /// </summary>
+    public const string RunId = "GITHUB_RUN_ID";
+
+    /// <summary>
     /// Set to <c>1</c> when step debug logging is on.
     /// </summary>
     public const string RunnerDebug = "RUNNER_DEBUG";

@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Steps can be synchronous.** Step classes can return a plain `StepResult` or `StepResult<T>` directly.
 - **`ritten status`.** Reports the current state of the project, including its version, release state, and the changelog,.
 - **Code coverage.** Tests collect coverage by default via the coverlet collector, and the line and branch rates are reported alongside the results. A `"coverage"` section in `ritten.json` with `line`/`branch` minimums makes the numbers enforced. Requires the `coverlet.collector` package in test projects.
+- **The pull request comment links to the run logs.** The comment now ends with a link to the GitHub Actions run page for when the report isn't detailed enough.
 - **The repository URL is picked up automatically.** Ritten reads the URL from the project file's `RepositoryUrl`, or failing that the origin git remote, when it's not given explicitly.
 
 ### Changed
