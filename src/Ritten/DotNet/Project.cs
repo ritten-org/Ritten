@@ -16,4 +16,9 @@ public class Project
     /// The package version of the project.
     /// </summary>
     public required NuGetVersion Version { get; init; }
+
+    /// <summary>
+    /// Whether this version is a prerelease.
+    /// </summary>
+    public bool IsPrerelease => Version.IsPrerelease;
 }

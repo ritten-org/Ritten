@@ -51,6 +51,17 @@ public class NuGetPushTests
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
     }
 
-    private NuGetPush Step() =>
-        new(Options.Create(_options), _state, _nuget, _report);
+    [Fact]
+    public async Task DoesNotDemandAnApiKeyForADryRun()
+    {
+        // Nothing is going to be pushed, so nothing needs authenticating.
+        _options.ApiKey = null;
+
+        var result = await Step(dryRun: true).Run(TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeFalse();
+    }
+
+    private NuGetPush Step(bool dryRun = false) =>
+        new(new PipelineJob("Test", "deploy", dryRun), Options.Create(_options), _state, _nuget, _report);
 }

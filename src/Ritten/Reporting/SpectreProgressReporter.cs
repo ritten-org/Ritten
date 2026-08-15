@@ -17,7 +17,9 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
     /// <inheritdoc />
     public Task OnPipelineStarted(PipelineJob job, CancellationToken cancellationToken)
     {
-        console.Write(new Rule($"[bold]{Markup.Escape(job.Pipeline)}[/] [grey]·[/] [bold]{Markup.Escape(job.Name)}[/]").LeftJustified());
+        // Said out loud, because the whole point is that nothing durable happened.
+        var dryRun = job.DryRun ? " [grey]·[/] [yellow]dry run[/]" : "";
+        console.Write(new Rule($"[bold]{Markup.Escape(job.Pipeline)}[/] [grey]·[/] [bold]{Markup.Escape(job.Name)}[/]{dryRun}").LeftJustified());
         _pipelineTimer.Restart();
         return Task.CompletedTask;
     }

@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Options;
-using NuGet.Versioning;
 using Ritten.Changelogs;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
@@ -59,15 +58,14 @@ public class ValidateChangelog(
 
         // A prerelease ships whatever is in [Unreleased]; a release needs an entry of its own.
         // One or the other, never both — nothing writes a versioned heading before it ships.
-        var isPrerelease = project.Version.IsPrerelease || project.Version < NuGetVersion.Parse("1.0.0");
-        var entry = isPrerelease ? changelog.Unreleased : changelog.Entry(project.Version);
+        var entry = project.IsPrerelease ? changelog.Unreleased : changelog.Entry(project.Version);
         if (entry == null)
         {
-            report.Section("Release").Failure(isPrerelease
+            report.Section("Release").Failure(project.IsPrerelease
                 ? "Missing [Unreleased] changelog entry."
                 : $"Missing changelog entry for **{project.Version}**.");
 
-            return StepResult.Failed(isPrerelease
+            return StepResult.Failed(project.IsPrerelease
                 ? $"No [Unreleased] changelog entry found in {options.Value.File}."
                 : $"No changelog entry found for version {project.Version} in {options.Value.File}.");
         }

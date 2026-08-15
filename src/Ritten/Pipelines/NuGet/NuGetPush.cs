@@ -13,11 +13,13 @@ namespace Ritten.Pipelines.NuGet;
 /// pipeline state (see <see cref="DotNetPack"/>); uses <see cref="Project"/> for the report
 /// when present.
 /// </summary>
+/// <param name="job">The job being run.</param>
 /// <param name="options">The pipeline's NuGet options.</param>
 /// <param name="state">The pipeline state.</param>
 /// <param name="nuget">The NuGet client.</param>
 /// <param name="report">The build report.</param>
 public class NuGetPush(
+    PipelineJob job,
     IOptions<NuGetOptions> options,
     IPipelineState state,
     INuGet nuget,
@@ -30,7 +32,7 @@ public class NuGetPush(
     /// <inheritdoc />
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrEmpty(options.Value.ApiKey))
+        if (!job.DryRun && string.IsNullOrEmpty(options.Value.ApiKey))
         {
             return StepResult.Failed($"The NuGet API key is not configured; set {RittenEnvironment.NuGetApiKey} for the deploy job.");
         }
@@ -39,7 +41,8 @@ public class NuGetPush(
         {
             return StepResult.Failed("Pack result not found in state.");
         }
-        var feed = new NuGetFeed(options.Value.Feed).WithApiKey(options.Value.ApiKey);
+        // The key requirement lives in the client, so a dry run doesn't need one to rehearse.
+        var feed = new NuGetFeed(options.Value.Feed) { ApiKey = options.Value.ApiKey };
 
         foreach (var package in packed.Packages)
         {

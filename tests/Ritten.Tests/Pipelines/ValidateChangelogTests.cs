@@ -125,7 +125,7 @@ public class ValidateChangelogTests
     public async Task PassesForAPrereleaseUsingTheUnreleasedEntry()
     {
         // Nothing writes a versioned heading before it ships, so a 0.x release reads [Unreleased].
-        Version("0.0.1");
+        Version("1.0.0-beta.1");
         SetChangelog(
             """
             # Changelog
@@ -146,7 +146,7 @@ public class ValidateChangelogTests
     [Fact]
     public async Task FailsForAPrereleaseWithoutAnUnreleasedEntry()
     {
-        Version("0.0.1");
+        Version("1.0.0-beta.1");
         SetChangelog(
             """
             # Changelog
@@ -188,7 +188,7 @@ public class ValidateChangelogTests
     [Fact]
     public async Task PutsTheUnreleasedEntryInStateForAPrerelease()
     {
-        Version("0.0.1");
+        Version("1.0.0-beta.1");
         SetChangelog(
             """
             # Changelog
@@ -209,7 +209,7 @@ public class ValidateChangelogTests
     public async Task FailsWhenTheEntryIsEmpty()
     {
         // An empty entry would ship a release with empty notes.
-        Version("0.0.1");
+        Version("1.0.0-beta.1");
         SetChangelog(
             """
             # Changelog
@@ -223,6 +223,29 @@ public class ValidateChangelogTests
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("empty");
+    }
+
+    [Fact]
+    public async Task TreatsAnUnlabelledZeroPointVersionAsARelease()
+    {
+        // 0.0.1 has no prerelease label, so a feed serves it as the latest stable version and
+        // people get it without asking for prereleases. It earns its own entry like any release.
+        Version("0.0.1");
+        SetChangelog(
+            """
+            # Changelog
+
+            ## [Unreleased]
+
+            - A change.
+
+            [Unreleased]: https://github.com/example/repo/commits/HEAD
+            """);
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeTrue();
+        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("0.0.1");
     }
 
     private void Version(string version) => _state.Get<Project>()

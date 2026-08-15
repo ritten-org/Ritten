@@ -15,10 +15,17 @@ var quiet = new Option<bool>("--quiet", "-q")
     Recursive = true
 };
 
+var dryRun = new Option<bool>("--dry-run")
+{
+    Description = "Rehearse the job without pushing, tagging, releasing, or commenting.",
+    Recursive = true
+};
+
 var root = new RootCommand("The Ritten build pipeline.")
 {
     verbose,
     quiet,
+    dryRun,
     Job("build", "Validates a pull request: formatting, version, changelog, compile, and tests."),
     Job("verify", "Compiles and tests, without any release validation."),
     Job("deploy", "Validates, packs, tags, creates the GitHub release, and publishes to NuGet.")
@@ -30,13 +37,15 @@ Command Job(string name, string description)
 {
     var command = new Command(name, description);
     command.SetAction((parseResult, cancellationToken) =>
-        PipelineHost.Run<DotNetPackagePipeline, DotNetPackageSettings>(name, LogLevel(parseResult), cancellationToken));
+    {
+        // --verbose wins if both are given: someone asking to see more has the more specific intent.
+        var logLevel = parseResult.GetValue(verbose)
+            ? PipelineLogLevel.Verbose
+            : parseResult.GetValue(quiet)
+                ? PipelineLogLevel.Warning
+                : PipelineLogLevel.Detail;;
+        var isDryRun = parseResult.GetValue(dryRun);
+        return PipelineHost.Run<DotNetPackagePipeline, DotNetPackageSettings>(name, logLevel, isDryRun, cancellationToken);
+    });
     return command;
 }
-
-// --verbose wins if both are given: someone asking to see more has the more specific intent.
-PipelineLogLevel LogLevel(ParseResult parseResult) => parseResult.GetValue(verbose)
-    ? PipelineLogLevel.Verbose
-    : parseResult.GetValue(quiet)
-        ? PipelineLogLevel.Warning
-        : PipelineLogLevel.Detail;

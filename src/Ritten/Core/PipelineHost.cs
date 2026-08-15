@@ -32,8 +32,9 @@ public class PipelineHost : IDisposable
     /// <typeparam name="TSettings">The settings taken by the pipeline.</typeparam>
     /// <param name="job">The job to run.</param>
     /// <param name="logLevel">The lowest level of message to print.</param>
+    /// <param name="dryRun">Rehearses the job without doing anything that reaches outside the working directory.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public static async Task<int> Run<TPipeline, TSettings>(string job, PipelineLogLevel logLevel = PipelineLogLevel.Detail, CancellationToken cancellationToken = default)
+    public static async Task<int> Run<TPipeline, TSettings>(string job, PipelineLogLevel logLevel = PipelineLogLevel.Detail, bool dryRun = false, CancellationToken cancellationToken = default)
         where TPipeline : Pipeline<TSettings>, new()
         where TSettings : class
     {
@@ -52,7 +53,7 @@ public class PipelineHost : IDisposable
             return ConfigurationError(reporter, settings.Errors);
         }
 
-        var builder = new PipelineHostBuilder(project.Value, pipeline.Name, reporter);
+        var builder = new PipelineHostBuilder(project.Value, pipeline.Name, reporter, dryRun);
         pipeline.Configure(builder, settings.Value);
 
         var host = builder.Build(job);

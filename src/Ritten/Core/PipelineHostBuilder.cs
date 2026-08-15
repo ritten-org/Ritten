@@ -5,7 +5,11 @@ using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core.FileSystem;
 using Ritten.Core.Runner;
+using Ritten.Git;
+using Ritten.NuGet;
 using Ritten.Reporting;
+using Ritten.Runtimes;
+using Ritten.Runtimes.GitHubActions;
 
 namespace Ritten.Core;
 
@@ -17,6 +21,7 @@ public class PipelineHostBuilder : IPipelineBuilder
     private readonly SpectreProgressReporter _reporter;
     private readonly string _pipelineName;
     private readonly Dictionary<string, Action<IJobBuilder>> _jobs = [];
+    private readonly bool _dryRun;
 
     /// <summary>
     /// Creates a new instance of the <see cref="PipelineHostBuilder"/>.
@@ -24,10 +29,12 @@ public class PipelineHostBuilder : IPipelineBuilder
     /// <param name="project">The project being built.</param>
     /// <param name="pipelineName">The name of the pipeline being configured.</param>
     /// <param name="reporter">The reporter that renders pipeline progress.</param>
-    internal PipelineHostBuilder(RittenProject project, string pipelineName, SpectreProgressReporter reporter)
+    /// <param name="dryRun">Whether to wrap the clients that reach outside the working directory.</param>
+    internal PipelineHostBuilder(RittenProject project, string pipelineName, SpectreProgressReporter reporter, bool dryRun = false)
     {
         _reporter = reporter;
         _pipelineName = pipelineName;
+        _dryRun = dryRun;
         Services.AddSingleton(project);
     }
 
@@ -52,7 +59,7 @@ public class PipelineHostBuilder : IPipelineBuilder
             return Result.Error($"The {_pipelineName} pipeline has no job named '{job}'.");
         }
 
-        Services.AddSingleton(new PipelineJob(_pipelineName, job));
+        Services.AddSingleton(new PipelineJob(_pipelineName, job, _dryRun));
         Services.AddSingleton(TimeProvider.System);
 
         Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
@@ -65,6 +72,18 @@ public class PipelineHostBuilder : IPipelineBuilder
 
         var builder = new JobBuilder(Services);
         configure(builder);
+
+        if (_dryRun)
+        {
+            // Wrapping the clients rather than asking each step to check a flag: a step that
+            // reaches outside the working directory can only do it through one of these, so a
+            // step added later is covered without anyone remembering to handle it.
+            Decorate<INuGet, DryRunNuGet>();
+            Decorate<IGit, DryRunGit>();
+            Replace<IReleaseService, DryRunReleaseService>();
+            // Nothing on ICommentService reads, so its dry run substitutes rather than wraps.
+            Replace<ICommentService, DryRunCommentService>();
+        }
 
         if (builder.Errors.Count > 0)
         {
@@ -79,6 +98,53 @@ public class PipelineHostBuilder : IPipelineBuilder
 
         return new PipelineHost(provider);
     }
+
+    /// <summary>
+    /// Replaces a registered service with a decorator that wraps it. Does nothing when the service
+    /// isn't registered, since a pipeline only registers the capabilities it uses.
+    /// </summary>
+    private void Decorate<TService, TDecorator>()
+        where TService : class
+        where TDecorator : class, TService
+    {
+        if (Services.LastOrDefault(d => d.ServiceType == typeof(TService)) is not { } registration)
+        {
+            return;
+        }
+
+        Services.Remove(registration);
+        Services.AddSingleton<TService>(provider =>
+        {
+            var inner = Resolve<TService>(provider, registration);
+            return ActivatorUtilities.CreateInstance<TDecorator>(provider, inner);
+        });
+    }
+
+    /// <summary>
+    /// Replaces a registered service outright, for a stand-in that has no need of the real one.
+    /// Does nothing when the service isn't registered.
+    /// </summary>
+    private void Replace<TService, TReplacement>()
+        where TService : class
+        where TReplacement : class, TService
+    {
+        if (Services.LastOrDefault(d => d.ServiceType == typeof(TService)) is not { } registration)
+        {
+            return;
+        }
+
+        Services.Remove(registration);
+        Services.AddSingleton<TService, TReplacement>();
+    }
+
+    private static TService Resolve<TService>(IServiceProvider provider, ServiceDescriptor registration)
+        where TService : class => registration switch
+        {
+            { ImplementationInstance: TService instance } => instance,
+            { ImplementationFactory: { } factory } => (TService)factory(provider),
+            { ImplementationType: { } type } => (TService)ActivatorUtilities.CreateInstance(provider, type),
+            _ => throw new InvalidOperationException($"Cannot decorate {typeof(TService).Name}: it has no implementation.")
+        };
 
     private sealed class JobBuilder(IServiceCollection services) : IJobBuilder
     {

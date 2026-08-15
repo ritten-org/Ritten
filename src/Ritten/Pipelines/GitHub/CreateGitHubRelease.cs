@@ -37,7 +37,7 @@ public class CreateGitHubRelease(
             return StepResult.Failed("Project info not found in state.");
         }
 
-        if (project.Version.IsPrerelease)
+        if (project.IsPrerelease)
         {
             log.Detail($"Skipping GitHub Release for prerelease version {project.Version}; tag has still been pushed.");
             return StepResult.Successful;
