@@ -28,7 +28,9 @@ public class DotnetTest(
     /// <inheritdoc />
     public string Name => "dotnet test";
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Runs the solution's tests.
+    /// </summary>
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var resultsDirectory = fileSystem.ProjectRoot

@@ -12,7 +12,9 @@ public class DotnetRestore(IDotNet dotnet) : IPipelineStep
     /// <inheritdoc />
     public string Name => "dotnet restore";
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Restores the solution's packages.
+    /// </summary>
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         await dotnet.Restore(new RestoreArgs(), cancellationToken);

@@ -17,7 +17,6 @@ public class NugetValidateTests
 {
     private readonly IPipelineLog _log = Substitute.For<IPipelineLog>();
     private readonly INuGet _nuget = Substitute.For<INuGet>();
-    private readonly IPipelineState _state = Substitute.For<IPipelineState>();
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
     private readonly ReportSection _releaseSection = new("Release");
     private readonly NuGetOptions _options = TestOptions.NuGet();
@@ -25,7 +24,6 @@ public class NugetValidateTests
     public NugetValidateTests()
     {
         _report.Section("Release").Returns(_releaseSection);
-        _state.Get<Project>().Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
         Published();
     }
 
@@ -35,10 +33,10 @@ public class NugetValidateTests
         // Nothing is staged to release; new work accrues under [Unreleased] until a release is prepared.
         Published("1.0.0", "1.1.0", "1.2.0");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Project("1.2.0"), TestContext.Current.CancellationToken);
 
-        result.IsFailure.ShouldBeFalse();
-        _state.Received().Set(Arg.Is<ReleaseState>(s => s.Kind == ReleaseStateKind.LatestInLine));
+        result.Outcome.IsFailure.ShouldBeFalse();
+        result.Value.ShouldNotBeNull().Kind.ShouldBe(ReleaseStateKind.LatestInLine);
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
         _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("latest published version");
     }
@@ -49,10 +47,10 @@ public class NugetValidateTests
         // A release branch sitting at its line's tip is at rest, even with a newer major out.
         Published("1.2.0", "2.0.0");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Project("1.2.0"), TestContext.Current.CancellationToken);
 
-        result.IsFailure.ShouldBeFalse();
-        _state.Received().Set(Arg.Is<ReleaseState>(s => s.Kind == ReleaseStateKind.LatestInLine));
+        result.Outcome.IsFailure.ShouldBeFalse();
+        result.Value.ShouldNotBeNull().Kind.ShouldBe(ReleaseStateKind.LatestInLine);
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
         _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("latest overall");
     }
@@ -63,10 +61,10 @@ public class NugetValidateTests
         // 1.2.0 shipped, then the version was wound back while 1.3.0 went out: incoherent.
         Published("1.2.0", "1.3.0");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Project("1.2.0"), TestContext.Current.CancellationToken);
 
-        result.IsFailure.ShouldBeTrue();
-        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("1.3.0");
+        result.Outcome.IsFailure.ShouldBeTrue();
+        result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("1.3.0");
         _releaseSection.Tone.ShouldBe(ReportTone.Failure);
         _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("already published");
     }
@@ -77,11 +75,12 @@ public class NugetValidateTests
         // 2.0.0 being out doesn't stop a security fix shipping to the 1.x line.
         Published("1.0.0", "2.0.0");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Project("1.2.0"), TestContext.Current.CancellationToken);
 
-        result.IsFailure.ShouldBeFalse();
-        _state.Received().Set(Arg.Is<ReleaseState>(s =>
-            s.Kind == ReleaseStateKind.Releasable && s.LatestVersionInLine == NuGetVersion.Parse("1.0.0")));
+        result.Outcome.IsFailure.ShouldBeFalse();
+        var release = result.Value.ShouldNotBeNull();
+        release.Kind.ShouldBe(ReleaseStateKind.Releasable);
+        release.LatestVersionInLine.ShouldBe(NuGetVersion.Parse("1.0.0"));
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
         _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("backport");
     }
@@ -91,9 +90,9 @@ public class NugetValidateTests
     {
         Published("1.0.0", "1.5.0");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Project("1.2.0"), TestContext.Current.CancellationToken);
 
-        result.IsFailure.ShouldBeTrue();
+        result.Outcome.IsFailure.ShouldBeTrue();
         _releaseSection.Tone.ShouldBe(ReportTone.Failure);
         _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("1.5.0");
     }
@@ -102,13 +101,12 @@ public class NugetValidateTests
     public async Task BlocksAnOlderMinorByDefault()
     {
         // Under SemVer, 1.2.6 with 1.3.4 out is a fix nobody needs — take 1.3.5 instead.
-        _state.Get<Project>().Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.6") });
         Published("1.2.5", "1.3.4");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Project("1.2.6"), TestContext.Current.CancellationToken);
 
-        result.IsFailure.ShouldBeTrue();
-        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("1.3.4");
+        result.Outcome.IsFailure.ShouldBeTrue();
+        result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("1.3.4");
     }
 
     [Fact]
@@ -116,37 +114,35 @@ public class NugetValidateTests
     {
         // For projects that treat the major as a product version, minors are the real lines.
         _options.Lines = ReleaseLine.Minor;
-        _state.Get<Project>().Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.6") });
         Published("1.2.5", "1.3.4");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Project("1.2.6"), TestContext.Current.CancellationToken);
 
-        result.IsFailure.ShouldBeFalse();
-        _state.Received().Set(Arg.Is<ReleaseState>(s =>
-            s.Kind == ReleaseStateKind.Releasable && s.LatestVersionInLine == NuGetVersion.Parse("1.2.5")));
+        result.Outcome.IsFailure.ShouldBeFalse();
+        var release = result.Value.ShouldNotBeNull();
+        release.Kind.ShouldBe(ReleaseStateKind.Releasable);
+        release.LatestVersionInLine.ShouldBe(NuGetVersion.Parse("1.2.5"));
     }
 
     [Fact]
     public async Task ComparesBySemanticVersionRatherThanOrderOfArrival()
     {
         // 1.10.0 is newer than 1.9.0, however the feed happens to return them.
-        _state.Get<Project>().Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.9.0") });
         Published("1.10.0", "1.2.0");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Project("1.9.0"), TestContext.Current.CancellationToken);
 
-        result.IsFailure.ShouldBeTrue();
+        result.Outcome.IsFailure.ShouldBeTrue();
     }
 
     [Fact]
     public async Task TreatsAPrereleaseAsBehindItsRelease()
     {
-        _state.Get<Project>().Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0-beta.1") });
         Published("1.2.0");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Project("1.2.0-beta.1"), TestContext.Current.CancellationToken);
 
-        result.IsFailure.ShouldBeTrue();
+        result.Outcome.IsFailure.ShouldBeTrue();
     }
 
     [Fact]
@@ -154,11 +150,12 @@ public class NugetValidateTests
     {
         Published("1.0.0", "1.1.0");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Project("1.2.0"), TestContext.Current.CancellationToken);
 
-        result.IsFailure.ShouldBeFalse();
-        _state.Received().Set(Arg.Is<ReleaseState>(s =>
-            s.Kind == ReleaseStateKind.Releasable && s.LatestVersionInLine == NuGetVersion.Parse("1.1.0")));
+        result.Outcome.IsFailure.ShouldBeFalse();
+        var release = result.Value.ShouldNotBeNull();
+        release.Kind.ShouldBe(ReleaseStateKind.Releasable);
+        release.LatestVersionInLine.ShouldBe(NuGetVersion.Parse("1.1.0"));
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
         _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("1.1.0");
     }
@@ -168,30 +165,21 @@ public class NugetValidateTests
     {
         Published();
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Project("1.2.0"), TestContext.Current.CancellationToken);
 
-        result.IsFailure.ShouldBeFalse();
-        _state.Received().Set(Arg.Is<ReleaseState>(s =>
-            s.Kind == ReleaseStateKind.Releasable && s.LatestVersionInLine == null && s.LatestVersion == null));
+        result.Outcome.IsFailure.ShouldBeFalse();
+        var release = result.Value.ShouldNotBeNull();
+        release.Kind.ShouldBe(ReleaseStateKind.Releasable);
+        release.LatestVersionInLine.ShouldBeNull();
+        release.LatestVersion.ShouldBeNull();
         _releaseSection.Tone.ShouldBe(ReportTone.Success);
         _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("first published version");
     }
 
     [Fact]
-    public async Task FailsWithoutTheProjectInState()
-    {
-        _state.Get<Project>().Returns((Project?)null);
-
-        var result = await Step().Run(TestContext.Current.CancellationToken);
-
-        result.IsFailure.ShouldBeTrue();
-        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("Project info");
-    }
-
-    [Fact]
     public async Task ChecksTheConfiguredFeedForTheProjectsOwnPackage()
     {
-        await Step().Run(TestContext.Current.CancellationToken);
+        await Step().Run(Project("1.2.0"), TestContext.Current.CancellationToken);
 
         await _nuget.Received().GetPublishedVersions(
             Arg.Is<NuGetFeed>(f => f.Url == _options.Feed),
@@ -199,10 +187,13 @@ public class NugetValidateTests
             Arg.Any<CancellationToken>());
     }
 
+    private static Project Project(string version) =>
+        new() { Name = "My.Package", Version = NuGetVersion.Parse(version) };
+
     private void Published(params string[] versions) =>
         _nuget.GetPublishedVersions(Arg.Any<NuGetFeed>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns([.. versions.Select(NuGetVersion.Parse)]);
 
     private NugetValidate Step() =>
-        new(_log, Options.Create(_options), _state, _report, _nuget);
+        new(_log, Options.Create(_options), _report, _nuget);
 }

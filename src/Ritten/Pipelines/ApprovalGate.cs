@@ -9,14 +9,20 @@ namespace Ritten.Pipelines;
 /// <param name="job">The job being run.</param>
 /// <param name="log">The pipeline log.</param>
 /// <param name="prompt">The prompt used to ask.</param>
-/// <param name="state">The pipeline state.</param>
-public class ApprovalGate(PipelineJob job, IPipelineLog log, IPipelinePrompt prompt, IPipelineState state) : IPipelineStep
+public class ApprovalGate(PipelineJob job, IPipelineLog log, IPipelinePrompt prompt) : IPipelineStep
 {
     /// <inheritdoc />
     public string Name => "approval gate";
 
     /// <inheritdoc />
-    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
+    public StepKind Kind => StepKind.Gate;
+
+    /// <summary>
+    /// Asks for approval, unless the run already carries it.
+    /// </summary>
+    /// <param name="project">The project being released, when one has been read, for the confirmation message.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    public async Task<StepResult> Run(Project? project, CancellationToken cancellationToken = default)
     {
         if (job.DryRun)
         {
@@ -38,7 +44,7 @@ public class ApprovalGate(PipelineJob job, IPipelineLog log, IPipelinePrompt pro
                 $"Pass --{PipelineArguments.AutoApprove} to approve it up front.");
         }
 
-        var release = state.Get<Project>() is { } project ? $"{project.Name} {project.Version}" : job.Name;
+        var release = project is not null ? $"{project.Name} {project.Version}" : job.Name;
         if (!await prompt.Confirm($"About to release {release}. This cannot be undone.", cancellationToken))
         {
             return StepResult.Failed($"The {job.Name} job was not approved.");

@@ -19,7 +19,9 @@ public class DotnetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuild
     /// <inheritdoc />
     public string Name => "dotnet build";
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Builds the solution.
+    /// </summary>
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var result = await dotnet.Build(

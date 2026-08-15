@@ -15,7 +15,10 @@ public class Clean(IPipelineLog log, IOptions<PipelineOptions> options, IFileSys
     /// <inheritdoc />
     public string Name => "clean";
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Deletes the artifacts and temp directories.
+    /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     public Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         log.Detail("Cleaning temp and artifact directories.");

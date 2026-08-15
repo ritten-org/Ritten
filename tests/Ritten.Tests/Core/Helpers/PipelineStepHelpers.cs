@@ -2,12 +2,31 @@ using Ritten.Contracts;
 
 namespace Ritten.Tests.Core.Helpers;
 
-public static class PipelineStepHelpers
+/// <summary>
+/// A configurable step for engine tests. The runner resolves step instances by their type, so
+/// tests that need several independent steps in one job use the A/B/C subclasses.
+/// </summary>
+public class TestStep : IPipelineStep
 {
-    public static IPipelineStep CreateMock()
+    /// <summary>What the step does when run; successful when not set.</summary>
+    public Func<CancellationToken, Task<StepResult>>? OnRun { get; set; }
+
+    /// <summary>A shared journal the step appends itself to, for ordering assertions.</summary>
+    public List<object>? Journal { get; set; }
+
+    /// <summary>How many times the step has run.</summary>
+    public int Runs { get; private set; }
+
+    public async Task<StepResult> Run(CancellationToken cancellationToken)
     {
-        var step = Substitute.For<IPipelineStep>();
-        step.Run(Arg.Any<CancellationToken>()).Returns(StepResult.Successful);
-        return step;
+        Runs++;
+        Journal?.Add(this);
+        return OnRun is null ? StepResult.Successful : await OnRun(cancellationToken);
     }
 }
+
+public sealed class TestStepA : TestStep;
+
+public sealed class TestStepB : TestStep;
+
+public sealed class TestStepC : TestStep;

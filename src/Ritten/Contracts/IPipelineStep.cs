@@ -1,8 +1,12 @@
 namespace Ritten.Contracts;
 
 /// <summary>
-/// Represents a step in a pipeline that can be executed.
+/// A step in a pipeline.
 /// </summary>
+/// <remarks>
+/// The interface carries only metadata: the step's behavior is a single public
+/// <c>Run</c> method whose signature is its contract, like minimal APIs.
+/// </remarks>
 public interface IPipelineStep
 {
     /// <summary>
@@ -11,9 +15,7 @@ public interface IPipelineStep
     string Name { get => GetType().Name; }
 
     /// <summary>
-    /// Runs the step in the pipeline.
+    /// Gets what this step's outcome means, for display and job-shape rules.
     /// </summary>
-    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
-    /// <returns>The result of the step execution.</returns>
-    Task<StepResult> Run(CancellationToken cancellationToken = default);
+    StepKind Kind => StepKind.Work;
 }

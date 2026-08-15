@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 
 namespace Ritten.Core.Runner;
@@ -5,13 +6,13 @@ namespace Ritten.Core.Runner;
 internal class DefaultPipelineRunner(
     IPipelineLog log,
     IEnumerable<IProgressReporter> reporters,
-    IEnumerable<IPipelineStep> steps,
+    IReadOnlyList<StepDescriptor> steps,
+    IServiceProvider services,
     PipelineJob job
 ) : IPipelineRunner
 {
 
     private readonly IReadOnlyCollection<IProgressReporter> _reporters = [.. reporters];
-    private readonly IReadOnlyList<IPipelineStep> _steps = [.. steps];
 
     public async Task<PipelineResult> Run(CancellationToken cancellationToken)
     {
@@ -30,8 +31,10 @@ internal class DefaultPipelineRunner(
 
     private async Task<List<StepResult>> RunSteps(CancellationToken cancellationToken)
     {
+        // The values steps produce, living exactly as long as the run that produced them.
+        Dictionary<Type, object> state = [];
         List<StepResult> results = [];
-        foreach (var step in _steps)
+        foreach (var descriptor in steps)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -39,9 +42,11 @@ internal class DefaultPipelineRunner(
                 break;
             }
 
+            var step = (IPipelineStep)services.GetRequiredService(descriptor.StepType);
+
             await NotifyReporters(r => r.OnStepStarted(step, cancellationToken));
 
-            var result = await RunStep(step, cancellationToken);
+            var result = await RunStep(step, descriptor, state, cancellationToken);
             results.Add(result);
 
             await NotifyReporters(r => r.OnStepCompleted(step, result, cancellationToken));
@@ -55,11 +60,11 @@ internal class DefaultPipelineRunner(
         return results;
     }
 
-    private async Task<StepResult> RunStep(IPipelineStep step, CancellationToken cancellationToken)
+    private async Task<StepResult> RunStep(IPipelineStep step, StepDescriptor descriptor, Dictionary<Type, object> state, CancellationToken cancellationToken)
     {
         try
         {
-            return await step.Run(cancellationToken);
+            return await descriptor.Invoke(step, services, state, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

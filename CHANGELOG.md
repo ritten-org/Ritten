@@ -4,12 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.0.2]
+## [0.0.2] - 2026-08-15
 
 ### Added
 
 - **The `build` job now packs the project.** This means packaging errors surface in pull requests instead of at deploy time.
 - **Backports.** Versions are now validated against their own release line, so a fix can ship to an older major when a newer one is already out. Projects that treat the major number as a product version can set `"release": { "lines": "minor" }` to allow releasing to older minors too. Backported releases are not marked latest.
+- **Steps are now minimal-API-style methods.** A step's `Run` method can use parameter-based dependency injection to inject a value `T` returned by any earlier step, and returning `Task<StepResult<T>>` is how you provide that `T` in the first place. Task ordering is validated at runtime.
+- **Steps declare a kind.** Steps can now declare themselves as work, validation, gate, or publish, which is shown as a colored glyph beside each step in the terminal.
 
 ### Changed
 
@@ -22,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Removed
 
 - **`RITTEN_SKIP_VERSION_CHECK` and `RITTEN_SKIP_CHANGELOG` are gone.** They existed for dependabot pull requests, which the at-rest state now handles naturally.
+- **`IPipelineState` is gone.** Steps take their inputs as `Run` parameters and return what they produce, so nothing needed the blackboard any more.
 
 ## [0.0.1] - 2026-08-15
 

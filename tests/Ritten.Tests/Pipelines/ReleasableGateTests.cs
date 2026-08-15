@@ -11,42 +11,26 @@ namespace Ritten.Tests.Pipelines;
 /// </summary>
 public class ReleasableGateTests
 {
-    private readonly IPipelineState _state = Substitute.For<IPipelineState>();
-
     [Fact]
     public async Task ContinuesWhenTheProjectIsReleasable()
     {
-        _state.Get<ReleaseState>().Returns(ReleaseState.Releasable(null, null));
-
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(ReleaseState.Releasable(null, null), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         result.Continue.ShouldBeTrue();
     }
 
     [Fact]
-    public async Task StopsSuccessfullyWhenTheProjectIsAtRest()
+    public async Task StopsSuccessfullyWhenThisVersionIsAlreadyReleased()
     {
         // `deploy && deploy` exits 0 both times: the second run has nothing to do, and says so.
-        _state.Get<ReleaseState>()
-            .Returns(ReleaseState.LatestInLine(NuGetVersion.Parse("1.2.0"), NuGetVersion.Parse("1.2.0")));
+        var release = ReleaseState.LatestInLine(NuGetVersion.Parse("1.2.0"), NuGetVersion.Parse("1.2.0"));
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(release, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         result.Continue.ShouldBeFalse();
     }
 
-    [Fact]
-    public async Task FailsWithoutTheReleaseStateInState()
-    {
-        _state.Get<ReleaseState>().Returns((ReleaseState?)null);
-
-        var result = await Step().Run(TestContext.Current.CancellationToken);
-
-        result.IsFailure.ShouldBeTrue();
-        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("Release state");
-    }
-
-    private ReleasableGate Step() => new(_state, Substitute.For<IPipelineLog>());
+    private static ReleasableGate Step() => new(Substitute.For<IPipelineLog>());
 }

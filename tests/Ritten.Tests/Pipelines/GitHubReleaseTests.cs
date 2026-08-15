@@ -12,24 +12,23 @@ namespace Ritten.Tests.Pipelines;
 
 public class GitHubReleaseTests
 {
+    private static readonly ReleaseState Releasable = ReleaseState.Releasable(null, null);
+
     private readonly IReleaseService _releases = Substitute.For<IReleaseService>();
     private readonly IChangelog _changelogs = Substitute.For<IChangelog>();
-    private readonly IPipelineState _state = Substitute.For<IPipelineState>();
     private readonly ChangelogEntry _entry = new() { Version = NuGetVersion.Parse("1.2.0"), Added = ["A thing."] };
+    private readonly Changelog _changelog;
 
     public GitHubReleaseTests()
     {
-        SetVersion("1.2.0");
-        _state.Get<ChangelogEntry>().Returns(_entry);
+        _changelog = new Changelog { Entries = [_entry] };
         _changelogs.RenderEntry(_entry).Returns("### Added\n\n- A thing.");
     }
 
     [Fact]
     public async Task SkipsPrereleaseVersions()
     {
-        SetVersion("1.2.0-beta.1");
-
-        await Step().Run(TestContext.Current.CancellationToken);
+        await Step().Run(Project("1.2.0-beta.1"), _changelog, Releasable, TestContext.Current.CancellationToken);
 
         await _releases.DidNotReceiveWithAnyArgs().Exists(default!, TestContext.Current.CancellationToken);
         await _releases.DidNotReceiveWithAnyArgs().Create(default!, default!, default!, default, TestContext.Current.CancellationToken);
@@ -40,7 +39,7 @@ public class GitHubReleaseTests
     {
         _releases.Exists("v1.2.0", Arg.Any<CancellationToken>()).Returns(true);
 
-        await Step().Run(TestContext.Current.CancellationToken);
+        await Step().Run(Project("1.2.0"), _changelog, Releasable, TestContext.Current.CancellationToken);
 
         await _releases.DidNotReceiveWithAnyArgs().Create(default!, default!, default!, default, TestContext.Current.CancellationToken);
     }
@@ -48,7 +47,7 @@ public class GitHubReleaseTests
     [Fact]
     public async Task CreatesTheReleaseWithTheRenderedChangelogEntry()
     {
-        await Step().Run(TestContext.Current.CancellationToken);
+        await Step().Run(Project("1.2.0"), _changelog, Releasable, TestContext.Current.CancellationToken);
 
         await _releases.Received().Create("v1.2.0", "v1.2.0", "### Added\n\n- A thing.", true, Arg.Any<CancellationToken>());
     }
@@ -57,18 +56,26 @@ public class GitHubReleaseTests
     public async Task DoesNotMarkABackportAsTheLatestRelease()
     {
         // 1.2.0 shipping below 2.0.0 must not displace 2.0.0 as the repository's latest release.
-        _state.Get<ReleaseState>()
-            .Returns(ReleaseState.Releasable(NuGetVersion.Parse("1.1.0"), NuGetVersion.Parse("2.0.0")));
+        var backport = ReleaseState.Releasable(NuGetVersion.Parse("1.1.0"), NuGetVersion.Parse("2.0.0"));
 
-        await Step().Run(TestContext.Current.CancellationToken);
+        await Step().Run(Project("1.2.0"), _changelog, backport, TestContext.Current.CancellationToken);
 
         await _releases.Received().Create("v1.2.0", "v1.2.0", Arg.Any<string>(), false, Arg.Any<CancellationToken>());
     }
 
-    private void SetVersion(string version) =>
-        _state.Get<Project>()
-            .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse(version) });
+    [Fact]
+    public async Task FailsWhenTheChangelogHasNoEntryForTheVersion()
+    {
+        // The gate guarantees a releasable state, so a missing entry here is genuine drift.
+        var result = await Step().Run(Project("1.3.0"), _changelog, Releasable, TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeTrue();
+        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("1.3.0");
+    }
+
+    private static Project Project(string version) =>
+        new() { Name = "My.Package", Version = NuGetVersion.Parse(version) };
 
     private GitHubRelease Step() =>
-        new(Substitute.For<IPipelineLog>(), Options.Create(TestOptions.Git()), _state, _releases, _changelogs);
+        new(Substitute.For<IPipelineLog>(), Options.Create(TestOptions.Git()), _releases, _changelogs);
 }

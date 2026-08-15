@@ -10,22 +10,17 @@ namespace Ritten.Tests.Pipelines;
 
 public class GitTagTests
 {
-    private readonly IGit _git = Substitute.For<IGit>();
-    private readonly IPipelineState _state = Substitute.For<IPipelineState>();
-    private readonly GitOptions _options = TestOptions.Git();
+    private static readonly Project TheProject = new() { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") };
 
-    public GitTagTests()
-    {
-        _state.Get<Project>()
-            .Returns(new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") });
-    }
+    private readonly IGit _git = Substitute.For<IGit>();
+    private readonly GitOptions _options = TestOptions.Git();
 
     [Fact]
     public async Task SkipsWhenTheTagAlreadyExistsOnOrigin()
     {
         _git.RemoteTagExists("origin", "v1.2.0", Arg.Any<CancellationToken>()).Returns(true);
 
-        await Step().Run(TestContext.Current.CancellationToken);
+        await Step().Run(TheProject, TestContext.Current.CancellationToken);
 
         await _git.DidNotReceiveWithAnyArgs().CreateTag(default!, default, TestContext.Current.CancellationToken);
         await _git.DidNotReceiveWithAnyArgs().PushTag(default!, default!, TestContext.Current.CancellationToken);
@@ -34,7 +29,7 @@ public class GitTagTests
     [Fact]
     public async Task CreatesAndPushesTheTagWhenItDoesNotExist()
     {
-        await Step().Run(TestContext.Current.CancellationToken);
+        await Step().Run(TheProject, TestContext.Current.CancellationToken);
 
         await _git.Received().CreateTag("v1.2.0", null, Arg.Any<CancellationToken>());
         await _git.Received().PushTag("origin", "v1.2.0", Arg.Any<CancellationToken>());
@@ -45,7 +40,7 @@ public class GitTagTests
     {
         _options.CommitSha = "abc123";
 
-        await Step().Run(TestContext.Current.CancellationToken);
+        await Step().Run(TheProject, TestContext.Current.CancellationToken);
 
         await _git.Received().CreateTag("v1.2.0", "abc123", Arg.Any<CancellationToken>());
     }
@@ -55,7 +50,7 @@ public class GitTagTests
     {
         _git.TagExists("v1.2.0", Arg.Any<CancellationToken>()).Returns(true);
 
-        await Step().Run(TestContext.Current.CancellationToken);
+        await Step().Run(TheProject, TestContext.Current.CancellationToken);
 
         await _git.DidNotReceiveWithAnyArgs().CreateTag(default!, default, TestContext.Current.CancellationToken);
         await _git.Received().PushTag("origin", "v1.2.0", Arg.Any<CancellationToken>());
@@ -66,11 +61,11 @@ public class GitTagTests
     {
         _options.TagPrefix = "release/";
 
-        await Step().Run(TestContext.Current.CancellationToken);
+        await Step().Run(TheProject, TestContext.Current.CancellationToken);
 
         await _git.Received().CreateTag("release/1.2.0", null, Arg.Any<CancellationToken>());
     }
 
     private GitTag Step() =>
-        new(Substitute.For<IPipelineLog>(), Options.Create(_options), _state, _git);
+        new(Substitute.For<IPipelineLog>(), Options.Create(_options), _git);
 }

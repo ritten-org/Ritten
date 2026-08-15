@@ -25,6 +25,12 @@ public class DotnetFormat(
     public string Name => "dotnet format";
 
     /// <inheritdoc />
+    public StepKind Kind => StepKind.Validation;
+
+    /// <summary>
+    /// Checks the solution's formatting without changing anything.
+    /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
         var reportDirectory = fileSystem.ProjectRoot

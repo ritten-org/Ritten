@@ -37,6 +37,41 @@ public class StepResultTests
     }
 
     [Fact]
+    public void ProducingResult_CarriesTheValueOnSuccess()
+    {
+        StepResult<string> result = "the produced value";
+
+        result.Outcome.ShouldBe(StepResult.Successful);
+        result.Value.ShouldBe("the produced value");
+    }
+
+    [Fact]
+    public void ProducingResult_CarriesAFailureWithoutAValue()
+    {
+        StepResult<string> result = StepResult.Failed("Nope.");
+
+        result.Outcome.IsFailure.ShouldBeTrue();
+        result.Value.ShouldBeNull();
+    }
+
+    [Fact]
+    public void ProducingResult_RefusesAContinuingSuccessWithoutAValue()
+    {
+        // The whole point of the return type: a producing step can't claim success and produce nothing.
+        Should.Throw<InvalidOperationException>(() => { StepResult<string> _ = StepResult.Successful; });
+    }
+
+    [Fact]
+    public void ProducingResult_AllowsASuccessfulEarlyStopWithoutAValue()
+    {
+        // Nothing after the stop consumes, so nothing needs producing.
+        StepResult<string> result = StepResult.NothingToDo;
+
+        result.Outcome.IsFailure.ShouldBeFalse();
+        result.Value.ShouldBeNull();
+    }
+
+    [Fact]
     public void Failed_KeepsEveryErrorItWasGiven()
     {
         var result = StepResult.Failed([new Error("First."), new Error("Second.")]);

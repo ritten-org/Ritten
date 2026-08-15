@@ -10,13 +10,12 @@ using Ritten.Reporting;
 namespace Ritten.Pipelines;
 
 /// <summary>
-/// Fails the pipeline when the changelog has no entry for the version being shipped.
+/// Validates the changelog against the release state.
 /// </summary>
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's changelog options.</param>
 /// <param name="release">The pipeline's release options.</param>
 /// <param name="fileSystem">The file system.</param>
-/// <param name="state">The pipeline state.</param>
 /// <param name="report">The build report.</param>
 /// <param name="changelogs">The changelog client.</param>
 public class ChangelogValidate(
@@ -24,7 +23,6 @@ public class ChangelogValidate(
     IOptions<ChangelogOptions> options,
     IOptions<GitOptions> release,
     IFileSystem fileSystem,
-    IPipelineState state,
     IBuildReport report,
     IChangelog changelogs
 ) : IPipelineStep
@@ -33,19 +31,16 @@ public class ChangelogValidate(
     public string Name => "changelog";
 
     /// <inheritdoc />
-    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
+    public StepKind Kind => StepKind.Validation;
+
+    /// <summary>
+    /// Validates the changelog for the given project and release state.
+    /// </summary>
+    /// <param name="project">The project being validated.</param>
+    /// <param name="releaseState">The release state determined against the feed.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    public async Task<StepResult<Changelog>> Run(Project project, ReleaseState releaseState, CancellationToken cancellationToken = default)
     {
-        var project = state.Get<Project>();
-        if (project == null)
-        {
-            return StepResult.Failed("Project info not found in state.");
-        }
-
-        if (state.Get<ReleaseState>() is not { } releaseState)
-        {
-            return StepResult.Failed("Release state not found in state.");
-        }
-
         var changelogFile = fileSystem.ProjectRoot.GetFile(options.Value.File);
         if (!changelogFile.Exists)
         {
@@ -55,12 +50,11 @@ public class ChangelogValidate(
 
         var changelog = await changelogs.Read(changelogFile, cancellationToken);
 
-        ChangelogEntry? entry = null;
         if (releaseState.Kind == ReleaseStateKind.Releasable)
         {
             // A prerelease ships whatever is in [Unreleased]; a release needs an entry of its own.
             // One or the other, never both — nothing writes a versioned heading before it ships.
-            entry = project.IsPrerelease ? changelog.Unreleased : changelog.Entry(project.Version);
+            var entry = project.IsPrerelease ? changelog.Unreleased : changelog.Entry(project.Version);
             if (entry == null)
             {
                 report.Section("Release").Failure(project.IsPrerelease
@@ -102,14 +96,13 @@ public class ChangelogValidate(
         {
             report.Section("Release").Success("New changes accrue under **[Unreleased]** until a release is prepared.");
             log.Detail("This version is the latest in its line; no changelog entry required.");
-            return StepResult.Successful;
+        }
+        else
+        {
+            report.Section("Release").Success($"Changelog entry for **{project.Version}** is present.");
+            log.Detail($"Found changelog entry for {project.Version}.");
         }
 
-        // CreateGitHubRelease reads this for the release notes.
-        state.Set(entry);
-
-        report.Section("Release").Success($"Changelog entry for **{project.Version}** is present.");
-        log.Detail($"Found changelog entry for {project.Version}.");
-        return StepResult.Successful;
+        return changelog;
     }
 }

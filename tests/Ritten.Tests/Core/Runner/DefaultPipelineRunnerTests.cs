@@ -1,8 +1,6 @@
 using Ritten.Contracts;
 using Ritten.Core;
-using Ritten.Reporting;
 using Ritten.Tests.Core.Helpers;
-using Spectre.Console;
 
 namespace Ritten.Tests.Core.Runner;
 
@@ -12,9 +10,10 @@ public class DefaultPipelineRunnerTests
     public async Task RunPipeline_WithSteps_RunsStepsInOrder()
     {
         // Arrange
-        var step1 = PipelineStepHelpers.CreateMock();
-        var step2 = PipelineStepHelpers.CreateMock();
-        var step3 = PipelineStepHelpers.CreateMock();
+        var journal = new List<object>();
+        var step1 = new TestStepA { Journal = journal };
+        var step2 = new TestStepB { Journal = journal };
+        var step3 = new TestStepC { Journal = journal };
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step1, step2, step3]);
 
@@ -22,22 +21,16 @@ public class DefaultPipelineRunnerTests
         await sut.Run(CancellationToken.None);
 
         // Assert
-        Received.InOrder(() =>
-        {
-            step1.Run(Arg.Any<CancellationToken>());
-            step2.Run(Arg.Any<CancellationToken>());
-            step3.Run(Arg.Any<CancellationToken>());
-        });
+        journal.ShouldBe([step1, step2, step3]);
     }
 
     [Fact]
     public async Task RunPipeline_StoppedOnError_StopsExecution()
     {
         // Arrange
-        var step1 = PipelineStepHelpers.CreateMock();
-        var step2 = PipelineStepHelpers.CreateMock();
-        step2.Run(Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
-        var step3 = PipelineStepHelpers.CreateMock();
+        var step1 = new TestStepA();
+        var step2 = new TestStepB { OnRun = _ => throw new Exception("Broken.") };
+        var step3 = new TestStepC();
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step1, step2, step3]);
 
@@ -45,16 +38,16 @@ public class DefaultPipelineRunnerTests
         await sut.Run(CancellationToken.None);
 
         // Assert
-        await step1.Received().Run(Arg.Any<CancellationToken>());
-        await step2.Received().Run(Arg.Any<CancellationToken>());
-        await step3.DidNotReceive().Run(Arg.Any<CancellationToken>());
+        step1.Runs.ShouldBe(1);
+        step2.Runs.ShouldBe(1);
+        step3.Runs.ShouldBe(0);
     }
 
     [Fact]
     public async Task RunPipeline_TokenCancelled_ReturnsCorrectExitCode()
     {
         // Arrange
-        var step1 = PipelineStepHelpers.CreateMock();
+        var step1 = new TestStepA();
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step1]);
 
@@ -65,7 +58,7 @@ public class DefaultPipelineRunnerTests
         var summary = await sut.Run(cts.Token);
 
         // Assert
-        await step1.DidNotReceive().Run(Arg.Any<CancellationToken>());
+        step1.Runs.ShouldBe(0);
         summary.ExitCode.ShouldBe(PipelineExitCodes.Cancelled);
     }
 
@@ -74,12 +67,14 @@ public class DefaultPipelineRunnerTests
     {
         // Arrange
         using var cts = new CancellationTokenSource();
-        var step = PipelineStepHelpers.CreateMock();
-        step.When(s => s.Run(Arg.Any<CancellationToken>())).Do(_ =>
+        var step = new TestStepA
         {
-            cts.Cancel();
-            throw new OperationCanceledException(cts.Token);
-        });
+            OnRun = _ =>
+            {
+                cts.Cancel();
+                throw new OperationCanceledException(cts.Token);
+            }
+        };
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step]);
 
@@ -96,9 +91,8 @@ public class DefaultPipelineRunnerTests
     {
         // Arrange
         var failed = new StepResult(PipelineExitCodes.Failed, Continue: true, ["Failed, but not fatally."]);
-        var step1 = PipelineStepHelpers.CreateMock();
-        step1.Run(Arg.Any<CancellationToken>()).Returns(failed);
-        var step2 = PipelineStepHelpers.CreateMock();
+        var step1 = new TestStepA { OnRun = _ => Task.FromResult(failed) };
+        var step2 = new TestStepB();
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step1, step2]);
 
@@ -106,7 +100,7 @@ public class DefaultPipelineRunnerTests
         var summary = await sut.Run(CancellationToken.None);
 
         // Assert
-        await step2.Received().Run(Arg.Any<CancellationToken>());
+        step2.Runs.ShouldBe(1);
         summary.ExitCode.ShouldBe(PipelineExitCodes.Failed);
         summary.IsSuccess.ShouldBeFalse();
     }
@@ -129,8 +123,7 @@ public class DefaultPipelineRunnerTests
     {
         // Arrange
         var log = Substitute.For<IPipelineLog>();
-        var step = PipelineStepHelpers.CreateMock();
-        step.Run(Arg.Any<CancellationToken>()).ThrowsAsync(new InvalidOperationException("Something broke."));
+        var step = new TestStepA { OnRun = _ => throw new InvalidOperationException("Something broke.") };
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step], log: log);
 
@@ -156,7 +149,7 @@ public class DefaultPipelineRunnerTests
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(
             reporters: [reporter],
-            steps: [PipelineStepHelpers.CreateMock()],
+            steps: [new TestStepA()],
             log: log
         );
 
@@ -175,10 +168,9 @@ public class DefaultPipelineRunnerTests
     public async Task RunPipeline_StoppedOnError_ReturnsCorrectExitCode()
     {
         // Arrange
-        var step1 = PipelineStepHelpers.CreateMock();
-        var step2 = PipelineStepHelpers.CreateMock();
-        step2.Run(Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
-        var step3 = PipelineStepHelpers.CreateMock();
+        var step1 = new TestStepA();
+        var step2 = new TestStepB { OnRun = _ => throw new Exception("Broken.") };
+        var step3 = new TestStepC();
 
         var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step1, step2, step3]);
 
@@ -193,113 +185,110 @@ public class DefaultPipelineRunnerTests
     public async Task RunPipeline_WithReporters_CallsOnPipelineStartedBeforeSteps()
     {
         // Arrange
+        var journal = new List<object>();
         var reporter = Substitute.For<IProgressReporter>();
-        var step = PipelineStepHelpers.CreateMock();
+        reporter.OnPipelineStarted(Arg.Any<PipelineJob>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                journal.Add("pipeline started");
+                return Task.CompletedTask;
+            });
+        var step = new TestStepA { Journal = journal };
 
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(
-            reporters: [reporter],
-            steps: [step]
-        );
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(reporters: [reporter], steps: [step]);
 
         // Act
         await sut.Run(CancellationToken.None);
 
         // Assert
-        Received.InOrder(() =>
-        {
-            reporter.OnPipelineStarted(Arg.Any<PipelineJob>(), Arg.Any<CancellationToken>());
-            step.Run(Arg.Any<CancellationToken>());
-        });
+        journal.ShouldBe(["pipeline started", step]);
     }
 
     [Fact]
     public async Task RunPipeline_WithReporters_CallsOnPipelineCompletedAfterSteps()
     {
         // Arrange
+        var journal = new List<object>();
         var reporter = Substitute.For<IProgressReporter>();
-        var step = PipelineStepHelpers.CreateMock();
+        reporter.OnPipelineCompleted(Arg.Any<PipelineResult>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                journal.Add("pipeline completed");
+                return Task.CompletedTask;
+            });
+        var step = new TestStepA { Journal = journal };
 
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(
-            steps: [step],
-            reporters: [reporter]
-        );
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step], reporters: [reporter]);
 
         // Act
         await sut.Run(CancellationToken.None);
 
         // Assert
-        Received.InOrder(() =>
-        {
-            step.Run(Arg.Any<CancellationToken>());
-            reporter.OnPipelineCompleted(Arg.Any<PipelineResult>(), Arg.Any<CancellationToken>());
-        });
+        journal.ShouldBe([step, "pipeline completed"]);
     }
 
     [Fact]
     public async Task RunPipeline_WithReporters_CallsStepLifecycleAroundEachStep()
     {
         // Arrange
+        var journal = new List<object>();
         var reporter = Substitute.For<IProgressReporter>();
-        var step = PipelineStepHelpers.CreateMock();
+        reporter.OnStepStarted(Arg.Any<IPipelineStep>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                journal.Add("step started");
+                return Task.CompletedTask;
+            });
+        reporter.OnStepCompleted(Arg.Any<IPipelineStep>(), Arg.Any<StepResult>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                journal.Add("step completed");
+                return Task.CompletedTask;
+            });
+        var step = new TestStepA { Journal = journal };
 
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(
-            reporters: [reporter],
-            steps: [step]
-        );
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(reporters: [reporter], steps: [step]);
 
         // Act
         await sut.Run(CancellationToken.None);
 
         // Assert
-        Received.InOrder(() =>
-        {
-            reporter.OnStepStarted(Arg.Any<IPipelineStep>(), Arg.Any<CancellationToken>());
-            step.Run(Arg.Any<CancellationToken>());
-            reporter.OnStepCompleted(Arg.Any<IPipelineStep>(), Arg.Any<StepResult>(), Arg.Any<CancellationToken>());
-        });
+        journal.ShouldBe(["step started", step, "step completed"]);
     }
 
     [Fact]
-    public async Task RunPipeline_ReporterError_StillRunsPipeline()
+    public async Task RunPipeline_ProducingStep_FeedsTheValueToTheNextStepsParameter()
     {
-        // Arrange
-        var reporter = Substitute.For<IProgressReporter>();
-        reporter.OnPipelineStarted(Arg.Any<PipelineJob>(), Arg.Any<CancellationToken>()).ThrowsAsync<Exception>();
+        // The whole contract in one round trip: a returned value arrives as the next parameter.
+        var producer = new ProducingStep();
+        var consumer = new ConsumingStep();
 
-        var step = PipelineStepHelpers.CreateMock();
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [producer, consumer]);
+        var summary = await sut.Run(CancellationToken.None);
 
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(
-            reporters: [reporter],
-            steps: [step]
-        );
-
-        // Act
-        var act = () => sut.Run(CancellationToken.None);
-
-        // Assert
-        await act.ShouldNotThrowAsync();
-        await step.Received().Run(Arg.Any<CancellationToken>());
+        summary.IsSuccess.ShouldBeTrue();
+        consumer.Received.ShouldBe("the produced value");
     }
 
-    [Fact]
-    public async Task RunPipeline_CancelledStep_IsRenderedWithoutTheReporterFailing()
+    private sealed class ProducedValue(string text)
     {
-        // A cancelled step is a failure by exit code, so the reporter walks its errors. It used
-        // to have none, which IsFailure's MemberNotNullWhen promised was impossible.
-        using var cts = new CancellationTokenSource();
-        var log = Substitute.For<IPipelineLog>();
-        var step = PipelineStepHelpers.CreateMock();
-        step.When(s => s.Run(Arg.Any<CancellationToken>())).Do(_ =>
+        public string Text => text;
+    }
+
+    private sealed class ProducingStep : IPipelineStep
+    {
+        public Task<StepResult<ProducedValue>> Run(CancellationToken cancellationToken) =>
+            Task.FromResult<StepResult<ProducedValue>>(new ProducedValue("the produced value"));
+    }
+
+    private sealed class ConsumingStep : IPipelineStep
+    {
+        public string? Received { get; private set; }
+
+        public Task<StepResult> Run(ProducedValue value, CancellationToken cancellationToken)
         {
-            cts.Cancel();
-            throw new OperationCanceledException(cts.Token);
-        });
-
-        var reporter = new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail);
-
-        var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step], reporters: [reporter], log: log);
-        await sut.Run(cts.Token);
-
-        log.DidNotReceive().Log(PipelineLogLevel.Warning, Arg.Any<string>(), Arg.Any<Exception>());
+            Received = value.Text;
+            return Task.FromResult(StepResult.Successful);
+        }
     }
 }

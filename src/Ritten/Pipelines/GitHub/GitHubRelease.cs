@@ -2,26 +2,22 @@ using Microsoft.Extensions.Options;
 using Ritten.Changelogs;
 using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.Pipelines.DotNet.Steps;
 using Ritten.Pipelines.Git;
 using Ritten.Runtimes.GitHubActions;
 
 namespace Ritten.Pipelines.GitHub;
 
 /// <summary>
-/// Creates the GitHub release for the version being shipped, with the changelog entry as its notes.
-/// Prereleases are skipped, and so is a release a previous run already created.
-/// Requires <see cref="Project"/> and <see cref="ChangelogEntry"/> in pipeline state (see <see cref="ReadProject"/> and <see cref="ChangelogValidate"/>).
+/// Creates the GitHub release for the version being shipped, with its changelog entry as the
+/// notes. Prereleases are skipped, and so is a release a previous run already created.
 /// </summary>
 /// <param name="log">The pipeline log.</param>
 /// <param name="options">The pipeline's release options.</param>
-/// <param name="state">The pipeline state.</param>
 /// <param name="releases">The GitHub release service.</param>
 /// <param name="changelogs">The changelog client.</param>
 public class GitHubRelease(
     IPipelineLog log,
     IOptions<GitOptions> options,
-    IPipelineState state,
     IReleaseService releases,
     IChangelog changelogs
 ) : IPipelineStep
@@ -30,13 +26,17 @@ public class GitHubRelease(
     public string Name => "gh release create";
 
     /// <inheritdoc />
-    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
-    {
-        if (state.Get<Project>() is not { } project)
-        {
-            return StepResult.Failed("Project info not found in state.");
-        }
+    public StepKind Kind => StepKind.Publish;
 
+    /// <summary>
+    /// Creates the GitHub release.
+    /// </summary>
+    /// <param name="project">The project being released.</param>
+    /// <param name="changelog">The validated changelog the release notes come from.</param>
+    /// <param name="releaseState">The release state, used to keep a backport from being marked latest.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    public async Task<StepResult> Run(Project project, Changelog changelog, ReleaseState releaseState, CancellationToken cancellationToken = default)
+    {
         if (project.IsPrerelease)
         {
             log.Skipped($"Skipping GitHub Release for prerelease version {project.Version}; tag has still been pushed.");
@@ -52,14 +52,13 @@ public class GitHubRelease(
             return StepResult.Successful;
         }
 
-        if (state.Get<ChangelogEntry>() is not { } entry)
+        if (changelog.Entry(project.Version) is not { } entry)
         {
-            return StepResult.Failed("Changelog entry not found in state.");
+            return StepResult.Failed($"No changelog entry found for version {project.Version}.");
         }
 
         // A backport must not displace the repository's real latest release.
-        var latestOverall = state.Get<ReleaseState>()?.LatestVersion;
-        var makeLatest = latestOverall is null || project.Version > latestOverall;
+        var makeLatest = releaseState.LatestVersion is null || project.Version > releaseState.LatestVersion;
 
         await releases.Create(tag, tag, changelogs.RenderEntry(entry), makeLatest, cancellationToken);
         return StepResult.Successful;

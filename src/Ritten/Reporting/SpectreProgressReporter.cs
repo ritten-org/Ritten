@@ -143,9 +143,21 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
 
     private void WriteHeading(IPipelineStep step)
     {
-        Write(2, $"[bold]{Markup.Escape(step.Name)}[/]");
+        var (glyph, color) = Style(step.Kind);
+        Write(2, $"[{color}]{glyph}[/] [bold]{Markup.Escape(step.Name)}[/]");
         _headingWritten = true;
     }
+
+    /// <summary>
+    /// Each kind keeps a stable glyph and colour, so a job's shape reads at a glance.
+    /// </summary>
+    private static (string Glyph, string Color) Style(StepKind kind) => kind switch
+    {
+        StepKind.Validation => ("○", "deepskyblue1"),
+        StepKind.Gate => ("◆", "yellow"),
+        StepKind.Publish => ("▲", "fuchsia"),
+        _ => ("·", "grey")
+    };
 
     /// <summary>
     /// Writes indented markup. A <see cref="Padder"/> rather than leading spaces, so that a line
