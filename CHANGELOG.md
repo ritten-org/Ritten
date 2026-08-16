@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **Unpublished project support.** There's a new `dotnet` pipeline for projects that ship nothing. It just runs the build and tests, but doesn't bother with a deploy.
+
 ### Fixed
 
 - **`build` no longer leaves a stray format report.** The dotnet client owns where its `dotnet format` report lives and removes it once the result has been read, so `temp/` is gone again after a run.
