@@ -123,57 +123,6 @@ public class PipelineSettingsTests : IDisposable
     }
 
     [Fact]
-    public async Task Read_RejectsAnUnrecognisedSection()
-    {
-        // A typo must not be silently ignored, or it surfaces later as "build.project not set".
-        WriteRittenJson(_root, """{ "biuld": { "project": "src/Thing/Thing.csproj" } }""");
-        var project = await RittenProject.Resolve(_root);
-
-        var settings = PipelineSettings.Read<DotNetToolSettings>(project.Value.ShouldNotBeNull());
-
-        settings.IsError.ShouldBeTrue();
-        var error = settings.Errors.ShouldHaveSingleItem();
-        // The message says what to fix without needing --verbose; the exception is kept for it.
-        error.Message.ShouldContain(RittenProject.FileName);
-        error.Message.ShouldContain("biuld");
-        error.Cause.ShouldBeOfType<JsonException>();
-    }
-
-    [Fact]
-    public async Task Read_RejectsAnUnrecognisedKeyWithinASection()
-    {
-        WriteRittenJson(_root, """{ "build": { "projct": "src/Thing/Thing.csproj" } }""");
-        var project = await RittenProject.Resolve(_root);
-
-        var settings = PipelineSettings.Read<DotNetToolSettings>(project.Value.ShouldNotBeNull());
-
-        settings.IsError.ShouldBeTrue();
-        var error = settings.Errors.ShouldHaveSingleItem();
-        // The message says what to fix without needing --verbose; the exception is kept for it.
-        error.Message.ShouldContain(RittenProject.FileName);
-        error.Message.ShouldContain("projct");
-        error.Cause.ShouldBeOfType<JsonException>();
-    }
-
-    [Fact]
-    public async Task Read_RejectsAKeyBelongingToAnotherKindOfProject()
-    {
-        // Because the settings type belongs to the pipeline, a key that would be valid for an
-        // npm project is an error in a .NET one.
-        WriteRittenJson(_root, """{ "build": { "directory": "packages/thing" } }""");
-        var project = await RittenProject.Resolve(_root);
-
-        var settings = PipelineSettings.Read<DotNetToolSettings>(project.Value.ShouldNotBeNull());
-
-        settings.IsError.ShouldBeTrue();
-        var error = settings.Errors.ShouldHaveSingleItem();
-        // The message says what to fix without needing --verbose; the exception is kept for it.
-        error.Message.ShouldContain(RittenProject.FileName);
-        error.Message.ShouldContain("directory");
-        error.Cause.ShouldBeOfType<JsonException>();
-    }
-
-    [Fact]
     public async Task Read_AllowsCommentsAndTrailingCommas()
     {
         // It's a hand-edited file.

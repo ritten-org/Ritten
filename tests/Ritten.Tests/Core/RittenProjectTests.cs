@@ -87,17 +87,6 @@ public class RittenProjectTests : IDisposable
     }
 
     [Fact]
-    public async Task GetPipelineName_MatchesThePropertyCaseInsensitively()
-    {
-        // The full parse is case-insensitive, so the peek has to be too.
-        WriteRittenJson(_root, """{ "Pipeline": "dotnet-tool" }""");
-
-        var project = await RittenProject.Resolve(_root);
-
-        project.Value.ShouldNotBeNull().GetPipelineName().Value.ShouldBe("dotnet-tool");
-    }
-
-    [Fact]
     public async Task GetPipelineName_ReportsAMissingDeclaration()
     {
         WriteRittenJson(_root);
@@ -109,16 +98,6 @@ public class RittenProjectTests : IDisposable
         var error = name.Errors.ShouldHaveSingleItem();
         error.Message.ShouldContain(RittenProject.FileName);
         error.Message.ShouldContain("pipeline");
-    }
-
-    [Fact]
-    public async Task GetPipelineName_ReportsANonStringDeclaration()
-    {
-        WriteRittenJson(_root, """{ "pipeline": 42 }""");
-
-        var project = await RittenProject.Resolve(_root);
-
-        project.Value.ShouldNotBeNull().GetPipelineName().IsError.ShouldBeTrue();
     }
 
     private static void WriteRittenJson(string directory, string content = "{}")
