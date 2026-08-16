@@ -60,24 +60,11 @@ public class PipelineHostTests
     }
 
     [Fact]
-    public void Build_RejectsAStepWithoutAStepAttribute()
-    {
-        // Name and kind are required, not defaulted: an unclassified step is a mistake, not work.
-        var job = new TestJob(steps: [typeof(UnclassifiedStep)]);
-        var builder = PipelineHostBuilderHelpers.Create();
-
-        var result = builder.Build(job, new DotNetToolSettings());
-
-        result.IsError.ShouldBeTrue();
-        result.Errors.ShouldHaveSingleItem().Message.ShouldContain("[Step]");
-    }
-
-    [Fact]
     public void Build_RunsRulesThePipelineRegisters()
     {
         var rule = Substitute.For<IJobRule>();
         rule.Check(Arg.Any<IJob>()).Returns([new Error("House rule broken.")]);
-        var job = new TestJob(steps: [typeof(FirstStep)]);
+        var job = new TestJob(steps: [Step.FromType<FirstStep>()]);
         var builder = PipelineHostBuilderHelpers.Create();
         builder.Services.AddSingleton(rule);
         builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
@@ -91,7 +78,7 @@ public class PipelineHostTests
     private static (PipelineHost Host, StepProbe Probe) BuildHost<TStep>() where TStep : class
     {
         var probe = new StepProbe();
-        var job = new TestJob(steps: [typeof(TStep)]);
+        var job = new TestJob(steps: [Step.FromType<TStep>()]);
         var builder = PipelineHostBuilderHelpers.Create();
         builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
         builder.Services.AddSingleton(probe);
@@ -128,12 +115,6 @@ class FailingStep
 class FirstStep
 {
     public Task<StepResult> Run(CancellationToken cancellationToken = default) =>
-        Task.FromResult(StepResult.Successful);
-}
-
-class UnclassifiedStep
-{
-    public Task<StepResult> Run(CancellationToken cancellationToken) =>
         Task.FromResult(StepResult.Successful);
 }
 

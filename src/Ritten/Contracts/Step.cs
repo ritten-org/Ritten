@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using Ritten.Core;
 
 namespace Ritten.Contracts;
 
@@ -58,19 +57,23 @@ public sealed class Step(string name, StepKind kind, Type? produces, IReadOnlyLi
     /// <summary>
     /// The type declaring the <c>Run</c> method, registered for the container to construct.
     /// </summary>
-    internal Type StepType =>
-        field ?? throw new InvalidOperationException($"'{Name}' was built from its facts alone; only a step described from its type can run.");
+    internal Type StepType => field ?? throw new InvalidOperationException($"'{Name}' was built from its facts alone; only a step described from its type can run.");
 
     /// <summary>
-    /// Reads the <c>Run</c> method of the given step type. Only the signature itself is judged
-    /// here; whether its parameters can be satisfied depends on the job, judged by the rules.
+    /// Reads a step from its type.
+    /// </summary>
+    /// <typeparam name="TStep">The step type to read.</typeparam>
+    public static Step FromType<TStep>() where TStep : class => FromType(typeof(TStep));
+
+    /// <summary>
+    /// Reads a step from its type.
     /// </summary>
     /// <param name="stepType">The step type to read.</param>
-    internal static Result<Step> FromType(Type stepType)
+    internal static Step FromType(Type stepType)
     {
         if (stepType.GetCustomAttribute<StepAttribute>() is not { } metadata)
         {
-            return Result.Error($"{stepType.Name} must declare a [Step] attribute naming and classifying it.");
+            throw new InvalidOperationException($"{stepType.Name} must declare a [Step] attribute naming and classifying it.");
         }
 
         var runs = stepType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
@@ -78,7 +81,7 @@ public sealed class Step(string name, StepKind kind, Type? produces, IReadOnlyLi
             .ToList();
         if (runs.Count != 1)
         {
-            return Result.Error($"{stepType.Name} must declare exactly one public Run method.");
+            throw new InvalidOperationException($"{stepType.Name} must declare exactly one public Run method.");
         }
 
         // A step with nothing to await returns its result directly, like a minimal API handler.
@@ -97,7 +100,7 @@ public sealed class Step(string name, StepKind kind, Type? produces, IReadOnlyLi
         }
         else if (payload != typeof(StepResult))
         {
-            return Result.Error($"{stepType.Name}.Run must return StepResult, StepResult<T>, Task<StepResult>, or Task<StepResult<T>>.");
+            throw new InvalidOperationException($"{stepType.Name}.Run must return StepResult, StepResult<T>, Task<StepResult>, or Task<StepResult<T>>.");
         }
 
         var nullability = new NullabilityInfoContext();
@@ -109,10 +112,7 @@ public sealed class Step(string name, StepKind kind, Type? produces, IReadOnlyLi
     }
 
     /// <summary>
-    /// Runs the step, supplying its parameters from pipeline state, and storing what it
-    /// produces for the steps after it. Parameters come only from state — services are
-    /// constructor-injected — which is what lets the produce-then-consume order be judged
-    /// on the declarations alone.
+    /// Runs the step, supplying its parameters from pipeline state.
     /// </summary>
     /// <param name="step">The resolved step instance.</param>
     /// <param name="state">The pipeline state for consumed and produced values.</param>

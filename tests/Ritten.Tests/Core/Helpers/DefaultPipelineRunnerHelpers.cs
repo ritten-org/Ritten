@@ -24,12 +24,7 @@ internal static class DefaultPipelineRunnerHelpers
         var methods = new List<Step>();
         foreach (var step in steps)
         {
-            if (Step.Describe(step.GetType()).Value is not { } method)
-            {
-                throw new InvalidOperationException($"{step.GetType().Name} has an invalid Run method.");
-            }
-
-            methods.Add(method);
+            methods.Add(Step.FromType(step.GetType()));
             services.AddSingleton(step.GetType(), step);
         }
 

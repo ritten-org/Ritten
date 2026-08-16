@@ -1,5 +1,6 @@
 using Ritten.Changelogs.Steps;
 using Ritten.CodeCoverage;
+using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.DotNet.Steps;
 using Ritten.Git.Steps;
@@ -21,25 +22,25 @@ internal sealed class DeployJob : DotNetPackageJob
     protected override void ValidateSettings(SettingsValidator<DotNetPackageSettings> settings) => settings.Require(s => s.Build.Project);
 
     /// <inheritdoc />
-    protected override IEnumerable<Type> GetSteps() =>
+    public override IReadOnlyList<Step> Steps { get; } =
     [
-        typeof(Clean),
-        typeof(ReadProject),
-        typeof(ReadChangelog),
-        typeof(ChangelogLinksValidate),
-        typeof(NugetRead),
-        typeof(NugetValidate),
-        typeof(ChangelogValidate),
-        typeof(ReleasableGate),
-        typeof(DotnetRestore),
-        typeof(DotnetBuild),
-        typeof(DotnetTest),
+        Step.FromType<Clean>(),
+        Step.FromType<ReadProject>(),
+        Step.FromType<ReadChangelog>(),
+        Step.FromType<ChangelogLinksValidate>(),
+        Step.FromType<NugetRead>(),
+        Step.FromType<NugetValidate>(),
+        Step.FromType<ChangelogValidate>(),
+        Step.FromType<ReleasableGate>(),
+        Step.FromType<DotnetRestore>(),
+        Step.FromType<DotnetBuild>(),
+        Step.FromType<DotnetTest>(),
         .. CoverageSteps.All,
-        typeof(ApprovalGate),
-        typeof(NugetAuthenticate),
-        typeof(DotnetPack),
-        typeof(GitTag),
-        typeof(GitHubRelease),
-        typeof(NugetPush)
+        Step.FromType<ApprovalGate>(),
+        Step.FromType<NugetAuthenticate>(),
+        Step.FromType<DotnetPack>(),
+        Step.FromType<GitTag>(),
+        Step.FromType<GitHubRelease>(),
+        Step.FromType<NugetPush>()
     ];
 }

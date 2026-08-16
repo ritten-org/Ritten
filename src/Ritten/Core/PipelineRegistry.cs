@@ -67,13 +67,6 @@ public sealed class PipelineRegistry
 
             foreach (var job in jobs)
             {
-                // A declaration that doesn't describe has no shape for the rules to judge.
-                if (job is Job declared && declared.Describe() is { IsError: true } broken)
-                {
-                    errors.AddRange(broken.Errors.Select(e => Contextualize(pipeline, job, e)));
-                    continue;
-                }
-
                 errors.AddRange(Rules
                     .SelectMany(rule => rule.Check(job))
                     .Select(e => Contextualize(pipeline, job, e)));

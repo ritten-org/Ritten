@@ -1,3 +1,4 @@
+using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.Pipelines;
 
@@ -8,13 +9,13 @@ namespace Ritten.Tests.Support;
 /// </summary>
 internal sealed class TestJob(
     string name = "verify",
-    IReadOnlyList<Type>? steps = null,
+    IReadOnlyList<Step>? steps = null,
     Action<SettingsValidator<DotNetToolSettings>>? validate = null
 ) : Job<DotNetToolSettings>
 {
     public override string Name => name;
 
-    protected override IEnumerable<Type> StepTypes => steps ?? [];
+    public override IReadOnlyList<Step> Steps { get; } = steps ?? [];
 
     protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => validate?.Invoke(settings);
 }

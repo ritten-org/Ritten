@@ -1,4 +1,5 @@
 using Ritten.CodeCoverage.Steps;
+using Ritten.Contracts;
 
 namespace Ritten.CodeCoverage;
 
@@ -10,5 +11,5 @@ internal static class CoverageSteps
     /// <summary>
     /// Reads the coverage the tests collected, then judges it against the configured minimums.
     /// </summary>
-    public static IReadOnlyList<Type> All => [typeof(ReadCoverage), typeof(CoverageValidate)];
+    public static IReadOnlyList<Step> All => [Step.FromType<ReadCoverage>(), Step.FromType<CoverageValidate>()];
 }

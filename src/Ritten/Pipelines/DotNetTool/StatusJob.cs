@@ -1,4 +1,5 @@
 using Ritten.Changelogs.Steps;
+using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.DotNet.Steps;
 using Ritten.NuGet.Steps;
@@ -18,11 +19,11 @@ internal sealed class StatusJob : DotNetToolJob
     protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => settings.Require(s => s.Build.Project);
 
     /// <inheritdoc />
-    protected override IEnumerable<Type> GetSteps() =>
+    public override IReadOnlyList<Step> Steps { get; } =
     [
-        typeof(ReadProject),
-        typeof(ReadChangelog),
-        typeof(NugetRead),
-        typeof(StatusReport)
+        Step.FromType<ReadProject>(),
+        Step.FromType<ReadChangelog>(),
+        Step.FromType<NugetRead>(),
+        Step.FromType<StatusReport>()
     ];
 }

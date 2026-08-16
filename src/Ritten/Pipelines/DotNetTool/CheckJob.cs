@@ -1,5 +1,6 @@
 using Ritten.Changelogs.Steps;
 using Ritten.CodeCoverage;
+using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.DotNet.Steps;
 using Ritten.NuGet.Steps;
@@ -19,20 +20,20 @@ internal sealed class CheckJob : DotNetToolJob
     protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => settings.Require(s => s.Build.Project);
 
     /// <inheritdoc />
-    protected override IEnumerable<Type> GetSteps() =>
+    public override IReadOnlyList<Step> Steps { get; } =
     [
-        typeof(Clean),
-        typeof(ReadProject),
-        typeof(ReadChangelog),
-        typeof(ChangelogLinksValidate),
-        typeof(NugetRead),
-        typeof(NugetValidate),
-        typeof(ChangelogValidate),
-        typeof(DotnetRestore),
-        typeof(DotnetFormat),
-        typeof(DotnetBuild),
-        typeof(DotnetTest),
+        Step.FromType<Clean>(),
+        Step.FromType<ReadProject>(),
+        Step.FromType<ReadChangelog>(),
+        Step.FromType<ChangelogLinksValidate>(),
+        Step.FromType<NugetRead>(),
+        Step.FromType<NugetValidate>(),
+        Step.FromType<ChangelogValidate>(),
+        Step.FromType<DotnetRestore>(),
+        Step.FromType<DotnetFormat>(),
+        Step.FromType<DotnetBuild>(),
+        Step.FromType<DotnetTest>(),
         .. CoverageSteps.All,
-        typeof(DotnetPack)
+        Step.FromType<DotnetPack>()
     ];
 }

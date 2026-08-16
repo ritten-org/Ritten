@@ -1,3 +1,4 @@
+using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.Pipelines.DotNetPackage;
 using Ritten.Pipelines.DotNetTool;
@@ -59,8 +60,8 @@ public class PipelineRegistryTests
     public void Validate_ReportsJobsSharingAName()
     {
         var registry = new PipelineRegistry().Add(new FakePipeline("fake",
-            new TestJob(steps: [typeof(FirstStep)]),
-            new TestJob(steps: [typeof(FirstStep)])));
+            new TestJob(steps: [Step.FromType<FirstStep>()]),
+            new TestJob(steps: [Step.FromType<FirstStep>()])));
 
         registry.Validate().ShouldHaveSingleItem().Message.ShouldContain("two jobs named 'verify'");
     }
@@ -71,7 +72,7 @@ public class PipelineRegistryTests
         // The purely structural job rules are judged on the declarations, so a bad shape fails
         // every run at startup, not just the run that selects it.
         var registry = new PipelineRegistry().Add(new FakePipeline("fake",
-            new TestJob("deploy", steps: [typeof(PublishingStep)])));
+            new TestJob("deploy", steps: [Step.FromType<PublishingStep>()])));
 
         var error = registry.Validate().ShouldHaveSingleItem();
         error.Message.ShouldStartWith("fake deploy:");
@@ -84,7 +85,7 @@ public class PipelineRegistryTests
         // Step parameters come only from state, so a consumer before its producer is judged on
         // the declarations — no container required.
         var registry = new PipelineRegistry().Add(new FakePipeline("fake",
-            new TestJob(steps: [typeof(ProjectConsumingStep)])));
+            new TestJob(steps: [Step.FromType<ProjectConsumingStep>()])));
 
         registry.Validate().ShouldHaveSingleItem().Message.ShouldContain("no earlier step produces");
     }
@@ -93,18 +94,9 @@ public class PipelineRegistryTests
     public void Validate_AcceptsAConsumerDeclaredAfterItsProducer()
     {
         var registry = new PipelineRegistry().Add(new FakePipeline("fake",
-            new TestJob(steps: [typeof(ProjectProducingStep), typeof(ProjectConsumingStep)])));
+            new TestJob(steps: [Step.FromType<ProjectProducingStep>(), Step.FromType<ProjectConsumingStep>()])));
 
         registry.Validate().ShouldBeEmpty();
-    }
-
-    [Fact]
-    public void Validate_ReportsAStepThatIsNotAStep()
-    {
-        var registry = new PipelineRegistry().Add(new FakePipeline("fake",
-            new TestJob(steps: [typeof(UnclassifiedStep)])));
-
-        registry.Validate().ShouldHaveSingleItem().Message.ShouldContain("[Step]");
     }
 
     private sealed class FakePipeline(string name, params IReadOnlyList<IJob> jobs) : IPipeline
