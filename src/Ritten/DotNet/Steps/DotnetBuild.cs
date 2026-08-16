@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
-using Ritten.Core;
 using Ritten.Reporting;
 
 namespace Ritten.DotNet.Steps;
@@ -14,8 +13,6 @@ namespace Ritten.DotNet.Steps;
 [Step("dotnet build", StepKind.Work)]
 public class DotnetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuildReport report)
 {
-    private const int MaxDiagnostics = 30;
-
     /// <summary>
     /// Builds the solution.
     /// </summary>
@@ -35,17 +32,6 @@ public class DotnetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuild
             return StepResult.Failed("The solution failed to build. Re-run with --verbose to see the compiler output.");
         }
 
-        var diagnostics = result.Diagnostics.Select(d => d.ToString()).ToList();
-        if (diagnostics.Count > MaxDiagnostics)
-        {
-            var omitted = diagnostics.Count - MaxDiagnostics;
-            diagnostics = [.. diagnostics.Take(MaxDiagnostics), $"…and {omitted} more"];
-        }
-
-        section.Details("Compiler output", $"```\n{string.Join('\n', diagnostics)}\n```");
-
-        // The terminal gets what the pull request comment gets; the command output that
-        // produced it is hidden unless someone asks for --verbose.
-        return StepResult.Failed(diagnostics.Select(d => new Error(d)));
+        return section.FailWithDiagnostics("Compiler output", result.Diagnostics);
     }
 }

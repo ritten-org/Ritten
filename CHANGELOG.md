@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - **`build` no longer leaves a stray format report.** The dotnet client owns where its `dotnet format` report lives and removes it once the result has been read, so `temp/` is gone again after a run.
+- **Restore failures name the problem.** When `dotnet restore` fails, the NuGet and MSBuild errors, like a vulnerable package, or an unreachable feed, are parsed and reported the same way build failures are.
+- **The pull request comment no longer vaguely mentions unknown errors.** When a failing step writes nothing to the report, the comment now shows the step's name and its errors.
+- **Command failure messages read stdout too.** MSBuild-family tools report their errors on standard output, so a failed command's message now falls back to the stdout tail when stderr is empty, rather than reporting the exit code alone.
 
 ## [0.0.4] - 2026-08-16
 

@@ -46,7 +46,7 @@ internal class BuildReportPublisher(
     /// <inheritdoc />
     public async Task OnPipelineCompleted(PipelineResult result, CancellationToken cancellationToken)
     {
-        var markdown = renderer.Render(options.Value.WorkflowName, result.IsSuccess, report.Sections);
+        var markdown = renderer.Render(options.Value.WorkflowName, result.IsSuccess, report.Sections, result.FailedStep);
         foreach (var sink in sinks)
         {
             try

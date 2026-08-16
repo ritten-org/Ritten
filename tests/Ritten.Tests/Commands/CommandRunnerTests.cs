@@ -46,6 +46,18 @@ public class CommandRunnerTests
     }
 
     [Fact]
+    public async Task Run_FallsBackToStandardOutputInTheFailureMessage()
+    {
+        // dotnet and MSBuild report their errors on stdout, leaving stderr empty.
+        var command = Shell("echo 'error NU1903: known vulnerability'; exit 1").ThrowOnError();
+
+        var exception = await Should.ThrowAsync<CommandFailedException>(() => Runner().Run(command, TestContext.Current.CancellationToken));
+
+        exception.Message.ShouldContain("exited with code 1");
+        exception.Message.ShouldContain("NU1903");
+    }
+
+    [Fact]
     public async Task Run_OmitsRedactedOutputFromTheFailureMessage()
     {
         var command = Shell("echo boom >&2; exit 1").RedactOutput().ThrowOnError();

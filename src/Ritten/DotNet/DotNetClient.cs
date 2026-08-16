@@ -62,10 +62,12 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
             command = command.AndArguments(args.Project);
         }
 
-        var result = await commands.Run(command.ThrowOnError(), cancellationToken);
+        var result = await commands.Run(command, cancellationToken);
         return new RestoreResult
         {
-            RestoredProjects = DotNetOutputParser.ParseRestoredProjects(result.StandardOutput)
+            Succeeded = result.IsSuccess,
+            RestoredProjects = DotNetOutputParser.ParseRestoredProjects(result.StandardOutput),
+            Diagnostics = ParseDiagnostics(result.StandardOutput)
         };
     }
 

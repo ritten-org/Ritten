@@ -63,8 +63,8 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
     public Task OnPipelineCompleted(PipelineResult result, CancellationToken cancellationToken)
     {
         _pipelineTimer.Stop();
-        var passed = result.Steps.Count(s => !s.IsFailure);
-        var failed = result.Steps.Count(s => s.IsFailure);
+        var passed = result.Steps.Count(s => !s.Result.IsFailure);
+        var failed = result.Steps.Count(s => s.Result.IsFailure);
         var total = result.Steps.Count;
         var elapsed = FormatDuration(_pipelineTimer.Elapsed);
 

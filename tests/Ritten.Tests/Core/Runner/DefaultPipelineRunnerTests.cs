@@ -83,7 +83,7 @@ public class DefaultPipelineRunnerTests
 
         // Assert
         summary.ExitCode.ShouldBe(PipelineExitCodes.Cancelled);
-        summary.Steps.ShouldHaveSingleItem().ShouldBe(StepResult.StoppedAfterCancel);
+        summary.Steps.ShouldHaveSingleItem().Result.ShouldBe(StepResult.StoppedAfterCancel);
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public class DefaultPipelineRunnerTests
         var summary = await sut.Run(CancellationToken.None);
 
         // Assert
-        summary.Steps.ShouldHaveSingleItem().Errors.ShouldHaveSingleItem("Something broke.");
+        summary.Steps.ShouldHaveSingleItem().Result.Errors.ShouldHaveSingleItem("Something broke.");
         log.Received().Log(
             PipelineLogLevel.Verbose,
             Arg.Any<string>(),
@@ -179,6 +179,24 @@ public class DefaultPipelineRunnerTests
 
         // Assert
         summary.ExitCode.ShouldBe(PipelineExitCodes.Failed);
+    }
+
+    [Fact]
+    public async Task RunPipeline_StoppedOnError_ExposesTheFailingStepAsTheFailure()
+    {
+        // Arrange
+        var step1 = new TestStepA();
+        var step2 = new TestStepB { OnRun = _ => throw new Exception("Broken.") };
+
+        var sut = DefaultPipelineRunnerHelpers.CreateRunner(steps: [step1, step2]);
+
+        // Act
+        var summary = await sut.Run(CancellationToken.None);
+
+        // Assert
+        var failure = summary.FailedStep.ShouldNotBeNull();
+        failure.Step.StepType.ShouldBe(typeof(TestStepB));
+        failure.Result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldBe("Broken.");
     }
 
     [Fact]
