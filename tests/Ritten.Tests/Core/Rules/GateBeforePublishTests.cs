@@ -11,7 +11,7 @@ public class GateBeforePublishTests
     [Fact]
     public void FailsAPublishWithNoGateBeforeIt()
     {
-        var errors = _rule.Check(new FakeJob([Step(StepKind.Work), Step(StepKind.Publish, "git tag")]));
+        var errors = _rule.Check(new TestJob(steps: [Step(StepKind.Work), Step(StepKind.Publish, "git tag")]));
 
         errors.ShouldHaveSingleItem().Message.ShouldContain("git tag");
     }
@@ -20,7 +20,7 @@ public class GateBeforePublishTests
     public void AGateAfterThePublishDoesNotCount()
     {
         // The gate has to be able to stop the publish, not regret it.
-        var errors = _rule.Check(new FakeJob([Step(StepKind.Publish, "git tag"), Step(StepKind.Gate)]));
+        var errors = _rule.Check(new TestJob(steps: [Step(StepKind.Publish, "git tag"), Step(StepKind.Gate)]));
 
         errors.ShouldNotBeEmpty();
     }
@@ -28,7 +28,7 @@ public class GateBeforePublishTests
     [Fact]
     public void PassesWhenAGateRunsBeforeTheFirstPublish()
     {
-        var errors = _rule.Check(new FakeJob([
+        var errors = _rule.Check(new TestJob(steps: [
             Step(StepKind.Gate),
             Step(StepKind.Publish),
             Step(StepKind.Publish)
@@ -40,7 +40,7 @@ public class GateBeforePublishTests
     [Fact]
     public void PassesAJobThatPublishesNothing()
     {
-        var errors = _rule.Check(new FakeJob([Step(StepKind.Work), Step(StepKind.Validation)]));
+        var errors = _rule.Check(new TestJob(steps: [Step(StepKind.Work), Step(StepKind.Validation)]));
 
         errors.ShouldBeEmpty();
     }

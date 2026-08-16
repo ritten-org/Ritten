@@ -11,10 +11,7 @@ namespace Ritten.Tests.Pipelines;
 /// </summary>
 public class DotNetPackagePipelineTests
 {
-    private static readonly DotNetPackageSettings Complete = new()
-    {
-        Build = new DotNetBuildSettings { Project = "src/Thing/Thing.csproj" }
-    };
+    private const string Complete = """{ "build": { "project": "src/Thing/Thing.csproj" } }""";
 
     [Theory]
     [InlineData("status")]
@@ -33,7 +30,7 @@ public class DotNetPackagePipelineTests
     [Fact]
     public void Build_DoesNotRequireAProject()
     {
-        var result = Build("build", new DotNetPackageSettings());
+        var result = Build("build", "{}");
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.Dispose();
@@ -45,17 +42,16 @@ public class DotNetPackagePipelineTests
     [InlineData("deploy")]
     public void ShippingJobs_RequireAProject(string job)
     {
-        var result = Build(job, new DotNetPackageSettings());
+        var result = Build(job, "{}");
 
         result.IsError.ShouldBeTrue();
         result.Errors.ShouldHaveSingleItem().Message.ShouldContain("'build.project'");
     }
 
-    private static Result<PipelineHost> Build(string job, DotNetPackageSettings settings)
+    private static Result<PipelineHost> Build(string job, string settings)
     {
         var pipeline = new DotNetPackagePipeline();
-        var builder = PipelineHostBuilderHelpers.Create(pipeline.Label);
-        var declared = (Job)pipeline.Jobs.Single(j => j.Name == job);
-        return builder.Build(declared, settings);
+        var builder = PipelineHostBuilderHelpers.Create(pipeline.Label, settings: settings);
+        return builder.Build(pipeline.Jobs.Single(j => j.Name == job));
     }
 }

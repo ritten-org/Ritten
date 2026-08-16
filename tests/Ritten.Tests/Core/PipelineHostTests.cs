@@ -49,7 +49,7 @@ public class PipelineHostTests
         var builder = PipelineHostBuilderHelpers.Create();
 
         // Act
-        var result = builder.Build(job, new DotNetToolSettings());
+        var result = builder.Build(job);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -69,7 +69,7 @@ public class PipelineHostTests
         builder.Services.AddSingleton(rule);
         builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
 
-        var result = builder.Build(job, new DotNetToolSettings());
+        var result = builder.Build(job);
 
         result.IsError.ShouldBeTrue();
         result.Errors.ShouldHaveSingleItem().Message.ShouldBe("House rule broken.");
@@ -83,7 +83,7 @@ public class PipelineHostTests
         builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
         builder.Services.AddSingleton(probe);
 
-        var result = builder.Build(job, new DotNetToolSettings());
+        var result = builder.Build(job);
         result.IsSuccess.ShouldBeTrue();
         return (result.Value, probe);
     }

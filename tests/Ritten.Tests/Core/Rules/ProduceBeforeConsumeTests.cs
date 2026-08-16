@@ -11,7 +11,7 @@ public class ProduceBeforeConsumeTests
     [Fact]
     public void FailsAConsumerWithNoProducerBeforeIt()
     {
-        var errors = Rule().Check(new FakeJob([
+        var errors = Rule().Check(new TestJob(steps: [
             Step(name: "consumer", requires: typeof(ProducedValue)),
             Step(name: "producer", produces: typeof(ProducedValue))
         ]));
@@ -24,7 +24,7 @@ public class ProduceBeforeConsumeTests
     [Fact]
     public void PassesAConsumerAfterItsProducer()
     {
-        var errors = Rule().Check(new FakeJob([
+        var errors = Rule().Check(new TestJob(steps: [
             Step(produces: typeof(ProducedValue)),
             Step(requires: typeof(ProducedValue))
         ]));
@@ -35,7 +35,7 @@ public class ProduceBeforeConsumeTests
     [Fact]
     public void ReportsEveryUnsatisfiedParameterAtOnce()
     {
-        var errors = Rule().Check(new FakeJob([
+        var errors = Rule().Check(new TestJob(steps: [
             Step(name: "first", requires: typeof(ProducedValue)),
             Step(name: "second", requires: typeof(ProducedValue))
         ]));

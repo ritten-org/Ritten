@@ -11,7 +11,7 @@ public class ValidationBeforePublishTests
     [Fact]
     public void FailsAValidationThatRunsAfterAPublish()
     {
-        var errors = _rule.Check(new FakeJob([
+        var errors = _rule.Check(new TestJob(steps: [
             Step(StepKind.Publish),
             Step(StepKind.Validation, "changelog")
         ]));
@@ -22,7 +22,7 @@ public class ValidationBeforePublishTests
     [Fact]
     public void ReportsEveryLateValidation()
     {
-        var errors = _rule.Check(new FakeJob([
+        var errors = _rule.Check(new TestJob(steps: [
             Step(StepKind.Publish),
             Step(StepKind.Validation, "first"),
             Step(StepKind.Validation, "second")
@@ -34,7 +34,7 @@ public class ValidationBeforePublishTests
     [Fact]
     public void PassesValidationsAheadOfThePublishSteps()
     {
-        var errors = _rule.Check(new FakeJob([
+        var errors = _rule.Check(new TestJob(steps: [
             Step(StepKind.Validation),
             Step(StepKind.Gate),
             Step(StepKind.Publish)
@@ -46,7 +46,7 @@ public class ValidationBeforePublishTests
     [Fact]
     public void PassesAJobThatPublishesNothing()
     {
-        var errors = _rule.Check(new FakeJob([Step(StepKind.Work), Step(StepKind.Validation)]));
+        var errors = _rule.Check(new TestJob(steps: [Step(StepKind.Work), Step(StepKind.Validation)]));
 
         errors.ShouldBeEmpty();
     }
