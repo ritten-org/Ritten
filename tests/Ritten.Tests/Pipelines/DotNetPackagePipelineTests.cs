@@ -1,9 +1,14 @@
 using Ritten.Core;
 using Ritten.Pipelines;
+using Ritten.Pipelines.DotNetPackage;
 using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Pipelines;
 
+/// <summary>
+/// The package pipeline is declared identically to the tool pipeline today; these tests pin the
+/// wiring (jobs build, requirements hold) so the two can diverge deliberately rather than by rot.
+/// </summary>
 public class DotNetPackagePipelineTests
 {
     private static readonly DotNetPackageSettings Complete = new()
@@ -49,8 +54,8 @@ public class DotNetPackagePipelineTests
     private static Result<PipelineHost> Build(string job, DotNetPackageSettings settings)
     {
         var pipeline = new DotNetPackagePipeline();
-        var builder = PipelineHostBuilderHelpers.Create(pipeline.Name);
-        pipeline.Configure(builder, settings);
-        return builder.Build(job);
+        var builder = PipelineHostBuilderHelpers.Create(pipeline.Label);
+        var declared = (Job)pipeline.Jobs.Single(j => j.Name == job);
+        return builder.Build(declared, settings);
     }
 }

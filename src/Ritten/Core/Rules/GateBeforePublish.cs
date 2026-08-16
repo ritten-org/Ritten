@@ -9,15 +9,15 @@ namespace Ritten.Core.Rules;
 public sealed class GateBeforePublish : IJobRule
 {
     /// <inheritdoc />
-    public IEnumerable<Error> Check(IReadOnlyList<JobStep> steps)
+    public IEnumerable<Error> Check(IJob job)
     {
-        var firstPublish = steps.FirstOrDefault(s => s.Kind == StepKind.Publish);
+        var firstPublish = job.Steps.FirstOrDefault(s => s.Kind == StepKind.Publish);
         if (firstPublish is null)
         {
             yield break;
         }
 
-        if (steps.TakeWhile(s => s != firstPublish).All(s => s.Kind != StepKind.Gate))
+        if (job.Steps.TakeWhile(s => s != firstPublish).All(s => s.Kind != StepKind.Gate))
         {
             yield return Result.Error($"'{firstPublish.Name}' is irreversible, but no gate runs before it. Add a gate ahead of the first publish step.");
         }

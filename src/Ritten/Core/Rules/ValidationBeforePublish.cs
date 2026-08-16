@@ -8,10 +8,10 @@ namespace Ritten.Core.Rules;
 public sealed class ValidationBeforePublish : IJobRule
 {
     /// <inheritdoc />
-    public IEnumerable<Error> Check(IReadOnlyList<JobStep> steps)
+    public IEnumerable<Error> Check(IJob job)
     {
         var published = false;
-        foreach (var step in steps)
+        foreach (var step in job.Steps)
         {
             if (step.Kind == StepKind.Publish)
             {

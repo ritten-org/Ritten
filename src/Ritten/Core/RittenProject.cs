@@ -13,7 +13,7 @@ internal sealed class RittenProject
     /// </summary>
     public const string FileName = "ritten.json";
 
-    private static readonly JsonSerializerOptions _serializerOptions = new()
+    private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -43,11 +43,11 @@ internal sealed class RittenProject
     /// Reads the project's settings as the given pipeline's settings type.
     /// </summary>
     /// <typeparam name="TSettings">The pipeline's settings type.</typeparam>
-    public Result<TSettings> GetSettings<TSettings>() where TSettings : class
+    public Result<TSettings> GetSettings<TSettings>() where TSettings : PipelineSettings
     {
         try
         {
-            if (Settings.Deserialize<TSettings>(_serializerOptions) is not { } settings)
+            if (Settings.Deserialize<TSettings>(SerializerOptions) is not { } settings)
             {
                 return Result.Error($"'{FilePath}' is empty.");
             }
@@ -75,7 +75,7 @@ internal sealed class RittenProject
                 try
                 {
                     await using var stream = File.OpenRead(path);
-                    var settings = await JsonSerializer.DeserializeAsync<JsonElement>(stream, _serializerOptions);
+                    var settings = await JsonSerializer.DeserializeAsync<JsonElement>(stream, SerializerOptions);
 
                     return new RittenProject { Directory = current.FullName, Settings = settings };
                 }

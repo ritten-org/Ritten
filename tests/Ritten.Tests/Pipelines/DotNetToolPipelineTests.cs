@@ -1,6 +1,6 @@
-using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.Pipelines;
+using Ritten.Pipelines.DotNetTool;
 using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Pipelines;
@@ -16,6 +16,12 @@ public class DotNetToolPipelineTests
         Build = new DotNetBuildSettings { Project = "src/Thing/Thing.csproj" }
     };
 
+    [Fact]
+    public void DeclaresTheJobsTheCliOffers()
+    {
+        new DotNetToolPipeline().Jobs.Select(j => j.Name).ShouldBe(["status", "build", "check", "deploy"]);
+    }
+
     [Theory]
     [InlineData("status")]
     [InlineData("build")]
@@ -28,15 +34,6 @@ public class DotNetToolPipelineTests
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.Dispose();
-    }
-
-    [Fact]
-    public void AnUnknownJob_IsRejected()
-    {
-        var result = Build("publish", Complete);
-
-        result.IsError.ShouldBeTrue();
-        result.Errors.ShouldHaveSingleItem().Message.ShouldContain("no job named 'publish'");
     }
 
     [Fact]
@@ -89,8 +86,8 @@ public class DotNetToolPipelineTests
         bool dryRun = false)
     {
         var pipeline = new DotNetToolPipeline();
-        var builder = PipelineHostBuilderHelpers.Create(pipeline.Name, environment, dryRun);
-        pipeline.Configure(builder, settings);
-        return builder.Build(job);
+        var builder = PipelineHostBuilderHelpers.Create(pipeline.Label, environment, dryRun);
+        var declared = (Job)pipeline.Jobs.Single(j => j.Name == job);
+        return builder.Build(declared, settings);
     }
 }

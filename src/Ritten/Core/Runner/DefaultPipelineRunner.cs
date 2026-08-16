@@ -6,7 +6,7 @@ namespace Ritten.Core.Runner;
 internal class DefaultPipelineRunner(
     IPipelineLog log,
     IEnumerable<IProgressReporter> reporters,
-    IReadOnlyList<StepDescriptor> steps,
+    IReadOnlyList<Step> steps,
     IServiceProvider services,
     PipelineJob job
 ) : IPipelineRunner
@@ -34,7 +34,7 @@ internal class DefaultPipelineRunner(
         // The values steps produce, living exactly as long as the run that produced them.
         Dictionary<Type, object> state = [];
         List<StepResult> results = [];
-        foreach (var descriptor in steps)
+        foreach (var step in steps)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -42,12 +42,12 @@ internal class DefaultPipelineRunner(
                 break;
             }
 
-            await NotifyReporters(r => r.OnStepStarted(descriptor.Step, cancellationToken));
+            await NotifyReporters(r => r.OnStepStarted(step, cancellationToken));
 
-            var result = await RunStep(descriptor, state, cancellationToken);
+            var result = await RunStep(step, state, cancellationToken);
             results.Add(result);
 
-            await NotifyReporters(r => r.OnStepCompleted(descriptor.Step, result, cancellationToken));
+            await NotifyReporters(r => r.OnStepCompleted(step, result, cancellationToken));
 
             if (!result.Continue)
             {
@@ -58,12 +58,12 @@ internal class DefaultPipelineRunner(
         return results;
     }
 
-    private async Task<StepResult> RunStep(StepDescriptor descriptor, Dictionary<Type, object> state, CancellationToken cancellationToken)
+    private async Task<StepResult> RunStep(Step step, Dictionary<Type, object> state, CancellationToken cancellationToken)
     {
         try
         {
-            var step = services.GetRequiredService(descriptor.StepType);
-            return await descriptor.Invoke(step, services, state, cancellationToken);
+            var instance = services.GetRequiredService(step.StepType);
+            return await step.Invoke(instance, state, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

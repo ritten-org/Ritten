@@ -233,13 +233,13 @@ public class DefaultPipelineRunnerTests
         // Arrange
         var journal = new List<object>();
         var reporter = Substitute.For<IProgressReporter>();
-        reporter.OnStepStarted(Arg.Any<JobStep>(), Arg.Any<CancellationToken>())
+        reporter.OnStepStarted(Arg.Any<Step>(), Arg.Any<CancellationToken>())
             .Returns(_ =>
             {
                 journal.Add("step started");
                 return Task.CompletedTask;
             });
-        reporter.OnStepCompleted(Arg.Any<JobStep>(), Arg.Any<StepResult>(), Arg.Any<CancellationToken>())
+        reporter.OnStepCompleted(Arg.Any<Step>(), Arg.Any<StepResult>(), Arg.Any<CancellationToken>())
             .Returns(_ =>
             {
                 journal.Add("step completed");
