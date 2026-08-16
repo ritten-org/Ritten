@@ -17,35 +17,35 @@ internal class DefaultPipelineRunner(
     public async Task<PipelineResult> Run(CancellationToken cancellationToken)
     {
         await NotifyReporters(r => r.OnPipelineStarted(job, cancellationToken));
-        var stepResults = await RunSteps(cancellationToken);
+        var outcomes = await RunSteps(cancellationToken);
 
         var exitCode = cancellationToken.IsCancellationRequested
             ? PipelineExitCodes.Cancelled
-            : stepResults.FirstOrDefault(s => s.IsFailure)?.ExitCode ?? PipelineExitCodes.Success;
+            : outcomes.FirstOrDefault(o => o.Result.IsFailure)?.Result.ExitCode ?? PipelineExitCodes.Success;
 
-        var result = new PipelineResult(exitCode, stepResults);
+        var result = new PipelineResult(exitCode, outcomes);
         await NotifyReporters(r => r.OnPipelineCompleted(result, cancellationToken), reverse: true);
 
         return result;
     }
 
-    private async Task<List<StepResult>> RunSteps(CancellationToken cancellationToken)
+    private async Task<List<StepOutcome>> RunSteps(CancellationToken cancellationToken)
     {
         // The values steps produce, living exactly as long as the run that produced them.
         Dictionary<Type, object> state = [];
-        List<StepResult> results = [];
+        List<StepOutcome> results = [];
         foreach (var step in steps)
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                results.Add(StepResult.StoppedAfterCancel);
+                results.Add(new StepOutcome(step, StepResult.StoppedAfterCancel));
                 break;
             }
 
             await NotifyReporters(r => r.OnStepStarted(step, cancellationToken));
 
             var result = await RunStep(step, state, cancellationToken);
-            results.Add(result);
+            results.Add(new StepOutcome(step, result));
 
             await NotifyReporters(r => r.OnStepCompleted(step, result, cancellationToken));
 

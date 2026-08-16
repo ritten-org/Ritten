@@ -2,12 +2,14 @@ using System.CommandLine;
 using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.GitHub;
+using Ritten.Pipelines.DotNet;
 using Ritten.Pipelines.DotNetPackage;
 using Ritten.Pipelines.DotNetTool;
 
 var pipelines = new PipelineRegistry()
     .Add(new DotNetToolPipeline())
-    .Add(new DotNetPackagePipeline());
+    .Add(new DotNetPackagePipeline())
+    .Add(new DotNetPipeline());
 
 var verbose = new Option<bool>($"--{PipelineArguments.Verbose}", "-v")
 {

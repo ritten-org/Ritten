@@ -17,4 +17,9 @@ public record Error(string Message, Exception? Cause = null)
     /// </summary>
     /// <param name="message">A message describing what was wrong.</param>
     public static implicit operator Error(string message) => new(message);
+
+    /// <summary>
+    /// Creates a new error with the given message.
+    /// </summary>
+    public static Error From(string message) => new(message);
 }

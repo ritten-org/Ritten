@@ -8,7 +8,7 @@ namespace Ritten.Tests.DotNet;
 
 /// <summary>
 /// Tests for the <see cref="DotNetClient"/> operations that run dotnet commands and interpret
-/// their output: <c>Build</c>, <c>Test</c>, and <c>CheckFormat</c>.
+/// their output: <c>Restore</c>, <c>Build</c>, <c>Test</c>, and <c>CheckFormat</c>.
 /// </summary>
 public class DotNetClientRunTests
 {
@@ -31,13 +31,36 @@ public class DotNetClientRunTests
     }
 
     [Fact]
-    public async Task Restore_ComposesTheCommandAndThrowsOnFailure()
+    public async Task Restore_ComposesTheCommandAndParsesTheRestoredProjects()
     {
-        await _client.Restore(new RestoreArgs { Project = "My.slnx" }, TestContext.Current.CancellationToken);
+        _commands.Respond(
+            c => c.Arguments.Contains("restore"),
+            new CommandResult(0, "Restored /repo/src/My.csproj (in 407 ms).\n", ""));
+
+        var result = await _client.Restore(new RestoreArgs { Project = "My.slnx" }, TestContext.Current.CancellationToken);
 
         var command = _commands.Executed.ShouldHaveSingleItem();
         command.Arguments.ShouldBe(["restore", "My.slnx"]);
-        command.ThrowsOnError.ShouldBeTrue();
+        command.ThrowsOnError.ShouldBeFalse();
+        result.Succeeded.ShouldBeTrue();
+        result.RestoredProjects.ShouldBe(["My"]);
+    }
+
+    [Fact]
+    public async Task Restore_ParsesDiagnosticsOnFailure()
+    {
+        _commands.Respond(
+            c => c.Arguments.Contains("restore"),
+            new CommandResult(1,
+                "tests/My.Tests.csproj : error NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability [/repo/My.slnx]\n",
+                ""));
+
+        var result = await _client.Restore(new RestoreArgs(), TestContext.Current.CancellationToken);
+
+        result.Succeeded.ShouldBeFalse();
+        var diagnostic = result.Diagnostics.ShouldHaveSingleItem();
+        diagnostic.Code.ShouldBe("NU1903");
+        diagnostic.Message.ShouldContain("SSH.NET");
     }
 
     [Fact]
