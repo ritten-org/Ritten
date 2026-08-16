@@ -39,7 +39,7 @@ Everything lives in one project, `src/Ritten`, split into a pipeline engine and 
 
 ### Engine (`Contracts/`, `Core/`)
 
-`Program.cs` maps each CLI job name to `PipelineHost.Run<DotNetToolPipeline, DotNetToolSettings>`. That resolves `ritten.json` (walking up from the cwd; strict camelCase deserialization, unknown keys rejected), then `PipelineHostBuilder`/`JobBuilder` compose the requested job from step types and build a DI container (`Microsoft.Extensions.DependencyInjection`, with `ValidateOnBuild`). `DefaultPipelineRunner` executes the steps in order.
+`Program.cs` registers the pipelines in a `PipelineRegistry` and maps each CLI job name to `PipelineHost.Run`. That resolves `ritten.json` (walking up from the cwd), reads its required `"pipeline"` key to pick the pipeline (and thus the settings schema; every settings record extends `PipelineSettings`), strict-deserializes the file against it (camelCase, unknown keys rejected), then `PipelineHostBuilder`/`JobBuilder` compose the requested job from step types and build a DI container (`Microsoft.Extensions.DependencyInjection`, with `ValidateOnBuild`). `DefaultPipelineRunner` executes the steps in order.
 
 **Steps** are minimal-API-style classes, discovered by reflection in `Core/StepDescriptor.cs`:
 
@@ -56,7 +56,7 @@ Everything lives in one project, `src/Ritten`, split into a pipeline engine and 
 
 Each domain folder — `Changelogs/`, `CodeCoverage/`, `Commands/`, `DotNet/`, `Git/`, `GitHub/`, `NuGet/`, `Releases/`, `Reporting/` — owns its client interface, options, steps (in a `Steps/` subfolder), and a `ServiceCollectionExtensions.cs` registering them. External processes (dotnet, git, gh) run through `Commands/ICommandRunner`.
 
-`Pipelines/DotNetToolPipeline.cs` is where the four jobs (`status`, `build`, `check`, `deploy`) are composed from steps; `Pipelines/DotNetToolSettings.cs` and its siblings define the `ritten.json` schema.
+`Pipelines/DotNetToolPipeline.cs` (`"pipeline": "dotnet-tool"`) is where the four jobs (`status`, `build`, `check`, `deploy`) are composed from steps; `DotNetPackagePipeline.cs` (`"dotnet-package"`) is its deliberately-identical sibling for library packages — flat siblings, duplicated manifests, no shared base. `Pipelines/DotNetToolSettings.cs` and its siblings define the `ritten.json` schema.
 
 **Reporting is two channels:** `IPipelineLog` is the console narrative (rendered by `SpectreProgressReporter`), while `IBuildReport` accumulates a markdown report that `GitHubCommentSink` posts as the PR comment. Validation steps typically write to both.
 

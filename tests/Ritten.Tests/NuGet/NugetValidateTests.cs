@@ -9,19 +9,15 @@ using Ritten.Tests.Support;
 
 namespace Ritten.Tests.NuGet;
 
-/// <summary>
-/// The gate that stops a version being published twice: it judges the state
-/// <see cref="NugetRead"/> classified, without touching the feed itself.
-/// </summary>
 public class NugetValidateTests
 {
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
-    private readonly ReportSection _releaseSection = new("Release");
+    private readonly ReportSection _versionSection = new("Version");
     private readonly NuGetOptions _options = TestOptions.NuGet();
 
     public NugetValidateTests()
     {
-        _report.Section("Release").Returns(_releaseSection);
+        _report.Section("Version").Returns(_versionSection);
     }
 
     [Fact]
@@ -33,8 +29,8 @@ public class NugetValidateTests
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("already published");
-        _releaseSection.Tone.ShouldBe(ReportTone.Failure);
-        _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("1.3.0");
+        _versionSection.Tone.ShouldBe(ReportTone.Failure);
+        _versionSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("1.3.0");
     }
 
     [Fact]
@@ -46,7 +42,7 @@ public class NugetValidateTests
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("must be higher than");
-        _releaseSection.Tone.ShouldBe(ReportTone.Failure);
+        _versionSection.Tone.ShouldBe(ReportTone.Failure);
     }
 
     [Fact]
@@ -68,8 +64,8 @@ public class NugetValidateTests
         var result = Step().Run(Project("1.2.0"), state);
 
         result.IsFailure.ShouldBeFalse();
-        _releaseSection.Tone.ShouldBe(ReportTone.Success);
-        _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("latest published version");
+        _versionSection.Tone.ShouldBe(ReportTone.Success);
+        _versionSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("latest published version");
     }
 
     [Fact]
@@ -80,7 +76,7 @@ public class NugetValidateTests
         var result = Step().Run(Project("1.2.0"), state);
 
         result.IsFailure.ShouldBeFalse();
-        _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("latest overall");
+        _versionSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("latest overall");
     }
 
     [Fact]
@@ -91,8 +87,8 @@ public class NugetValidateTests
         var result = Step().Run(Project("1.2.0"), state);
 
         result.IsFailure.ShouldBeFalse();
-        _releaseSection.Tone.ShouldBe(ReportTone.Success);
-        _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("1.1.0");
+        _versionSection.Tone.ShouldBe(ReportTone.Success);
+        _versionSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("1.1.0");
     }
 
     [Fact]
@@ -103,7 +99,7 @@ public class NugetValidateTests
         var result = Step().Run(Project("1.2.0"), state);
 
         result.IsFailure.ShouldBeFalse();
-        _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("first published version");
+        _versionSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("first published version");
     }
 
     [Fact]
@@ -114,7 +110,7 @@ public class NugetValidateTests
         var result = Step().Run(Project("1.2.0"), state);
 
         result.IsFailure.ShouldBeFalse();
-        _releaseSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("backport");
+        _versionSection.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("backport");
     }
 
     private static Project Project(string version) =>

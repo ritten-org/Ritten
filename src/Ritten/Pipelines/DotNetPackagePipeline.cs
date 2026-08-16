@@ -1,7 +1,11 @@
+using Microsoft.Extensions.DependencyInjection;
+using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
 using Ritten.CodeCoverage;
 using Ritten.Core;
+using Ritten.DotNet;
 using Ritten.DotNet.Steps;
+using Ritten.Git;
 using Ritten.Git.Steps;
 using Ritten.GitHub;
 using Ritten.GitHub.Steps;
@@ -13,15 +17,15 @@ using Ritten.Reporting;
 namespace Ritten.Pipelines;
 
 /// <summary>
-/// Defines the pipeline jobs for building and maintaining .NET tools.
+/// Defines the pipeline jobs for building and maintaining NuGet packages.
 /// </summary>
-public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
+public class DotNetPackagePipeline : Pipeline<DotNetPackageSettings>
 {
     /// <inheritdoc/>
-    public override string Name => "dotnet tool";
+    public override string Name => "dotnet package";
 
     /// <inheritdoc />
-    public override void Configure(IPipelineBuilder builder, DotNetToolSettings settings)
+    public override void Configure(IPipelineBuilder builder, DotNetPackageSettings settings)
     {
         AddServices(builder.Services, settings);
 
@@ -82,7 +86,7 @@ public class DotNetToolPipeline : Pipeline<DotNetToolSettings>
         );
     }
 
-    private static void AddServices(IServiceCollection services, DotNetToolSettings settings)
+    private static void AddServices(IServiceCollection services, DotNetPackageSettings settings)
     {
         services
             .AddChangelogs(settings.Changelog)

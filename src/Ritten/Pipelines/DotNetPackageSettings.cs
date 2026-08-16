@@ -3,9 +3,9 @@ using Ritten.Core;
 namespace Ritten.Pipelines;
 
 /// <summary>
-/// The <c>ritten.json</c> schema for the .NET tool pipeline.
+/// The <c>ritten.json</c> schema for the .NET package pipeline.
 /// </summary>
-public sealed record DotNetToolSettings : PipelineSettings
+public sealed record DotNetPackageSettings : PipelineSettings
 {
     /// <summary>
     /// The repository's web URL; read from the project file or the origin remote when not set.

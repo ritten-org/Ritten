@@ -37,7 +37,7 @@ public class ChangelogLinksValidate(IPipelineLog log, IOptions<ChangelogOptions>
         if (!changelog.Links.SequenceEqual(expected))
         {
             var block = string.Join('\n', expected.Select(l => l.ToMarkdown()));
-            report.Section("Release")
+            report.Section("Changelog")
                 .Failure($"The version links in `{options.Value.File}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
 
             return new Error($"The version links in {options.Value.File} are missing or out of date. Expected:")

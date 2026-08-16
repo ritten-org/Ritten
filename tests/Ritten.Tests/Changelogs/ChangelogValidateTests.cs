@@ -10,10 +10,6 @@ using Ritten.Reporting;
 
 namespace Ritten.Tests.Changelogs;
 
-/// <summary>
-/// The documentation obligation attaches to releasing: an unpublished version must have its
-/// entry, and a published one owes nothing.
-/// </summary>
 public class ChangelogValidateTests
 {
     // The real client, so these tests exercise the actual parser.
@@ -27,11 +23,11 @@ public class ChangelogValidateTests
         new(Published: true, LatestInLine: true, NuGetVersion.Parse("1.1.0"), NuGetVersion.Parse("1.1.0"));
 
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
-    private readonly ReportSection _releaseSection = new("Release");
+    private readonly ReportSection _changelogSection = new("Changelog");
 
     public ChangelogValidateTests()
     {
-        _report.Section("Release").Returns(_releaseSection);
+        _report.Section("Changelog").Returns(_changelogSection);
     }
 
     [Fact]
@@ -50,7 +46,7 @@ public class ChangelogValidateTests
         var result = Step().Run(Project("1.2.0"), AlreadyPublished, changelog);
 
         result.IsFailure.ShouldBeFalse();
-        _releaseSection.Tone.ShouldBe(ReportTone.Success);
+        _changelogSection.Tone.ShouldBe(ReportTone.Success);
     }
 
     [Fact]
@@ -68,7 +64,7 @@ public class ChangelogValidateTests
         var result = Step().Run(Project("1.2.0"), Releasable, changelog);
 
         result.IsFailure.ShouldBeFalse();
-        _releaseSection.Tone.ShouldBe(ReportTone.Success);
+        _changelogSection.Tone.ShouldBe(ReportTone.Success);
     }
 
     [Fact]
@@ -87,7 +83,7 @@ public class ChangelogValidateTests
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("1.2.0");
-        _releaseSection.Tone.ShouldBe(ReportTone.Failure);
+        _changelogSection.Tone.ShouldBe(ReportTone.Failure);
     }
 
     [Fact]
@@ -106,7 +102,7 @@ public class ChangelogValidateTests
         var result = Step().Run(Project("1.0.0-beta.1"), Releasable, changelog);
 
         result.IsFailure.ShouldBeFalse();
-        _releaseSection.Tone.ShouldBe(ReportTone.Success);
+        _changelogSection.Tone.ShouldBe(ReportTone.Success);
     }
 
     [Fact]

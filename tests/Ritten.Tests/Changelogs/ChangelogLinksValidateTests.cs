@@ -24,12 +24,12 @@ public class ChangelogLinksValidateTests
         .GetRequiredService<IChangelog>();
 
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
-    private readonly ReportSection _releaseSection = new("Release");
+    private readonly ReportSection _changelogSection = new("Changelog");
     private readonly ChangelogOptions _options = TestOptions.Changelog();
 
     public ChangelogLinksValidateTests()
     {
-        _report.Section("Release").Returns(_releaseSection);
+        _report.Section("Changelog").Returns(_changelogSection);
     }
 
     [Fact]
@@ -68,8 +68,8 @@ public class ChangelogLinksValidateTests
         var result = Step().Run(Project(), changelog);
 
         result.IsFailure.ShouldBeTrue();
-        _releaseSection.Tone.ShouldBe(ReportTone.Failure);
-        var failure = _releaseSection.Entries.OfType<ReportParagraph>().Last();
+        _changelogSection.Tone.ShouldBe(ReportTone.Failure);
+        var failure = _changelogSection.Entries.OfType<ReportParagraph>().Last();
         failure.Markdown.ShouldContain("[1.2.0]: https://github.com/example/repo/releases/tag/v1.2.0");
     }
 
