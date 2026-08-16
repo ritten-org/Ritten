@@ -1,10 +1,11 @@
+using Ritten.Core;
+
 namespace Ritten.Pipelines;
 
 /// <summary>
-/// The <c>ritten.json</c> schema for the .NET package pipelines.
-/// against.
+/// The <c>ritten.json</c> schema for the .NET tool pipeline.
 /// </summary>
-public sealed record DotNetToolSettings
+public sealed record DotNetToolSettings : PipelineSettings
 {
     /// <summary>
     /// The repository's web URL; read from the project file or the origin remote when not set.

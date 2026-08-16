@@ -21,15 +21,10 @@ internal static class DefaultPipelineRunnerHelpers
         // The instances are registered directly, so the runner resolves exactly the steps the
         // test configured.
         var services = new ServiceCollection();
-        var methods = new List<StepDescriptor>();
+        var methods = new List<Step>();
         foreach (var step in steps)
         {
-            if (StepDescriptor.Describe(step.GetType()).Value is not { } method)
-            {
-                throw new InvalidOperationException($"{step.GetType().Name} has an invalid Run method.");
-            }
-
-            methods.Add(method);
+            methods.Add(Step.FromType(step.GetType()));
             services.AddSingleton(step.GetType(), step);
         }
 

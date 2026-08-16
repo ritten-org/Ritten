@@ -1,6 +1,6 @@
-using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.Pipelines;
+using Ritten.Pipelines.DotNetTool;
 using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Pipelines;
@@ -11,10 +11,13 @@ namespace Ritten.Tests.Pipelines;
 /// </summary>
 public class DotNetToolPipelineTests
 {
-    private static readonly DotNetToolSettings Complete = new()
+    private const string Complete = """{ "build": { "project": "src/Thing/Thing.csproj" } }""";
+
+    [Fact]
+    public void DeclaresTheJobsTheCliOffers()
     {
-        Build = new DotNetBuildSettings { Project = "src/Thing/Thing.csproj" }
-    };
+        new DotNetToolPipeline().Jobs.Select(j => j.Name).ShouldBe(["status", "build", "check", "deploy"]);
+    }
 
     [Theory]
     [InlineData("status")]
@@ -31,18 +34,9 @@ public class DotNetToolPipelineTests
     }
 
     [Fact]
-    public void AnUnknownJob_IsRejected()
-    {
-        var result = Build("publish", Complete);
-
-        result.IsError.ShouldBeTrue();
-        result.Errors.ShouldHaveSingleItem().Message.ShouldContain("no job named 'publish'");
-    }
-
-    [Fact]
     public void Build_DoesNotRequireAProject()
     {
-        var result = Build("build", new DotNetToolSettings());
+        var result = Build("build", "{}");
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.Dispose();
@@ -54,7 +48,7 @@ public class DotNetToolPipelineTests
     [InlineData("deploy")]
     public void ShippingJobs_RequireAProject(string job)
     {
-        var result = Build(job, new DotNetToolSettings());
+        var result = Build(job, "{}");
 
         result.IsError.ShouldBeTrue();
         result.Errors.ShouldHaveSingleItem().Message.ShouldContain("'build.project'");
@@ -84,13 +78,12 @@ public class DotNetToolPipelineTests
 
     private static Result<PipelineHost> Build(
         string job,
-        DotNetToolSettings settings,
+        string settings,
         Func<string, string?>? environment = null,
         bool dryRun = false)
     {
         var pipeline = new DotNetToolPipeline();
-        var builder = PipelineHostBuilderHelpers.Create(pipeline.Name, environment, dryRun);
-        pipeline.Configure(builder, settings);
-        return builder.Build(job);
+        var builder = PipelineHostBuilderHelpers.Create(pipeline.Label, environment, dryRun, settings: settings);
+        return builder.Build(pipeline.Jobs.Single(j => j.Name == job));
     }
 }

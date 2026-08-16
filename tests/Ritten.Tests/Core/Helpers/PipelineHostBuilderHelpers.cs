@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.Reporting;
@@ -20,9 +21,10 @@ internal static class PipelineHostBuilderHelpers
         string pipelineName = "Test",
         Func<string, string?>? environment = null,
         bool dryRun = false,
-        IPipelineLog? log = null) =>
+        IPipelineLog? log = null,
+        string settings = "{}") =>
         new(
-            new RittenProject { Directory = Path.GetTempPath() },
+            new RittenProject { Directory = Path.GetTempPath(), Settings = JsonSerializer.Deserialize<JsonElement>(settings) },
             pipelineName,
             new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail),
             dryRun,

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Ritten.Core;
 
@@ -13,13 +12,8 @@ internal sealed class RittenProject
     /// </summary>
     public const string FileName = "ritten.json";
 
-    private static readonly JsonSerializerOptions _serializerOptions = new()
+    private static readonly JsonSerializerOptions SerializerOptions = new()
     {
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-        PropertyNameCaseInsensitive = true,
-        RespectNullableAnnotations = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true
     };
@@ -32,7 +26,7 @@ internal sealed class RittenProject
     /// <summary>
     /// The raw contents of the project's <c>ritten.json</c>.
     /// </summary>
-    private JsonElement Settings { get; init; }
+    internal JsonElement Settings { get; init; }
 
     /// <summary>
     /// The path of the project's <c>ritten.json</c>, for error messages.
@@ -40,24 +34,19 @@ internal sealed class RittenProject
     public string FilePath => Path.Combine(Directory, FileName);
 
     /// <summary>
-    /// Reads the project's settings as the given pipeline's settings type.
+    /// Reads which pipeline the settings declare.
     /// </summary>
-    /// <typeparam name="TSettings">The pipeline's settings type.</typeparam>
-    public Result<TSettings> GetSettings<TSettings>() where TSettings : class
+    public Result<string> GetPipelineName()
     {
-        try
+        if (Settings.TryGetProperty("pipeline", out var pipelineProp))
         {
-            if (Settings.Deserialize<TSettings>(_serializerOptions) is not { } settings)
+            var pipeline = pipelineProp.GetString();
+            if (pipeline is not null)
             {
-                return Result.Error($"'{FilePath}' is empty.");
+                return pipeline;
             }
-
-            return settings;
         }
-        catch (JsonException exception)
-        {
-            return Result.Error($"Could not read '{FilePath}': {exception.Message}", exception);
-        }
+        return Result.Error($"'{FilePath}' does not declare which pipeline it runs; set \"pipeline\".");
     }
 
     /// <summary>
@@ -75,7 +64,7 @@ internal sealed class RittenProject
                 try
                 {
                     await using var stream = File.OpenRead(path);
-                    var settings = await JsonSerializer.DeserializeAsync<JsonElement>(stream, _serializerOptions);
+                    var settings = await JsonSerializer.DeserializeAsync<JsonElement>(stream, SerializerOptions);
 
                     return new RittenProject { Directory = current.FullName, Settings = settings };
                 }

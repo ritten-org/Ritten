@@ -1,0 +1,29 @@
+using Ritten.Changelogs.Steps;
+using Ritten.Contracts;
+using Ritten.Core;
+using Ritten.DotNet.Steps;
+using Ritten.NuGet.Steps;
+using Ritten.Pipelines.Steps;
+
+namespace Ritten.Pipelines.DotNetTool;
+
+/// <summary>
+/// Reports where the project stands: version, release state, and changelog.
+/// </summary>
+internal sealed class StatusJob : DotNetToolJob
+{
+    /// <inheritdoc />
+    public override string Name => "status";
+
+    /// <inheritdoc />
+    protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => settings.Require(s => s.Build.Project);
+
+    /// <inheritdoc />
+    public override IReadOnlyList<Step> Steps { get; } =
+    [
+        Step.FromType<ReadProject>(),
+        Step.FromType<ReadChangelog>(),
+        Step.FromType<NugetRead>(),
+        Step.FromType<StatusReport>()
+    ];
+}

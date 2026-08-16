@@ -22,12 +22,12 @@ public class ReadChangelogTests
 
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
-    private readonly ReportSection _releaseSection = new("Release");
+    private readonly ReportSection _changelogSection = new("Changelog");
     private readonly ChangelogOptions _options = TestOptions.Changelog();
 
     public ReadChangelogTests()
     {
-        _report.Section("Release").Returns(_releaseSection);
+        _report.Section("Changelog").Returns(_changelogSection);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class ReadChangelogTests
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain(_options.File);
-        _releaseSection.Tone.ShouldBe(ReportTone.Failure);
+        _changelogSection.Tone.ShouldBe(ReportTone.Failure);
     }
 
     private void SetChangelog(string content)

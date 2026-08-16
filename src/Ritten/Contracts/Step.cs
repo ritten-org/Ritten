@@ -1,13 +1,16 @@
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using Ritten.Contracts;
 
-namespace Ritten.Core;
+namespace Ritten.Contracts;
 
 /// <summary>
-/// A step's of a pipeline step and the details needed to run it.
+/// A step of a declared job.
 /// </summary>
-internal sealed class StepDescriptor
+/// <param name="name">The step's display name.</param>
+/// <param name="kind">What the step's outcome means.</param>
+/// <param name="produces">The type the step produces, or <c>null</c> for a non-producing step.</param>
+/// <param name="requires">The parameter types the step cannot run without.</param>
+public sealed class Step(string name, StepKind kind, Type? produces, IReadOnlyList<Type> requires)
 {
     private enum ParameterSource
     {
@@ -16,52 +19,61 @@ internal sealed class StepDescriptor
         Required
     }
 
-    private readonly MethodInfo _run;
+    private readonly MethodInfo? _run;
     private readonly bool _asynchronous;
     private readonly PropertyInfo? _taskResult;
-    private readonly IReadOnlyList<(Type Type, ParameterSource Source)> _parameters;
+    private readonly IReadOnlyList<(Type Type, ParameterSource Source)> _parameters = [];
 
-    private StepDescriptor(Type stepType, StepAttribute metadata, MethodInfo run, bool asynchronous, Type? produces, IReadOnlyList<(Type Type, ParameterSource Source)> parameters)
+    private Step(Type stepType, StepAttribute metadata, MethodInfo run, bool asynchronous, Type? produces, IReadOnlyList<(Type Type, ParameterSource Source)> parameters)
+        : this(metadata.Name, metadata.Kind, produces, [.. parameters.Where(p => p.Source == ParameterSource.Required).Select(p => p.Type)])
     {
         StepType = stepType;
-        Produces = produces;
         _run = run;
         _asynchronous = asynchronous;
         _parameters = parameters;
         _taskResult = asynchronous ? run.ReturnType.GetProperty(nameof(Task<>.Result)) : null;
-
-        Step = new JobStep(
-            metadata.Name,
-            metadata.Kind,
-            produces,
-            [.. parameters.Where(p => p.Source == ParameterSource.Required).Select(p => p.Type)]);
     }
 
     /// <summary>
-    /// The step type declaring the <c>Run</c> method.
+    /// The step's display name.
     /// </summary>
-    public Type StepType { get; }
+    public string Name { get; } = name;
 
     /// <summary>
-    /// The type this step produces into pipeline state, or <c>null</c> for a non-producing step.
+    /// What the step's outcome means.
     /// </summary>
-    public Type? Produces { get; }
+    public StepKind Kind { get; } = kind;
 
     /// <summary>
-    /// The step as rules and reporters see it, read entirely from the type.
+    /// The type the step produces into pipeline state, or <c>null</c> for a non-producing step.
     /// </summary>
-    public JobStep Step { get; }
+    public Type? Produces { get; } = produces;
 
     /// <summary>
-    /// Reads the <c>Run</c> method of the given step type. Only the signature itself is judged
-    /// here; whether its parameters can be satisfied depends on the job, judged by the rules.
+    /// The parameter types the step cannot run without.
+    /// </summary>
+    public IReadOnlyList<Type> Requires { get; } = requires;
+
+    /// <summary>
+    /// The type declaring the <c>Run</c> method, registered for the container to construct.
+    /// </summary>
+    internal Type StepType => field ?? throw new InvalidOperationException($"'{Name}' was built from its facts alone; only a step described from its type can run.");
+
+    /// <summary>
+    /// Reads a step from its type.
+    /// </summary>
+    /// <typeparam name="TStep">The step type to read.</typeparam>
+    public static Step FromType<TStep>() where TStep : class => FromType(typeof(TStep));
+
+    /// <summary>
+    /// Reads a step from its type.
     /// </summary>
     /// <param name="stepType">The step type to read.</param>
-    public static Result<StepDescriptor> Describe(Type stepType)
+    internal static Step FromType(Type stepType)
     {
         if (stepType.GetCustomAttribute<StepAttribute>() is not { } metadata)
         {
-            return Result.Error($"{stepType.Name} must declare a [Step] attribute naming and classifying it.");
+            throw new InvalidOperationException($"{stepType.Name} must declare a [Step] attribute naming and classifying it.");
         }
 
         var runs = stepType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
@@ -69,7 +81,7 @@ internal sealed class StepDescriptor
             .ToList();
         if (runs.Count != 1)
         {
-            return Result.Error($"{stepType.Name} must declare exactly one public Run method.");
+            throw new InvalidOperationException($"{stepType.Name} must declare exactly one public Run method.");
         }
 
         // A step with nothing to await returns its result directly, like a minimal API handler.
@@ -88,7 +100,7 @@ internal sealed class StepDescriptor
         }
         else if (payload != typeof(StepResult))
         {
-            return Result.Error($"{stepType.Name}.Run must return StepResult, StepResult<T>, Task<StepResult>, or Task<StepResult<T>>.");
+            throw new InvalidOperationException($"{stepType.Name}.Run must return StepResult, StepResult<T>, Task<StepResult>, or Task<StepResult<T>>.");
         }
 
         var nullability = new NullabilityInfoContext();
@@ -96,19 +108,16 @@ internal sealed class StepDescriptor
             .Select(parameter => (parameter.ParameterType, Classify(parameter, nullability)))
             .ToList();
 
-        return new StepDescriptor(stepType, metadata, run, asynchronous, produces, parameters);
+        return new Step(stepType, metadata, run, asynchronous, produces, parameters);
     }
 
-
     /// <summary>
-    /// Runs the step, supplying its parameters from state and services, and storing what it
-    /// produces for the steps after it.
+    /// Runs the step, supplying its parameters from pipeline state.
     /// </summary>
     /// <param name="step">The resolved step instance.</param>
-    /// <param name="services">The service provider for parameters no step produces.</param>
     /// <param name="state">The pipeline state for consumed and produced values.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public async Task<StepResult> Invoke(object step, IServiceProvider services, Dictionary<Type, object> state, CancellationToken cancellationToken)
+    internal async Task<StepResult> Invoke(object step, Dictionary<Type, object> state, CancellationToken cancellationToken)
     {
         var arguments = new object?[_parameters.Count];
         for (var i = 0; i < _parameters.Count; i++)
@@ -118,15 +127,17 @@ internal sealed class StepDescriptor
             {
                 ParameterSource.Token => cancellationToken,
                 ParameterSource.Optional => state.GetValueOrDefault(type),
-                _ => state.GetValueOrDefault(type) ?? services.GetService(type)
-                    ?? throw new InvalidOperationException($"No {type.Name} in pipeline state or services; an earlier step should have produced it.")
+                _ => state.GetValueOrDefault(type)
+                    ?? throw new InvalidOperationException($"No {type.Name} in pipeline state; an earlier step should have produced it.")
             };
         }
 
         object result;
         try
         {
-            result = _run.Invoke(step, arguments)!;
+            // The runner resolves the instance by StepType, which throws first for a step that
+            // was never described — by here _run is certain to exist.
+            result = _run!.Invoke(step, arguments)!;
         }
         catch (TargetInvocationException exception) when (exception.InnerException is not null)
         {

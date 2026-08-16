@@ -13,7 +13,7 @@ public class SpectreProgressReporterTests
         // Headings, outcomes, and timings are the job's shape, not chatter.
         var console = new TestConsole();
         var sut = new SpectreProgressReporter(console, PipelineLogLevel.Warning);
-        var step = new JobStep("git tag", StepKind.Publish, null, []);
+        var step = new Step("git tag", StepKind.Publish, null, []);
 
         await sut.OnStepStarted(step, TestContext.Current.CancellationToken);
         await sut.OnStepCompleted(step, StepResult.Successful, TestContext.Current.CancellationToken);
@@ -38,7 +38,7 @@ public class SpectreProgressReporterTests
     {
         var console = new TestConsole();
         var sut = new SpectreProgressReporter(console, PipelineLogLevel.Warning);
-        var step = new JobStep("changelog", StepKind.Validation, null, []);
+        var step = new Step("changelog", StepKind.Validation, null, []);
 
         await sut.OnStepStarted(step, TestContext.Current.CancellationToken);
         await sut.OnStepCompleted(step, StepResult.Failed("The entry is missing."), TestContext.Current.CancellationToken);

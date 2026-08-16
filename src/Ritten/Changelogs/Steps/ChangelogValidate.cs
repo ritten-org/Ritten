@@ -23,7 +23,7 @@ public class ChangelogValidate(IPipelineLog log, IBuildReport report)
     {
         if (releaseState.Published)
         {
-            report.Section("Release").Success("New changes accrue under **[Unreleased]** until a release is prepared.");
+            report.Section("Changelog").Success("New changes accrue under **[Unreleased]** until a release is prepared.");
             log.Detail("This version is already published; no changelog entry required.");
             return StepResult.Successful;
         }
@@ -33,7 +33,7 @@ public class ChangelogValidate(IPipelineLog log, IBuildReport report)
         var entry = project.IsPrerelease ? changelog.Unreleased : changelog.Entry(project.Version);
         if (entry == null)
         {
-            report.Section("Release").Failure(project.IsPrerelease
+            report.Section("Changelog").Failure(project.IsPrerelease
                 ? "Missing [Unreleased] changelog entry."
                 : $"Missing changelog entry for **{project.Version}**.");
 
@@ -44,11 +44,11 @@ public class ChangelogValidate(IPipelineLog log, IBuildReport report)
 
         if (entry.IsEmpty)
         {
-            report.Section("Release").Failure($"The changelog entry for **{project.Version}** is empty.");
+            report.Section("Changelog").Failure($"The changelog entry for **{project.Version}** is empty.");
             return StepResult.Failed($"Changelog entry for version {project.Version} is empty.");
         }
 
-        report.Section("Release").Success($"Changelog entry for **{project.Version}** is present.");
+        report.Section("Changelog").Success($"Changelog entry for **{project.Version}** is present.");
         log.Detail($"Found changelog entry for {project.Version}.");
         return StepResult.Successful;
     }

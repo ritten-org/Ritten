@@ -8,8 +8,8 @@ namespace Ritten.Contracts;
 public interface IJobRule
 {
     /// <summary>
-    /// Checks the job's steps, returning an error for each violated invariant.
+    /// Checks the job, returning an error for each violated invariant.
     /// </summary>
-    /// <param name="steps">The job's steps, in the order they would run.</param>
-    IEnumerable<Error> Check(IReadOnlyList<JobStep> steps);
+    /// <param name="job">The job to judge.</param>
+    IEnumerable<Error> Check(IJob job);
 }

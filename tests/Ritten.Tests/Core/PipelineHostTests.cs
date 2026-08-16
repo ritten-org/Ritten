@@ -5,6 +5,7 @@ using Ritten.Core;
 using Ritten.DotNet;
 using Ritten.Pipelines;
 using Ritten.Tests.Core.Helpers;
+using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Core;
 
@@ -40,36 +41,15 @@ public class PipelineHostTests
     }
 
     [Fact]
-    public void Build_RegistersOnlyTheRequestedJobsSteps()
-    {
-        // Arrange — two jobs declared, only one requested.
-        var builder = PipelineHostBuilderHelpers.Create();
-        builder.AddJob("verify", job => job.UseStep<FirstStep>());
-        builder.AddJob("deploy", job => job.UseStep<SecondStep>());
-
-        // Act
-        var result = builder.Build("verify");
-
-        // Assert
-        result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
-        builder.Services.ShouldContain(d => d.ServiceType == typeof(FirstStep));
-        builder.Services.ShouldNotContain(d => d.ServiceType == typeof(SecondStep));
-    }
-
-    [Fact]
     public void Build_ReportsEveryUnmetRequirementAtOnce()
     {
         // Arrange — being told about all of them beats fixing them one run at a time. The keys are
-        // inferred from the expressions, so they can't drift from the properties they describe.
-        var settings = new DotNetToolSettings();
+        // derived from the property chains, so they can't drift from the settings they describe.
+        var job = new TestJob("deploy", validate: s => s.Require(x => x.Build.Project).Require(x => x.Repository));
         var builder = PipelineHostBuilderHelpers.Create();
-        builder.AddJob("deploy", job => job
-            .Requires(settings.Build.Project)
-            .Requires(settings.Repository));
 
         // Act
-        var result = builder.Build("deploy");
+        var result = builder.Build(job);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -80,87 +60,30 @@ public class PipelineHostTests
     }
 
     [Fact]
-    public void Build_RejectsAStepWhoseInputNothingProduces()
-    {
-        // A consuming step before its producer is a composition mistake, caught before any work.
-        var builder = PipelineHostBuilderHelpers.Create();
-        builder.AddJob("verify", job => job.UseStep<ProjectConsumingStep>());
-        builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
-
-        var result = builder.Build("verify");
-
-        result.IsError.ShouldBeTrue();
-        result.Errors.ShouldHaveSingleItem().Message
-            .ShouldContain("no earlier step produces");
-    }
-
-    [Fact]
-    public void Build_RejectsAStepWithoutAStepAttribute()
-    {
-        // Name and kind are required, not defaulted: an unclassified step is a mistake, not work.
-        var builder = PipelineHostBuilderHelpers.Create();
-        builder.AddJob("verify", job => job.UseStep<UnclassifiedStep>());
-
-        var result = builder.Build("verify");
-
-        result.IsError.ShouldBeTrue();
-        result.Errors.ShouldHaveSingleItem().Message.ShouldContain("[Step]");
-    }
-
-    [Fact]
-    public void Build_RejectsAJobThatPublishesWithoutAGate()
-    {
-        // The rule reports rather than repairs, so the job's declaration stays the whole truth.
-        var builder = PipelineHostBuilderHelpers.Create();
-        builder.AddJob("deploy", job => job.UseStep<PublishingStep>());
-        builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
-
-        var result = builder.Build("deploy");
-
-        result.IsError.ShouldBeTrue();
-        result.Errors.ShouldHaveSingleItem().Message.ShouldContain("gate");
-    }
-
-    [Fact]
     public void Build_RunsRulesThePipelineRegisters()
     {
         var rule = Substitute.For<IJobRule>();
-        rule.Check(Arg.Any<IReadOnlyList<JobStep>>()).Returns([new Error("House rule broken.")]);
+        rule.Check(Arg.Any<IJob>()).Returns([new Error("House rule broken.")]);
+        var job = new TestJob(steps: [Step.FromType<FirstStep>()]);
         var builder = PipelineHostBuilderHelpers.Create();
-        builder.AddJob("verify", job => job.UseStep<FirstStep>());
         builder.Services.AddSingleton(rule);
         builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
 
-        var result = builder.Build("verify");
+        var result = builder.Build(job);
 
         result.IsError.ShouldBeTrue();
         result.Errors.ShouldHaveSingleItem().Message.ShouldBe("House rule broken.");
     }
 
-    [Fact]
-    public void Build_AcceptsAConsumerDeclaredAfterItsProducer()
-    {
-        var builder = PipelineHostBuilderHelpers.Create();
-        builder.AddJob("verify", job => job
-            .UseStep<ProjectProducingStep>()
-            .UseStep<ProjectConsumingStep>());
-        builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
-
-        var result = builder.Build("verify");
-
-        result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
-    }
-
     private static (PipelineHost Host, StepProbe Probe) BuildHost<TStep>() where TStep : class
     {
         var probe = new StepProbe();
+        var job = new TestJob(steps: [Step.FromType<TStep>()]);
         var builder = PipelineHostBuilderHelpers.Create();
-        builder.AddJob("verify", job => job.UseStep<TStep>());
         builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
         builder.Services.AddSingleton(probe);
 
-        var result = builder.Build("verify");
+        var result = builder.Build(job);
         result.IsSuccess.ShouldBeTrue();
         return (result.Value, probe);
     }
@@ -192,19 +115,6 @@ class FailingStep
 class FirstStep
 {
     public Task<StepResult> Run(CancellationToken cancellationToken = default) =>
-        Task.FromResult(StepResult.Successful);
-}
-
-[Step("second", StepKind.Work)]
-class SecondStep
-{
-    public Task<StepResult> Run(CancellationToken cancellationToken = default) =>
-        Task.FromResult(StepResult.Successful);
-}
-
-class UnclassifiedStep
-{
-    public Task<StepResult> Run(CancellationToken cancellationToken) =>
         Task.FromResult(StepResult.Successful);
 }
 

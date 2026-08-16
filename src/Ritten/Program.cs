@@ -2,7 +2,12 @@ using System.CommandLine;
 using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.GitHub;
-using Ritten.Pipelines;
+using Ritten.Pipelines.DotNetPackage;
+using Ritten.Pipelines.DotNetTool;
+
+var pipelines = new PipelineRegistry()
+    .Add(new DotNetToolPipeline())
+    .Add(new DotNetPackagePipeline());
 
 var verbose = new Option<bool>($"--{PipelineArguments.Verbose}", "-v")
 {
@@ -34,15 +39,15 @@ var root = new RootCommand("The Ritten build pipeline.")
     quiet,
     dryRun,
     autoApprove,
-    Job("status", "Reports where the project stands: version, release state, and changelog."),
-    Job("build", "Compiles and tests, without any release validation."),
-    Job("check", "Validates a pull request: formatting, version, changelog, compile, tests, and pack."),
-    Job("deploy", "Validates, packs, tags, creates the GitHub release, and publishes to NuGet.")
+    JobCommand("status", "Reports where the project stands: version, release state, and changelog."),
+    JobCommand("build", "Compiles and tests, without any release validation."),
+    JobCommand("check", "Validates a pull request: formatting, version, changelog, compile, tests, and pack."),
+    JobCommand("deploy", "Validates, packs, tags, creates the GitHub release, and publishes to NuGet.")
 };
 
 return await root.Parse(args).InvokeAsync();
 
-Command Job(string name, string description)
+Command JobCommand(string name, string description)
 {
     var command = new Command(name, description);
     command.SetAction((parseResult, cancellationToken) =>
@@ -55,12 +60,14 @@ Command Job(string name, string description)
             : parseResult.GetValue(quiet)
                 ? PipelineLogLevel.Warning
                 : PipelineLogLevel.Detail;
-        return PipelineHost.Run<DotNetToolPipeline, DotNetToolSettings>(
-            name,
-            logLevel,
-            parseResult.GetValue(dryRun),
-            parseResult.GetValue(autoApprove),
-            cancellationToken);
+        var args = new RunJobArgs(name)
+        {
+            LogLevel = logLevel,
+            DryRun = parseResult.GetValue(dryRun),
+            AutoApprove = parseResult.GetValue(autoApprove)
+        };
+
+        return PipelineHost.RunJob(pipelines, args, cancellationToken);
     });
     return command;
 }
