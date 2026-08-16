@@ -1,5 +1,3 @@
-using Ritten.Contracts.FileSystem;
-
 namespace Ritten.DotNet;
 
 /// <summary>
@@ -7,12 +5,6 @@ namespace Ritten.DotNet;
 /// </summary>
 public record FormatArgs
 {
-    /// <summary>
-    /// The directory the <c>dotnet format</c> report is written to and read back from;
-    /// created if it doesn't exist.
-    /// </summary>
-    public required IDirectory ReportDirectory { get; init; }
-
     /// <summary>
     /// Whether to disable restoring packages on format.
     /// </summary>

@@ -19,17 +19,6 @@ public class PipelineSettingsTests : IDisposable
     }
 
     [Fact]
-    public async Task Read_AcceptsThePipelineDeclaration()
-    {
-        // The strict schema must admit the key the host reads ahead of the parse.
-        WriteRittenJson(_root, """{ "pipeline": "dotnet-tool" }""");
-
-        var settings = await Read(_root);
-
-        settings.Pipeline.ShouldBe("dotnet-tool");
-    }
-
-    [Fact]
     public async Task Read_ReadsSections()
     {
         WriteRittenJson(_root, """

@@ -22,6 +22,14 @@ public class DotNetClientRunTests
         _client = new DotNetClient(_commands, _fileSystem);
     }
 
+    private IDirectory ReportDirectory()
+    {
+        var reportDirectory = Substitute.For<IDirectory>();
+        reportDirectory.AbsolutePath.Returns("/repo/temp/format");
+        _fileSystem.Temp.GetDirectory("format").Returns(reportDirectory);
+        return reportDirectory;
+    }
+
     [Fact]
     public async Task Restore_ComposesTheCommandAndThrowsOnFailure()
     {
@@ -104,34 +112,30 @@ public class DotNetClientRunTests
     [Fact]
     public async Task CheckFormat_ReadsTheReportOnFailure()
     {
-        var reportDirectory = Substitute.For<IDirectory>();
-        reportDirectory.AbsolutePath.Returns("/repo/temp/format");
+        var reportDirectory = ReportDirectory();
         var reportFile = FileWithContent("""[{"FilePath": "/repo/src/B.cs"}, {"FilePath": "/repo/src/A.cs"}]""");
         reportFile.Exists.Returns(true);
         reportDirectory.GetFile("format-report.json").Returns(reportFile);
         _commands.Respond(c => c.Arguments.Contains("format"), new CommandResult(2, "", ""));
 
-        var result = await _client.CheckFormat(
-            new FormatArgs { ReportDirectory = reportDirectory },
-            TestContext.Current.CancellationToken);
+        var result = await _client.CheckFormat(new FormatArgs(), TestContext.Current.CancellationToken);
 
         result.Succeeded.ShouldBeFalse();
         result.UnformattedFiles.ShouldBe(["src/A.cs", "src/B.cs"]);
+        reportDirectory.Received().Delete();
     }
 
     [Fact]
     public async Task CheckFormat_SucceedsWithoutReadingTheReport()
     {
-        var reportDirectory = Substitute.For<IDirectory>();
-        reportDirectory.AbsolutePath.Returns("/repo/temp/format");
+        var reportDirectory = ReportDirectory();
 
-        var result = await _client.CheckFormat(
-            new FormatArgs { ReportDirectory = reportDirectory },
-            TestContext.Current.CancellationToken);
+        var result = await _client.CheckFormat(new FormatArgs(), TestContext.Current.CancellationToken);
 
         result.Succeeded.ShouldBeTrue();
         result.UnformattedFiles.ShouldBeEmpty();
         reportDirectory.DidNotReceiveWithAnyArgs().GetFile(default!);
+        reportDirectory.Received().Delete();
     }
 
     private static IFile TrxFile(int passed, int failed, string failure)

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`build` no longer leaves a stray format report.** The dotnet client owns where its `dotnet format` report lives and removes it once the result has been read, so `temp/` is gone again after a run.
+
 ## [0.0.4] - 2026-08-16
 
 ### Added
@@ -65,6 +71,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[Unreleased]: https://github.com/ritten-org/Ritten/compare/v0.0.4...HEAD
 [0.0.4]: https://github.com/ritten-org/Ritten/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/ritten-org/Ritten/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/ritten-org/Ritten/compare/v0.0.1...v0.0.2
