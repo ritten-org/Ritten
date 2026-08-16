@@ -168,26 +168,35 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
 
     public async Task<FormatResult> CheckFormat(FormatArgs args, CancellationToken cancellationToken = default)
     {
-        args.ReportDirectory.Create();
+        // The report is this client's working space, not the caller's concern: created here,
+        // read here, and removed here, so a run leaves nothing behind.
+        var reportDirectory = fileSystem.Temp.GetDirectory("format");
+        reportDirectory.Create();
+        try
+        {
+            var command = Command
+                .Create("dotnet")
+                .WithArguments("format", "--verify-no-changes", "--report", reportDirectory.AbsolutePath);
+            if (args.NoRestore)
+            {
+                command = command.AndArguments("--no-restore");
+            }
+            var result = await commands.Run(command, cancellationToken);
+            if (result.IsSuccess)
+            {
+                return new FormatResult { Succeeded = true };
+            }
 
-        var command = Command
-            .Create("dotnet")
-            .WithArguments("format", "--verify-no-changes", "--report", args.ReportDirectory.AbsolutePath);
-        if (args.NoRestore)
-        {
-            command = command.AndArguments("--no-restore");
+            return new FormatResult
+            {
+                Succeeded = false,
+                UnformattedFiles = await ReadUnformattedFiles(reportDirectory.GetFile("format-report.json"), cancellationToken)
+            };
         }
-        var result = await commands.Run(command, cancellationToken);
-        if (result.IsSuccess)
+        finally
         {
-            return new FormatResult { Succeeded = true };
+            reportDirectory.Delete();
         }
-
-        return new FormatResult
-        {
-            Succeeded = false,
-            UnformattedFiles = await ReadUnformattedFiles(args.ReportDirectory.GetFile("format-report.json"), cancellationToken)
-        };
     }
 
     public async Task<TestRun> ReadTestResults(IFile file, CancellationToken cancellationToken = default)

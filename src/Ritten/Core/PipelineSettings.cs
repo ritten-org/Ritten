@@ -18,11 +18,6 @@ public abstract record PipelineSettings
     };
 
     /// <summary>
-    /// The pipeline the project runs, e.g. <c>dotnet-tool</c>.
-    /// </summary>
-    public string? Pipeline { get; init; }
-
-    /// <summary>
     /// Reads the given project's settings as the given shape.
     /// </summary>
     /// <typeparam name="TSettings">The settings shape to read.</typeparam>
