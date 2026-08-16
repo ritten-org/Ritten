@@ -143,6 +143,8 @@ public class DotNetClientRunTests
 
         var result = await _client.CheckFormat(new FormatArgs(), TestContext.Current.CancellationToken);
 
+        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(
+            ["format", "whitespace", "--verify-no-changes", "--report", "/repo/temp/format"]);
         result.Succeeded.ShouldBeFalse();
         result.UnformattedFiles.ShouldBe(["src/A.cs", "src/B.cs"]);
         reportDirectory.Received().Delete();
