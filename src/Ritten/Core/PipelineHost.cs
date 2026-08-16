@@ -26,21 +26,23 @@ public class PipelineHost : IDisposable
     }
 
     /// <summary>
-    /// Runs one job of the specified pipeline, returning its exit code.
+    /// Runs the requested job of whichever registered pipeline the resolved project declares,
+    /// returning its exit code.
     /// </summary>
-    /// <typeparam name="TPipeline">The pipeline the job belongs to.</typeparam>
-    /// <typeparam name="TSettings">The settings taken by the pipeline.</typeparam>
-    /// <param name="job">The job to run.</param>
-    /// <param name="logLevel">The lowest level of message to print.</param>
-    /// <param name="dryRun">Rehearses the job without doing anything that reaches outside the working directory.</param>
-    /// <param name="autoApprove">Approves a job that would otherwise stop and ask.</param>
+    /// <param name="pipelines">The pipelines the host knows about.</param>
+    /// <param name="args">What the command line asked for.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public static async Task<int> Run<TPipeline, TSettings>(string job, PipelineLogLevel logLevel = PipelineLogLevel.Detail, bool dryRun = false, bool autoApprove = false, CancellationToken cancellationToken = default)
-        where TPipeline : Pipeline<TSettings>, new()
-        where TSettings : class
+    public static async Task<int> RunJob(PipelineRegistry pipelines, RunJobArgs args, CancellationToken cancellationToken = default)
     {
-        var reporter = new SpectreProgressReporter(AnsiConsole.Console, logLevel);
-        var pipeline = new TPipeline();
+        var reporter = new SpectreProgressReporter(AnsiConsole.Console, args.LogLevel);
+
+        // The whole registered model is judged before anything is loaded, so a malformed
+        // pipeline fails every run at startup, not just the run that selects it.
+        var model = pipelines.Validate();
+        if (model.Count > 0)
+        {
+            return ConfigurationError(reporter, model);
+        }
 
         var project = await RittenProject.Resolve(Environment.CurrentDirectory);
         if (project.IsError)
@@ -48,16 +50,32 @@ public class PipelineHost : IDisposable
             return ConfigurationError(reporter, project.Errors);
         }
 
-        var settings = project.Value.GetSettings<TSettings>();
-        if (settings.IsError)
+        var knownPipelines = Result.Error($"Known pipelines: {string.Join(", ", pipelines.Names)}.");
+        var name = project.Value.GetPipelineName();
+        if (name.IsError)
         {
-            return ConfigurationError(reporter, settings.Errors);
+            return ConfigurationError(reporter, [.. name.Errors, knownPipelines]);
         }
 
-        var builder = new PipelineHostBuilder(project.Value, pipeline.Name, reporter, dryRun, autoApprove);
-        pipeline.Configure(builder, settings.Value);
+        if (pipelines.Find(name.Value) is not { } pipeline)
+        {
+            return ConfigurationError(reporter, [Result.Error($"'{project.Value.FilePath}' declares the unknown pipeline '{name.Value}'."), knownPipelines]);
+        }
 
-        var host = builder.Build(job);
+        // The job is picked out of the static model before settings are parsed: a typo'd
+        // command shouldn't need a valid configuration to be diagnosed.
+        var jobs = pipeline.Jobs;
+        var declared = jobs.FirstOrDefault(j => j.Name == args.Job);
+        if (declared is null)
+        {
+            return ConfigurationError(reporter, [
+                Result.Error($"The {pipeline.Label} pipeline has no job named '{args.Job}'."),
+                Result.Error($"Known jobs: {string.Join(", ", jobs.Select(j => j.Name))}.")
+            ]);
+        }
+
+        var builder = new PipelineHostBuilder(project.Value, pipeline.Label, reporter, args.DryRun, args.AutoApprove);
+        var host = builder.Build(declared);
         if (host.IsError)
         {
             return ConfigurationError(reporter, host.Errors);

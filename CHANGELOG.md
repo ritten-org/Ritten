@@ -6,9 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **NuGet package projects.** A `dotnet-package` pipeline runs the same jobs as the tool pipeline for plain library packages; declare `"pipeline": "dotnet-package"` to use it.
+
 ### Changed
 
+- **`ritten.json` must declare its pipeline.** Every project now names the pipeline it runs — `"pipeline": "dotnet-tool"` or `"dotnet-package"`.
 - **`deploy` needs no environment variables up front.** The repository ID requirement was left over from before releases were addressed by owner and name, and the NuGet API key is now resolved by a dedicated `nuget auth` step: from `RITTEN_NUGET_API_KEY` when set, otherwise by asking at the terminal.
+- **Report sections are more granular.** Changelog remarks come under **Changelog** and the version's standing against the feed under **Version**, leaving **Release** for what actually shipped.
 
 ## [0.0.3] - 2026-08-15
 

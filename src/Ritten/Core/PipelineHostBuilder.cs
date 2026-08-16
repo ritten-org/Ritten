@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core.FileSystem;
-using Ritten.Core.Rules;
 using Ritten.Core.Runner;
 using Ritten.Git;
 using Ritten.GitHub;
@@ -14,12 +13,12 @@ using Spectre.Console;
 namespace Ritten.Core;
 
 /// <summary>
-/// Provides functionality to configure and build a pipeline application.
+/// Assembles a declared <see cref="IJob"/> into a runnable <see cref="PipelineHost"/> for one project.
 /// </summary>
-public class PipelineHostBuilder : IPipelineBuilder
+public class PipelineHostBuilder
 {
-    private readonly string _pipelineName;
-    private readonly Dictionary<string, Action<IJobBuilder>> _jobs = [];
+    private readonly RittenProject _project;
+    private readonly string _pipelineLabel;
     private readonly bool _dryRun;
     private readonly bool _autoApprove;
     private readonly Func<string, string?> _environment;
@@ -29,15 +28,16 @@ public class PipelineHostBuilder : IPipelineBuilder
     /// Creates a new instance of the <see cref="PipelineHostBuilder"/>.
     /// </summary>
     /// <param name="project">The project being built.</param>
-    /// <param name="pipelineName">The name of the pipeline being configured.</param>
+    /// <param name="pipelineLabel">The human label of the pipeline being assembled.</param>
     /// <param name="reporter">The reporter that renders pipeline progress.</param>
     /// <param name="dryRun">Whether to wrap the clients that reach outside the working directory.</param>
     /// <param name="autoApprove">Whether a job that would stop and ask has been approved up front.</param>
     /// <param name="environment">Reads environment variables; the process environment when not given.</param>
     /// <param name="log">Where the builder writes; the reporter when not given.</param>
-    internal PipelineHostBuilder(RittenProject project, string pipelineName, SpectreProgressReporter reporter, bool dryRun = false, bool autoApprove = false, Func<string, string?>? environment = null, IPipelineLog? log = null)
+    internal PipelineHostBuilder(RittenProject project, string pipelineLabel, SpectreProgressReporter reporter, bool dryRun = false, bool autoApprove = false, Func<string, string?>? environment = null, IPipelineLog? log = null)
     {
-        _pipelineName = pipelineName;
+        _project = project;
+        _pipelineLabel = pipelineLabel;
         _dryRun = dryRun;
         _autoApprove = autoApprove;
         _environment = environment ?? Environment.GetEnvironmentVariable;
@@ -53,43 +53,34 @@ public class PipelineHostBuilder : IPipelineBuilder
         Services.TryAddSingleton(_log);
         Services.TryAddSingleton<IPipelinePrompt>(_ => new ConsolePrompt(AnsiConsole.Console));
 
-        // The invariants every job shape must hold; pipelines can register more.
-        Services.TryAddEnumerable(ServiceDescriptor.Singleton<IJobRule, ProduceBeforeConsume>());
-        Services.TryAddEnumerable(ServiceDescriptor.Singleton<IJobRule, GateBeforePublish>());
-        Services.TryAddEnumerable(ServiceDescriptor.Singleton<IJobRule, ValidationBeforePublish>());
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// The service collection the job is assembled into.
+    /// </summary>
     public IServiceCollection Services { get; } = new ServiceCollection();
-
-    /// <inheritdoc />
-    public IPipelineBuilder AddJob(string name, Action<IJobBuilder> configure)
-    {
-        _jobs.Add(name, configure);
-        return this;
-    }
 
     /// <summary>
     /// Builds the <see cref="PipelineHost" /> for the given job.
     /// </summary>
+    /// <param name="job">The declared job to assemble.</param>
     /// <returns>The configured pipeline application.</returns>
-    public Result<PipelineHost> Build(string job)
+    public Result<PipelineHost> Build(IJob job)
     {
-        if (!_jobs.TryGetValue(job, out var configure))
+        var settings = job.ReadSettings(_project, _environment, _dryRun, _log);
+        if (settings.IsError)
         {
-            return Result.Error($"The {_pipelineName} pipeline has no job named '{job}'.");
+            return settings.Errors;
         }
 
-        Services.AddSingleton(new PipelineJob(_pipelineName, job, _dryRun, _autoApprove));
+        Services.AddSingleton(new PipelineJob(_pipelineLabel, job.Name, _dryRun, _autoApprove));
+        job.ConfigureServices(Services, settings.Value);
 
-        var builder = new JobBuilder(Services, _log, _environment, _dryRun);
-        configure(builder);
-        var result = builder.Build();
-        if (result.IsError)
+        Services.AddSingleton(job.Steps);
+        foreach (var step in job.Steps)
         {
-            return result.Errors;
+            Services.AddTransient(step.StepType);
         }
-        Services.AddSingleton(result.Value);
 
         if (_dryRun)
         {
@@ -109,12 +100,11 @@ public class PipelineHostBuilder : IPipelineBuilder
             ValidateOnBuild = true
         });
 
-        var steps = result.Value.Select(descriptor => descriptor.Step).ToList();
-        var errors = provider.GetServices<IJobRule>().SelectMany(rule => rule.Check(steps)).ToList();
-        if (errors.Count > 0)
+        var ruleErrors = provider.GetServices<IJobRule>().SelectMany(rule => rule.Check(job)).ToList();
+        if (ruleErrors.Count > 0)
         {
             provider.Dispose();
-            return errors;
+            return ruleErrors;
         }
 
         return new PipelineHost(provider);
