@@ -22,6 +22,6 @@ internal abstract class DotNetToolJob : Job<DotNetToolSettings>
         .AddCoverage(settings.Coverage)
         .AddGit(settings.Release.TagPrefix)
         .AddNuGet(settings.Release.Feed, settings.Release.Lines)
-        .AddGitHubActionsRuntime()
+        .AddGitHubClient()
         .AddBuildReporting();
 }

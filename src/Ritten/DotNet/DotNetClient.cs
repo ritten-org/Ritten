@@ -9,6 +9,9 @@ namespace Ritten.DotNet;
 
 internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : IDotNet
 {
+    /// <summary>The name the coverage report is written under; the coverage step globs for it.</summary>
+    private const string CoverageFileName = "coverage.cobertura.xml";
+
     private static readonly JsonSerializerOptions FormatReportJson = new() { PropertyNameCaseInsensitive = true };
 
     public async Task<Result<Project>> ReadProject(IFile file, CancellationToken cancellationToken = default)
@@ -143,11 +146,15 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
             command = command.AndArguments("--configuration", args.Configuration);
         }
 
-        command = command.AndArguments("--logger", "trx", "--results-directory", args.ResultsDirectory.AbsolutePath);
+        // Microsoft.Testing.Platform options, not VSTest ones: the .NET 10 SDK refuses to run an MTP test
+        // application through the VSTest target, so `--logger trx` and `--collect` are no longer the spellings.
+        // Both reports need their extension package referenced by the test project to be recognised.
+        command = command.AndArguments("--report-trx", "--results-directory", args.ResultsDirectory.AbsolutePath);
 
         if (args.CollectCoverage)
         {
-            command = command.AndArguments("--collect", "XPlat Code Coverage");
+            command = command.AndArguments(
+                "--coverage", "--coverage-output-format", "cobertura", "--coverage-output", CoverageFileName);
         }
 
         var result = await commands.Run(command, cancellationToken);

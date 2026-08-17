@@ -6,7 +6,7 @@ namespace Ritten.Tests.GitHub;
 public class GitHubCommentSinkTests
 {
     private readonly ICommentService _comments = Substitute.For<ICommentService>();
-    private readonly GitHubOptions _options = new() { PullRequestNumber = 42 };
+    private readonly GitHubActionsOptions _options = new() { PullRequestNumber = 42 };
 
     [Fact]
     public async Task Publish_AppendsALinkToTheRunLogs()

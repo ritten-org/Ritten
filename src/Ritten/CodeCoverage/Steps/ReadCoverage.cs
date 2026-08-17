@@ -21,7 +21,7 @@ public class ReadCoverage(IPipelineLog log, IFileSystem fileSystem)
         var files = results.GetFiles("**/coverage.cobertura.xml").ToList();
         if (files.Count == 0)
         {
-            return StepResult.Failed("No coverage reports were produced. Add the coverlet.collector package to your test projects.");
+            return StepResult.Failed("No coverage reports were produced. Add the Microsoft.Testing.Extensions.CodeCoverage package to your test projects.");
         }
 
         var coverage = files

@@ -3,47 +3,43 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Commands;
-using Ritten.Reporting.Sinks;
+using Ritten.Contracts;
 
 namespace Ritten.GitHub;
 
 /// <summary>
-/// Provides extension methods for registering GitHub Actions runtime services.
+/// Provides extension methods for registering the GitHub client.
 /// </summary>
 internal static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds the GitHub Actions runtime services to the service collection.
+    /// Adds the client the pipeline talks to GitHub itself with.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="clientName">The product name used to identify this pipeline to the GitHub API.</param>
-    public static IServiceCollection AddGitHubActionsRuntime(this IServiceCollection services, string? clientName = null)
+    public static IServiceCollection AddGitHubClient(this IServiceCollection services, string? clientName = null)
     {
-        if (services.All(d => d.ServiceType != typeof(GitHubActionsRuntimeMarker)))
+        if (services.All(d => d.ServiceType != typeof(GitHubClientMarker)))
         {
-            services.AddSingleton<GitHubActionsRuntimeMarker>();
-
-            services.AddOptions<GitHubOptions>()
-                .Configure(GitHubOptions.ConfigureFromEnvironment);
+            services.AddSingleton<GitHubClientMarker>();
 
             services.AddCommandRunner();
+            services.AddOptions<GitHubClientOptions>()
+                .Configure<PipelineEnvironment>((options, environment) => options.Token = environment.Get(GitHubEnvironment.Token));
+
             services.TryAddSingleton<ICredentialStore, AmbientCredentialStore>();
             services.AddSingleton<IGitHubClient>(provider =>
             {
-                var options = provider.GetRequiredService<IOptions<GitHubOptions>>().Value;
+                var options = provider.GetRequiredService<IOptions<GitHubClientOptions>>().Value;
                 return new GitHubClient(new ProductHeaderValue(options.ClientName), provider.GetRequiredService<ICredentialStore>());
             });
 
-            services.TryAddSingleton<ICommentService, CommentService>();
             services.TryAddSingleton<IReleaseService, ReleaseService>();
         }
 
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IReportSink, GitHubReportSink>());
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IReportSink, GitHubCommentSink>());
-
         if (clientName is not null)
         {
-            services.PostConfigure<GitHubOptions>(o => o.ClientName = clientName);
+            services.PostConfigure<GitHubClientOptions>(o => o.ClientName = clientName);
         }
 
         return services;
@@ -52,5 +48,5 @@ internal static class ServiceCollectionExtensions
     /// <summary>
     /// Private marker type so that consumers can't suppress the checks.
     /// </summary>
-    private sealed class GitHubActionsRuntimeMarker;
+    private sealed class GitHubClientMarker;
 }

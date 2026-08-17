@@ -3,20 +3,10 @@ using System.Diagnostics.CodeAnalysis;
 namespace Ritten.GitHub;
 
 /// <summary>
-/// GitHub context for publishing the build report.
+/// What the GitHub Actions runtime knows about the run that triggered it.
 /// </summary>
-public class GitHubOptions
+public class GitHubActionsOptions
 {
-    /// <summary>
-    /// The product name used to identify the pipeline to the GitHub API.
-    /// </summary>
-    public string ClientName { get; set; } = "Ritten";
-
-    /// <summary>
-    /// The token used to authenticate with the GitHub API.
-    /// </summary>
-    public string? Token { get; set; }
-
     /// <summary>
     /// The ID of the repository the pipeline is running against.
     /// </summary>
@@ -26,16 +16,6 @@ public class GitHubOptions
     /// The number of the pull request that triggered the run, if there is one.
     /// </summary>
     public int? PullRequestNumber { get; set; }
-
-    /// <summary>
-    /// The name of the workflow the pipeline is running in, used to title the build report.
-    /// </summary>
-    public string WorkflowName { get; set; } = "Pipeline";
-
-    /// <summary>
-    /// True if the pipeline is running in a GitHub Actions environment.
-    /// </summary>
-    public bool IsEnabled { get; set; }
 
     /// <summary>
     /// The web page for the current workflow run, where the logs live.
@@ -54,28 +34,14 @@ public class GitHubOptions
     public bool IsPullRequest => PullRequestNumber != null;
 
     /// <summary>
-    /// Configures the given options based on the current environment.
+    /// Configures the given options from the given environment.
     /// </summary>
-    public static void ConfigureFromEnvironment(GitHubOptions options) =>
-        ConfigureFromEnvironment(options, Environment.GetEnvironmentVariable);
-
-    /// <summary>
-    /// Configures the given options from the given environment
-    /// </summary>
-    internal static void ConfigureFromEnvironment(GitHubOptions options, Func<string, string?> envVar)
+    internal static void ConfigureFromEnvironment(GitHubActionsOptions options, Func<string, string?> envVar)
     {
-        options.Token = envVar(GitHubEnvironment.Token) ?? envVar(GitHubEnvironment.DefaultToken);
         options.RepositoryId = ParseRepositoryId(envVar(GitHubEnvironment.RepositoryId));
         options.PullRequestNumber = ParsePullRequestNumber(envVar(GitHubEnvironment.Ref));
-        options.IsEnabled = !string.IsNullOrEmpty(envVar(GitHubEnvironment.Actions));
         options.SummaryFile = envVar(GitHubEnvironment.StepSummary);
         options.RunUrl = BuildRunUrl(envVar(GitHubEnvironment.ServerUrl), envVar(GitHubEnvironment.Repository), envVar(GitHubEnvironment.RunId));
-
-        var workflow = envVar(GitHubEnvironment.Workflow);
-        if (workflow != null)
-        {
-            options.WorkflowName = workflow;
-        }
     }
 
     private static string? BuildRunUrl(string? serverUrl, string? repository, string? runId) =>

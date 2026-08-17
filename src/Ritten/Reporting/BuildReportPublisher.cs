@@ -1,41 +1,23 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Core;
-using Ritten.GitHub;
 using Ritten.Reporting.Sinks;
 
 namespace Ritten.Reporting;
 
 /// <summary>
-/// Posts a pending PR comment when the pipeline starts and publishes the final
-/// build report to every registered sink when it finishes.
+/// Publishes the final build report to every registered sink when the pipeline finishes.
 /// </summary>
 internal class BuildReportPublisher(
     IPipelineLog log,
-    IOptions<GitHubOptions> options,
+    IOptions<RunContext> context,
     IBuildReport report,
     MarkdownReportRenderer renderer,
-    ICommentService comments,
     IEnumerable<IReportSink> sinks
 ) : IProgressReporter
 {
     /// <inheritdoc />
-    public async Task OnPipelineStarted(PipelineJob job, CancellationToken cancellationToken)
-    {
-        if (!options.Value.IsPullRequest)
-        {
-            return;
-        }
-
-        try
-        {
-            await comments.CreateOrUpdate($"## ⏳ {options.Value.WorkflowName}\n\n{job.Name} job in progress…", cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            log.Warning("Failed to post the pending pull request comment.", ex);
-        }
-    }
+    public Task OnPipelineStarted(PipelineJob job, CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc />
     public Task OnStepStarted(Step step, CancellationToken cancellationToken) => Task.CompletedTask;
@@ -46,7 +28,7 @@ internal class BuildReportPublisher(
     /// <inheritdoc />
     public async Task OnPipelineCompleted(PipelineResult result, CancellationToken cancellationToken)
     {
-        var markdown = renderer.Render(options.Value.WorkflowName, result.IsSuccess, report.Sections, result.FailedStep);
+        var markdown = renderer.Render(context.Value.Title, result.IsSuccess, report.Sections, result.FailedStep);
         foreach (var sink in sinks)
         {
             try

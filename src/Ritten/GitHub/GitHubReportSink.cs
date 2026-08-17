@@ -5,17 +5,12 @@ namespace Ritten.GitHub;
 
 /// <summary>
 /// Publishes the report to the GitHub Actions job summary via <c>GITHUB_STEP_SUMMARY</c>.
-/// Does nothing when the pipeline is not running in GitHub Actions.
+/// Does nothing when the runner provides no summary file.
 /// </summary>
-internal class GitHubReportSink(IOptions<GitHubOptions> options) : IReportSink
+internal class GitHubReportSink(IOptions<GitHubActionsOptions> options) : IReportSink
 {
     public async Task Publish(string markdown, CancellationToken cancellationToken = default)
     {
-        if (!options.Value.IsEnabled)
-        {
-            return;
-        }
-
         if (options.Value.SummaryFile is not { } path)
         {
             return;
