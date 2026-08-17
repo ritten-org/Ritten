@@ -17,9 +17,9 @@ dotnet ritten check                # build + release validation (what CI runs on
 dotnet ritten status               # report version, release state, changelog
 
 dotnet build                       # plain compile (warnings are errors, style enforced in build)
-dotnet test                        # all tests
-dotnet test --filter "FullyQualifiedName~ReleasableGateTests"                  # one class
-dotnet test --filter "FullyQualifiedName~ReleasableGateTests.ContinuesWhenTheProjectIsReleasable"  # one test
+dotnet test                        # all tests (MTP mode — the runner is declared in global.json)
+dotnet test --filter-class "*ReleasableGateTests"                    # one class
+dotnet test --filter-method "*.ContinuesWhenTheProjectIsReleasable"  # one test
 dotnet format                      # fix formatting; `dotnet ritten build` fails on violations
 ```
 

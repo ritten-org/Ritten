@@ -100,23 +100,9 @@ internal class CommandRunner(IPipelineLog log, IFileSystem fileSystem) : IComman
             return message;
         }
 
-        // MSBuild-family tools report their errors on stdout, so an empty stderr doesn't
-        // mean the command had nothing to say.
-        var tail = Tail(result.StandardError);
-        if (tail.Count == 0)
-        {
-            tail = Tail(result.StandardOutput);
-        }
-
+        var tail = result.ErrorTail();
         return tail.Count == 0 ? message : $"{message}\n{string.Join('\n', tail)}";
     }
-
-    private static List<string> Tail(string output) =>
-    [
-        .. output
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .TakeLast(10)
-    ];
 
     private DataReceivedEventHandler CaptureOutput(StringBuilder sb, bool hide, TaskCompletionSource tcs) => (_, e) =>
     {

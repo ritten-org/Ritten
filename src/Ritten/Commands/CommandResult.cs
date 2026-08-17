@@ -17,4 +17,21 @@ public record CommandResult(int ExitCode, string StandardOutput, string Standard
     /// True if the command exited non-zero, otherwise false.
     /// </summary>
     public bool IsError => ExitCode != 0;
+
+    /// <summary>
+    /// The last few lines the command wrote stderr.
+    /// </summary>
+    /// <param name="lines">The maximum number of lines to keep.</param>
+    public IReadOnlyList<string> ErrorTail(int lines = 10)
+    {
+        var tail = Tail(StandardError, lines);
+        return tail.Count > 0 ? tail : Tail(StandardOutput, lines);
+    }
+
+    private static List<string> Tail(string output, int lines) =>
+    [
+        .. output
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .TakeLast(lines)
+    ];
 }
