@@ -4,7 +4,12 @@ using Ritten.Contracts;
 
 namespace Ritten.GitHub;
 
-internal class CommentService(IPipelineLog log, IOptions<GitHubOptions> options, IGitHubClient client) : ICommentService
+internal class CommentService(
+    IPipelineLog log,
+    IOptions<GitHubActionsOptions> options,
+    IOptions<RunContext> context,
+    IGitHubClient client
+) : ICommentService
 {
     public async Task CreateOrUpdate(string body, CancellationToken cancellationToken = default)
     {
@@ -37,7 +42,7 @@ internal class CommentService(IPipelineLog log, IOptions<GitHubOptions> options,
     }
 
     // One comment per workflow, found again on later runs by this invisible prefix.
-    private string Marker => $"<!-- ritten:{Slug(options.Value.WorkflowName)} -->";
+    private string Marker => $"<!-- ritten:{Slug(context.Value.Title)} -->";
 
     private static string Slug(string value) =>
         string.Concat(value.ToLowerInvariant().Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-'));

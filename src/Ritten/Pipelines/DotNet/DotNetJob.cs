@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Ritten.CodeCoverage;
 using Ritten.Core;
 using Ritten.DotNet;
-using Ritten.GitHub;
 using Ritten.Reporting;
 
 namespace Ritten.Pipelines.DotNet;
@@ -16,6 +15,5 @@ internal abstract class DotNetJob : Job<DotNetSettings>
     protected override void ConfigureServices(IServiceCollection services, DotNetSettings settings) => services
         .AddDotNet(settings.Build)
         .AddCoverage(settings.Coverage)
-        .AddGitHubActionsRuntime()
         .AddBuildReporting();
 }

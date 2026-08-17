@@ -22,7 +22,7 @@ internal abstract class DotNetPackageJob : Job<DotNetPackageSettings>
         .AddCoverage(settings.Coverage)
         .AddGit(settings.Release.TagPrefix)
         .AddNuGet(settings.Release.Feed, settings.Release.Lines)
-        .AddGitHubActionsRuntime()
+        .AddGitHubClient()
         .AddBuildReporting();
 
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Changelogs;
 using Ritten.Commands;
+using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.GitHub;
@@ -10,7 +11,6 @@ using Ritten.NuGet;
 using Ritten.Pipelines;
 using Ritten.Releases;
 using Ritten.Reporting;
-using Ritten.Reporting.Sinks;
 
 namespace Ritten.Tests.Extensions;
 
@@ -33,7 +33,7 @@ public class ServiceCollectionExtensionsTests
             .AddDotNet(Settings.Build).AddDotNet(Settings.Build)
             .AddGit(Settings.Release.TagPrefix).AddGit(Settings.Release.TagPrefix)
             .AddNuGet(Settings.Release.Feed, ReleaseLine.Major).AddNuGet(Settings.Release.Feed, ReleaseLine.Major)
-            .AddGitHubActionsRuntime().AddGitHubActionsRuntime()
+            .AddGitHubClient().AddGitHubClient()
             .AddBuildReporting().AddBuildReporting();
 
         services.Count(d => d.ServiceType == typeof(ICommandRunner)).ShouldBe(1);
@@ -42,9 +42,8 @@ public class ServiceCollectionExtensionsTests
         services.Count(d => d.ServiceType == typeof(IGit)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(INuGet)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IGitHubClient)).ShouldBe(1);
-        services.Count(d => d.ServiceType == typeof(ICommentService)).ShouldBe(1);
+        services.Count(d => d.ServiceType == typeof(IReleaseService)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IBuildReport)).ShouldBe(1);
-        services.Count(d => d.ServiceType == typeof(IReportSink)).ShouldBe(2);
     }
 
     [Fact]
@@ -64,29 +63,40 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddBuildReporting_RegistersItsGitHubDependencies()
+    public void AddBuildReporting_CarriesNoGitHubDependencies()
     {
+        // Where the report lands is the active runtime's business; reporting itself must build on
+        // any runtime, GitHub nowhere in sight.
         var services = Services().AddBuildReporting();
 
-        services.Count(d => d.ServiceType == typeof(IGitHubClient)).ShouldBe(1);
-        services.Count(d => d.ServiceType == typeof(ICommentService)).ShouldBe(1);
-        services.Count(d => d.ServiceType == typeof(IReleaseService)).ShouldBe(1);
+        services.ShouldNotContain(d => d.ServiceType == typeof(IGitHubClient));
+        services.ShouldNotContain(d => d.ServiceType == typeof(ICommentService));
     }
 
     [Fact]
-    public void AddGitHubActionsRuntime_AppliesTheGivenClientName()
+    public void AddGitHubClient_AppliesTheGivenClientName()
     {
-        var provider = Services().AddGitHubActionsRuntime("My.Pipeline").BuildServiceProvider();
+        var provider = Services().AddGitHubClient("My.Pipeline").BuildServiceProvider();
 
-        provider.GetRequiredService<IOptions<GitHubOptions>>().Value.ClientName.ShouldBe("My.Pipeline");
+        provider.GetRequiredService<IOptions<GitHubClientOptions>>().Value.ClientName.ShouldBe("My.Pipeline");
     }
 
     [Fact]
-    public void AddGitHubActionsRuntime_KeepsAnExplicitClientNameWhenRedundantlyRegistered()
+    public void AddGitHubClient_KeepsAnExplicitClientNameWhenRedundantlyRegistered()
     {
-        var provider = Services().AddGitHubActionsRuntime("My.Pipeline").AddBuildReporting().BuildServiceProvider();
+        var provider = Services().AddGitHubClient("My.Pipeline").AddGitHubClient().BuildServiceProvider();
 
-        provider.GetRequiredService<IOptions<GitHubOptions>>().Value.ClientName.ShouldBe("My.Pipeline");
+        provider.GetRequiredService<IOptions<GitHubClientOptions>>().Value.ClientName.ShouldBe("My.Pipeline");
+    }
+
+    [Fact]
+    public void AddGitHubClient_ReadsTheExplicitTokenFromTheFilteredEnvironment()
+    {
+        var provider = Services(new Dictionary<string, string> { ["GH_TOKEN"] = "explicit" })
+            .AddGitHubClient()
+            .BuildServiceProvider();
+
+        provider.GetRequiredService<IOptions<GitHubClientOptions>>().Value.Token.ShouldBe("explicit");
     }
 
     [Fact]
@@ -107,5 +117,6 @@ public class ServiceCollectionExtensionsTests
         provider.GetRequiredService<IOptions<NuGetOptions>>().Value.Feed.ShouldBe("https://example.com/index.json");
     }
 
-    private static IServiceCollection Services() => new ServiceCollection();
+    private static IServiceCollection Services(Dictionary<string, string>? environment = null) =>
+        new ServiceCollection().AddSingleton(new PipelineEnvironment((environment ?? []).GetValueOrDefault));
 }

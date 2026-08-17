@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
-using Ritten.GitHub;
 
 namespace Ritten.Reporting;
 
@@ -17,7 +16,6 @@ public static class ServiceCollectionExtensions
         /// </summary>
         public IServiceCollection AddBuildReporting()
         {
-            services.AddGitHubActionsRuntime();
             if (services.Any(d => d.ServiceType == typeof(BuildReportingMarker)))
             {
                 return services;

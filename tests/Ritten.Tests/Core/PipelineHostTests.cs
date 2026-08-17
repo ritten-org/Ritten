@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.Core;
+using Ritten.Core.Runtimes;
 using Ritten.DotNet;
 using Ritten.Pipelines;
 using Ritten.Tests.Core.Helpers;
@@ -75,6 +76,35 @@ public class PipelineHostTests
         result.Errors.ShouldHaveSingleItem().Message.ShouldBe("House rule broken.");
     }
 
+    [Fact]
+    public void Build_ConfiguresTheServicesOfTheDetectedRuntime()
+    {
+        var runtime = new StubRuntime();
+        var builder = PipelineHostBuilderHelpers.Create(runtimes: new RuntimeRegistry().Add(runtime));
+        builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
+
+        var result = builder.Build(new TestJob());
+
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Dispose();
+        // The runtime reads its claimed variables from the unfiltered environment: they're its own.
+        runtime.SeenSecret.ShouldBe("set");
+    }
+
+    [Fact]
+    public void Build_HidesClaimedVariablesFromSettingsValidation()
+    {
+        // The variable exists in the process environment, but the runtime consumed it — so a job
+        // requiring it fails loudly instead of running with a value that belongs to the runtime.
+        var job = new TestJob(validate: s => s.RequireEnvironment("STUB_SECRET"));
+        var builder = PipelineHostBuilderHelpers.Create(runtimes: new RuntimeRegistry().Add(new StubRuntime()));
+
+        var result = builder.Build(job);
+
+        result.IsError.ShouldBeTrue();
+        result.Errors.ShouldHaveSingleItem().Message.ShouldBe("STUB_SECRET is not set.");
+    }
+
     private static (PipelineHost Host, StepProbe Probe) BuildHost<TStep>() where TStep : class
     {
         var probe = new StepProbe();
@@ -92,6 +122,20 @@ public class PipelineHostTests
 public sealed class StepProbe
 {
     public List<string> Ran { get; } = [];
+}
+
+sealed class StubRuntime : Runtime
+{
+    public string? SeenSecret { get; private set; }
+
+    public override string Name => "stub";
+
+    public override IReadOnlyCollection<string> Markers { get; } = ["STUB_CI"];
+
+    public override IReadOnlyCollection<string> Claims { get; } = ["STUB_CI", "STUB_SECRET"];
+
+    public override void ConfigureServices(IServiceCollection services, Func<string, string?> environment) =>
+        SeenSecret = environment("STUB_SECRET");
 }
 
 [Step("probe", StepKind.Work)]

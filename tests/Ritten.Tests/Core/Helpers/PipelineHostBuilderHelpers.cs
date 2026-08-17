@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Ritten.Contracts;
 using Ritten.Core;
+using Ritten.Core.Runtimes;
 using Ritten.Reporting;
 using Spectre.Console;
 
@@ -22,7 +23,8 @@ internal static class PipelineHostBuilderHelpers
         Func<string, string?>? environment = null,
         bool dryRun = false,
         IPipelineLog? log = null,
-        string settings = "{}") =>
+        string settings = "{}",
+        RuntimeRegistry? runtimes = null) =>
         new(
             new RittenProject { Directory = Path.GetTempPath(), Settings = JsonSerializer.Deserialize<JsonElement>(settings) },
             pipelineName,
@@ -30,5 +32,6 @@ internal static class PipelineHostBuilderHelpers
             dryRun,
             autoApprove: false,
             environment ?? Complete,
-            log);
+            log,
+            runtimes);
 }

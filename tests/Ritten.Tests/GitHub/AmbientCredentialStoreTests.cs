@@ -10,7 +10,7 @@ namespace Ritten.Tests.GitHub;
 public class AmbientCredentialStoreTests
 {
     private readonly FakeCommandRunner _commands = new();
-    private readonly GitHubOptions _options = new();
+    private readonly GitHubClientOptions _options = new();
 
     [Fact]
     public async Task UsesTheEnvironmentTokenWithoutAskingTheCli()

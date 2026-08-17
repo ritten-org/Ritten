@@ -6,11 +6,11 @@ using Ritten.Contracts;
 namespace Ritten.GitHub;
 
 /// <summary>
-/// Resolves GitHub API credentials from wherever the environment keeps them: the token
-/// environment variables first, then the gh CLI's stored login, so running locally works
-/// without any setup beyond being logged in to gh.
+/// Resolves GitHub API credentials from wherever the run keeps them: the configured token first
+/// (an explicit <c>GH_TOKEN</c>, or the ambient token the active runtime offered), then the gh
+/// CLI's stored login, so running locally works without any setup beyond being logged in to gh.
 /// </summary>
-internal class AmbientCredentialStore(IPipelineLog log, IOptions<GitHubOptions> options, ICommandRunner commands) : ICredentialStore
+internal class AmbientCredentialStore(IPipelineLog log, IOptions<GitHubClientOptions> options, ICommandRunner commands) : ICredentialStore
 {
     private Task<Credentials>? _credentials;
 

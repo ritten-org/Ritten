@@ -4,6 +4,7 @@ using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Core.FileSystem;
 using Ritten.Core.Runner;
+using Ritten.Core.Runtimes;
 using Ritten.Git;
 using Ritten.GitHub;
 using Ritten.NuGet;
@@ -23,6 +24,7 @@ public class PipelineHostBuilder
     private readonly bool _autoApprove;
     private readonly Func<string, string?> _environment;
     private readonly IPipelineLog _log;
+    private readonly RuntimeRegistry _runtimes;
 
     /// <summary>
     /// Creates a new instance of the <see cref="PipelineHostBuilder"/>.
@@ -34,7 +36,8 @@ public class PipelineHostBuilder
     /// <param name="autoApprove">Whether a job that would stop and ask has been approved up front.</param>
     /// <param name="environment">Reads environment variables; the process environment when not given.</param>
     /// <param name="log">Where the builder writes; the reporter when not given.</param>
-    internal PipelineHostBuilder(RittenProject project, string pipelineLabel, SpectreProgressReporter reporter, bool dryRun = false, bool autoApprove = false, Func<string, string?>? environment = null, IPipelineLog? log = null)
+    /// <param name="runtimes">The runtimes the host can find itself running in; local-only when not given.</param>
+    internal PipelineHostBuilder(RittenProject project, string pipelineLabel, SpectreProgressReporter reporter, bool dryRun = false, bool autoApprove = false, Func<string, string?>? environment = null, IPipelineLog? log = null, RuntimeRegistry? runtimes = null)
     {
         _project = project;
         _pipelineLabel = pipelineLabel;
@@ -42,6 +45,7 @@ public class PipelineHostBuilder
         _autoApprove = autoApprove;
         _environment = environment ?? Environment.GetEnvironmentVariable;
         _log = log ?? reporter;
+        _runtimes = runtimes ?? new RuntimeRegistry();
 
         // Applies to every run.
         Services.AddOptions();
@@ -67,13 +71,22 @@ public class PipelineHostBuilder
     /// <returns>The configured pipeline application.</returns>
     public Result<PipelineHost> Build(IJob job)
     {
-        var settings = job.ReadSettings(_project, _environment, _dryRun, _log);
+        var runtime = _runtimes.Detect(_environment);
+        if (runtime.IsError)
+        {
+            return runtime.Errors;
+        }
+
+        var environment = runtime.Value.Environment;
+        var settings = job.ReadSettings(_project, environment, _dryRun, _log);
         if (settings.IsError)
         {
             return settings.Errors;
         }
 
+        Services.AddSingleton(new PipelineEnvironment(environment));
         Services.AddSingleton(new PipelineJob(_pipelineLabel, job.Name, _dryRun, _autoApprove));
+        runtime.Value.Runtime.ConfigureServices(Services, _environment);
         job.ConfigureServices(Services, settings.Value);
 
         Services.AddSingleton(job.Steps);

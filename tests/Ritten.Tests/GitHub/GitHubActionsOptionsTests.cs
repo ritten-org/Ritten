@@ -2,30 +2,24 @@ using Ritten.GitHub;
 
 namespace Ritten.Tests.GitHub;
 
-public class GitHubOptionsTests
+public class GitHubActionsOptionsTests
 {
     [Fact]
     public void ConfigureFromEnvironment_ReadsTheActionsEnvironment()
     {
         var options = Configure(new Dictionary<string, string>
         {
-            ["GH_TOKEN"] = "token-1",
             ["GITHUB_REPOSITORY_ID"] = "12345",
             ["GITHUB_REF"] = "refs/pull/42/merge",
-            ["GITHUB_WORKFLOW"] = "My Workflow",
-            ["GITHUB_ACTIONS"] = "true",
             ["GITHUB_STEP_SUMMARY"] = "/tmp/summary.md",
             ["GITHUB_SERVER_URL"] = "https://github.com",
             ["GITHUB_REPOSITORY"] = "example/repo",
             ["GITHUB_RUN_ID"] = "987654"
         });
 
-        options.Token.ShouldBe("token-1");
         options.RepositoryId.ShouldBe(12345);
         options.PullRequestNumber.ShouldBe(42);
         options.IsPullRequest.ShouldBeTrue();
-        options.WorkflowName.ShouldBe("My Workflow");
-        options.IsEnabled.ShouldBeTrue();
         options.SummaryFile.ShouldBe("/tmp/summary.md");
         options.RunUrl.ShouldBe("https://github.com/example/repo/actions/runs/987654");
     }
@@ -43,26 +37,6 @@ public class GitHubOptionsTests
     }
 
     [Fact]
-    public void ConfigureFromEnvironment_FallsBackToTheDefaultGitHubToken()
-    {
-        var options = Configure(new Dictionary<string, string> { ["GITHUB_TOKEN"] = "token-2" });
-
-        options.Token.ShouldBe("token-2");
-    }
-
-    [Fact]
-    public void ConfigureFromEnvironment_PrefersGhTokenOverGitHubToken()
-    {
-        var options = Configure(new Dictionary<string, string>
-        {
-            ["GH_TOKEN"] = "token-1",
-            ["GITHUB_TOKEN"] = "token-2"
-        });
-
-        options.Token.ShouldBe("token-1");
-    }
-
-    [Fact]
     public void ConfigureFromEnvironment_LeavesPullRequestNumberNullForBranchRefs()
     {
         var options = Configure(new Dictionary<string, string> { ["GITHUB_REF"] = "refs/heads/main" });
@@ -76,11 +50,8 @@ public class GitHubOptionsTests
     {
         var options = Configure([]);
 
-        options.Token.ShouldBeNull();
         options.RepositoryId.ShouldBeNull();
         options.PullRequestNumber.ShouldBeNull();
-        options.WorkflowName.ShouldBe("Pipeline");
-        options.IsEnabled.ShouldBeFalse();
         options.SummaryFile.ShouldBeNull();
         options.RunUrl.ShouldBeNull();
     }
@@ -98,34 +69,20 @@ public class GitHubOptionsTests
     {
         // The environment is applied wholesale and configuration is bound over the top, so this
         // must not merge with whatever the options already held.
-        var options = new GitHubOptions
+        var options = new GitHubActionsOptions
         {
-            Token = "stale-token",
             RepositoryId = 99,
             PullRequestNumber = 7,
-            IsEnabled = true,
             SummaryFile = "/stale/summary.md",
             RunUrl = "https://github.com/example/repo/actions/runs/1"
         };
 
-        GitHubOptions.ConfigureFromEnvironment(options, _ => null);
+        GitHubActionsOptions.ConfigureFromEnvironment(options, _ => null);
 
-        options.Token.ShouldBeNull();
         options.RepositoryId.ShouldBeNull();
         options.PullRequestNumber.ShouldBeNull();
-        options.IsEnabled.ShouldBeFalse();
         options.SummaryFile.ShouldBeNull();
         options.RunUrl.ShouldBeNull();
-    }
-
-    [Fact]
-    public void ConfigureFromEnvironment_KeepsTheDefaultWorkflowNameWhenUnset()
-    {
-        var options = new GitHubOptions { WorkflowName = "Configured Workflow" };
-
-        GitHubOptions.ConfigureFromEnvironment(options, _ => null);
-
-        options.WorkflowName.ShouldBe("Configured Workflow");
     }
 
     [Theory]
@@ -146,10 +103,10 @@ public class GitHubOptionsTests
         GitHubEnvironment.IsDebug(environment.GetValueOrDefault).ShouldBe(expected);
     }
 
-    private static GitHubOptions Configure(Dictionary<string, string> environment)
+    private static GitHubActionsOptions Configure(Dictionary<string, string> environment)
     {
-        var options = new GitHubOptions();
-        GitHubOptions.ConfigureFromEnvironment(options, environment.GetValueOrDefault);
+        var options = new GitHubActionsOptions();
+        GitHubActionsOptions.ConfigureFromEnvironment(options, environment.GetValueOrDefault);
         return options;
     }
 }

@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Ritten.Contracts;
 using Ritten.Core;
+using Ritten.Core.Runtimes;
 using Ritten.GitHub;
 using Ritten.Pipelines.DotNet;
 using Ritten.Pipelines.DotNetPackage;
@@ -10,6 +11,9 @@ var pipelines = new PipelineRegistry()
     .Add(new DotNetToolPipeline())
     .Add(new DotNetPackagePipeline())
     .Add(new DotNetPipeline());
+
+var runtimes = new RuntimeRegistry()
+    .Add(new GitHubActionsRuntime());
 
 var verbose = new Option<bool>($"--{PipelineArguments.Verbose}", "-v")
 {
@@ -69,7 +73,7 @@ Command JobCommand(string name, string description)
             AutoApprove = parseResult.GetValue(autoApprove)
         };
 
-        return PipelineHost.RunJob(pipelines, args, cancellationToken);
+        return PipelineHost.RunJob(pipelines, runtimes, args, cancellationToken);
     });
     return command;
 }
