@@ -28,7 +28,7 @@ public record TestArgs
     public required IDirectory ResultsDirectory { get; init; }
 
     /// <summary>
-    /// Collects code coverage while the tests run, via the coverlet collector.
+    /// Collects code coverage while the tests run, via the platform's code-coverage extension.
     /// </summary>
     public bool CollectCoverage { get; init; }
 }

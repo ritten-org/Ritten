@@ -34,7 +34,7 @@ public class ReadCoverageTests
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem()
-            .Message.ShouldContain("coverlet.collector");
+            .Message.ShouldContain("Microsoft.Testing.Extensions.CodeCoverage");
     }
 
     private void SetReports(params string[] reports)

@@ -125,11 +125,31 @@ public class DotNetClientRunTests
 
         resultsDirectory.Received().Create();
         _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(
-            ["test", "--no-build", "--configuration", "Release", "--logger", "trx", "--results-directory", "/repo/temp/test-results"]);
+            ["test", "--no-build", "--configuration", "Release", "--report-trx", "--results-directory", "/repo/temp/test-results"]);
         result.Succeeded.ShouldBeFalse();
         result.Passed.ShouldBe(5);
         result.Failed.ShouldBe(2);
         result.Failures.Select(f => f.TestName).ShouldBe(["Suite.One", "Suite.Two"]);
+    }
+
+    [Fact]
+    public async Task Test_CollectsCoverageUnderTheNameTheCoverageStepLooksFor()
+    {
+        // The platform writes wherever it is told, and ReadCoverage globs for coverage.cobertura.xml, so
+        // the two have to agree on the name.
+        var resultsDirectory = Substitute.For<IDirectory>();
+        resultsDirectory.AbsolutePath.Returns("/repo/temp/test-results");
+        resultsDirectory.GetFiles("*.trx").Returns([]);
+
+        await _client.Test(
+            new TestArgs { ResultsDirectory = resultsDirectory, CollectCoverage = true },
+            TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(
+        [
+            "test", "--report-trx", "--results-directory", "/repo/temp/test-results",
+            "--coverage", "--coverage-output-format", "cobertura", "--coverage-output", "coverage.cobertura.xml"
+        ]);
     }
 
     [Fact]
