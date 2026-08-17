@@ -9,4 +9,9 @@ public record TestResult : TestRun
     /// True if the test command succeeded, otherwise false.
     /// </summary>
     public required bool Succeeded { get; init; }
+
+    /// <summary>
+    /// The tail of the command's output when it failed.
+    /// </summary>
+    public IReadOnlyList<string> FailureOutput { get; init; } = [];
 }

@@ -64,8 +64,17 @@ public class DotnetTest(
 
         if (result.Failures.Count == 0)
         {
-            report.Section("Tests").Failure("`dotnet test` failed — check the build logs for details.");
-            return StepResult.Failed("Tests failed. Re-run with --verbose to see the output.");
+            var section = report.Section("Tests").Failure("`dotnet test` failed before reporting any results.");
+            if (result.FailureOutput.Count == 0)
+            {
+                return StepResult.Failed("Tests failed. Re-run with --verbose to see the output.");
+            }
+
+            section.Details("Output", $"```\n{string.Join('\n', result.FailureOutput)}\n```");
+            return StepResult.Failed([
+                new Error("`dotnet test` failed before reporting any results:"),
+                .. result.FailureOutput.Select(line => new Error(line))
+            ]);
         }
 
         var summary = $"{result.Failed} {(result.Failed == 1 ? "test" : "tests")} failed ({result.Passed} passed, {result.Skipped} skipped)";

@@ -98,6 +98,44 @@ public class DotNetClientTests
         result.Value.Version.ShouldBe(NuGetVersion.Parse("2.3.4"));
     }
 
+    [Fact]
+    public async Task Test_NamesTheProjectWithTheMtpOption()
+    {
+        // The MTP mode of `dotnet test` rejects a bare positional path.
+        _commands.Respond(c => c.Arguments.Contains("test"), new CommandResult(0, "", ""));
+
+        await _client.Test(
+            new TestArgs { Project = "tests/My.Tests.csproj", ResultsDirectory = ResultsDirectory() },
+            TestContext.Current.CancellationToken);
+
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.Take(3).ShouldBe(["test", "--project", "tests/My.Tests.csproj"]);
+    }
+
+    [Fact]
+    public async Task Test_ReportsTheOutputTailWhenTheRunFailsWithoutResults()
+    {
+        // A run that dies before any test reports leaves no TRX behind, so the command's own
+        // output is the only diagnosis there is.
+        _commands.Respond(
+            c => c.Arguments.Contains("test"),
+            new CommandResult(5, "error: unknown option: --report-trx\n", ""));
+
+        var result = await _client.Test(
+            new TestArgs { ResultsDirectory = ResultsDirectory() },
+            TestContext.Current.CancellationToken);
+
+        result.Succeeded.ShouldBeFalse();
+        result.FailureOutput.ShouldBe(["error: unknown option: --report-trx"]);
+    }
+
+    private static IDirectory ResultsDirectory()
+    {
+        var directory = Substitute.For<IDirectory>();
+        directory.GetFiles("*.trx").Returns([]);
+        return directory;
+    }
+
     private static IFile ProjectFile(string path)
     {
         var file = Substitute.For<IFile>();

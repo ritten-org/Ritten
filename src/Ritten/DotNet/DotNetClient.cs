@@ -133,7 +133,8 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         var command = Command.Create("dotnet").WithArguments("test");
         if (args.Project is not null)
         {
-            command = command.AndArguments(args.Project);
+            // The MTP mode of `dotnet test` rejects a bare positional; the project must be named.
+            command = command.AndArguments("--project", args.Project);
         }
 
         if (args.NoBuild)
@@ -168,6 +169,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         return new TestResult
         {
             Succeeded = result.IsSuccess,
+            FailureOutput = result.IsSuccess ? [] : result.ErrorTail(),
             Passed = runs.Sum(r => r.Passed),
             Failed = runs.Sum(r => r.Failed),
             Skipped = runs.Sum(r => r.Skipped),
