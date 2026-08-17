@@ -13,7 +13,7 @@ public enum StepKind
     /// <summary>
     /// A read-only policy check. Failure means the repository needs fixing, not the build.
     /// </summary>
-    Validation,
+    Check,
 
     /// <summary>
     /// May end the job early, in either direction: declined, or nothing left to do.

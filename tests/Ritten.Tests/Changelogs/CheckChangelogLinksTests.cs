@@ -15,7 +15,7 @@ namespace Ritten.Tests.Changelogs;
 /// The links are a deterministic function of the file's own entries, so this lint applies in
 /// every release state. The repository URL arrives already resolved on the project.
 /// </summary>
-public class ChangelogLinksValidateTests
+public class CheckChangelogLinksTests
 {
     // The real client, so these tests exercise the actual link generator.
     private static readonly IChangelog Changelogs = new ServiceCollection()
@@ -27,7 +27,7 @@ public class ChangelogLinksValidateTests
     private readonly ReportSection _changelogSection = new("Changelog");
     private readonly ChangelogOptions _options = TestOptions.Changelog();
 
-    public ChangelogLinksValidateTests()
+    public CheckChangelogLinksTests()
     {
         _report.Section("Changelog").Returns(_changelogSection);
     }
@@ -98,7 +98,7 @@ public class ChangelogLinksValidateTests
     }
 
     [Fact]
-    public void SkipsLinkValidationWhenTheProjectHasNoRepository()
+    public void SkipsLinkCheckWhenTheProjectHasNoRepository()
     {
         var changelog = Changelogs.Parse(
             """
@@ -119,6 +119,6 @@ public class ChangelogLinksValidateTests
     private static Project Project(string? repository = "https://github.com/example/repo") =>
         new() { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0"), Repository = repository };
 
-    private ChangelogLinksValidate Step() =>
+    private CheckChangelogLinks Step() =>
         new(Substitute.For<IPipelineLog>(), Options.Create(_options), Options.Create(TestOptions.Git()), _report, Changelogs);
 }

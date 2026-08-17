@@ -12,7 +12,7 @@ public static class ServiceCollectionExtensions
     extension(IServiceCollection services)
     {
         /// <summary>
-        /// Adds changelog validation.
+        /// Adds changelog checks.
         /// </summary>
         public IServiceCollection AddChangelogs(ChangelogSettings settings)
         {

@@ -6,7 +6,7 @@ namespace Ritten.NuGet;
 
 /// <summary>
 /// Reports what would be published instead of publishing it.
-/// Reads pass through, so version validation still runs against the real feed.
+/// Reads pass through, so version checks still runs against the real feed.
 /// </summary>
 internal class DryRunNuGet(IPipelineLog log, INuGet inner) : INuGet
 {

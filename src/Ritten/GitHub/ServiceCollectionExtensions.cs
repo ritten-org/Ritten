@@ -50,7 +50,7 @@ internal static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Private marker type so that consumers can't suppress the validation.
+    /// Private marker type so that consumers can't suppress the checks.
     /// </summary>
     private sealed class GitHubActionsRuntimeMarker;
 }

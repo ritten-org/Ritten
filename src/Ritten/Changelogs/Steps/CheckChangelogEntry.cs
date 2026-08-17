@@ -10,8 +10,8 @@ namespace Ritten.Changelogs.Steps;
 /// </summary>
 /// <param name="log">The pipeline log.</param>
 /// <param name="report">The build report.</param>
-[Step("changelog entry", StepKind.Validation)]
-public class ChangelogValidate(IPipelineLog log, IBuildReport report)
+[Step("check changelog entry", StepKind.Check)]
+public class CheckChangelogEntry(IPipelineLog log, IBuildReport report)
 {
     /// <summary>
     /// Validates the changelog for the given project and release state.

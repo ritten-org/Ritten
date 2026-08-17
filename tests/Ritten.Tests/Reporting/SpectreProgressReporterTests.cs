@@ -38,7 +38,7 @@ public class SpectreProgressReporterTests
     {
         var console = new TestConsole();
         var sut = new SpectreProgressReporter(console, PipelineLogLevel.Warning);
-        var step = new Step("changelog", StepKind.Validation, null, []);
+        var step = new Step("changelog", StepKind.Check, null, []);
 
         await sut.OnStepStarted(step, TestContext.Current.CancellationToken);
         await sut.OnStepCompleted(step, StepResult.Failed("The entry is missing."), TestContext.Current.CancellationToken);

@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - **The format check verifies whitespace only.** The formatting step now runs `dotnet format whitespace --verify-no-changes` instead of the full style-and-analyzer pass, which was the slowest step in the pipeline.
+- **Validation steps are now called checks.** `Validation` is now `Check`. It fits better with the domain grammar and is fewer characters to type.
 
 ### Fixed
 

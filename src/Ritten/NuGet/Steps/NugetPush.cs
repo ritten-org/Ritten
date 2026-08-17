@@ -10,7 +10,7 @@ namespace Ritten.NuGet.Steps;
 /// </summary>
 /// <param name="nuget">The NuGet client.</param>
 /// <param name="report">The build report.</param>
-[Step("dotnet nuget push", StepKind.Publish)]
+[Step("nuget push", StepKind.Publish)]
 public class NugetPush(INuGet nuget, IBuildReport report)
 {
     /// <summary>

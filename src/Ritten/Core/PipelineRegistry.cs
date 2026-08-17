@@ -13,7 +13,7 @@ public sealed class PipelineRegistry
     private static readonly IJobRule[] Rules = [
         new ProduceBeforeConsume(),
         new GateBeforePublish(),
-        new ValidationBeforePublish()
+        new CheckBeforePublish()
     ];
 
     private readonly List<IPipeline> _pipelines = [];

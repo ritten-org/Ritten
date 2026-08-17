@@ -9,7 +9,7 @@ namespace Ritten.Tests.CodeCoverage;
 /// Without minimums coverage is watched, not enforced, so a project can see its numbers before
 /// deciding what to demand of them.
 /// </summary>
-public class CoverageValidateTests
+public class CoverageCheckTests
 {
     private static readonly Coverage ThreeQuarters =
         new() { LinesCovered = 75, LinesValid = 100, BranchesCovered = 3, BranchesValid = 4 };
@@ -18,7 +18,7 @@ public class CoverageValidateTests
     private readonly ReportSection _section = new("Coverage");
     private readonly CoverageOptions _options = new();
 
-    public CoverageValidateTests()
+    public CoverageCheckTests()
     {
         _report.Section("Coverage").Returns(_section);
     }
@@ -69,5 +69,5 @@ public class CoverageValidateTests
         result.Errors.ShouldNotBeNull().Count.ShouldBe(2);
     }
 
-    private CoverageValidate Step() => new(Options.Create(_options), _report);
+    private CoverageCheck Step() => new(Options.Create(_options), _report);
 }

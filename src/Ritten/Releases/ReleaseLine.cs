@@ -1,7 +1,7 @@
 namespace Ritten.Releases;
 
 /// <summary>
-/// How published versions are grouped into release lines for validation.
+/// How published versions are grouped into release lines during checks.
 /// </summary>
 public enum ReleaseLine
 {

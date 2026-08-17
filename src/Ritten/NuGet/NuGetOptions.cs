@@ -5,7 +5,7 @@ using Ritten.Releases;
 namespace Ritten.NuGet;
 
 /// <summary>
-/// Settings for the NuGet feed the package is validated against and published to.
+/// Settings for the NuGet feed the package is checked against and published to.
 /// </summary>
 public class NuGetOptions
 {

@@ -40,7 +40,7 @@ public class GateBeforePublishTests
     [Fact]
     public void PassesAJobThatPublishesNothing()
     {
-        var errors = _rule.Check(new TestJob(steps: [Step(StepKind.Work), Step(StepKind.Validation)]));
+        var errors = _rule.Check(new TestJob(steps: [Step(StepKind.Work), Step(StepKind.Check)]));
 
         errors.ShouldBeEmpty();
     }

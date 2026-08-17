@@ -11,7 +11,7 @@ namespace Ritten.Tests.NuGet;
 
 /// <summary>
 /// The classification is total: every version maps to a state, coherent or not, and nothing
-/// here fails on policy — judging belongs to <see cref="NugetValidate"/>.
+/// here fails on policy — judging belongs to <see cref="CheckVersion"/>.
 /// </summary>
 public class NugetReadTests
 {
