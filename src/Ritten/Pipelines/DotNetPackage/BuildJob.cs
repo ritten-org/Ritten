@@ -6,7 +6,7 @@ using Ritten.Pipelines.Steps;
 namespace Ritten.Pipelines.DotNetPackage;
 
 /// <summary>
-/// Compiles and tests, without any release validation.
+/// Compiles and tests, without any release checks.
 /// </summary>
 internal sealed class BuildJob : DotNetPackageJob
 {

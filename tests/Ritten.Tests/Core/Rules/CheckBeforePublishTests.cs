@@ -4,38 +4,38 @@ using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Core.Rules;
 
-public class ValidationBeforePublishTests
+public class CheckBeforePublishTests
 {
-    private readonly ValidationBeforePublish _rule = new();
+    private readonly CheckBeforePublish _rule = new();
 
     [Fact]
-    public void FailsAValidationThatRunsAfterAPublish()
+    public void FailsACheckThatRunsAfterAPublish()
     {
         var errors = _rule.Check(new TestJob(steps: [
             Step(StepKind.Publish),
-            Step(StepKind.Validation, "changelog")
+            Step(StepKind.Check, "changelog")
         ]));
 
         errors.ShouldHaveSingleItem().Message.ShouldContain("changelog");
     }
 
     [Fact]
-    public void ReportsEveryLateValidation()
+    public void ReportsEveryLateCheck()
     {
         var errors = _rule.Check(new TestJob(steps: [
             Step(StepKind.Publish),
-            Step(StepKind.Validation, "first"),
-            Step(StepKind.Validation, "second")
+            Step(StepKind.Check, "first"),
+            Step(StepKind.Check, "second")
         ]));
 
         errors.Count().ShouldBe(2);
     }
 
     [Fact]
-    public void PassesValidationsAheadOfThePublishSteps()
+    public void PassesChecksAheadOfThePublishSteps()
     {
         var errors = _rule.Check(new TestJob(steps: [
-            Step(StepKind.Validation),
+            Step(StepKind.Check),
             Step(StepKind.Gate),
             Step(StepKind.Publish)
         ]));
@@ -46,7 +46,7 @@ public class ValidationBeforePublishTests
     [Fact]
     public void PassesAJobThatPublishesNothing()
     {
-        var errors = _rule.Check(new TestJob(steps: [Step(StepKind.Work), Step(StepKind.Validation)]));
+        var errors = _rule.Check(new TestJob(steps: [Step(StepKind.Work), Step(StepKind.Check)]));
 
         errors.ShouldBeEmpty();
     }

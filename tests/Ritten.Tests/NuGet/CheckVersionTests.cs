@@ -9,13 +9,13 @@ using Ritten.Tests.Support;
 
 namespace Ritten.Tests.NuGet;
 
-public class NugetValidateTests
+public class CheckVersionTests
 {
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
     private readonly ReportSection _versionSection = new("Version");
     private readonly NuGetOptions _options = TestOptions.NuGet();
 
-    public NugetValidateTests()
+    public CheckVersionTests()
     {
         _report.Section("Version").Returns(_versionSection);
     }
@@ -116,6 +116,6 @@ public class NugetValidateTests
     private static Project Project(string version) =>
         new() { Name = "My.Package", Version = NuGetVersion.Parse(version) };
 
-    private NugetValidate Step() =>
+    private CheckVersion Step() =>
         new(Options.Create(_options), _report);
 }

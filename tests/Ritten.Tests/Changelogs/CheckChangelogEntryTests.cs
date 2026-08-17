@@ -10,7 +10,7 @@ using Ritten.Reporting;
 
 namespace Ritten.Tests.Changelogs;
 
-public class ChangelogValidateTests
+public class CheckChangelogEntryTests
 {
     // The real client, so these tests exercise the actual parser.
     private static readonly IChangelog Changelogs = new ServiceCollection()
@@ -25,7 +25,7 @@ public class ChangelogValidateTests
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
     private readonly ReportSection _changelogSection = new("Changelog");
 
-    public ChangelogValidateTests()
+    public CheckChangelogEntryTests()
     {
         _report.Section("Changelog").Returns(_changelogSection);
     }
@@ -163,6 +163,6 @@ public class ChangelogValidateTests
     private static Project Project(string version) =>
         new() { Name = "My.Package", Version = NuGetVersion.Parse(version) };
 
-    private ChangelogValidate Step() =>
+    private CheckChangelogEntry Step() =>
         new(Substitute.For<IPipelineLog>(), _report);
 }

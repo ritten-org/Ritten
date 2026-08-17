@@ -42,9 +42,9 @@ var root = new RootCommand("The Ritten build pipeline.")
     dryRun,
     autoApprove,
     JobCommand("status", "Reports where the project stands: version, release state, and changelog."),
-    JobCommand("build", "Compiles and tests, without any release validation."),
-    JobCommand("check", "Validates a pull request: formatting, version, changelog, compile, tests, and pack."),
-    JobCommand("deploy", "Validates, packs, tags, creates the GitHub release, and publishes to NuGet.")
+    JobCommand("build", "Compiles and tests, without any release checks."),
+    JobCommand("check", "Checks a pull request: formatting, version, changelog, compile, tests, and pack."),
+    JobCommand("deploy", "Checks, packs, tags, creates the GitHub release, and publishes to NuGet.")
 };
 
 return await root.Parse(args).InvokeAsync();

@@ -3,9 +3,9 @@ using Ritten.Contracts;
 namespace Ritten.Core.Rules;
 
 /// <summary>
-/// Requires validations to run before any publish step.
+/// Requires checks to run before any publish step.
 /// </summary>
-public sealed class ValidationBeforePublish : IJobRule
+public sealed class CheckBeforePublish : IJobRule
 {
     /// <inheritdoc />
     public IEnumerable<Error> Check(IJob job)
@@ -17,9 +17,9 @@ public sealed class ValidationBeforePublish : IJobRule
             {
                 published = true;
             }
-            else if (published && step.Kind == StepKind.Validation)
+            else if (published && step.Kind == StepKind.Check)
             {
-                yield return Result.Error($"'{step.Name}' validates after the job has already started publishing. Move validations ahead of the publish steps.");
+                yield return Result.Error($"'{step.Name}' checks after the job has already started publishing. Move checks ahead of the publish steps.");
             }
         }
     }

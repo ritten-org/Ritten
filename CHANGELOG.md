@@ -4,11 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.0.5] - 2026-08-17
 
 ### Added
 
 - **Unpublished project support.** There's a new `dotnet` pipeline for projects that ship nothing. It just runs the build and tests, but doesn't bother with a deploy.
+
+### Changed
+
+- **The format check verifies whitespace only.** The formatting step now runs `dotnet format whitespace --verify-no-changes` instead of the full style-and-analyzer pass, which was the slowest step in the pipeline.
+- **Validation steps are now called checks.** `Validation` is now `Check`. It fits better with the domain grammar and is fewer characters to type.
 
 ### Fixed
 
@@ -78,7 +83,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
-[Unreleased]: https://github.com/ritten-org/Ritten/compare/v0.0.4...HEAD
+[0.0.5]: https://github.com/ritten-org/Ritten/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/ritten-org/Ritten/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/ritten-org/Ritten/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/ritten-org/Ritten/compare/v0.0.1...v0.0.2

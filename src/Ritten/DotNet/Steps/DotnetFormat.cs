@@ -5,15 +5,12 @@ using Ritten.Reporting;
 namespace Ritten.DotNet.Steps;
 
 /// <summary>
-/// Fails the pipeline when <c>dotnet format</c> would make changes, reporting the unformatted files.
+/// Fails the pipeline when <c>dotnet format whitespace</c> would make changes.
 /// </summary>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
-[Step("dotnet format", StepKind.Validation)]
-public class DotnetFormat(
-    IDotNet dotnet,
-    IBuildReport report
-)
+[Step("dotnet format", StepKind.Check)]
+public class DotnetFormat(IDotNet dotnet, IBuildReport report)
 {
     /// <summary>
     /// Checks the solution's formatting without changing anything.

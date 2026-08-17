@@ -10,8 +10,8 @@ namespace Ritten.CodeCoverage.Steps;
 /// </summary>
 /// <param name="options">The pipeline's coverage options.</param>
 /// <param name="report">The build report.</param>
-[Step("coverage", StepKind.Validation)]
-public class CoverageValidate(IOptions<CoverageOptions> options, IBuildReport report)
+[Step("check coverage", StepKind.Check)]
+public class CoverageCheck(IOptions<CoverageOptions> options, IBuildReport report)
 {
     /// <summary>
     /// Judges the collected coverage.

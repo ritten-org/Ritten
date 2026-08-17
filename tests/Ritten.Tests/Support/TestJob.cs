@@ -5,7 +5,7 @@ using Ritten.Pipelines;
 namespace Ritten.Tests.Support;
 
 /// <summary>
-/// A job declared inline: the steps and validation a test hands it, nothing more.
+/// A job declared inline: the steps and checks a test hands it, nothing more.
 /// </summary>
 internal sealed class TestJob(
     string name = "verify",

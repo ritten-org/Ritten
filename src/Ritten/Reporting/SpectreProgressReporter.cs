@@ -143,7 +143,7 @@ internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogL
     /// </summary>
     private static (string Glyph, string Color) Style(StepKind kind) => kind switch
     {
-        StepKind.Validation => ("○", "deepskyblue1"),
+        StepKind.Check => ("○", "deepskyblue1"),
         StepKind.Gate => ("◆", "yellow"),
         StepKind.Publish => ("▲", "fuchsia"),
         _ => ("·", "grey")

@@ -1,7 +1,7 @@
 namespace Ritten.Changelogs;
 
 /// <summary>
-/// Settings for changelog validation.
+/// Settings for changelog checks.
 /// </summary>
 public class ChangelogOptions
 {

@@ -11,5 +11,5 @@ internal static class CoverageSteps
     /// <summary>
     /// Reads the coverage the tests collected, then judges it against the configured minimums.
     /// </summary>
-    public static IReadOnlyList<Step> All => [Step.FromType<ReadCoverage>(), Step.FromType<CoverageValidate>()];
+    public static IReadOnlyList<Step> All => [Step.FromType<ReadCoverage>(), Step.FromType<CoverageCheck>()];
 }

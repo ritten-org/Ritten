@@ -12,9 +12,12 @@ namespace Ritten.NuGet.Steps;
 /// </summary>
 /// <param name="options">The pipeline's NuGet options.</param>
 /// <param name="report">The build report.</param>
-[Step("nuget validate", StepKind.Validation)]
-public class NugetValidate(IOptions<NuGetOptions> options, IBuildReport report)
+[Step("check version", StepKind.Check)]
+public class CheckVersion(IOptions<NuGetOptions> options, IBuildReport report)
 {
+
+    // TODO: Split this up. Something else should produce the versions (NPM, NuGet, etc.) this step should do the actual enforcement.
+
     /// <summary>
     /// Judges the release state of the given project's version.
     /// </summary>
