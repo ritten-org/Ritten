@@ -50,7 +50,7 @@ Everything lives in one project, `src/Ritten`, split into a pipeline engine and 
 - `Run` parameters come only from pipeline state (values earlier steps produced). A nullable reference parameter is an optional read of state; `CancellationToken` is passed through. Services are constructor-injected — never `Run` parameters — which is what lets produce-then-consume order be judged on the declarations alone.
 - `StepResult` with `Continue = false` and a success exit code means "nothing left to do" — the job stops early, successfully.
 
-**Job shape is validated before anything runs.** `StepKind` (Work / Validation / Gate / Publish) feeds the `IJobRule` invariants in `Core/Rules/`: produced values must precede their consumers, gates must precede publishes, validations must precede publishes. Adding a step in the wrong position fails at startup, not mid-run.
+**Job shape is validated before anything runs.** `StepKind` (Work / Check / Gate / Publish) feeds the `IJobRule` invariants in `Core/Rules/`: produced values must precede their consumers, gates must precede publishes, checks must precede publishes. Adding a step in the wrong position fails at startup, not mid-run.
 
 **Dry run is guaranteed at the client layer.** `PipelineHostBuilder.Build` decorates or replaces the outward-reaching clients (`IGit`, `INuGet`, `IReleaseService`, `ICommentService`), which removes every irreversible action from the execution path no matter what the steps do. Steps whose *flow* changes in a rehearsal (e.g. `ApprovalGate` skips the prompt, `NugetAuthenticate` skips credentials) read the injected `PipelineJob.DryRun` — but side-effect safety is never a step's responsibility. A new step that reaches outside the working directory must do so through one of these clients (or a new decorated one).
 
@@ -60,7 +60,7 @@ Each domain folder — `Changelogs/`, `CodeCoverage/`, `Commands/`, `DotNet/`, `
 
 `Pipelines/DotNetTool/` (`"pipeline": "dotnet-tool"`) holds the pipeline and its four job classes (`status`, `build`, `check`, `deploy`), which share the standard service registrations through the pipeline-local `DotNetToolJob` base; `Pipelines/DotNetPackage/` (`"dotnet-package"`) is its deliberately-identical sibling for library packages — flat siblings, duplicated declarations, no sharing *across* pipelines. `Pipelines/DotNetToolSettings.cs` and its siblings define the `ritten.json` schema.
 
-**Reporting is two channels:** `IPipelineLog` is the console narrative (rendered by `SpectreProgressReporter`), while `IBuildReport` accumulates a markdown report that `GitHubCommentSink` posts as the PR comment. Validation steps typically write to both.
+**Reporting is two channels:** `IPipelineLog` is the console narrative (rendered by `SpectreProgressReporter`), while `IBuildReport` accumulates a markdown report that `GitHubCommentSink` posts as the PR comment. Check steps typically write to both.
 
 **Errors flow through `Core/Result<T>` and `Error`** (accumulated, not thrown) for configuration and client calls; exceptions are reserved for programming errors.
 
