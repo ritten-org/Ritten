@@ -1,7 +1,7 @@
 using Ritten.Changelogs.Steps;
 using Ritten.CodeCoverage;
 using Ritten.Contracts;
-using Ritten.Core;
+using Ritten.Engine;
 using Ritten.DotNet.Steps;
 using Ritten.Git.Steps;
 using Ritten.GitHub.Steps;

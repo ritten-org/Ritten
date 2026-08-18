@@ -1,6 +1,6 @@
-using Ritten.Core;
+using Ritten.Engine;
 using Ritten.Workflows.DotNet;
-using Ritten.Tests.Core.Helpers;
+using Ritten.Tests.Engine.Helpers;
 
 namespace Ritten.Tests.Workflows;
 

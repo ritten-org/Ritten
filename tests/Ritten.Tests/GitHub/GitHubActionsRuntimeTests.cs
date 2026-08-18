@@ -1,10 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
-using Ritten.Core;
+using Ritten.Engine;
 using Ritten.GitHub;
 using Ritten.Reporting.Sinks;
-using Ritten.Tests.Core.Helpers;
+using Ritten.Tests.Engine.Helpers;
 
 namespace Ritten.Tests.GitHub;
 

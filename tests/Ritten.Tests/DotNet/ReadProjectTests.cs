@@ -2,7 +2,7 @@ using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
-using Ritten.Core;
+using Ritten.Engine;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.Git;

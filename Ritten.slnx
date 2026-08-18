@@ -9,6 +9,7 @@
     <File Path="install-tool.sh" />
     <File Path="ritten.json" />
   </Folder>
+  <Project Path="src\Ritten.Core\Ritten.Core.csproj" />
   <Project Path="src\Ritten\Ritten.csproj" />
   <Project Path="tests\Ritten.Tests\Ritten.Tests.csproj" />
 </Solution>

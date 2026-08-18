@@ -1,5 +1,5 @@
 using Ritten.CodeCoverage;
-using Ritten.Core;
+using Ritten.Engine;
 using Ritten.DotNet;
 using Ritten.Reporting;
 

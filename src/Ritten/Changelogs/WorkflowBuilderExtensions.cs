@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Ritten.Core;
+using Ritten.Engine;
 using Ritten.Workflows;
 
 namespace Ritten.Changelogs;

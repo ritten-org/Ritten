@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Commands;
 using Ritten.Contracts;
-using Ritten.Core;
+using Ritten.Engine;
 
 namespace Ritten.GitHub;
 

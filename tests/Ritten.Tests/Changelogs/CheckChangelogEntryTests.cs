@@ -7,7 +7,7 @@ using Ritten.DotNet;
 using Ritten.Workflows;
 using Ritten.Releases;
 using Ritten.Reporting;
-using Ritten.Tests.Core.Helpers;
+using Ritten.Tests.Engine.Helpers;
 
 namespace Ritten.Tests.Changelogs;
 

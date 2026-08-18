@@ -4,7 +4,7 @@ using Octokit;
 using Ritten.Changelogs;
 using Ritten.Commands;
 using Ritten.Contracts;
-using Ritten.Core;
+using Ritten.Engine;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.GitHub;
@@ -12,7 +12,7 @@ using Ritten.NuGet;
 using Ritten.Workflows;
 using Ritten.Releases;
 using Ritten.Reporting;
-using Ritten.Tests.Core.Helpers;
+using Ritten.Tests.Engine.Helpers;
 
 namespace Ritten.Tests.Extensions;
 

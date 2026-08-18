@@ -8,7 +8,7 @@ using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Workflows;
 using Ritten.Reporting;
-using Ritten.Tests.Core.Helpers;
+using Ritten.Tests.Engine.Helpers;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Changelogs;
