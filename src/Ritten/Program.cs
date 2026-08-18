@@ -58,10 +58,9 @@ Command JobCommand(string name, string description)
     var command = new Command(name, description);
     command.SetAction((parseResult, cancellationToken) =>
     {
-        // Re-running with debug logging is an in-the-moment request to see more, so it outranks
-        // a --quiet that's been sitting in a workflow file since whenever. --verbose wins over
-        // --quiet for the same reason: the more specific intent.
-        var logLevel = parseResult.GetValue(verbose) || GitHubEnvironment.IsDebug()
+        // --verbose wins over --quiet: the more specific intent. A debug request from the
+        // environment is the runtime's to honour, once one has been detected.
+        var logLevel = parseResult.GetValue(verbose)
             ? PipelineLogLevel.Verbose
             : parseResult.GetValue(quiet)
                 ? PipelineLogLevel.Warning

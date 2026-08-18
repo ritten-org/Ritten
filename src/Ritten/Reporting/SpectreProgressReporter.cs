@@ -8,7 +8,7 @@ namespace Ritten.Reporting;
 /// <summary>
 /// Renders pipeline progress to the terminal using Spectre.Console.
 /// </summary>
-internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogLevel minimumLogLevel) : IProgressReporter, IPipelineLog
+internal sealed class SpectreProgressReporter(IAnsiConsole console, PipelineLogLevel minimumLogLevel) : IPipelineConsole
 {
     private readonly Stopwatch _stepTimer = new();
     private readonly Stopwatch _pipelineTimer = new();

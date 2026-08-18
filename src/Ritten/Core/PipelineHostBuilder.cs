@@ -22,30 +22,29 @@ public class PipelineHostBuilder
     private readonly string _pipelineLabel;
     private readonly bool _dryRun;
     private readonly bool _autoApprove;
-    private readonly Func<string, string?> _environment;
     private readonly IPipelineLog _log;
-    private readonly RuntimeRegistry _runtimes;
+    private readonly DetectRuntimeResult _runtime;
 
     /// <summary>
     /// Creates a new instance of the <see cref="PipelineHostBuilder"/>.
     /// </summary>
     /// <param name="project">The project being built.</param>
     /// <param name="pipelineLabel">The human label of the pipeline being assembled.</param>
-    /// <param name="reporter">The reporter that renders pipeline progress.</param>
+    /// <param name="console">The console narrative the run renders through.</param>
+    /// <param name="runtime">The detected runtime the job runs in. Detection happens before the
+    /// builder exists, so that what it selects can shape the console the whole run — errors that
+    /// precede the build included — is reported through.</param>
     /// <param name="dryRun">Whether to wrap the clients that reach outside the working directory.</param>
     /// <param name="autoApprove">Whether a job that would stop and ask has been approved up front.</param>
-    /// <param name="environment">Reads environment variables; the process environment when not given.</param>
-    /// <param name="log">Where the builder writes; the reporter when not given.</param>
-    /// <param name="runtimes">The runtimes the host can find itself running in; local-only when not given.</param>
-    internal PipelineHostBuilder(RittenProject project, string pipelineLabel, SpectreProgressReporter reporter, bool dryRun = false, bool autoApprove = false, Func<string, string?>? environment = null, IPipelineLog? log = null, RuntimeRegistry? runtimes = null)
+    /// <param name="log">Where the builder writes; the console when not given.</param>
+    internal PipelineHostBuilder(RittenProject project, string pipelineLabel, IPipelineConsole console, DetectRuntimeResult runtime, bool dryRun = false, bool autoApprove = false, IPipelineLog? log = null)
     {
         _project = project;
         _pipelineLabel = pipelineLabel;
         _dryRun = dryRun;
         _autoApprove = autoApprove;
-        _environment = environment ?? Environment.GetEnvironmentVariable;
-        _log = log ?? reporter;
-        _runtimes = runtimes ?? new RuntimeRegistry();
+        _log = log ?? console;
+        _runtime = runtime;
 
         // Applies to every run.
         Services.AddOptions();
@@ -53,7 +52,7 @@ public class PipelineHostBuilder
         Services.AddSingleton(TimeProvider.System);
         Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
         Services.TryAddSingleton<IFileSystem, ProjectFileSystem>();
-        Services.AddSingleton<IProgressReporter>(reporter);
+        Services.AddSingleton<IProgressReporter>(console);
         Services.TryAddSingleton(_log);
         Services.TryAddSingleton<IPipelinePrompt>(_ => new ConsolePrompt(AnsiConsole.Console));
 
@@ -71,22 +70,15 @@ public class PipelineHostBuilder
     /// <returns>The configured pipeline application.</returns>
     public Result<PipelineHost> Build(IJob job)
     {
-        var runtime = _runtimes.Detect(_environment);
-        if (runtime.IsError)
-        {
-            return runtime.Errors;
-        }
-
-        var environment = runtime.Value.Environment;
-        var settings = job.ReadSettings(_project, environment, _dryRun, _log);
+        var settings = job.ReadSettings(_project, _runtime.Environment, _dryRun, _log);
         if (settings.IsError)
         {
             return settings.Errors;
         }
 
-        Services.AddSingleton(new PipelineEnvironment(environment));
+        Services.AddSingleton(new PipelineEnvironment(_runtime.Environment));
         Services.AddSingleton(new PipelineJob(_pipelineLabel, job.Name, _dryRun, _autoApprove));
-        runtime.Value.Runtime.ConfigureServices(Services, _environment);
+        _runtime.Runtime.ConfigureServices(Services, _runtime.Raw);
         job.ConfigureServices(Services, settings.Value);
 
         Services.AddSingleton(job.Steps);
