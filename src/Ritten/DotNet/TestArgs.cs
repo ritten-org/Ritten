@@ -18,7 +18,7 @@ public record TestArgs
     public string? Configuration { get; init; }
 
     /// <summary>
-    /// Skips the implicit build, for pipelines with an explicit build step.
+    /// Skips the implicit build, for workflows with an explicit build step.
     /// </summary>
     public bool NoBuild { get; init; }
 

@@ -6,7 +6,7 @@ namespace Ritten.Reporting;
 /// <summary>
 /// Asks for approval at the terminal.
 /// </summary>
-internal sealed class ConsolePrompt(IAnsiConsole console) : IPipelinePrompt
+internal sealed class ConsolePrompt(IAnsiConsole console) : IWorkflowPrompt
 {
     /// <inheritdoc />
     public bool IsInteractive => console.Profile.Capabilities.Interactive;

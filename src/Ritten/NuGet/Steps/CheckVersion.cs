@@ -10,7 +10,7 @@ namespace Ritten.NuGet.Steps;
 /// Judges the project's <see cref="ReleaseState"/>: a version that is the latest of its line
 /// passes, published or not, while one its line has moved past fails with what to bump.
 /// </summary>
-/// <param name="options">The pipeline's NuGet options.</param>
+/// <param name="options">The workflow's NuGet options.</param>
 /// <param name="report">The build report.</param>
 [Step("check version", StepKind.Check)]
 public class CheckVersion(IOptions<NuGetOptions> options, IBuildReport report)

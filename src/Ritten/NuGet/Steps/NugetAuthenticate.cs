@@ -8,11 +8,11 @@ namespace Ritten.NuGet.Steps;
 /// Resolves the credentials for the feed being pushed to.
 /// </summary>
 /// <param name="job">The job being run.</param>
-/// <param name="log">The pipeline log.</param>
-/// <param name="options">The pipeline's NuGet options.</param>
+/// <param name="log">The workflow log.</param>
+/// <param name="options">The workflow's NuGet options.</param>
 /// <param name="prompt">The prompt used to ask for a key.</param>
 [Step("nuget auth", StepKind.Work)]
-public class NugetAuthenticate(PipelineJob job, IPipelineLog log, IOptions<NuGetOptions> options, IPipelinePrompt prompt)
+public class NugetAuthenticate(WorkflowJob job, IWorkflowLog log, IOptions<NuGetOptions> options, IWorkflowPrompt prompt)
 {
     /// <summary>
     /// Produces the authenticated feed that <see cref="NugetPush"/> publishes to.

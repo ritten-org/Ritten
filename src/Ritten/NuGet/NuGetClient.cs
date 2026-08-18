@@ -8,7 +8,7 @@ using Ritten.Contracts.FileSystem;
 
 namespace Ritten.NuGet;
 
-internal class NuGetClient(IPipelineLog log, ICommandRunner commands) : INuGet
+internal class NuGetClient(IWorkflowLog log, ICommandRunner commands) : INuGet
 {
     public async Task<IReadOnlyList<NuGetVersion>> GetPublishedVersions(NuGetFeed feed, string packageId, CancellationToken cancellationToken = default)
     {

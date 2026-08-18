@@ -8,7 +8,7 @@ namespace Ritten.GitHub;
 public class GitHubActionsOptions
 {
     /// <summary>
-    /// The ID of the repository the pipeline is running against.
+    /// The ID of the repository the workflow is running against.
     /// </summary>
     public long? RepositoryId { get; set; }
 

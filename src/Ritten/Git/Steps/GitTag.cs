@@ -8,11 +8,11 @@ namespace Ritten.Git.Steps;
 /// <summary>
 /// Creates and pushes the release tag, skipping whatever a previous run already did so failed deploys can be rerun.
 /// </summary>
-/// <param name="log">The pipeline log.</param>
-/// <param name="options">The pipeline's release options.</param>
+/// <param name="log">The workflow log.</param>
+/// <param name="options">The workflow's release options.</param>
 /// <param name="git">The git client.</param>
 [Step("git tag", StepKind.Publish)]
-public class GitTag(IPipelineLog log, IOptions<GitOptions> options, IGit git)
+public class GitTag(IWorkflowLog log, IOptions<GitOptions> options, IGit git)
 {
     /// <summary>
     /// Tags the release and pushes the tag.

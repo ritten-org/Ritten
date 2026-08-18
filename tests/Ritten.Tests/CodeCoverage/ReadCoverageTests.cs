@@ -53,5 +53,5 @@ public class ReadCoverageTests
     }
 
     private ReadCoverage Step() =>
-        new(Substitute.For<IPipelineLog>(), _fileSystem);
+        new(Substitute.For<IWorkflowLog>(), _fileSystem);
 }

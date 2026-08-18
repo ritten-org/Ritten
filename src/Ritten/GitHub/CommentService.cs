@@ -5,7 +5,7 @@ using Ritten.Contracts;
 namespace Ritten.GitHub;
 
 internal class CommentService(
-    IPipelineLog log,
+    IWorkflowLog log,
     IOptions<GitHubActionsOptions> options,
     IOptions<RunContext> context,
     IGitHubClient client

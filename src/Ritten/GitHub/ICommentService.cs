@@ -6,7 +6,7 @@ namespace Ritten.GitHub;
 public interface ICommentService
 {
     /// <summary>
-    /// Creates the pipeline's comment on the current pull request, or updates it in place.
+    /// Creates the workflow's comment on the current pull request, or updates it in place.
     /// </summary>
     Task CreateOrUpdate(string body, CancellationToken cancellationToken = default);
 }

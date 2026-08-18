@@ -8,5 +8,5 @@ public class RunContext
     /// <summary>
     /// The name the run is reported under, e.g. the CI workflow's name.
     /// </summary>
-    public string Title { get; set; } = "Pipeline";
+    public string Title { get; set; } = "Workflow";
 }

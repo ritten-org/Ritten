@@ -45,7 +45,7 @@ public sealed class Step(string name, StepKind kind, Type? produces, IReadOnlyLi
     public StepKind Kind { get; } = kind;
 
     /// <summary>
-    /// The type the step produces into pipeline state, or <c>null</c> for a non-producing step.
+    /// The type the step produces into workflow state, or <c>null</c> for a non-producing step.
     /// </summary>
     public Type? Produces { get; } = produces;
 
@@ -112,10 +112,10 @@ public sealed class Step(string name, StepKind kind, Type? produces, IReadOnlyLi
     }
 
     /// <summary>
-    /// Runs the step, supplying its parameters from pipeline state.
+    /// Runs the step, supplying its parameters from workflow state.
     /// </summary>
     /// <param name="step">The resolved step instance.</param>
-    /// <param name="state">The pipeline state for consumed and produced values.</param>
+    /// <param name="state">The workflow state for consumed and produced values.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     internal async Task<StepResult> Invoke(object step, Dictionary<Type, object> state, CancellationToken cancellationToken)
     {
@@ -128,7 +128,7 @@ public sealed class Step(string name, StepKind kind, Type? produces, IReadOnlyLi
                 ParameterSource.Token => cancellationToken,
                 ParameterSource.Optional => state.GetValueOrDefault(type),
                 _ => state.GetValueOrDefault(type)
-                    ?? throw new InvalidOperationException($"No {type.Name} in pipeline state; an earlier step should have produced it.")
+                    ?? throw new InvalidOperationException($"No {type.Name} in workflow state; an earlier step should have produced it.")
             };
         }
 

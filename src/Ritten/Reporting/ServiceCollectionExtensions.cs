@@ -12,7 +12,7 @@ public static class ServiceCollectionExtensions
     {
         /// <summary>
         /// Adds <see cref="IBuildReport"/> to the service collection and registers the
-        /// <see cref="BuildReportPublisher"/> that publishes it when the pipeline finishes.
+        /// <see cref="BuildReportPublisher"/> that publishes it when the workflow finishes.
         /// </summary>
         public IServiceCollection AddBuildReporting()
         {

@@ -3,14 +3,14 @@ using Ritten.Core;
 namespace Ritten.Contracts;
 
 /// <summary>
-/// Receives lifecycle notifications from the pipeline runner.
+/// Receives lifecycle notifications from the workflow runner.
 /// </summary>
 public interface IProgressReporter
 {
     /// <summary>
     /// Called when the job is about to start.
     /// </summary>
-    Task OnPipelineStarted(PipelineJob job, CancellationToken cancellationToken = default);
+    Task OnWorkflowStarted(WorkflowJob job, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Called when a step is about to run.
@@ -23,7 +23,7 @@ public interface IProgressReporter
     Task OnStepCompleted(Step step, StepResult result, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Called when the pipeline has finished executing.
+    /// Called when the workflow has finished executing.
     /// </summary>
-    Task OnPipelineCompleted(PipelineResult result, CancellationToken cancellationToken = default);
+    Task OnWorkflowCompleted(WorkflowResult result, CancellationToken cancellationToken = default);
 }

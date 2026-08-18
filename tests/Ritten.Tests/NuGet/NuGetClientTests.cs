@@ -14,7 +14,7 @@ public class NuGetClientTests
 
     public NuGetClientTests()
     {
-        _client = new NuGetClient(Substitute.For<IPipelineLog>(), _commands);
+        _client = new NuGetClient(Substitute.For<IWorkflowLog>(), _commands);
     }
 
     [Fact]

@@ -1,7 +1,5 @@
 using System.Text.Json;
 using Ritten.Core;
-using Ritten.Pipelines;
-using Ritten.Releases;
 
 namespace Ritten.Tests.Core;
 
@@ -23,7 +21,7 @@ public class RittenProjectTests : IDisposable
     {
         WriteRittenJson(_root);
 
-        var project = await RittenProject.Resolve(_root);
+        var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
 
         project.Value.ShouldNotBeNull().Directory.ShouldBe(_root);
     }
@@ -34,7 +32,7 @@ public class RittenProjectTests : IDisposable
         WriteRittenJson(_root);
         var nested = Directory.CreateDirectory(Path.Combine(_root, "src", "Thing", "bin")).FullName;
 
-        var project = await RittenProject.Resolve(nested);
+        var project = await RittenProject.Resolve(nested, TestContext.Current.CancellationToken);
 
         project.Value.ShouldNotBeNull().Directory.ShouldBe(_root);
     }
@@ -47,7 +45,7 @@ public class RittenProjectTests : IDisposable
         var nested = Directory.CreateDirectory(Path.Combine(_root, "nested")).FullName;
         WriteRittenJson(nested);
 
-        var project = await RittenProject.Resolve(Path.Combine(nested, "src"));
+        var project = await RittenProject.Resolve(Path.Combine(nested, "src"), TestContext.Current.CancellationToken);
 
         project.Value.ShouldNotBeNull().Directory.ShouldBe(nested);
     }
@@ -57,7 +55,7 @@ public class RittenProjectTests : IDisposable
     {
         Directory.CreateDirectory(_root);
 
-        var project = await RittenProject.Resolve(_root);
+        var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
 
         project.IsError.ShouldBeTrue();
         project.Errors.ShouldHaveSingleItem().Message.ShouldContain("No ritten.json found");
@@ -68,7 +66,7 @@ public class RittenProjectTests : IDisposable
     {
         WriteRittenJson(_root, "{ not json");
 
-        var project = await RittenProject.Resolve(_root);
+        var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
 
         project.IsError.ShouldBeTrue();
         var error = project.Errors.ShouldHaveSingleItem();
@@ -77,27 +75,27 @@ public class RittenProjectTests : IDisposable
     }
 
     [Fact]
-    public async Task GetPipelineName_ReadsTheDeclaration()
+    public async Task GetWorkflowName_ReadsTheDeclaration()
     {
-        WriteRittenJson(_root, """{ "pipeline": "dotnet-tool", "build": { "project": "src/Thing/Thing.csproj" } }""");
+        WriteRittenJson(_root, """{ "workflow": "dotnet-tool", "build": { "project": "src/Thing/Thing.csproj" } }""");
 
-        var project = await RittenProject.Resolve(_root);
+        var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
 
-        project.Value.ShouldNotBeNull().GetPipelineName().Value.ShouldBe("dotnet-tool");
+        project.Value.ShouldNotBeNull().GetWorkflowName().Value.ShouldBe("dotnet-tool");
     }
 
     [Fact]
-    public async Task GetPipelineName_ReportsAMissingDeclaration()
+    public async Task GetWorkflowName_ReportsAMissingDeclaration()
     {
         WriteRittenJson(_root);
 
-        var project = await RittenProject.Resolve(_root);
-        var name = project.Value.ShouldNotBeNull().GetPipelineName();
+        var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
+        var name = project.Value.ShouldNotBeNull().GetWorkflowName();
 
         name.IsError.ShouldBeTrue();
         var error = name.Errors.ShouldHaveSingleItem();
         error.Message.ShouldContain(RittenProject.FileName);
-        error.Message.ShouldContain("pipeline");
+        error.Message.ShouldContain("workflow");
     }
 
     private static void WriteRittenJson(string directory, string content = "{}")

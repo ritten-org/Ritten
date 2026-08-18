@@ -1,6 +1,6 @@
 using Ritten.Contracts;
 using Ritten.Core;
-using Ritten.Pipelines;
+using Ritten.Workflows;
 
 namespace Ritten.Tests.Support;
 

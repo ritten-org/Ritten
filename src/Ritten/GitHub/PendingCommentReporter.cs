@@ -5,18 +5,18 @@ using Ritten.Core;
 namespace Ritten.GitHub;
 
 /// <summary>
-/// Posts a pending comment when the pipeline starts, so the pull request shows the run is underway
+/// Posts a pending comment when the workflow starts, so the pull request shows the run is underway
 /// before any result exists. The final report replaces it via <see cref="GitHubCommentSink"/>.
 /// </summary>
 internal class PendingCommentReporter(
-    IPipelineLog log,
+    IWorkflowLog log,
     IOptions<GitHubActionsOptions> options,
     IOptions<RunContext> context,
     ICommentService comments
 ) : IProgressReporter
 {
     /// <inheritdoc />
-    public async Task OnPipelineStarted(PipelineJob job, CancellationToken cancellationToken)
+    public async Task OnWorkflowStarted(WorkflowJob job, CancellationToken cancellationToken)
     {
         if (!options.Value.IsPullRequest)
         {
@@ -40,5 +40,5 @@ internal class PendingCommentReporter(
     public Task OnStepCompleted(Step step, StepResult result, CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc />
-    public Task OnPipelineCompleted(PipelineResult result, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task OnWorkflowCompleted(WorkflowResult result, CancellationToken cancellationToken) => Task.CompletedTask;
 }

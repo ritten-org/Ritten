@@ -7,7 +7,7 @@ namespace Ritten.Tests.DotNet;
 
 public class DotnetRestoreTests
 {
-    private readonly IPipelineLog _log = Substitute.For<IPipelineLog>();
+    private readonly IWorkflowLog _log = Substitute.For<IWorkflowLog>();
     private readonly IDotNet _dotnet = Substitute.For<IDotNet>();
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();
     private readonly ReportSection _section = new("Restore");

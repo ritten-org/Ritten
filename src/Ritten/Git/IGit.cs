@@ -1,7 +1,7 @@
 namespace Ritten.Git;
 
 /// <summary>
-/// Exposes functionality for interacting with the git repository the pipeline is running in.
+/// Exposes functionality for interacting with the git repository the workflow is running in.
 /// </summary>
 public interface IGit
 {

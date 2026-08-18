@@ -7,7 +7,7 @@ namespace Ritten.Core;
 /// The base for declaring a job.
 /// </summary>
 /// <typeparam name="TSettings">The settings type the job's requirements and services read.</typeparam>
-public abstract class Job<TSettings> : IJob where TSettings : PipelineSettings
+public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
 {
     /// <inheritdoc />
     public abstract string Name { get; }
@@ -35,21 +35,21 @@ public abstract class Job<TSettings> : IJob where TSettings : PipelineSettings
     {
     }
 
-    Result<PipelineSettings> IJob.ReadSettings(RittenProject project, Func<string, string?> environment, bool dryRun, IPipelineLog log)
+    Result<WorkflowSettings> IJob.ReadSettings(RittenProject project, Func<string, string?> environment, bool dryRun, IWorkflowLog log)
     {
-        var settings = PipelineSettings.Read<TSettings>(project);
+        var settings = WorkflowSettings.Read<TSettings>(project);
         if (settings.IsError)
         {
-            return new Result<PipelineSettings>(settings.Errors);
+            return new Result<WorkflowSettings>(settings.Errors);
         }
 
         var validator = new SettingsValidator<TSettings>(settings.Value, environment, dryRun, log);
         ValidateSettings(validator);
         return validator.Errors.Count > 0
-            ? new Result<PipelineSettings>(validator.Errors)
-            : new Result<PipelineSettings>(settings.Value);
+            ? new Result<WorkflowSettings>(validator.Errors)
+            : new Result<WorkflowSettings>(settings.Value);
     }
 
-    void IJob.ConfigureServices(IServiceCollection services, PipelineSettings settings) =>
+    void IJob.ConfigureServices(IServiceCollection services, WorkflowSettings settings) =>
         ConfigureServices(services, (TSettings)settings);
 }

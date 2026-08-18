@@ -11,13 +11,13 @@ namespace Ritten.GitHub.Steps;
 /// Creates the GitHub release for the version being shipped, with its changelog entry as the
 /// notes. Prereleases are skipped, and so is a release a previous run already created.
 /// </summary>
-/// <param name="log">The pipeline log.</param>
-/// <param name="options">The pipeline's release options.</param>
+/// <param name="log">The workflow log.</param>
+/// <param name="options">The workflow's release options.</param>
 /// <param name="releases">The GitHub release service.</param>
 /// <param name="changelogs">The changelog client.</param>
 [Step("gh release create", StepKind.Publish)]
 public class GitHubRelease(
-    IPipelineLog log,
+    IWorkflowLog log,
     IOptions<GitOptions> options,
     IReleaseService releases,
     IChangelog changelogs

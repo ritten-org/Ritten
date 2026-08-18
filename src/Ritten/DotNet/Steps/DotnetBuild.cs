@@ -7,7 +7,7 @@ namespace Ritten.DotNet.Steps;
 /// <summary>
 /// Builds the solution, reporting compiler diagnostics when the build fails.
 /// </summary>
-/// <param name="options">The pipeline's build options.</param>
+/// <param name="options">The workflow's build options.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
 [Step("dotnet build", StepKind.Work)]

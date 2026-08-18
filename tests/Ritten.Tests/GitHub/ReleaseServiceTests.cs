@@ -14,7 +14,7 @@ public class ReleaseServiceTests
 
     public ReleaseServiceTests()
     {
-        _service = new ReleaseService(Substitute.For<IPipelineLog>(), _client);
+        _service = new ReleaseService(Substitute.For<IWorkflowLog>(), _client);
     }
 
     [Fact]

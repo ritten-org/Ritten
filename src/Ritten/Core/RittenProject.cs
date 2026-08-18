@@ -34,26 +34,27 @@ internal sealed class RittenProject
     public string FilePath => Path.Combine(Directory, FileName);
 
     /// <summary>
-    /// Reads which pipeline the settings declare.
+    /// Reads which workflow the settings declare.
     /// </summary>
-    public Result<string> GetPipelineName()
+    public Result<string> GetWorkflowName()
     {
-        if (Settings.TryGetProperty("pipeline", out var pipelineProp))
+        if (Settings.TryGetProperty("workflow", out var workflowProp))
         {
-            var pipeline = pipelineProp.GetString();
-            if (pipeline is not null)
+            var workflow = workflowProp.GetString();
+            if (workflow is not null)
             {
-                return pipeline;
+                return workflow;
             }
         }
-        return Result.Error($"'{FilePath}' does not declare which pipeline it runs; set \"pipeline\".");
+        return Result.Error($"'{FilePath}' does not declare which workflow it runs; set \"workflow\".");
     }
 
     /// <summary>
     /// Walks up from the given directory looking for a project.
     /// </summary>
     /// <param name="directory">The directory to start from, usually the working directory.</param>
-    public static async Task<Result<RittenProject>> Resolve(string directory)
+    /// <param name="ct">Cancellation token.</param>
+    public static async Task<Result<RittenProject>> Resolve(string directory, CancellationToken ct)
     {
         var current = new DirectoryInfo(Path.GetFullPath(directory));
         while (current is not null)
@@ -64,7 +65,7 @@ internal sealed class RittenProject
                 try
                 {
                     await using var stream = File.OpenRead(path);
-                    var settings = await JsonSerializer.DeserializeAsync<JsonElement>(stream, SerializerOptions);
+                    var settings = await JsonSerializer.DeserializeAsync<JsonElement>(stream, SerializerOptions, ct);
 
                     return new RittenProject { Directory = current.FullName, Settings = settings };
                 }

@@ -20,7 +20,7 @@ public class GitClientTests : IAsyncLifetime
     {
         var fileSystem = Substitute.For<IFileSystem>();
         fileSystem.ProjectRoot.AbsolutePath.Returns(_repository);
-        _commands = new CommandRunner(Substitute.For<IPipelineLog>(), fileSystem);
+        _commands = new CommandRunner(Substitute.For<IWorkflowLog>(), fileSystem);
         _git = new GitClient(_commands);
 
         await Git("init", "--initial-branch=main", ".");

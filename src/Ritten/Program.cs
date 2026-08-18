@@ -1,45 +1,54 @@
 using System.CommandLine;
 using Ritten.Contracts;
 using Ritten.Core;
-using Ritten.Core.Runtimes;
 using Ritten.GitHub;
-using Ritten.Pipelines.DotNet;
-using Ritten.Pipelines.DotNetPackage;
-using Ritten.Pipelines.DotNetTool;
+using Ritten.Workflows.DotNet;
+using Ritten.Workflows.DotNetPackage;
+using Ritten.Workflows.DotNetTool;
 
-var pipelines = new PipelineRegistry()
-    .Add(new DotNetToolPipeline())
-    .Add(new DotNetPackagePipeline())
-    .Add(new DotNetPipeline());
+var builder = WorkflowApplication.CreateBuilder();
 
-var runtimes = new RuntimeRegistry()
-    .Add(new GitHubActionsRuntime());
+builder.Workflows
+    .Add<DotNetToolWorkflow>()
+    .Add<DotNetPackageWorkflow>()
+    .Add<DotNetWorkflow>();
 
-var verbose = new Option<bool>($"--{PipelineArguments.Verbose}", "-v")
+builder.Runtimes
+    .Add<GitHubActionsRuntime>();
+
+var built = builder.Build();
+if (built.IsError)
+{
+    return WorkflowExitCodes.ConfigurationError;
+}
+
+var workflow = built.Value;
+
+var verbose = new Option<bool>($"--{WorkflowArguments.Verbose}", "-v")
 {
     Description = "Show every log entry in its highest detail.",
     Recursive = true
 };
 
-var quiet = new Option<bool>($"--{PipelineArguments.Quiet}", "-q")
+var quiet = new Option<bool>($"--{WorkflowArguments.Quiet}", "-q")
 {
     Description = "Show each step's outcome, but only failure detail.",
     Recursive = true
 };
 
-var autoApprove = new Option<bool>($"--{PipelineArguments.AutoApprove}")
+var autoApprove = new Option<bool>($"--{WorkflowArguments.AutoApprove}")
 {
     Description = "Approve a job up front, for runs with nobody there to confirm.",
     Recursive = true
 };
 
-var dryRun = new Option<bool>($"--{PipelineArguments.DryRun}")
+var dryRun = new Option<bool>($"--{WorkflowArguments.DryRun}")
 {
     Description = "Rehearse the job without pushing, tagging, releasing, or commenting.",
     Recursive = true
 };
 
-var root = new RootCommand("The Ritten build pipeline.")
+var root = new RootCommand("The Ritten build workflow.")
 {
     verbose,
     quiet,
@@ -59,10 +68,10 @@ Command JobCommand(string name, string description)
     command.SetAction((parseResult, cancellationToken) =>
     {
         var logLevel = parseResult.GetValue(verbose)
-            ? PipelineLogLevel.Verbose
+            ? WorkflowLogLevel.Verbose
             : parseResult.GetValue(quiet)
-                ? PipelineLogLevel.Warning
-                : PipelineLogLevel.Detail;
+                ? WorkflowLogLevel.Warning
+                : WorkflowLogLevel.Detail;
         var args = new RunJobArgs(name)
         {
             LogLevel = logLevel,
@@ -70,7 +79,7 @@ Command JobCommand(string name, string description)
             AutoApprove = parseResult.GetValue(autoApprove)
         };
 
-        return PipelineHost.RunJob(pipelines, runtimes, args, cancellationToken);
+        return workflow.Run(args, cancellationToken);
     });
     return command;
 }

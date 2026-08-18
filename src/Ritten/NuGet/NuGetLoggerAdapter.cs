@@ -6,10 +6,10 @@ using NuGetLogLevel = NuGet.Common.LogLevel;
 namespace Ritten.NuGet;
 
 /// <summary>
-/// Adapts <see cref="IPipelineLog"/> to NuGet's <see cref="NuGetILogger"/>.
+/// Adapts <see cref="IWorkflowLog"/> to NuGet's <see cref="NuGetILogger"/>.
 /// </summary>
-/// <param name="log">The pipeline log to write to.</param>
-internal class NuGetLoggerAdapter(IPipelineLog log) : NuGetILogger
+/// <param name="log">The workflow log to write to.</param>
+internal class NuGetLoggerAdapter(IWorkflowLog log) : NuGetILogger
 {
     /// <inheritdoc/>
     public void LogDebug(string data) => log.Verbose(data);

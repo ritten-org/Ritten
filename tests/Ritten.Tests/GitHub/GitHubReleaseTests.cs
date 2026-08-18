@@ -87,5 +87,5 @@ public class GitHubReleaseTests
         new() { Name = "My.Package", Version = NuGetVersion.Parse(version), Repository = "https://github.com/example/repo" };
 
     private GitHubRelease Step() =>
-        new(Substitute.For<IPipelineLog>(), Options.Create(TestOptions.Git()), _releases, _changelogs);
+        new(Substitute.For<IWorkflowLog>(), Options.Create(TestOptions.Git()), _releases, _changelogs);
 }

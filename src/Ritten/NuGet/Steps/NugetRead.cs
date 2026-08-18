@@ -9,11 +9,11 @@ namespace Ritten.NuGet.Steps;
 /// <summary>
 /// Classifies where the project's version stands against the feed.
 /// </summary>
-/// <param name="log">The pipeline log.</param>
-/// <param name="options">The pipeline's NuGet options.</param>
+/// <param name="log">The workflow log.</param>
+/// <param name="options">The workflow's NuGet options.</param>
 /// <param name="nuget">The NuGet client.</param>
 [Step("nuget read", StepKind.Work)]
-public class NugetRead(IPipelineLog log, IOptions<NuGetOptions> options, INuGet nuget)
+public class NugetRead(IWorkflowLog log, IOptions<NuGetOptions> options, INuGet nuget)
 {
     /// <summary>
     /// Reads the feed and classifies the given project's version.

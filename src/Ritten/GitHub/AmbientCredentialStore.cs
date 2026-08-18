@@ -10,7 +10,7 @@ namespace Ritten.GitHub;
 /// (an explicit <c>GH_TOKEN</c>, or the ambient token the active runtime offered), then the gh
 /// CLI's stored login, so running locally works without any setup beyond being logged in to gh.
 /// </summary>
-internal class AmbientCredentialStore(IPipelineLog log, IOptions<GitHubClientOptions> options, ICommandRunner commands) : ICredentialStore
+internal class AmbientCredentialStore(IWorkflowLog log, IOptions<GitHubClientOptions> options, ICommandRunner commands) : ICredentialStore
 {
     private Task<Credentials>? _credentials;
 

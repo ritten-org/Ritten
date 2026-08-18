@@ -15,7 +15,7 @@ namespace Ritten.Tests.NuGet;
 /// </summary>
 public class NugetReadTests
 {
-    private readonly IPipelineLog _log = Substitute.For<IPipelineLog>();
+    private readonly IWorkflowLog _log = Substitute.For<IWorkflowLog>();
     private readonly INuGet _nuget = Substitute.For<INuGet>();
     private readonly NuGetOptions _options = TestOptions.NuGet();
 

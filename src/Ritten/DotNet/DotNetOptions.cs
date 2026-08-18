@@ -1,7 +1,7 @@
 namespace Ritten.DotNet;
 
 /// <summary>
-/// Settings shared by the .NET pipeline steps. Bound from the <c>DotNet</c> configuration section.
+/// Settings shared by the .NET workflow steps. Bound from the <c>DotNet</c> configuration section.
 /// </summary>
 public class DotNetOptions
 {

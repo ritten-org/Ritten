@@ -6,7 +6,7 @@ using Spectre.Console;
 namespace Ritten.Core.Runtimes;
 
 /// <summary>
-/// Declares an environment a pipeline can find itself running in.
+/// Declares an environment a workflow can find itself running in.
 /// </summary>
 public abstract class Runtime
 {
@@ -42,6 +42,6 @@ public abstract class Runtime
     /// Creates the console narrative for a run in this environment.
     /// </summary>
     /// <param name="level">The lowest level of message the console should print.</param>
-    public virtual IPipelineConsole CreateConsole(PipelineLogLevel level) =>
-        new SpectrePipelineConsole(AnsiConsole.Console, level);
+    public virtual IWorkflowConsole CreateConsole(WorkflowLogLevel level) =>
+        new SpectreWorkflowConsole(AnsiConsole.Console, level);
 }

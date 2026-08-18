@@ -6,7 +6,7 @@ namespace Ritten.GitHub;
 /// Reports that a comment would be posted instead of posting it. Nothing on this interface reads,
 /// so the real service is never needed.
 /// </summary>
-internal class DryRunCommentService(IPipelineLog log) : ICommentService
+internal class DryRunCommentService(IWorkflowLog log) : ICommentService
 {
     /// <inheritdoc />
     public Task CreateOrUpdate(string body, CancellationToken cancellationToken = default)

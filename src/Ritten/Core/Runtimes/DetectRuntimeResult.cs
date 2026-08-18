@@ -39,6 +39,6 @@ public sealed class DetectRuntimeResult
     /// Creates the console narrative for the run.
     /// </summary>
     /// <param name="requested">The lowest level of message the command line asked to print.</param>
-    public IPipelineConsole CreateConsole(PipelineLogLevel requested) =>
-        Runtime.CreateConsole(Debug ? PipelineLogLevel.Verbose : requested);
+    public IWorkflowConsole CreateConsole(WorkflowLogLevel requested) =>
+        Runtime.CreateConsole(Debug ? WorkflowLogLevel.Verbose : requested);
 }

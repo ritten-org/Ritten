@@ -4,7 +4,7 @@ using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
 using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.Pipelines;
+using Ritten.Workflows;
 using Ritten.Releases;
 using Ritten.Reporting;
 
@@ -164,5 +164,5 @@ public class CheckChangelogEntryTests
         new() { Name = "My.Package", Version = NuGetVersion.Parse(version) };
 
     private CheckChangelogEntry Step() =>
-        new(Substitute.For<IPipelineLog>(), _report);
+        new(Substitute.For<IWorkflowLog>(), _report);
 }

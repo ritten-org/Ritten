@@ -9,14 +9,14 @@ namespace Ritten.DotNet.Steps;
 /// <summary>
 /// Runs the tests, reporting the aggregated counts on success and the individual failures otherwise.
 /// </summary>
-/// <param name="log">The pipeline log.</param>
-/// <param name="options">The pipeline's .NET options.</param>
+/// <param name="log">The workflow log.</param>
+/// <param name="options">The workflow's .NET options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
 [Step("dotnet test", StepKind.Work)]
 public class DotnetTest(
-    IPipelineLog log,
+    IWorkflowLog log,
     IOptions<DotNetOptions> options,
     IFileSystem fileSystem,
     IDotNet dotnet,

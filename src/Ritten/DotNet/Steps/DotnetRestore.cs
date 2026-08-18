@@ -6,11 +6,11 @@ namespace Ritten.DotNet.Steps;
 /// <summary>
 /// Runs <c>dotnet restore</c>, reporting the restore diagnostics when it fails.
 /// </summary>
-/// <param name="log">The pipeline log.</param>
+/// <param name="log">The workflow log.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
 [Step("dotnet restore", StepKind.Work)]
-public class DotnetRestore(IPipelineLog log, IDotNet dotnet, IBuildReport report)
+public class DotnetRestore(IWorkflowLog log, IDotNet dotnet, IBuildReport report)
 {
     /// <summary>
     /// Restores the solution's packages.

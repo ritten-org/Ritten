@@ -89,7 +89,7 @@ public class DotNetClientTests
 
         var fileSystem = Substitute.For<IFileSystem>();
         fileSystem.ProjectRoot.AbsolutePath.Returns(project.Root);
-        var client = new DotNetClient(new CommandRunner(Substitute.For<IPipelineLog>(), fileSystem), fileSystem);
+        var client = new DotNetClient(new CommandRunner(Substitute.For<IWorkflowLog>(), fileSystem), fileSystem);
 
         var result = await client.ReadProject(ProjectFile(project.CsprojPath), TestContext.Current.CancellationToken);
 
