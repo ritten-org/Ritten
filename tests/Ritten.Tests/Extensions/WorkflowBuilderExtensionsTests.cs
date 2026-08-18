@@ -4,15 +4,16 @@ using Octokit;
 using Ritten.Changelogs;
 using Ritten.Commands;
 using Ritten.Contracts;
-using Ritten.Core;
 using Ritten.DotNet;
+using Ritten.Engine;
+using Ritten.Engine.Runs;
 using Ritten.Git;
 using Ritten.GitHub;
 using Ritten.NuGet;
-using Ritten.Workflows;
 using Ritten.Releases;
 using Ritten.Reporting;
-using Ritten.Tests.Core.Helpers;
+using Ritten.Tests.Engine.Helpers;
+using Ritten.Workflows;
 
 namespace Ritten.Tests.Extensions;
 
@@ -118,6 +119,18 @@ public class WorkflowBuilderExtensionsTests
         provider.GetRequiredService<IOptions<ChangelogOptions>>().Value.File.ShouldBe("HISTORY.md");
         provider.GetRequiredService<IOptions<GitOptions>>().Value.TagPrefix.ShouldBe("release-");
         provider.GetRequiredService<IOptions<NuGetOptions>>().Value.Feed.ShouldBe("https://example.com/index.json");
+    }
+
+    [Fact]
+    public void AddDotNet_TheFirstProjectIsTheReleasesFace()
+    {
+        var provider = Builder()
+            .AddDotNet(new DotNetBuildSettings { Projects = ["src/A/A.csproj", "src/B/B.csproj"] })
+            .Services.BuildServiceProvider();
+
+        var options = provider.GetRequiredService<IOptions<DotNetOptions>>().Value;
+        options.ProjectFile.ShouldBe("src/A/A.csproj");
+        options.Projects.ShouldBe(["src/A/A.csproj", "src/B/B.csproj"]);
     }
 
     private static WorkflowRunBuilder Builder(Dictionary<string, string>? environment = null)

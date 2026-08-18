@@ -2,6 +2,7 @@ using System.Net;
 using Octokit;
 using Ritten.Contracts;
 using Ritten.GitHub;
+using Ritten.Reporting;
 
 namespace Ritten.Tests.GitHub;
 

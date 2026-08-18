@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Commands;
-using Ritten.Core;
+using Ritten.Engine;
 using Ritten.Workflows;
 
 namespace Ritten.DotNet;
@@ -22,9 +22,15 @@ public static class WorkflowBuilderExtensions
             builder.Services.TryAddSingleton<IDotNet, DotNetClient>();
             builder.Services.Configure<DotNetOptions>(o =>
             {
+                // `project` and `projects` are two spellings of one setting; validation has
+                // already refused files that use both.
+                var projects = settings.Projects is { Count: > 0 }
+                    ? settings.Projects
+                    : settings.Project is null ? [] : [settings.Project];
                 o.Configuration = settings.Configuration;
-                o.ProjectFile = settings.Project ?? "";
+                o.ProjectFile = projects.FirstOrDefault() ?? "";
                 o.Repository = repository;
+                o.Projects = projects;
             });
             return builder;
         }

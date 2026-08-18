@@ -2,6 +2,7 @@ using Ritten.Changelogs;
 using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Releases;
+using Ritten.Reporting;
 
 namespace Ritten.Workflows.Steps;
 

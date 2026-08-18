@@ -3,6 +3,7 @@ using Octokit;
 using Ritten.Commands;
 using Ritten.Contracts;
 using Ritten.GitHub;
+using Ritten.Reporting;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.GitHub;

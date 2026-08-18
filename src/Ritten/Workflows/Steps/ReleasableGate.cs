@@ -1,5 +1,6 @@
 using Ritten.Contracts;
 using Ritten.Releases;
+using Ritten.Reporting;
 
 namespace Ritten.Workflows.Steps;
 

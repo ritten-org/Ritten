@@ -1,4 +1,5 @@
 using Ritten.Contracts;
+using Ritten.Reporting;
 
 namespace Ritten.Git;
 

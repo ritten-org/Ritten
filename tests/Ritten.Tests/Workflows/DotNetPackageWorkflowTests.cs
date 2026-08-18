@@ -1,6 +1,7 @@
-using Ritten.Core;
+using Ritten.Engine;
+using Ritten.Engine.Runs;
+using Ritten.Tests.Engine.Helpers;
 using Ritten.Workflows.DotNetPackage;
-using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Workflows;
 
@@ -33,6 +34,28 @@ public class DotNetPackageWorkflowTests
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.Dispose();
+    }
+
+    [Theory]
+    [InlineData("status")]
+    [InlineData("check")]
+    [InlineData("deploy")]
+    public void ShippingJobs_AcceptProjectsAsThePluralSpelling(string job)
+    {
+        var result = Build(job, """{ "build": { "projects": ["src/Core/Core.csproj", "src/Thing/Thing.csproj"] } }""");
+
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Dispose();
+    }
+
+    [Fact]
+    public void BothProjectSpellingsAreRefused()
+    {
+        // `project` and `projects` are two spellings of one setting; declaring both is ambiguous.
+        var result = Build("deploy", """{ "build": { "project": "src/A/A.csproj", "projects": ["src/B/B.csproj"] } }""");
+
+        result.IsError.ShouldBeTrue();
+        result.Errors.ShouldHaveSingleItem().Message.ShouldContain("use one");
     }
 
     [Theory]

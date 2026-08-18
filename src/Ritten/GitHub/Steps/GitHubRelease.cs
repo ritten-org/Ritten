@@ -4,6 +4,7 @@ using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.Releases;
+using Ritten.Reporting;
 
 namespace Ritten.GitHub.Steps;
 

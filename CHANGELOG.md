@@ -4,10 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-08-19
 
 ### Added
 
+- **The Core is a separate project.** Ritten.Core now lives in a separate project. In a future release, it will be consumable directly.
+- **A repository can ship several packages.** `build.projects` lists every project to pack and publish (single-target projects keep using `build.project`). Packages release in lockstep, with one key version, one changelog entry, and one tag. The first project is used as the metadata source.
 - **Decorators are builder-level now.** Service decorators and replacements for dry runs can now be registered directly on the builder using `builder.Decorators`.
 - **The project file is the host's to name.** An application built on the engine can point at its own file (`builder.ProjectFileName = "build.json"`), and every error message names that file, so embedding Ritten never has to be announced in the repository.
 
@@ -110,7 +112,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
-[Unreleased]: https://github.com/ritten-org/Ritten/compare/v0.1.0...HEAD
+[0.2.0]: https://github.com/ritten-org/Ritten/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ritten-org/Ritten/compare/v0.0.6...v0.1.0
 [0.0.6]: https://github.com/ritten-org/Ritten/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/ritten-org/Ritten/compare/v0.0.4...v0.0.5

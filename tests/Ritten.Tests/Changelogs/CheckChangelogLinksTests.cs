@@ -5,10 +5,10 @@ using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
 using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.Workflows;
 using Ritten.Reporting;
-using Ritten.Tests.Core.Helpers;
+using Ritten.Tests.Engine.Helpers;
 using Ritten.Tests.Support;
+using Ritten.Workflows;
 
 namespace Ritten.Tests.Changelogs;
 

@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
@@ -31,7 +32,7 @@
 
   <ItemGroup>
     <None Update="Changelogs\SampleChangelog.md" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="Core\FileSystem\TestFile.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Engine\FileSystem\TestFile.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

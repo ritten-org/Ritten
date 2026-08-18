@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
+using Ritten.Reporting;
 
 namespace Ritten.Git.Steps;
 
@@ -17,7 +18,7 @@ public class GitTag(IWorkflowLog log, IOptions<GitOptions> options, IGit git)
     /// <summary>
     /// Tags the release and pushes the tag.
     /// </summary>
-    /// <param name="project">The project being released (see <see cref="ReadProject"/>).</param>
+    /// <param name="project">The project being released (see <see cref="ResolveRelease"/>).</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     public async Task<StepResult> Run(Project project, CancellationToken cancellationToken = default)
     {

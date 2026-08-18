@@ -1,7 +1,8 @@
 using Ritten.Changelogs.Steps;
 using Ritten.Contracts;
-using Ritten.Core;
 using Ritten.DotNet.Steps;
+using Ritten.Engine;
+using Ritten.Engine.Workflows;
 using Ritten.NuGet.Steps;
 using Ritten.Workflows.Steps;
 
@@ -16,12 +17,15 @@ internal sealed class StatusJob : DotNetPackageJob
     public override string Name => "status";
 
     /// <inheritdoc />
-    protected override void ValidateSettings(SettingsValidator<DotNetPackageSettings> settings) => settings.Require(s => s.Build.Project);
+    protected override void ValidateSettings(SettingsValidator<DotNetPackageSettings> settings) => settings
+        .Require(s => s.Build.Project is not null || s.Build.Projects is { Count: > 0 }, "Set 'build.project' (one package) or 'build.projects' (several).")
+        .Require(s => s.Build.Project is null || s.Build.Projects is null, "'build.project' and 'build.projects' are both set; use one.");
 
     /// <inheritdoc />
     public override IReadOnlyList<Step> Steps { get; } =
     [
-        Step.FromType<ReadProject>(),
+        Step.FromType<ReadProjects>(),
+        Step.FromType<ResolveRelease>(),
         Step.FromType<ReadChangelog>(),
         Step.FromType<NugetRead>(),
         Step.FromType<StatusReport>()

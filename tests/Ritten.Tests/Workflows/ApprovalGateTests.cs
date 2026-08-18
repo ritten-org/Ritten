@@ -1,6 +1,7 @@
 using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.DotNet;
+using Ritten.Reporting;
 using Ritten.Workflows.Steps;
 
 namespace Ritten.Tests.Workflows;

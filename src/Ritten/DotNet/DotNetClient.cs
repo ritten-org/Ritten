@@ -2,7 +2,7 @@ using System.Text.Json;
 using NuGet.Versioning;
 using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
-using Ritten.Core;
+using Ritten.Engine;
 using Ritten.Git;
 
 namespace Ritten.DotNet;

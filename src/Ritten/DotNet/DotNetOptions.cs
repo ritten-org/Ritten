@@ -11,9 +11,14 @@ public class DotNetOptions
     public string Configuration { get; set; } = "Release";
 
     /// <summary>
-    /// The project file of the package being shipped, relative to the repository root.
+    /// The first shipped project.
     /// </summary>
     public string ProjectFile { get; set; } = "";
+
+    /// <summary>
+    /// The project files of every package the repository ships.
+    /// </summary>
+    public IReadOnlyList<string> Projects { get; set; } = [];
 
     /// <summary>
     /// The repository's web URL, when configured explicitly; wins over anything derived.

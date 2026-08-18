@@ -1,7 +1,8 @@
 using Ritten.Changelogs;
 using Ritten.CodeCoverage;
-using Ritten.Core;
 using Ritten.DotNet;
+using Ritten.Engine;
+using Ritten.Engine.Workflows;
 using Ritten.Git;
 using Ritten.GitHub;
 using Ritten.NuGet;

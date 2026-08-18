@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Options;
+using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.Releases;
+using Ritten.Reporting;
 
 namespace Ritten.NuGet.Steps;
 
@@ -18,27 +20,47 @@ public class NugetRead(IWorkflowLog log, IOptions<NuGetOptions> options, INuGet 
     /// <summary>
     /// Reads the feed and classifies the given project's version.
     /// </summary>
-    /// <param name="project">The project being classified (see <see cref="ReadProject"/>).</param>
+    /// <param name="project">The project being classified (see <see cref="ResolveRelease"/>).</param>
+    /// <param name="packages">The packages the repository ships (see <see cref="ReadProjects"/>).</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public async Task<StepResult<ReleaseState>> Run(Project project, CancellationToken cancellationToken = default)
+    public async Task<StepResult<ReleaseState>> Run(Project project, PackageSet packages, CancellationToken cancellationToken = default)
     {
         var feed = new NuGetFeed(options.Value.Feed);
-        var publishedVersions = await nuget.GetPublishedVersions(feed, project.Name, cancellationToken);
-        var latestPublished = publishedVersions.DefaultIfEmpty().Max();
-        var lineTip = publishedVersions
+
+        // The repository's release history is the union of its packages' histories, so a
+        // brand-new package can't blind the version check by having none of its own.
+        List<PackagePublication> publications = [];
+        List<NuGetVersion> history = [];
+        foreach (var package in packages.Packages)
+        {
+            var versions = await nuget.GetPublishedVersions(feed, package.Name, cancellationToken);
+            history.AddRange(versions);
+            publications.Add(new PackagePublication(package.Name, versions.Any(v => v == package.Version)));
+        }
+
+        var latestPublished = history.DefaultIfEmpty().Max();
+        var lineTip = history
             .Where(v => options.Value.Lines.SameLine(v, project.Version))
             .DefaultIfEmpty()
             .Max();
 
-        var published = publishedVersions.Any(v => v == project.Version);
-
-        // A published version can't be ahead of its line's tip, so "latest" means being it;
-        // an unpublished version has to beat it.
+        // A published version can't be ahead of its line's tip, so "latest" means being it; an
+        // unpublished version has to beat it. Partially published counts as published here: what
+        // remains of it must still ship, wherever the tip stands.
+        var anyPublished = history.Any(v => v == project.Version);
         var latestInLine = lineTip is null
-            || (published ? project.Version >= lineTip : project.Version > lineTip);
+            || (anyPublished ? project.Version >= lineTip : project.Version > lineTip);
 
-        var state = new ReleaseState(published, latestInLine, lineTip, latestPublished);
+        // At rest means nothing left to push: every shipped package carries the version.
+        var published = publications.Count > 0 && publications.All(p => p.Published);
+
+        var state = new ReleaseState(published, latestInLine, lineTip, latestPublished) { Packages = publications };
         log.Detail(Describe(project, state));
+        if (!published && publications.Any(p => p.Published))
+        {
+            log.Detail($"Already published: {string.Join(", ", publications.Where(p => p.Published).Select(p => p.Name))}; still to push: {string.Join(", ", publications.Where(p => !p.Published).Select(p => p.Name))}.");
+        }
+
         return state;
     }
 
