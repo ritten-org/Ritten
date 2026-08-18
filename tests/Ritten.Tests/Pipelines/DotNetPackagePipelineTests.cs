@@ -1,5 +1,4 @@
 using Ritten.Core;
-using Ritten.Pipelines;
 using Ritten.Pipelines.DotNetPackage;
 using Ritten.Tests.Core.Helpers;
 
@@ -48,10 +47,10 @@ public class DotNetPackagePipelineTests
         result.Errors.ShouldHaveSingleItem().Message.ShouldContain("'build.project'");
     }
 
-    private static Result<PipelineHost> Build(string job, string settings)
+    private static Result<PipelineRun> Build(string job, string settings)
     {
         var pipeline = new DotNetPackagePipeline();
-        var builder = PipelineHostBuilderHelpers.Create(pipeline.Label, settings: settings);
+        var builder = PipelineRunBuilderHelpers.Create(pipeline.Label, settings: settings);
         return builder.Build(pipeline.Jobs.Single(j => j.Name == job));
     }
 }

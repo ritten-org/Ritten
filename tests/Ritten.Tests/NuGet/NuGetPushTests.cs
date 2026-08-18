@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;

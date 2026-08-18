@@ -4,13 +4,12 @@ using Ritten.Contracts;
 using Ritten.Core;
 using Ritten.Core.Runtimes;
 using Ritten.DotNet;
-using Ritten.Pipelines;
 using Ritten.Tests.Core.Helpers;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Core;
 
-public class PipelineHostTests
+public class PipelineRunTests
 {
     [Fact]
     public async Task Run_WithPassingStep_ReturnsZero()
@@ -47,7 +46,7 @@ public class PipelineHostTests
         // Arrange — being told about all of them beats fixing them one run at a time. The keys are
         // derived from the property chains, so they can't drift from the settings they describe.
         var job = new TestJob("deploy", validate: s => s.Require(x => x.Build.Project).Require(x => x.Repository));
-        var builder = PipelineHostBuilderHelpers.Create();
+        var builder = PipelineRunBuilderHelpers.Create();
 
         // Act
         var result = builder.Build(job);
@@ -66,7 +65,7 @@ public class PipelineHostTests
         var rule = Substitute.For<IJobRule>();
         rule.Check(Arg.Any<IJob>()).Returns([new Error("House rule broken.")]);
         var job = new TestJob(steps: [Step.FromType<FirstStep>()]);
-        var builder = PipelineHostBuilderHelpers.Create();
+        var builder = PipelineRunBuilderHelpers.Create();
         builder.Services.AddSingleton(rule);
         builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
 
@@ -80,7 +79,7 @@ public class PipelineHostTests
     public void Build_ConfiguresTheServicesOfTheDetectedRuntime()
     {
         var runtime = new StubRuntime();
-        var builder = PipelineHostBuilderHelpers.Create(runtimes: new RuntimeRegistry().Add(runtime));
+        var builder = PipelineRunBuilderHelpers.Create(runtimes: new RuntimeRegistry().Add(runtime));
         builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
 
         var result = builder.Build(new TestJob());
@@ -97,7 +96,7 @@ public class PipelineHostTests
         // The variable exists in the process environment, but the runtime consumed it — so a job
         // requiring it fails loudly instead of running with a value that belongs to the runtime.
         var job = new TestJob(validate: s => s.RequireEnvironment("STUB_SECRET"));
-        var builder = PipelineHostBuilderHelpers.Create(runtimes: new RuntimeRegistry().Add(new StubRuntime()));
+        var builder = PipelineRunBuilderHelpers.Create(runtimes: new RuntimeRegistry().Add(new StubRuntime()));
 
         var result = builder.Build(job);
 
@@ -105,11 +104,11 @@ public class PipelineHostTests
         result.Errors.ShouldHaveSingleItem().Message.ShouldBe("STUB_SECRET is not set.");
     }
 
-    private static (PipelineHost Host, StepProbe Probe) BuildHost<TStep>() where TStep : class
+    private static (PipelineRun Host, StepProbe Probe) BuildHost<TStep>() where TStep : class
     {
         var probe = new StepProbe();
         var job = new TestJob(steps: [Step.FromType<TStep>()]);
-        var builder = PipelineHostBuilderHelpers.Create();
+        var builder = PipelineRunBuilderHelpers.Create();
         builder.Services.AddSingleton(Substitute.For<IPipelineLog>());
         builder.Services.AddSingleton(probe);
 

@@ -14,9 +14,9 @@ using Spectre.Console;
 namespace Ritten.Core;
 
 /// <summary>
-/// Assembles a declared <see cref="IJob"/> into a runnable <see cref="PipelineHost"/> for one project.
+/// Assembles a declared <see cref="IJob"/> into a runnable <see cref="PipelineRun"/> for one project.
 /// </summary>
-public class PipelineHostBuilder
+public class PipelineRunBuilder
 {
     private readonly RittenProject _project;
     private readonly DetectRuntimeResult _runtime;
@@ -26,12 +26,12 @@ public class PipelineHostBuilder
     private IPipelineLog _log;
 
     /// <summary>
-    /// Creates a new instance of the <see cref="PipelineHostBuilder"/>.
+    /// Creates a new instance of the <see cref="PipelineRunBuilder"/>.
     /// </summary>
     /// <param name="project">The project being built.</param>
     /// <param name="runtime">The detected runtime the job runs in.</param>
     /// <param name="console">The console narrative the run renders through.</param>
-    internal PipelineHostBuilder(RittenProject project, DetectRuntimeResult runtime, IPipelineConsole console)
+    internal PipelineRunBuilder(RittenProject project, DetectRuntimeResult runtime, IPipelineConsole console)
     {
         _project = project;
         _runtime = runtime;
@@ -56,7 +56,7 @@ public class PipelineHostBuilder
     /// Names the pipeline the job belongs to, for the run's narrative.
     /// </summary>
     /// <param name="label">The human label of the pipeline being assembled.</param>
-    public PipelineHostBuilder WithPipelineLabel(string label)
+    public PipelineRunBuilder WithPipelineLabel(string label)
     {
         _pipelineLabel = label;
         return this;
@@ -67,7 +67,7 @@ public class PipelineHostBuilder
     /// nothing irreversible can happen no matter what the steps do.
     /// </summary>
     /// <param name="dryRun">Whether the run is a rehearsal.</param>
-    public PipelineHostBuilder WithDryRun(bool dryRun = true)
+    public PipelineRunBuilder WithDryRun(bool dryRun = true)
     {
         _dryRun = dryRun;
         return this;
@@ -77,9 +77,23 @@ public class PipelineHostBuilder
     /// Approves the job up front, for runs with nobody there to confirm.
     /// </summary>
     /// <param name="autoApprove">Whether a job that would stop and ask is pre-approved.</param>
-    public PipelineHostBuilder WithAutoApprove(bool autoApprove = true)
+    public PipelineRunBuilder WithAutoApprove(bool autoApprove = true)
     {
         _autoApprove = autoApprove;
+        return this;
+    }
+
+    /// <summary>
+    /// Adds registrations shared by every job.
+    /// </summary>
+    /// <param name="services">The shared registrations to copy in.</param>
+    public PipelineRunBuilder WithServices(IEnumerable<ServiceDescriptor> services)
+    {
+        foreach (var service in services)
+        {
+            Services.Add(service);
+        }
+
         return this;
     }
 
@@ -88,18 +102,18 @@ public class PipelineHostBuilder
     /// console.
     /// </summary>
     /// <param name="log">Where the builder writes.</param>
-    internal PipelineHostBuilder WithLog(IPipelineLog log)
+    internal PipelineRunBuilder WithLog(IPipelineLog log)
     {
         _log = log;
         return this;
     }
 
     /// <summary>
-    /// Builds the <see cref="PipelineHost" /> for the given job.
+    /// Builds the <see cref="PipelineRun" /> for the given job.
     /// </summary>
     /// <param name="job">The declared job to assemble.</param>
     /// <returns>The configured pipeline application.</returns>
-    public Result<PipelineHost> Build(IJob job)
+    public Result<PipelineRun> Build(IJob job)
     {
         // Registered here rather than at construction so a WithLog still lands; TryAdd, so a log
         // the host registered directly wins over the builder's own.
@@ -147,7 +161,7 @@ public class PipelineHostBuilder
             return ruleErrors;
         }
 
-        return new PipelineHost(provider);
+        return new PipelineRun(provider);
     }
 
     /// <summary>

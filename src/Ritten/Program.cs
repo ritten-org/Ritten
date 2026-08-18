@@ -1,19 +1,28 @@
 using System.CommandLine;
 using Ritten.Contracts;
 using Ritten.Core;
-using Ritten.Core.Runtimes;
 using Ritten.GitHub;
 using Ritten.Pipelines.DotNet;
 using Ritten.Pipelines.DotNetPackage;
 using Ritten.Pipelines.DotNetTool;
 
-var pipelines = new PipelineRegistry()
-    .Add(new DotNetToolPipeline())
-    .Add(new DotNetPackagePipeline())
-    .Add(new DotNetPipeline());
+var builder = PipelineApplication.CreateBuilder();
 
-var runtimes = new RuntimeRegistry()
-    .Add(new GitHubActionsRuntime());
+builder.Pipelines
+    .Add<DotNetToolPipeline>()
+    .Add<DotNetPackagePipeline>()
+    .Add<DotNetPipeline>();
+
+builder.Runtimes
+    .Add<GitHubActionsRuntime>();
+
+var built = builder.Build();
+if (built.IsError)
+{
+    return PipelineExitCodes.ConfigurationError;
+}
+
+var pipeline = built.Value;
 
 var verbose = new Option<bool>($"--{PipelineArguments.Verbose}", "-v")
 {
@@ -70,7 +79,7 @@ Command JobCommand(string name, string description)
             AutoApprove = parseResult.GetValue(autoApprove)
         };
 
-        return PipelineHost.RunJob(pipelines, runtimes, args, cancellationToken);
+        return pipeline.Run(args, cancellationToken);
     });
     return command;
 }

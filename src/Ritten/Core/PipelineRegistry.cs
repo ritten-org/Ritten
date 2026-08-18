@@ -29,6 +29,12 @@ public sealed class PipelineRegistry
     }
 
     /// <summary>
+    /// Registers a pipeline by type.
+    /// </summary>
+    /// <typeparam name="T">The pipeline type to construct and register.</typeparam>
+    public PipelineRegistry Add<T>() where T : IPipeline, new() => Add(new T());
+
+    /// <summary>
     /// The registered pipelines, in registration order.
     /// </summary>
     public IReadOnlyList<IPipeline> Pipelines => _pipelines;

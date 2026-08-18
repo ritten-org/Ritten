@@ -30,7 +30,7 @@ public class PipelineSettingsTests : IDisposable
             }
             """);
 
-        var settings = await Read(_root);
+        var settings = await Read(_root, TestContext.Current.CancellationToken);
 
         settings.Build.Project.ShouldBe("src/Thing/Thing.csproj");
         settings.Build.Configuration.ShouldBe("Debug");
@@ -45,7 +45,7 @@ public class PipelineSettingsTests : IDisposable
     {
         WriteRittenJson(_root);
 
-        var settings = await Read(_root);
+        var settings = await Read(_root, TestContext.Current.CancellationToken);
 
         settings.Build.Project.ShouldBeNull();
         settings.Build.Configuration.ShouldBe("Release");
@@ -60,7 +60,7 @@ public class PipelineSettingsTests : IDisposable
     {
         WriteRittenJson(_root, """{ "build": { "project": "src/Thing/Thing.csproj" } }""");
 
-        var settings = await Read(_root);
+        var settings = await Read(_root, TestContext.Current.CancellationToken);
 
         settings.Build.Project.ShouldBe("src/Thing/Thing.csproj");
         settings.Build.Configuration.ShouldBe("Release");
@@ -71,7 +71,7 @@ public class PipelineSettingsTests : IDisposable
     {
         WriteRittenJson(_root, """{ "release": { "lines": "minor" } }""");
 
-        var settings = await Read(_root);
+        var settings = await Read(_root, TestContext.Current.CancellationToken);
 
         settings.Release.Lines.ShouldBe(ReleaseLine.Minor);
     }
@@ -81,7 +81,7 @@ public class PipelineSettingsTests : IDisposable
     {
         WriteRittenJson(_root, """{ "coverage": { "line": 80.5 } }""");
 
-        var settings = await Read(_root);
+        var settings = await Read(_root, TestContext.Current.CancellationToken);
 
         settings.Coverage.Line.ShouldBe(80.5m);
         settings.Coverage.Branch.ShouldBeNull();
@@ -93,7 +93,7 @@ public class PipelineSettingsTests : IDisposable
         // Coverage is always on; the section only sets minimums.
         WriteRittenJson(_root);
 
-        var settings = await Read(_root);
+        var settings = await Read(_root, TestContext.Current.CancellationToken);
 
         settings.Coverage.Line.ShouldBeNull();
         settings.Coverage.Branch.ShouldBeNull();
@@ -103,7 +103,7 @@ public class PipelineSettingsTests : IDisposable
     public async Task Read_RejectsAnUnrecognisedEnumValue()
     {
         WriteRittenJson(_root, """{ "release": { "lines": "patch" } }""");
-        var project = await RittenProject.Resolve(_root);
+        var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
 
         var settings = PipelineSettings.Read<DotNetToolSettings>(project.Value.ShouldNotBeNull());
 
@@ -122,14 +122,14 @@ public class PipelineSettingsTests : IDisposable
             }
             """);
 
-        var settings = await Read(_root);
+        var settings = await Read(_root, TestContext.Current.CancellationToken);
 
         settings.Build.Project.ShouldBe("src/Thing/Thing.csproj");
     }
 
-    private static async Task<DotNetToolSettings> Read(string directory)
+    private static async Task<DotNetToolSettings> Read(string directory, CancellationToken ct)
     {
-        var project = await RittenProject.Resolve(directory);
+        var project = await RittenProject.Resolve(directory, ct);
         var settings = PipelineSettings.Read<DotNetToolSettings>(project.Value.ShouldNotBeNull());
         settings.IsError.ShouldBeFalse();
         return settings.Value;

@@ -18,6 +18,12 @@ public sealed class RuntimeRegistry
     }
 
     /// <summary>
+    /// Registers a runtime candidate by type.
+    /// </summary>
+    /// <typeparam name="T">The runtime type to construct and register.</typeparam>
+    public RuntimeRegistry Add<T>() where T : Runtime, new() => Add(new T());
+
+    /// <summary>
     /// Validates the entire registered runtime model.
     /// </summary>
     internal IReadOnlyList<Error> Validate()

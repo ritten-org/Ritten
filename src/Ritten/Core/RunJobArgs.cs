@@ -14,6 +14,11 @@ public sealed record RunJobArgs(string Job)
     public PipelineLogLevel LogLevel { get; init; } = PipelineLogLevel.Detail;
 
     /// <summary>
+    /// The directory on the file system in which to run the job.
+    /// </summary>
+    public string Directory { get; init; } = Environment.CurrentDirectory;
+
+    /// <summary>
     /// Rehearses the job without doing anything that reaches outside the working directory.
     /// </summary>
     public bool DryRun { get; init; }

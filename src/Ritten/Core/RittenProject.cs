@@ -53,7 +53,8 @@ internal sealed class RittenProject
     /// Walks up from the given directory looking for a project.
     /// </summary>
     /// <param name="directory">The directory to start from, usually the working directory.</param>
-    public static async Task<Result<RittenProject>> Resolve(string directory)
+    /// <param name="ct">Cancellation token.</param>
+    public static async Task<Result<RittenProject>> Resolve(string directory, CancellationToken ct)
     {
         var current = new DirectoryInfo(Path.GetFullPath(directory));
         while (current is not null)
@@ -64,7 +65,7 @@ internal sealed class RittenProject
                 try
                 {
                     await using var stream = File.OpenRead(path);
-                    var settings = await JsonSerializer.DeserializeAsync<JsonElement>(stream, SerializerOptions);
+                    var settings = await JsonSerializer.DeserializeAsync<JsonElement>(stream, SerializerOptions, ct);
 
                     return new RittenProject { Directory = current.FullName, Settings = settings };
                 }

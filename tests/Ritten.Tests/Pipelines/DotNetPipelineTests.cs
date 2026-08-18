@@ -28,10 +28,10 @@ public class DotNetPipelineTests
         result.Value.Dispose();
     }
 
-    private static Result<PipelineHost> Build(string job, string settings)
+    private static Result<PipelineRun> Build(string job, string settings)
     {
         var pipeline = new DotNetPipeline();
-        var builder = PipelineHostBuilderHelpers.Create(pipeline.Label, settings: settings);
+        var builder = PipelineRunBuilderHelpers.Create(pipeline.Label, settings: settings);
         return builder.Build(pipeline.Jobs.Single(j => j.Name == job));
     }
 }

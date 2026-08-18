@@ -7,7 +7,7 @@ using Spectre.Console;
 
 namespace Ritten.Tests.Core.Helpers;
 
-internal static class PipelineHostBuilderHelpers
+internal static class PipelineRunBuilderHelpers
 {
     /// <summary>
     /// An environment with everything set. Tests supply their own rather than reading the process
@@ -18,7 +18,7 @@ internal static class PipelineHostBuilderHelpers
     /// <summary>An environment with nothing set.</summary>
     public static Func<string, string?> Empty { get; } = _ => null;
 
-    public static PipelineHostBuilder Create(
+    public static PipelineRunBuilder Create(
         string pipelineName = "Test",
         Func<string, string?>? environment = null,
         bool dryRun = false,
@@ -26,7 +26,7 @@ internal static class PipelineHostBuilderHelpers
         string settings = "{}",
         RuntimeRegistry? runtimes = null)
     {
-        var builder = new PipelineHostBuilder(
+        var builder = new PipelineRunBuilder(
                 new RittenProject { Directory = Path.GetTempPath(), Settings = JsonSerializer.Deserialize<JsonElement>(settings) },
                 (runtimes ?? new RuntimeRegistry()).Detect(environment ?? Complete).Value.ShouldNotBeNull(),
                 new SpectrePipelineConsole(AnsiConsole.Console, PipelineLogLevel.Detail))
