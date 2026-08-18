@@ -116,7 +116,7 @@ public class PhysicalDirectoryTests
     {
         // Arrange
         var path = "./";
-        var directory = "Core";
+        var directory = "Engine";
         var dir = new PhysicalDirectory(path);
 
         // Act
@@ -124,7 +124,7 @@ public class PhysicalDirectoryTests
 
         // Assert
         subDir.Exists.ShouldBeTrue();
-        subDir.Name.ShouldBe("Core");
+        subDir.Name.ShouldBe("Engine");
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public class PhysicalDirectoryTests
         var directories = dir.GetDirectories();
 
         // Assert
-        directories.ShouldContain(d => d.Name == "Core");
+        directories.ShouldContain(d => d.Name == "Engine");
     }
 
     [Fact]
