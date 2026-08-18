@@ -99,5 +99,5 @@ public class ReadProjectTests
     }
 
     private ReadProject Step() =>
-        new(Substitute.For<IPipelineLog>(), Options.Create(_options), _fileSystem, _dotnet, _git);
+        new(Substitute.For<IWorkflowLog>(), Options.Create(_options), _fileSystem, _dotnet, _git);
 }

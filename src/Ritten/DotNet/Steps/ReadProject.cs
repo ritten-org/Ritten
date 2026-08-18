@@ -8,13 +8,13 @@ namespace Ritten.DotNet.Steps;
 /// <summary>
 /// Reads the package name and version from the configured project file.
 /// </summary>
-/// <param name="log">The pipeline log.</param>
-/// <param name="options">The pipeline's build options.</param>
+/// <param name="log">The workflow log.</param>
+/// <param name="options">The workflow's build options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="git">The git client.</param>
 [Step("read project", StepKind.Work)]
-public class ReadProject(IPipelineLog log, IOptions<DotNetOptions> options, IFileSystem fileSystem, IDotNet dotnet, IGit git)
+public class ReadProject(IWorkflowLog log, IOptions<DotNetOptions> options, IFileSystem fileSystem, IDotNet dotnet, IGit git)
 {
     /// <summary>
     /// Reads the configured project file.

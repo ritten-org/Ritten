@@ -6,10 +6,10 @@ using Ritten.Reporting.Sinks;
 namespace Ritten.Reporting;
 
 /// <summary>
-/// Publishes the final build report to every registered sink when the pipeline finishes.
+/// Publishes the final build report to every registered sink when the workflow finishes.
 /// </summary>
 internal class BuildReportPublisher(
-    IPipelineLog log,
+    IWorkflowLog log,
     IOptions<RunContext> context,
     IBuildReport report,
     MarkdownReportRenderer renderer,
@@ -17,7 +17,7 @@ internal class BuildReportPublisher(
 ) : IProgressReporter
 {
     /// <inheritdoc />
-    public Task OnPipelineStarted(PipelineJob job, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task OnWorkflowStarted(WorkflowJob job, CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc />
     public Task OnStepStarted(Step step, CancellationToken cancellationToken) => Task.CompletedTask;
@@ -26,7 +26,7 @@ internal class BuildReportPublisher(
     public Task OnStepCompleted(Step step, StepResult result, CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc />
-    public async Task OnPipelineCompleted(PipelineResult result, CancellationToken cancellationToken)
+    public async Task OnWorkflowCompleted(WorkflowResult result, CancellationToken cancellationToken)
     {
         var markdown = renderer.Render(context.Value.Title, result.IsSuccess, report.Sections, result.FailedStep);
         foreach (var sink in sinks)

@@ -60,7 +60,7 @@ public class GitHubActionsRuntimeTests
     {
         var provider = Build(runtimeEnvironment: []);
 
-        provider.GetRequiredService<IOptions<RunContext>>().Value.Title.ShouldBe("Pipeline");
+        provider.GetRequiredService<IOptions<RunContext>>().Value.Title.ShouldBe("Workflow");
     }
 
     [Fact]
@@ -107,8 +107,8 @@ public class GitHubActionsRuntimeTests
     private static ServiceCollection Services(Dictionary<string, string> filteredEnvironment)
     {
         var services = new ServiceCollection();
-        services.AddSingleton(new PipelineEnvironment(filteredEnvironment.GetValueOrDefault));
-        services.AddSingleton(Substitute.For<IPipelineLog>());
+        services.AddSingleton(new WorkflowEnvironment(filteredEnvironment.GetValueOrDefault));
+        services.AddSingleton(Substitute.For<IWorkflowLog>());
         return services;
     }
 }

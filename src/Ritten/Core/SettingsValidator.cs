@@ -8,15 +8,15 @@ namespace Ritten.Core;
 /// Allows a job to validate its settings before it's run.
 /// </summary>
 /// <typeparam name="TSettings">The settings type being validated.</typeparam>
-public sealed class SettingsValidator<TSettings> where TSettings : PipelineSettings
+public sealed class SettingsValidator<TSettings> where TSettings : WorkflowSettings
 {
     private readonly TSettings _settings;
     private readonly Func<string, string?> _environment;
     private readonly bool _dryRun;
-    private readonly IPipelineLog _log;
+    private readonly IWorkflowLog _log;
     private readonly List<Error> _errors = [];
 
-    internal SettingsValidator(TSettings settings, Func<string, string?> environment, bool dryRun, IPipelineLog log)
+    internal SettingsValidator(TSettings settings, Func<string, string?> environment, bool dryRun, IWorkflowLog log)
     {
         _settings = settings;
         _environment = environment;

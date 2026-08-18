@@ -13,7 +13,7 @@ public class ProjectFileSystemTests
         var directory = Directory.GetCurrentDirectory();
 
         // Act
-        var fileSystem = new ProjectFileSystem(Project(directory), Options.Create(new PipelineOptions()));
+        var fileSystem = new ProjectFileSystem(Project(directory), Options.Create(new WorkflowOptions()));
 
         // Assert
         fileSystem.ProjectRoot.AbsolutePath.ShouldBe(directory);
@@ -23,7 +23,7 @@ public class ProjectFileSystemTests
     public void ProjectRoot_IsAbsolute()
     {
         // Act
-        var fileSystem = new ProjectFileSystem(Project("."), Options.Create(new PipelineOptions()));
+        var fileSystem = new ProjectFileSystem(Project("."), Options.Create(new WorkflowOptions()));
 
         // Assert
         Path.IsPathRooted(fileSystem.ProjectRoot.AbsolutePath).ShouldBeTrue();

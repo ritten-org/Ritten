@@ -52,7 +52,7 @@ public class AmbientCredentialStoreTests
         var commands = Substitute.For<ICommandRunner>();
         commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>())
             .Returns<CommandResult>(_ => throw new System.ComponentModel.Win32Exception("no such file"));
-        var store = new AmbientCredentialStore(Substitute.For<IPipelineLog>(), Options.Create(_options), commands);
+        var store = new AmbientCredentialStore(Substitute.For<IWorkflowLog>(), Options.Create(_options), commands);
 
         var credentials = await store.GetCredentials();
 
@@ -73,5 +73,5 @@ public class AmbientCredentialStoreTests
     }
 
     private AmbientCredentialStore Store() =>
-        new(Substitute.For<IPipelineLog>(), Options.Create(_options), _commands);
+        new(Substitute.For<IWorkflowLog>(), Options.Create(_options), _commands);
 }

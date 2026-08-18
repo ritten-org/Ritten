@@ -75,27 +75,27 @@ public class RittenProjectTests : IDisposable
     }
 
     [Fact]
-    public async Task GetPipelineName_ReadsTheDeclaration()
+    public async Task GetWorkflowName_ReadsTheDeclaration()
     {
-        WriteRittenJson(_root, """{ "pipeline": "dotnet-tool", "build": { "project": "src/Thing/Thing.csproj" } }""");
+        WriteRittenJson(_root, """{ "workflow": "dotnet-tool", "build": { "project": "src/Thing/Thing.csproj" } }""");
 
         var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
 
-        project.Value.ShouldNotBeNull().GetPipelineName().Value.ShouldBe("dotnet-tool");
+        project.Value.ShouldNotBeNull().GetWorkflowName().Value.ShouldBe("dotnet-tool");
     }
 
     [Fact]
-    public async Task GetPipelineName_ReportsAMissingDeclaration()
+    public async Task GetWorkflowName_ReportsAMissingDeclaration()
     {
         WriteRittenJson(_root);
 
         var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
-        var name = project.Value.ShouldNotBeNull().GetPipelineName();
+        var name = project.Value.ShouldNotBeNull().GetWorkflowName();
 
         name.IsError.ShouldBeTrue();
         var error = name.Errors.ShouldHaveSingleItem();
         error.Message.ShouldContain(RittenProject.FileName);
-        error.Message.ShouldContain("pipeline");
+        error.Message.ShouldContain("workflow");
     }
 
     private static void WriteRittenJson(string directory, string content = "{}")

@@ -1,12 +1,12 @@
 namespace Ritten.GitHub;
 
 /// <summary>
-/// Options for the client the pipeline talks to GitHub itself with.
+/// Options for the client the workflow talks to GitHub itself with.
 /// </summary>
 public class GitHubClientOptions
 {
     /// <summary>
-    /// The product name used to identify the pipeline to the GitHub API.
+    /// The product name used to identify the workflow to the GitHub API.
     /// </summary>
     public string ClientName { get; set; } = "Ritten";
 

@@ -10,13 +10,13 @@ namespace Ritten.Changelogs.Steps;
 /// <summary>
 /// Keeps the changelog's version links correct.
 /// </summary>
-/// <param name="log">The pipeline log.</param>
-/// <param name="options">The pipeline's changelog options.</param>
-/// <param name="release">The pipeline's release options.</param>
+/// <param name="log">The workflow log.</param>
+/// <param name="options">The workflow's changelog options.</param>
+/// <param name="release">The workflow's release options.</param>
 /// <param name="report">The build report.</param>
 /// <param name="changelogs">The changelog client.</param>
 [Step("check changelog links", StepKind.Check)]
-public class CheckChangelogLinks(IPipelineLog log, IOptions<ChangelogOptions> options, IOptions<GitOptions> release, IBuildReport report, IChangelog changelogs)
+public class CheckChangelogLinks(IWorkflowLog log, IOptions<ChangelogOptions> options, IOptions<GitOptions> release, IBuildReport report, IChangelog changelogs)
 {
     /// <summary>
     /// Validates the changelog's version links.

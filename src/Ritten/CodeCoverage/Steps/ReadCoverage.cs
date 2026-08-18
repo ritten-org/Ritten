@@ -6,10 +6,10 @@ namespace Ritten.CodeCoverage.Steps;
 /// <summary>
 /// Reads and combines the cobertura reports the test run produced.
 /// </summary>
-/// <param name="log">The pipeline log.</param>
+/// <param name="log">The workflow log.</param>
 /// <param name="fileSystem">The file system.</param>
 [Step("read coverage", StepKind.Work)]
-public class ReadCoverage(IPipelineLog log, IFileSystem fileSystem)
+public class ReadCoverage(IWorkflowLog log, IFileSystem fileSystem)
 {
     /// <summary>
     /// Reads the coverage reports from the test results directory.

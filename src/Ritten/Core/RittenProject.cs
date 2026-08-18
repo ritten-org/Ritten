@@ -34,19 +34,19 @@ internal sealed class RittenProject
     public string FilePath => Path.Combine(Directory, FileName);
 
     /// <summary>
-    /// Reads which pipeline the settings declare.
+    /// Reads which workflow the settings declare.
     /// </summary>
-    public Result<string> GetPipelineName()
+    public Result<string> GetWorkflowName()
     {
-        if (Settings.TryGetProperty("pipeline", out var pipelineProp))
+        if (Settings.TryGetProperty("workflow", out var workflowProp))
         {
-            var pipeline = pipelineProp.GetString();
-            if (pipeline is not null)
+            var workflow = workflowProp.GetString();
+            if (workflow is not null)
             {
-                return pipeline;
+                return workflow;
             }
         }
-        return Result.Error($"'{FilePath}' does not declare which pipeline it runs; set \"pipeline\".");
+        return Result.Error($"'{FilePath}' does not declare which workflow it runs; set \"workflow\".");
     }
 
     /// <summary>

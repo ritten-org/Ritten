@@ -1,7 +1,7 @@
 namespace Ritten.Contracts;
 
 /// <summary>
-/// Names and classifies a pipeline step.
+/// Names and classifies a workflow step.
 /// </summary>
 /// <param name="name">The step's display name.</param>
 /// <param name="kind">What the step's outcome means.</param>

@@ -29,7 +29,7 @@ public class StepResultTests
     }
 
     [Fact]
-    public void NothingToDo_StopsThePipelineSuccessfully()
+    public void NothingToDo_StopsTheWorkflowSuccessfully()
     {
         StepResult.NothingToDo.IsFailure.ShouldBeFalse();
         StepResult.NothingToDo.Continue.ShouldBeFalse();

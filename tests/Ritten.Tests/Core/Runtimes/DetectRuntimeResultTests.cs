@@ -42,9 +42,9 @@ public class DetectRuntimeResultTests
         var runtime = new DebuggableRuntime();
         var selection = Detect(runtime, ("STUB_CI", "true"));
 
-        selection.CreateConsole(PipelineLogLevel.Detail);
+        selection.CreateConsole(WorkflowLogLevel.Detail);
 
-        runtime.ConsoleLevel.ShouldBe(PipelineLogLevel.Detail);
+        runtime.ConsoleLevel.ShouldBe(WorkflowLogLevel.Detail);
     }
 
     [Fact]
@@ -55,9 +55,9 @@ public class DetectRuntimeResultTests
         var runtime = new DebuggableRuntime();
         var selection = Detect(runtime, ("STUB_CI", "true"), ("STUB_DEBUG", "on"));
 
-        selection.CreateConsole(PipelineLogLevel.Warning);
+        selection.CreateConsole(WorkflowLogLevel.Warning);
 
-        runtime.ConsoleLevel.ShouldBe(PipelineLogLevel.Verbose);
+        runtime.ConsoleLevel.ShouldBe(WorkflowLogLevel.Verbose);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class DetectRuntimeResultTests
     {
         var selection = new RuntimeRegistry().Detect(Env()).Value.ShouldNotBeNull();
 
-        selection.CreateConsole(PipelineLogLevel.Detail).ShouldBeOfType<SpectrePipelineConsole>();
+        selection.CreateConsole(WorkflowLogLevel.Detail).ShouldBeOfType<SpectreWorkflowConsole>();
     }
 
     private static DetectRuntimeResult Detect(Runtime runtime, params (string Name, string Value)[] variables) =>
@@ -76,7 +76,7 @@ public class DetectRuntimeResultTests
 
     private sealed class DebuggableRuntime : Runtime
     {
-        public PipelineLogLevel? ConsoleLevel { get; private set; }
+        public WorkflowLogLevel? ConsoleLevel { get; private set; }
 
         public override string Name => "debuggable";
 
@@ -90,10 +90,10 @@ public class DetectRuntimeResultTests
 
         public override bool IsDebug(Func<string, string?> environment) => environment("STUB_DEBUG") == "on";
 
-        public override IPipelineConsole CreateConsole(PipelineLogLevel level)
+        public override IWorkflowConsole CreateConsole(WorkflowLogLevel level)
         {
             ConsoleLevel = level;
-            return Substitute.For<IPipelineConsole>();
+            return Substitute.For<IWorkflowConsole>();
         }
     }
 }

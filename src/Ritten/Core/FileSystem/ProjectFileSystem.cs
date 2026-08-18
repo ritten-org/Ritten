@@ -5,7 +5,7 @@ namespace Ritten.Core.FileSystem;
 
 internal class ProjectFileSystem : IFileSystem
 {
-    public ProjectFileSystem(RittenProject project, IOptions<PipelineOptions> options)
+    public ProjectFileSystem(RittenProject project, IOptions<WorkflowOptions> options)
     {
         ProjectRoot = new PhysicalDirectory(project.Directory);
         Artifacts = ProjectRoot.GetDirectory(options.Value.ArtifactsDirectory);

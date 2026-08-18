@@ -5,7 +5,7 @@ using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
 using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.Pipelines;
+using Ritten.Workflows;
 using Ritten.Reporting;
 using Ritten.Tests.Support;
 
@@ -120,5 +120,5 @@ public class CheckChangelogLinksTests
         new() { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0"), Repository = repository };
 
     private CheckChangelogLinks Step() =>
-        new(Substitute.For<IPipelineLog>(), Options.Create(_options), Options.Create(TestOptions.Git()), _report, Changelogs);
+        new(Substitute.For<IWorkflowLog>(), Options.Create(_options), Options.Create(TestOptions.Git()), _report, Changelogs);
 }

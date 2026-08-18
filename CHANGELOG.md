@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Projects declare a `workflow`, not a `pipeline`.** Ritten's unit of jobs is now called a workflow, completing the job/step taxonomy it already shares with GitHub Actions. `ritten.json` must now say `"workflow": "dotnet-tool"`; the old `pipeline` key is no longer read.
 - **Debug logging belongs to the runtime.** `RUNNER_DEBUG` now enables verbose output only when the run is actually on GitHub Actions.
 
 ### Fixed

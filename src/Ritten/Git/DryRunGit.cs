@@ -5,7 +5,7 @@ namespace Ritten.Git;
 /// <summary>
 /// Reports what would be tagged instead of tagging it.
 /// </summary>
-internal class DryRunGit(IPipelineLog log, IGit inner) : IGit
+internal class DryRunGit(IWorkflowLog log, IGit inner) : IGit
 {
     /// <inheritdoc />
     public Task<string?> GetRemoteUrl(string remote, CancellationToken cancellationToken = default) =>

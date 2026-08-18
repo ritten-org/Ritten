@@ -8,13 +8,13 @@ namespace Ritten.Changelogs.Steps;
 /// <summary>
 /// Reads and parses the changelog file.
 /// </summary>
-/// <param name="log">The pipeline log.</param>
-/// <param name="options">The pipeline's changelog options.</param>
+/// <param name="log">The workflow log.</param>
+/// <param name="options">The workflow's changelog options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="report">The build report.</param>
 /// <param name="changelogs">The changelog client.</param>
 [Step("read changelog", StepKind.Work)]
-public class ReadChangelog(IPipelineLog log, IOptions<ChangelogOptions> options, IFileSystem fileSystem, IBuildReport report, IChangelog changelogs)
+public class ReadChangelog(IWorkflowLog log, IOptions<ChangelogOptions> options, IFileSystem fileSystem, IBuildReport report, IChangelog changelogs)
 {
     /// <summary>
     /// Reads the configured changelog file.

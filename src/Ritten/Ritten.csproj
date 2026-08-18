@@ -28,7 +28,7 @@
     <FileVersion>$(Version.Split('-')[0])</FileVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageTags>devops;cicd;build;automation;pipelines;deployment</PackageTags>
+    <PackageTags>devops;cicd;build;automation;workflows;pipelines;deployment</PackageTags>
     <LangVersion>latest</LangVersion>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>

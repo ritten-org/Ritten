@@ -16,7 +16,7 @@ public record BuildArgs
     public string? Configuration { get; init; }
 
     /// <summary>
-    /// Skips the implicit restore, for pipelines with an explicit restore step.
+    /// Skips the implicit restore, for workflows with an explicit restore step.
     /// </summary>
     public bool NoRestore { get; init; }
 }

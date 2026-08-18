@@ -5,7 +5,7 @@ using Ritten.Reporting;
 namespace Ritten.DotNet.Steps;
 
 /// <summary>
-/// Fails the pipeline when <c>dotnet format whitespace</c> would make changes.
+/// Fails the workflow when <c>dotnet format whitespace</c> would make changes.
 /// </summary>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>

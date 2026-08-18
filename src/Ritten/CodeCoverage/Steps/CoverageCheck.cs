@@ -8,7 +8,7 @@ namespace Ritten.CodeCoverage.Steps;
 /// <summary>
 /// Judges the collected <see cref="Coverage"/> against the configured minimums.
 /// </summary>
-/// <param name="options">The pipeline's coverage options.</param>
+/// <param name="options">The workflow's coverage options.</param>
 /// <param name="report">The build report.</param>
 [Step("check coverage", StepKind.Check)]
 public class CoverageCheck(IOptions<CoverageOptions> options, IBuildReport report)

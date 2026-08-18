@@ -6,7 +6,7 @@ using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
-using Ritten.Pipelines;
+using Ritten.Workflows;
 using Ritten.Reporting;
 using Ritten.Tests.Support;
 
@@ -75,5 +75,5 @@ public class ReadChangelogTests
     }
 
     private ReadChangelog Step() =>
-        new(Substitute.For<IPipelineLog>(), Options.Create(_options), _fileSystem, _report, Changelogs);
+        new(Substitute.For<IWorkflowLog>(), Options.Create(_options), _fileSystem, _report, Changelogs);
 }

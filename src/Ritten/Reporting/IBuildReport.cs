@@ -1,7 +1,7 @@
 namespace Ritten.Reporting;
 
 /// <summary>
-/// Accumulates authored feedback from pipeline steps for publication at the end of the run.
+/// Accumulates authored feedback from workflow steps for publication at the end of the run.
 /// </summary>
 public interface IBuildReport
 {

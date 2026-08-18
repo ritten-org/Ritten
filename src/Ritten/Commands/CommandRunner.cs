@@ -5,7 +5,7 @@ using Ritten.Contracts.FileSystem;
 
 namespace Ritten.Commands;
 
-internal class CommandRunner(IPipelineLog log, IFileSystem fileSystem) : ICommandRunner
+internal class CommandRunner(IWorkflowLog log, IFileSystem fileSystem) : ICommandRunner
 {
     public async Task<CommandResult> Run(Command command, CancellationToken cancellationToken = default)
     {
@@ -80,7 +80,7 @@ internal class CommandRunner(IPipelineLog log, IFileSystem fileSystem) : IComman
             Task.Delay(TimeSpan.FromSeconds(2), CancellationToken.None)
         );
 
-        var exitLogLevel = process.ExitCode == 0 ? PipelineLogLevel.Verbose : PipelineLogLevel.Detail;
+        var exitLogLevel = process.ExitCode == 0 ? WorkflowLogLevel.Verbose : WorkflowLogLevel.Detail;
         log.Log(exitLogLevel, $"Exit code: {process.ExitCode}");
 
         var result = new CommandResult(process.ExitCode, stdOut.ToString(), stdErr.ToString());

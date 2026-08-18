@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using Ritten.Pipelines;
+using Ritten.Workflows;
 
 namespace Ritten.CodeCoverage;
 

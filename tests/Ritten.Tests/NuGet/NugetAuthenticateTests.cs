@@ -12,7 +12,7 @@ namespace Ritten.Tests.NuGet;
 /// </summary>
 public class NugetAuthenticateTests
 {
-    private readonly IPipelinePrompt _prompt = Substitute.For<IPipelinePrompt>();
+    private readonly IWorkflowPrompt _prompt = Substitute.For<IWorkflowPrompt>();
     private readonly NuGetOptions _options = TestOptions.NuGet();
 
     [Fact]
@@ -74,5 +74,5 @@ public class NugetAuthenticateTests
     }
 
     private NugetAuthenticate Step(bool dryRun = false) =>
-        new(new PipelineJob("dotnet-tool", "deploy", DryRun: dryRun), Substitute.For<IPipelineLog>(), Options.Create(_options), _prompt);
+        new(new WorkflowJob("dotnet-tool", "deploy", DryRun: dryRun), Substitute.For<IWorkflowLog>(), Options.Create(_options), _prompt);
 }

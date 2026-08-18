@@ -8,7 +8,7 @@ using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.GitHub;
 using Ritten.NuGet;
-using Ritten.Pipelines;
+using Ritten.Workflows;
 using Ritten.Releases;
 using Ritten.Reporting;
 
@@ -76,17 +76,17 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void AddGitHubClient_AppliesTheGivenClientName()
     {
-        var provider = Services().AddGitHubClient("My.Pipeline").BuildServiceProvider();
+        var provider = Services().AddGitHubClient("My.Workflow").BuildServiceProvider();
 
-        provider.GetRequiredService<IOptions<GitHubClientOptions>>().Value.ClientName.ShouldBe("My.Pipeline");
+        provider.GetRequiredService<IOptions<GitHubClientOptions>>().Value.ClientName.ShouldBe("My.Workflow");
     }
 
     [Fact]
     public void AddGitHubClient_KeepsAnExplicitClientNameWhenRedundantlyRegistered()
     {
-        var provider = Services().AddGitHubClient("My.Pipeline").AddGitHubClient().BuildServiceProvider();
+        var provider = Services().AddGitHubClient("My.Workflow").AddGitHubClient().BuildServiceProvider();
 
-        provider.GetRequiredService<IOptions<GitHubClientOptions>>().Value.ClientName.ShouldBe("My.Pipeline");
+        provider.GetRequiredService<IOptions<GitHubClientOptions>>().Value.ClientName.ShouldBe("My.Workflow");
     }
 
     [Fact]
@@ -118,5 +118,5 @@ public class ServiceCollectionExtensionsTests
     }
 
     private static IServiceCollection Services(Dictionary<string, string>? environment = null) =>
-        new ServiceCollection().AddSingleton(new PipelineEnvironment((environment ?? []).GetValueOrDefault));
+        new ServiceCollection().AddSingleton(new WorkflowEnvironment((environment ?? []).GetValueOrDefault));
 }

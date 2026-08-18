@@ -13,10 +13,10 @@ namespace Ritten.GitHub;
 internal static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds the client the pipeline talks to GitHub itself with.
+    /// Adds the client the workflow talks to GitHub itself with.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="clientName">The product name used to identify this pipeline to the GitHub API.</param>
+    /// <param name="clientName">The product name used to identify this workflow to the GitHub API.</param>
     public static IServiceCollection AddGitHubClient(this IServiceCollection services, string? clientName = null)
     {
         if (services.All(d => d.ServiceType != typeof(GitHubClientMarker)))
@@ -25,7 +25,7 @@ internal static class ServiceCollectionExtensions
 
             services.AddCommandRunner();
             services.AddOptions<GitHubClientOptions>()
-                .Configure<PipelineEnvironment>((options, environment) => options.Token = environment.Get(GitHubEnvironment.Token));
+                .Configure<WorkflowEnvironment>((options, environment) => options.Token = environment.Get(GitHubEnvironment.Token));
 
             services.TryAddSingleton<ICredentialStore, AmbientCredentialStore>();
             services.AddSingleton<IGitHubClient>(provider =>

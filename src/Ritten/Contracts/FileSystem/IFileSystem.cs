@@ -16,7 +16,7 @@ public interface IFileSystem
     IDirectory Artifacts { get; }
 
     /// <summary>
-    /// Gets the directory intermediate pipeline output is written to.
+    /// Gets the directory intermediate workflow output is written to.
     /// </summary>
     IDirectory Temp { get; }
 }

@@ -88,7 +88,7 @@ public class CommandRunnerTests
     }
 
     [Fact]
-    public async Task Run_ResolvesTheWorkingDirectoryAgainstThePipelineDirectory()
+    public async Task Run_ResolvesTheWorkingDirectoryAgainstTheWorkflowDirectory()
     {
         using var root = TempDirectory.Create();
         Directory.CreateDirectory(Path.Combine(root.Path, "sub"));
@@ -102,7 +102,7 @@ public class CommandRunnerTests
     {
         var fileSystem = Substitute.For<IFileSystem>();
         fileSystem.ProjectRoot.AbsolutePath.Returns(currentDirectory ?? Path.GetTempPath());
-        return new CommandRunner(Substitute.For<IPipelineLog>(), fileSystem);
+        return new CommandRunner(Substitute.For<IWorkflowLog>(), fileSystem);
     }
 
     private static Command Shell(string script) => Command.Create("/bin/sh").WithArguments("-c", script);
