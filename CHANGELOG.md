@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [0.3.0] - 2026-08-19
 
-### Change
+### Changed
 
 - **Separate `Ritten.Core` package.** With this release, `Ritten.Core` is now published for direct consumption in building custom CI workflows.
 
@@ -118,6 +118,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.3.0]: https://github.com/ritten-org/Ritten/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ritten-org/Ritten/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ritten-org/Ritten/compare/v0.0.6...v0.1.0
 [0.0.6]: https://github.com/ritten-org/Ritten/compare/v0.0.5...v0.0.6
