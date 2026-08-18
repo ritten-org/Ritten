@@ -4,12 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] - 2026-08-18
 
 ### Changed
 
 - **Projects declare a `workflow`, not a `pipeline`.** Ritten's unit of jobs is now called a workflow, completing the job/step taxonomy it already shares with GitHub Actions. `ritten.json` must now say `"workflow": "dotnet-tool"`; the old `pipeline` key is no longer read.
 - **Debug logging belongs to the runtime.** `RUNNER_DEBUG` now enables verbose output only when the run is actually on GitHub Actions.
+- **Familiar builder pattern.** The pipeline host builder is now a pipeline application builder and follow a similar shape to the .NET standard hosts.
 
 ### Fixed
 
@@ -102,7 +103,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
-[Unreleased]: https://github.com/ritten-org/Ritten/compare/v0.0.6...HEAD
+[0.1.0]: https://github.com/ritten-org/Ritten/compare/v0.0.6...v0.1.0
 [0.0.6]: https://github.com/ritten-org/Ritten/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/ritten-org/Ritten/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/ritten-org/Ritten/compare/v0.0.3...v0.0.4
