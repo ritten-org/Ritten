@@ -29,9 +29,8 @@ internal static class PipelineHostBuilderHelpers
             new RittenProject { Directory = Path.GetTempPath(), Settings = JsonSerializer.Deserialize<JsonElement>(settings) },
             pipelineName,
             new SpectreProgressReporter(AnsiConsole.Console, PipelineLogLevel.Detail),
+            (runtimes ?? new RuntimeRegistry()).Detect(environment ?? Complete).Value.ShouldNotBeNull(),
             dryRun,
             autoApprove: false,
-            environment ?? Complete,
-            log,
-            runtimes);
+            log);
 }
