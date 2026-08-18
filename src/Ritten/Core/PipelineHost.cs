@@ -84,7 +84,10 @@ public class PipelineHost : IDisposable
             ]);
         }
 
-        var builder = new PipelineHostBuilder(project.Value, pipeline.Label, console, runtime.Value, args.DryRun, args.AutoApprove);
+        var builder = new PipelineHostBuilder(project.Value, runtime.Value, console)
+            .WithPipelineLabel(pipeline.Label)
+            .WithDryRun(args.DryRun)
+            .WithAutoApprove(args.AutoApprove);
         var host = builder.Build(declared);
         if (host.IsError)
         {

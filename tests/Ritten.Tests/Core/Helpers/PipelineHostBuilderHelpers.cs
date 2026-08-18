@@ -24,13 +24,14 @@ internal static class PipelineHostBuilderHelpers
         bool dryRun = false,
         IPipelineLog? log = null,
         string settings = "{}",
-        RuntimeRegistry? runtimes = null) =>
-        new(
-            new RittenProject { Directory = Path.GetTempPath(), Settings = JsonSerializer.Deserialize<JsonElement>(settings) },
-            pipelineName,
-            new SpectrePipelineConsole(AnsiConsole.Console, PipelineLogLevel.Detail),
-            (runtimes ?? new RuntimeRegistry()).Detect(environment ?? Complete).Value.ShouldNotBeNull(),
-            dryRun,
-            autoApprove: false,
-            log);
+        RuntimeRegistry? runtimes = null)
+    {
+        var builder = new PipelineHostBuilder(
+                new RittenProject { Directory = Path.GetTempPath(), Settings = JsonSerializer.Deserialize<JsonElement>(settings) },
+                (runtimes ?? new RuntimeRegistry()).Detect(environment ?? Complete).Value.ShouldNotBeNull(),
+                new SpectrePipelineConsole(AnsiConsole.Console, PipelineLogLevel.Detail))
+            .WithPipelineLabel(pipelineName)
+            .WithDryRun(dryRun);
+        return log is null ? builder : builder.WithLog(log);
+    }
 }

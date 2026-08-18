@@ -19,33 +19,23 @@ namespace Ritten.Core;
 public class PipelineHostBuilder
 {
     private readonly RittenProject _project;
-    private readonly string _pipelineLabel;
-    private readonly bool _dryRun;
-    private readonly bool _autoApprove;
-    private readonly Func<string, string?> _environment;
-    private readonly IPipelineLog _log;
-    private readonly RuntimeRegistry _runtimes;
+    private readonly DetectRuntimeResult _runtime;
+    private string _pipelineLabel = "";
+    private bool _dryRun;
+    private bool _autoApprove;
+    private IPipelineLog _log;
 
     /// <summary>
     /// Creates a new instance of the <see cref="PipelineHostBuilder"/>.
     /// </summary>
     /// <param name="project">The project being built.</param>
-    /// <param name="pipelineLabel">The human label of the pipeline being assembled.</param>
-    /// <param name="reporter">The reporter that renders pipeline progress.</param>
-    /// <param name="dryRun">Whether to wrap the clients that reach outside the working directory.</param>
-    /// <param name="autoApprove">Whether a job that would stop and ask has been approved up front.</param>
-    /// <param name="environment">Reads environment variables; the process environment when not given.</param>
-    /// <param name="log">Where the builder writes; the reporter when not given.</param>
-    /// <param name="runtimes">The runtimes the host can find itself running in; local-only when not given.</param>
-    internal PipelineHostBuilder(RittenProject project, string pipelineLabel, SpectreProgressReporter reporter, bool dryRun = false, bool autoApprove = false, Func<string, string?>? environment = null, IPipelineLog? log = null, RuntimeRegistry? runtimes = null)
+    /// <param name="runtime">The detected runtime the job runs in.</param>
+    /// <param name="console">The console narrative the run renders through.</param>
+    internal PipelineHostBuilder(RittenProject project, DetectRuntimeResult runtime, IPipelineConsole console)
     {
         _project = project;
-        _pipelineLabel = pipelineLabel;
-        _dryRun = dryRun;
-        _autoApprove = autoApprove;
-        _environment = environment ?? Environment.GetEnvironmentVariable;
-        _log = log ?? reporter;
-        _runtimes = runtimes ?? new RuntimeRegistry();
+        _runtime = runtime;
+        _log = console;
 
         // Applies to every run.
         Services.AddOptions();
@@ -53,10 +43,8 @@ public class PipelineHostBuilder
         Services.AddSingleton(TimeProvider.System);
         Services.TryAddSingleton<IPipelineRunner, DefaultPipelineRunner>();
         Services.TryAddSingleton<IFileSystem, ProjectFileSystem>();
-        Services.AddSingleton<IProgressReporter>(reporter);
-        Services.TryAddSingleton(_log);
+        Services.AddSingleton<IProgressReporter>(console);
         Services.TryAddSingleton<IPipelinePrompt>(_ => new ConsolePrompt(AnsiConsole.Console));
-
     }
 
     /// <summary>
@@ -65,28 +53,67 @@ public class PipelineHostBuilder
     public IServiceCollection Services { get; } = new ServiceCollection();
 
     /// <summary>
+    /// Names the pipeline the job belongs to, for the run's narrative.
+    /// </summary>
+    /// <param name="label">The human label of the pipeline being assembled.</param>
+    public PipelineHostBuilder WithPipelineLabel(string label)
+    {
+        _pipelineLabel = label;
+        return this;
+    }
+
+    /// <summary>
+    /// Rehearses the job: the clients that reach outside the working directory are wrapped, so
+    /// nothing irreversible can happen no matter what the steps do.
+    /// </summary>
+    /// <param name="dryRun">Whether the run is a rehearsal.</param>
+    public PipelineHostBuilder WithDryRun(bool dryRun = true)
+    {
+        _dryRun = dryRun;
+        return this;
+    }
+
+    /// <summary>
+    /// Approves the job up front, for runs with nobody there to confirm.
+    /// </summary>
+    /// <param name="autoApprove">Whether a job that would stop and ask is pre-approved.</param>
+    public PipelineHostBuilder WithAutoApprove(bool autoApprove = true)
+    {
+        _autoApprove = autoApprove;
+        return this;
+    }
+
+    /// <summary>
+    /// Redirects what the builder itself writes — settings warnings and the like — away from the
+    /// console.
+    /// </summary>
+    /// <param name="log">Where the builder writes.</param>
+    internal PipelineHostBuilder WithLog(IPipelineLog log)
+    {
+        _log = log;
+        return this;
+    }
+
+    /// <summary>
     /// Builds the <see cref="PipelineHost" /> for the given job.
     /// </summary>
     /// <param name="job">The declared job to assemble.</param>
     /// <returns>The configured pipeline application.</returns>
     public Result<PipelineHost> Build(IJob job)
     {
-        var runtime = _runtimes.Detect(_environment);
-        if (runtime.IsError)
-        {
-            return runtime.Errors;
-        }
+        // Registered here rather than at construction so a WithLog still lands; TryAdd, so a log
+        // the host registered directly wins over the builder's own.
+        Services.TryAddSingleton(_log);
 
-        var environment = runtime.Value.Environment;
-        var settings = job.ReadSettings(_project, environment, _dryRun, _log);
+        var settings = job.ReadSettings(_project, _runtime.Environment, _dryRun, _log);
         if (settings.IsError)
         {
             return settings.Errors;
         }
 
-        Services.AddSingleton(new PipelineEnvironment(environment));
+        Services.AddSingleton(new PipelineEnvironment(_runtime.Environment));
         Services.AddSingleton(new PipelineJob(_pipelineLabel, job.Name, _dryRun, _autoApprove));
-        runtime.Value.Runtime.ConfigureServices(Services, _environment);
+        _runtime.Runtime.ConfigureServices(Services, _runtime.Raw);
         job.ConfigureServices(Services, settings.Value);
 
         Services.AddSingleton(job.Steps);
