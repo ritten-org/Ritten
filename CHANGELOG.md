@@ -109,6 +109,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[Unreleased]: https://github.com/ritten-org/Ritten/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/ritten-org/Ritten/compare/v0.0.6...v0.1.0
 [0.0.6]: https://github.com/ritten-org/Ritten/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/ritten-org/Ritten/compare/v0.0.4...v0.0.5
