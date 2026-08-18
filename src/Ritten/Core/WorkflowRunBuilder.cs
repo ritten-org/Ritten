@@ -170,13 +170,14 @@ public class WorkflowRunBuilder
     }
 
     /// <summary>
-    /// Registers the given service decorators.
+    /// Adds decorators that modify the services used by jobs.
     /// </summary>
+    /// <param name="decorators">The shared decorators to adopt.</param>
     public WorkflowRunBuilder WithDecorators(DecoratorRegistry decorators)
     {
-        foreach (var decoration in decorators.GetAll())
+        foreach (var decorator in decorators.GetAll())
         {
-            Services.AddSingleton(decoration);
+            DryRun.Add(decorator);
         }
 
         return this;

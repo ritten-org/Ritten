@@ -7,15 +7,16 @@ using Ritten.DotNet;
 using Ritten.Workflows;
 using Ritten.Releases;
 using Ritten.Reporting;
+using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Changelogs;
 
 public class CheckChangelogEntryTests
 {
     // The real client, so these tests exercise the actual parser.
-    private static readonly IChangelog Changelogs = new ServiceCollection()
+    private static readonly IChangelog Changelogs = WorkflowRunBuilderHelpers.Create()
         .AddChangelogs(new ChangelogSettings())
-        .BuildServiceProvider()
+        .Services.BuildServiceProvider()
         .GetRequiredService<IChangelog>();
 
     private static readonly ReleaseState Releasable = new(Published: false, LatestInLine: true, null, null);

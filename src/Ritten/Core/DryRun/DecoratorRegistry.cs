@@ -33,6 +33,15 @@ public class DecoratorRegistry
     }
 
     /// <summary>
+    /// Adopts a decorator declared in another registry.
+    /// </summary>
+    internal DecoratorRegistry Add(Decorator decorator)
+    {
+        _list.Add(decorator);
+        return this;
+    }
+
+    /// <summary>
     /// Gets all the decorators declared by this registry.
     /// </summary>
     internal IReadOnlyCollection<Decorator> GetAll() => _list.AsReadOnly();

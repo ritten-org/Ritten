@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+using Ritten.Core;
 using Ritten.Core.Runtimes;
 
 namespace Ritten.Tests.Core.Runtimes;
@@ -149,7 +149,7 @@ public class RuntimeRegistryTests
 
         public override IReadOnlyCollection<string> Claims => claims;
 
-        public override void Configure(IServiceCollection services, Func<string, string?> environment)
+        public override void Configure(WorkflowRunBuilder builder, Func<string, string?> environment)
         {
         }
     }

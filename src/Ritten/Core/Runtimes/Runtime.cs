@@ -25,9 +25,9 @@ public abstract class Runtime
     public abstract IReadOnlyCollection<string> Claims { get; }
 
     /// <summary>
-    /// Registers the services this runtime provides.
+    /// Registers the services and anything else this runtime provides.
     /// </summary>
-    /// <param name="builder">The service collection the job is assembled into.</param>
+    /// <param name="builder">The run being assembled; services and decorators hang off it.</param>
     /// <param name="environment">The unfiltered environment; the runtime owns its claims.</param>
     public abstract void Configure(WorkflowRunBuilder builder, Func<string, string?> environment);
 

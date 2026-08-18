@@ -6,16 +6,27 @@ using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Core.DryRun;
 
-public class DecoratorTests
+public class DecoratorTests : IDisposable
 {
+    private readonly string _root = Path.Combine(Path.GetTempPath(), $"ritten-decorators-{Guid.NewGuid():N}");
+
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        if (Directory.Exists(_root))
+        {
+            Directory.Delete(_root, true);
+        }
+    }
+
     [Fact]
-    public async Task DryRun_StopsSideEffectsAtThePairedDecorator()
+    public async Task DryRun_StopsSideEffectsAtTheDecorator()
     {
         var client = new RealClient();
-        using var run = Build(dryRun: true, services =>
+        using var run = Build(dryRun: true, builder =>
         {
-            services.AddSingleton<IOutwardClient>(client);
-            services.DryRun.Decorate<IOutwardClient, RehearsingClient>();
+            builder.Services.AddSingleton<IOutwardClient>(client);
+            builder.DryRun.Decorate<IOutwardClient, RehearsingClient>();
         });
 
         await run.Run(TestContext.Current.CancellationToken);
@@ -24,13 +35,13 @@ public class DecoratorTests
     }
 
     [Fact]
-    public async Task DryRun_SubstitutesThePairedReplacement()
+    public async Task DryRun_SubstitutesTheReplacement()
     {
         var client = new RealClient();
-        using var run = Build(dryRun: true, services =>
+        using var run = Build(dryRun: true, builder =>
         {
-            services.AddSingleton<IOutwardClient>(client);
-            services.DryRun.Replace<IOutwardClient, NullClient>();
+            builder.Services.AddSingleton<IOutwardClient>(client);
+            builder.DryRun.Replace<IOutwardClient, NullClient>();
         });
 
         await run.Run(TestContext.Current.CancellationToken);
@@ -39,14 +50,14 @@ public class DecoratorTests
     }
 
     [Fact]
-    public async Task Run_LeavesThePairedClientAloneOutsideADryRun()
+    public async Task Run_LeavesTheDecoratedClientAloneOutsideADryRun()
     {
-        // The pairing is a declaration, not a decoration: a real run reaches the real client.
+        // The decorator is a declaration, not a decoration: a real run reaches the real client.
         var client = new RealClient();
-        using var run = Build(dryRun: false, services =>
+        using var run = Build(dryRun: false, builder =>
         {
-            services.AddSingleton<IOutwardClient>(client);
-            services.DryRun.Decorate<IOutwardClient, RehearsingClient>();
+            builder.Services.AddSingleton<IOutwardClient>(client);
+            builder.DryRun.Decorate<IOutwardClient, RehearsingClient>();
         });
 
         await run.Run(TestContext.Current.CancellationToken);
@@ -55,10 +66,10 @@ public class DecoratorTests
     }
 
     [Fact]
-    public void DryRun_IgnoresAPairingWhoseClientIsNotRegistered()
+    public void DryRun_IgnoresADecoratorWhoseClientIsNotRegistered()
     {
-        // A workflow only registers the capabilities it uses; a pairing for an absent client is
-        // a no-op, not an error.
+        // A workflow only registers the capabilities it uses; a decorator for an absent client
+        // is a no-op, not an error.
         var builder = WorkflowRunBuilderHelpers.Create(dryRun: true);
         builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
         builder.DryRun.Decorate<IOutwardClient, RehearsingClient>();
@@ -69,11 +80,33 @@ public class DecoratorTests
         result.Value.ShouldNotBeNull().Dispose();
     }
 
-    private static WorkflowRun Build(bool dryRun, Action<IServiceCollection> configure)
+    [Fact]
+    public async Task Run_AppliesTheApplicationsSharedDecoratorsInADryRun()
+    {
+        // The application's decorators travel to the run through WithDecorators; a shared client
+        // declared once at application level must stay rehearsal-safe in every job.
+        Directory.CreateDirectory(_root);
+        await File.WriteAllTextAsync(Path.Combine(_root, "ritten.json"), """{ "workflow": "test" }""", TestContext.Current.CancellationToken);
+        var client = new RealClient();
+        var builder = WorkflowApplication.CreateBuilder();
+        builder.Workflows.Add(new TestWorkflow(jobs: [new TestJob(steps: [Step.FromType<PushStep>()])]));
+        builder.Services.AddSingleton<IOutwardClient>(client);
+        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
+        builder.DryRun.Decorate<IOutwardClient, RehearsingClient>();
+        var application = builder.Build().Value.ShouldNotBeNull();
+
+        var args = new RunJobArgs("verify") { Directory = _root, DryRun = true };
+        var exitCode = await application.Run(args, _ => null, TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(WorkflowExitCodes.Success);
+        client.Pushes.ShouldBe(0, "an application-level decorator must reach the run");
+    }
+
+    private static WorkflowRun Build(bool dryRun, Action<WorkflowRunBuilder> configure)
     {
         var builder = WorkflowRunBuilderHelpers.Create(dryRun: dryRun);
         builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
-        configure(builder.Services);
+        configure(builder);
 
         var result = builder.Build(new TestJob(steps: [Step.FromType<PushStep>()]));
         result.IsSuccess.ShouldBeTrue();

@@ -7,6 +7,7 @@ using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Workflows;
 using Ritten.Reporting;
+using Ritten.Tests.Core.Helpers;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Changelogs;
@@ -18,9 +19,9 @@ namespace Ritten.Tests.Changelogs;
 public class CheckChangelogLinksTests
 {
     // The real client, so these tests exercise the actual link generator.
-    private static readonly IChangelog Changelogs = new ServiceCollection()
+    private static readonly IChangelog Changelogs = WorkflowRunBuilderHelpers.Create()
         .AddChangelogs(new ChangelogSettings())
-        .BuildServiceProvider()
+        .Services.BuildServiceProvider()
         .GetRequiredService<IChangelog>();
 
     private readonly IBuildReport _report = Substitute.For<IBuildReport>();

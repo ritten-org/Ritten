@@ -4,6 +4,7 @@ using Octokit;
 using Ritten.Changelogs;
 using Ritten.Commands;
 using Ritten.Contracts;
+using Ritten.Core;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.GitHub;
@@ -11,10 +12,11 @@ using Ritten.NuGet;
 using Ritten.Workflows;
 using Ritten.Releases;
 using Ritten.Reporting;
+using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Extensions;
 
-public class ServiceCollectionExtensionsTests
+public class WorkflowRunBuilderExtensionsTests
 {
     private static readonly DotNetToolSettings Settings = new()
     {
@@ -27,14 +29,15 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void Registrations_AreIdempotent()
     {
-        var services = Services()
+        var services = Builder()
             .AddCommandRunner().AddCommandRunner()
             .AddChangelogs(Settings.Changelog).AddChangelogs(Settings.Changelog)
             .AddDotNet(Settings.Build).AddDotNet(Settings.Build)
             .AddGit(Settings.Release.TagPrefix).AddGit(Settings.Release.TagPrefix)
             .AddNuGet(Settings.Release.Feed, ReleaseLine.Major).AddNuGet(Settings.Release.Feed, ReleaseLine.Major)
             .AddGitHubClient().AddGitHubClient()
-            .AddBuildReporting().AddBuildReporting();
+            .AddBuildReporting().AddBuildReporting()
+            .Services;
 
         services.Count(d => d.ServiceType == typeof(ICommandRunner)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IChangelog)).ShouldBe(1);
@@ -49,7 +52,7 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void AddGit_RegistersItsCommandRunnerDependency()
     {
-        var services = Services().AddGit(Settings.Release.TagPrefix);
+        var services = Builder().AddGit(Settings.Release.TagPrefix).Services;
 
         services.Count(d => d.ServiceType == typeof(ICommandRunner)).ShouldBe(1);
     }
@@ -57,7 +60,7 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void AddDotNet_RegistersItsCommandRunnerDependency()
     {
-        var services = Services().AddDotNet(Settings.Build);
+        var services = Builder().AddDotNet(Settings.Build).Services;
 
         services.Count(d => d.ServiceType == typeof(ICommandRunner)).ShouldBe(1);
     }
@@ -67,7 +70,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Where the report lands is the active runtime's business; reporting itself must build on
         // any runtime, GitHub nowhere in sight.
-        var services = Services().AddBuildReporting();
+        var services = Builder().AddBuildReporting().Services;
 
         services.ShouldNotContain(d => d.ServiceType == typeof(IGitHubClient));
         services.ShouldNotContain(d => d.ServiceType == typeof(ICommentService));
@@ -76,7 +79,7 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void AddGitHubClient_AppliesTheGivenClientName()
     {
-        var provider = Services().AddGitHubClient("My.Workflow").BuildServiceProvider();
+        var provider = Builder().AddGitHubClient("My.Workflow").Services.BuildServiceProvider();
 
         provider.GetRequiredService<IOptions<GitHubClientOptions>>().Value.ClientName.ShouldBe("My.Workflow");
     }
@@ -84,7 +87,7 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void AddGitHubClient_KeepsAnExplicitClientNameWhenRedundantlyRegistered()
     {
-        var provider = Services().AddGitHubClient("My.Workflow").AddGitHubClient().BuildServiceProvider();
+        var provider = Builder().AddGitHubClient("My.Workflow").AddGitHubClient().Services.BuildServiceProvider();
 
         provider.GetRequiredService<IOptions<GitHubClientOptions>>().Value.ClientName.ShouldBe("My.Workflow");
     }
@@ -92,9 +95,9 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void AddGitHubClient_ReadsTheExplicitTokenFromTheFilteredEnvironment()
     {
-        var provider = Services(new Dictionary<string, string> { ["GH_TOKEN"] = "explicit" })
+        var provider = Builder(new Dictionary<string, string> { ["GH_TOKEN"] = "explicit" })
             .AddGitHubClient()
-            .BuildServiceProvider();
+            .Services.BuildServiceProvider();
 
         provider.GetRequiredService<IOptions<GitHubClientOptions>>().Value.Token.ShouldBe("explicit");
     }
@@ -102,12 +105,12 @@ public class ServiceCollectionExtensionsTests
     [Fact]
     public void EachCapability_MapsOnlyItsOwnSliceOfTheSettings()
     {
-        var provider = Services()
+        var provider = Builder()
             .AddDotNet(Settings.Build, Settings.Repository)
             .AddChangelogs(Settings.Changelog)
             .AddGit(Settings.Release.TagPrefix)
             .AddNuGet(Settings.Release.Feed, ReleaseLine.Major)
-            .BuildServiceProvider();
+            .Services.BuildServiceProvider();
 
         provider.GetRequiredService<IOptions<DotNetOptions>>().Value.ProjectFile.ShouldBe("src/Thing/Thing.csproj");
         provider.GetRequiredService<IOptions<DotNetOptions>>().Value.Configuration.ShouldBe("Debug");
@@ -117,6 +120,10 @@ public class ServiceCollectionExtensionsTests
         provider.GetRequiredService<IOptions<NuGetOptions>>().Value.Feed.ShouldBe("https://example.com/index.json");
     }
 
-    private static IServiceCollection Services(Dictionary<string, string>? environment = null) =>
-        new ServiceCollection().AddSingleton(new WorkflowEnvironment((environment ?? []).GetValueOrDefault));
+    private static WorkflowRunBuilder Builder(Dictionary<string, string>? environment = null)
+    {
+        var builder = WorkflowRunBuilderHelpers.Create();
+        builder.Services.AddSingleton(new WorkflowEnvironment((environment ?? []).GetValueOrDefault));
+        return builder;
+    }
 }
