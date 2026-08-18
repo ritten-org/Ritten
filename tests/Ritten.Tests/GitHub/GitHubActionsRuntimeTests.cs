@@ -88,7 +88,7 @@ public class GitHubActionsRuntimeTests
     {
         var services = Services(filteredEnvironment: []);
 
-        new GitHubActionsRuntime().ConfigureServices(services, new Dictionary<string, string>().GetValueOrDefault);
+        new GitHubActionsRuntime().Configure(services, new Dictionary<string, string>().GetValueOrDefault);
 
         services.Count(d => d.ServiceType == typeof(IReportSink)).ShouldBe(2);
         services.Count(d => d.ServiceType == typeof(ICommentService)).ShouldBe(1);
@@ -100,7 +100,7 @@ public class GitHubActionsRuntimeTests
         Dictionary<string, string>? filteredEnvironment = null)
     {
         var services = Services(filteredEnvironment ?? []);
-        new GitHubActionsRuntime().ConfigureServices(services, runtimeEnvironment.GetValueOrDefault);
+        new GitHubActionsRuntime().Configure(services, runtimeEnvironment.GetValueOrDefault);
         return services.BuildServiceProvider();
     }
 

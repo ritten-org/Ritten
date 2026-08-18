@@ -1,31 +1,32 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
+using Ritten.Core;
 
 namespace Ritten.Reporting;
 
 /// <summary>
 /// Registers build reporting.
 /// </summary>
-public static class ServiceCollectionExtensions
+public static class WorkflowRunBuilderExtensions
 {
-    extension(IServiceCollection services)
+    extension(WorkflowRunBuilder builder)
     {
         /// <summary>
         /// Adds <see cref="IBuildReport"/> to the service collection and registers the
         /// <see cref="BuildReportPublisher"/> that publishes it when the workflow finishes.
         /// </summary>
-        public IServiceCollection AddBuildReporting()
+        public WorkflowRunBuilder AddBuildReporting()
         {
-            if (services.Any(d => d.ServiceType == typeof(BuildReportingMarker)))
+            if (builder.Services.Any(d => d.ServiceType == typeof(BuildReportingMarker)))
             {
-                return services;
+                return builder;
             }
 
-            services.AddSingleton<BuildReportingMarker>();
-            services.AddSingleton<IBuildReport, BuildReport>();
-            services.AddSingleton<MarkdownReportRenderer>();
-            services.AddSingleton<IProgressReporter, BuildReportPublisher>();
-            return services;
+            builder.Services.AddSingleton<BuildReportingMarker>();
+            builder.Services.AddSingleton<IBuildReport, BuildReport>();
+            builder.Services.AddSingleton<MarkdownReportRenderer>();
+            builder.Services.AddSingleton<IProgressReporter, BuildReportPublisher>();
+            return builder;
         }
     }
 

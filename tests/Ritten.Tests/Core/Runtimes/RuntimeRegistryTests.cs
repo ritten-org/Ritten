@@ -149,7 +149,7 @@ public class RuntimeRegistryTests
 
         public override IReadOnlyCollection<string> Claims => claims;
 
-        public override void ConfigureServices(IServiceCollection services, Func<string, string?> environment)
+        public override void Configure(IServiceCollection services, Func<string, string?> environment)
         {
         }
     }

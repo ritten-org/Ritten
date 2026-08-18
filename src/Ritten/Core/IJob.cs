@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 
 namespace Ritten.Core;
@@ -24,7 +23,7 @@ public interface IJob
     internal Result<WorkflowSettings> ReadSettings(RittenProject project, Func<string, string?> environment, bool dryRun, IWorkflowLog log);
 
     /// <summary>
-    /// Registers the services the job declared.
+    /// Configures the run with the given settings.
     /// </summary>
-    internal void ConfigureServices(IServiceCollection services, WorkflowSettings settings);
+    internal void Configure(WorkflowRunBuilder builder, WorkflowSettings settings);
 }

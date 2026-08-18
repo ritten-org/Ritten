@@ -2,12 +2,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
+using Ritten.Core.DryRun;
 using Ritten.Core.FileSystem;
 using Ritten.Core.Runner;
 using Ritten.Core.Runtimes;
-using Ritten.Git;
-using Ritten.GitHub;
-using Ritten.NuGet;
 using Ritten.Reporting;
 using Spectre.Console;
 
@@ -51,6 +49,11 @@ public class WorkflowRunBuilder
     /// The service collection the job is assembled into.
     /// </summary>
     public IServiceCollection Services { get; } = new ServiceCollection();
+
+    /// <summary>
+    /// The dry-run pairings for the run's services.
+    /// </summary>
+    public DecoratorRegistry DryRun { get; } = new();
 
     /// <summary>
     /// Names the workflow the job belongs to, for the run's narrative.
@@ -127,8 +130,8 @@ public class WorkflowRunBuilder
 
         Services.AddSingleton(new WorkflowEnvironment(_runtime.Environment));
         Services.AddSingleton(new WorkflowJob(_workflowLabel, job.Name, _dryRun, _autoApprove));
-        _runtime.Runtime.ConfigureServices(Services, _runtime.Raw);
-        job.ConfigureServices(Services, settings.Value);
+        _runtime.Runtime.Configure(this, _runtime.Raw);
+        job.Configure(this, settings.Value);
 
         Services.AddSingleton(job.Steps);
         foreach (var step in job.Steps)
@@ -138,14 +141,16 @@ public class WorkflowRunBuilder
 
         if (_dryRun)
         {
-            // Wrapping the clients rather than asking each step to check a flag: a step that
-            // reaches outside the working directory can only do it through one of these, so a
-            // step added later is covered without anyone remembering to handle it.
-            Decorate<INuGet, DryRunNuGet>();
-            Decorate<IGit, DryRunGit>();
-            Replace<IReleaseService, DryRunReleaseService>();
-            // Nothing on ICommentService reads, so its dry run substitutes rather than wraps.
-            Replace<ICommentService, DryRunCommentService>();
+            // These stub mappings let us decorate or outright replace services so they can't accidentally do anything irreversible.
+            var decorators = DryRun.GetAll()
+                .GroupBy(p => p.ServiceType)
+                .Select(g => g.Last())
+                .ToList();
+
+            foreach (var decorator in decorators)
+            {
+                decorator.Decorate(Services);
+            }
         }
 
         var provider = Services.BuildServiceProvider(new ServiceProviderOptions
@@ -165,49 +170,15 @@ public class WorkflowRunBuilder
     }
 
     /// <summary>
-    /// Replaces a registered service with a decorator that wraps it. Does nothing when the service
-    /// isn't registered, since a workflow only registers the capabilities it uses.
+    /// Registers the given service decorators.
     /// </summary>
-    private void Decorate<TService, TDecorator>()
-        where TService : class
-        where TDecorator : class, TService
+    public WorkflowRunBuilder WithDecorators(DecoratorRegistry decorators)
     {
-        if (Services.LastOrDefault(d => d.ServiceType == typeof(TService)) is not { } registration)
+        foreach (var decoration in decorators.GetAll())
         {
-            return;
+            Services.AddSingleton(decoration);
         }
 
-        Services.Remove(registration);
-        Services.AddSingleton<TService>(provider =>
-        {
-            var inner = Resolve<TService>(provider, registration);
-            return ActivatorUtilities.CreateInstance<TDecorator>(provider, inner);
-        });
+        return this;
     }
-
-    /// <summary>
-    /// Replaces a registered service outright, for a stand-in that has no need of the real one.
-    /// Does nothing when the service isn't registered.
-    /// </summary>
-    private void Replace<TService, TReplacement>()
-        where TService : class
-        where TReplacement : class, TService
-    {
-        if (Services.LastOrDefault(d => d.ServiceType == typeof(TService)) is not { } registration)
-        {
-            return;
-        }
-
-        Services.Remove(registration);
-        Services.AddSingleton<TService, TReplacement>();
-    }
-
-    private static TService Resolve<TService>(IServiceProvider provider, ServiceDescriptor registration)
-        where TService : class => registration switch
-        {
-            { ImplementationInstance: TService instance } => instance,
-            { ImplementationFactory: { } factory } => (TService)factory(provider),
-            { ImplementationType: { } type } => (TService)ActivatorUtilities.CreateInstance(provider, type),
-            _ => throw new InvalidOperationException($"Cannot decorate {typeof(TService).Name}: it has no implementation.")
-        };
 }

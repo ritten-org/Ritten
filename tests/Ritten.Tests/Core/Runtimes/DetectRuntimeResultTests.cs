@@ -84,7 +84,7 @@ public class DetectRuntimeResultTests
 
         public override IReadOnlyCollection<string> Claims { get; } = ["STUB_CI", "STUB_DEBUG"];
 
-        public override void ConfigureServices(IServiceCollection services, Func<string, string?> environment)
+        public override void Configure(IServiceCollection services, Func<string, string?> environment)
         {
         }
 

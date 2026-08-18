@@ -1,22 +1,22 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Ritten.Core;
 
 namespace Ritten.Commands;
 
 /// <summary>
 /// Registers the command runner.
 /// </summary>
-public static class ServiceCollectionExtensions
+public static class WorkflowRunBuilderExtensions
 {
-    extension(IServiceCollection services)
+    extension(WorkflowRunBuilder builder)
     {
         /// <summary>
         /// Adds <see cref="ICommandRunner"/> to the service collection.
         /// </summary>
-        public IServiceCollection AddCommandRunner()
+        public WorkflowRunBuilder AddCommandRunner()
         {
-            services.TryAddSingleton<ICommandRunner, CommandRunner>();
-            return services;
+            builder.Services.TryAddSingleton<ICommandRunner, CommandRunner>();
+            return builder;
         }
     }
 }
