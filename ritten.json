@@ -1,6 +1,9 @@
 {
   "workflow": "dotnet-tool",
   "build": {
-    "project": "src/Ritten/Ritten.csproj"
+    "projects": [
+      "src/Ritten/Ritten.csproj",
+      "src/Ritten.Core/Ritten.Core.csproj"
+    ]
   }
 }

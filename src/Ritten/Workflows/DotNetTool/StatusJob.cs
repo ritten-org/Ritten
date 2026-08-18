@@ -17,12 +17,15 @@ internal sealed class StatusJob : DotNetToolJob
     public override string Name => "status";
 
     /// <inheritdoc />
-    protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => settings.Require(s => s.Build.Project);
+    protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => settings
+        .Require(s => s.Build.Project is not null || s.Build.Projects is { Count: > 0 }, "Set 'build.project' (one package) or 'build.projects' (several).")
+        .Require(s => s.Build.Project is null || s.Build.Projects is null, "'build.project' and 'build.projects' are both set; use one.");
 
     /// <inheritdoc />
     public override IReadOnlyList<Step> Steps { get; } =
     [
-        Step.FromType<ReadProject>(),
+        Step.FromType<ReadProjects>(),
+        Step.FromType<ResolveRelease>(),
         Step.FromType<ReadChangelog>(),
         Step.FromType<NugetRead>(),
         Step.FromType<StatusReport>()

@@ -21,7 +21,7 @@ public class CheckChangelogLinks(IWorkflowLog log, IOptions<ChangelogOptions> op
     /// <summary>
     /// Validates the changelog's version links.
     /// </summary>
-    /// <param name="project">The project the changelog belongs to (see <see cref="DotNet.Steps.ReadProject"/>).</param>
+    /// <param name="project">The project the changelog belongs to (see <see cref="DotNet.Steps.ResolveRelease"/>).</param>
     /// <param name="changelog">The parsed changelog (see <see cref="ReadChangelog"/>).</param>
     public StepResult Run(Project project, Changelog changelog)
     {

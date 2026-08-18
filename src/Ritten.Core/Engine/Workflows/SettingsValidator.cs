@@ -47,6 +47,21 @@ public sealed class SettingsValidator<TSettings> where TSettings : WorkflowSetti
     }
 
     /// <summary>
+    /// Requires a condition the property-chain form can't express — one setting or another, say.
+    /// </summary>
+    /// <param name="satisfied">Whether the settings meet the requirement.</param>
+    /// <param name="error">The complete error to report when they don't.</param>
+    public SettingsValidator<TSettings> Require(Func<TSettings, bool> satisfied, string error)
+    {
+        if (!satisfied(_settings))
+        {
+            _errors.Add(Result.Error(error));
+        }
+
+        return this;
+    }
+
+    /// <summary>
     /// Requires an environment variable to be set.
     /// </summary>
     /// <param name="variable">The name of the environment variable.</param>

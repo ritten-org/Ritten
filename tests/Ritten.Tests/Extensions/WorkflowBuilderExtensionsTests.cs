@@ -121,6 +121,18 @@ public class WorkflowBuilderExtensionsTests
         provider.GetRequiredService<IOptions<NuGetOptions>>().Value.Feed.ShouldBe("https://example.com/index.json");
     }
 
+    [Fact]
+    public void AddDotNet_TheFirstProjectIsTheReleasesFace()
+    {
+        var provider = Builder()
+            .AddDotNet(new DotNetBuildSettings { Projects = ["src/A/A.csproj", "src/B/B.csproj"] })
+            .Services.BuildServiceProvider();
+
+        var options = provider.GetRequiredService<IOptions<DotNetOptions>>().Value;
+        options.ProjectFile.ShouldBe("src/A/A.csproj");
+        options.Projects.ShouldBe(["src/A/A.csproj", "src/B/B.csproj"]);
+    }
+
     private static WorkflowRunBuilder Builder(Dictionary<string, string>? environment = null)
     {
         var builder = WorkflowRunBuilderHelpers.Create();

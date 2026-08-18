@@ -7,7 +7,11 @@ namespace Ritten.Tests.Support;
 
 public static class TestOptions
 {
-    public static DotNetOptions DotNet() => new() { ProjectFile = "src/My.Package/My.Package.csproj" };
+    public static DotNetOptions DotNet() => new()
+    {
+        ProjectFile = "src/My.Package/My.Package.csproj",
+        Projects = ["src/My.Package/My.Package.csproj"]
+    };
 
     public static ChangelogOptions Changelog() => new();
 

@@ -29,13 +29,13 @@ All jobs accept `--verbose`/`-v`, `--quiet`/`-q`, `--dry-run`, and `--auto-appro
 
 ## Release conventions (enforced by `check` in CI)
 
-- The version lives in `<Version>` in `src/Ritten/Ritten.csproj`.
+- The version lives in `<Version>` in `Directory.Build.props`, shared by every project so lockstep holds by construction; `build.projects` in `ritten.json` lists every shipped project (`build.project`, singular, is the one-package spelling — declare one or the other, never both). `check` fails if a `<Version>` drifts, and a rerun after a half-failed deploy pushes only the missing packages.
 - `CHANGELOG.md` follows Keep a Changelog. User-visible changes get an entry under `## [Unreleased]` (bold-lead bullet style, e.g. `- **Steps can be synchronous.** …`). When a release is prepared, the version gets its own heading; a version bump without a matching changelog entry fails `check`.
 - A version that is already published is "at rest": `check` passes with nothing to release, and `deploy` stops early with success (`ReleasableGate`).
 
 ## Architecture
 
-Two projects: `src/Ritten.Core` is the engine — package `Ritten.Core`, deliberately unpublished (`IsPackable` false) until the workflow model can release more than one package from a repo — and `src/Ritten` is the tool (domain modules, workflows, `Program.cs`), referencing it. The engine references no domain module; the compiler enforces the boundary. Engine namespaces map to intent: `Ritten.Contracts` holds the facts steps and rules consume (the step model plus injected run facts like `WorkflowJob`/`WorkflowEnvironment`); `Ritten.Engine` is the application front door (`WorkflowApplication` and its builder, `Result`/`Error`, `RittenProject`, the CLI vocabulary), with `.Workflows` for the declaration model (`IWorkflow`/`Job`/settings), `.Runs` for one run's assembly and execution, and `.Runtimes`/`.Rules`/`.DryRun`/`.FileSystem` as before; `Ritten.Reporting` owns both output channels — the console narrative (`IWorkflowLog`/`IWorkflowConsole`/`IProgressReporter`) and the build report.
+Two projects: `src/Ritten.Core` is the engine — package `Ritten.Core`, released in lockstep with the tool — and `src/Ritten` is the tool (domain modules, workflows, `Program.cs`), referencing it. The engine references no domain module; the compiler enforces the boundary. Engine namespaces map to intent: `Ritten.Contracts` holds the facts steps and rules consume (the step model plus injected run facts like `WorkflowJob`/`WorkflowEnvironment`); `Ritten.Engine` is the application front door (`WorkflowApplication` and its builder, `Result`/`Error`, `RittenProject`, the CLI vocabulary), with `.Workflows` for the declaration model (`IWorkflow`/`Job`/settings), `.Runs` for one run's assembly and execution, and `.Runtimes`/`.Rules`/`.DryRun`/`.FileSystem` as before; `Ritten.Reporting` owns both output channels — the console narrative (`IWorkflowLog`/`IWorkflowConsole`/`IProgressReporter`) and the build report.
 
 ### Engine (`src/Ritten.Core`: `Contracts/`, `Engine/`, `Reporting/`)
 

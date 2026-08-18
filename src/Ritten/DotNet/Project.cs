@@ -23,6 +23,11 @@ public record Project
     public string? Repository { get; init; }
 
     /// <summary>
+    /// The project file this was read from, relative to the repository root, when known.
+    /// </summary>
+    public string ProjectFile { get; init; } = "";
+
+    /// <summary>
     /// Whether this version is a prerelease.
     /// </summary>
     public bool IsPrerelease => Version.IsPrerelease;

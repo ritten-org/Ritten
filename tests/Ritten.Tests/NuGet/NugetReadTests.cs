@@ -172,14 +172,64 @@ public class NugetReadTests
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task AtRestMeansEveryPackageIsPublished()
+    {
+        // The tool's version is up but the engine's push failed: the repo is not at rest, and
+        // the state records exactly which package is missing.
+        PublishedFor("My.Package", "1.2.0");
+        PublishedFor("My.Package.Core");
+        var project = new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") };
+        var core = new Project { Name = "My.Package.Core", Version = NuGetVersion.Parse("1.2.0") };
+
+        var result = await Step().Run(project, new PackageSet { Packages = [core, project] }, TestContext.Current.CancellationToken);
+
+        var state = result.Value.ShouldNotBeNull();
+        state.Published.ShouldBeFalse();
+        state.Packages.ShouldBe([new("My.Package.Core", false), new("My.Package", true)]);
+    }
+
+    [Fact]
+    public async Task EveryPackagePublishedIsAtRest()
+    {
+        PublishedFor("My.Package", "1.2.0");
+        PublishedFor("My.Package.Core", "1.2.0");
+        var project = new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") };
+        var core = new Project { Name = "My.Package.Core", Version = NuGetVersion.Parse("1.2.0") };
+
+        var result = await Step().Run(project, new PackageSet { Packages = [core, project] }, TestContext.Current.CancellationToken);
+
+        result.Value.ShouldNotBeNull().Published.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ANewPackageCannotBlindTheVersionCheck()
+    {
+        // The repository's history is its packages' histories pooled: a brand-new package with
+        // no history of its own still sees the established package's tip, so a rewound version
+        // can't slip through as a "first release".
+        PublishedFor("My.Package.Core");
+        PublishedFor("My.Package", "1.2.0");
+        var core = new Project { Name = "My.Package.Core", Version = NuGetVersion.Parse("1.1.0") };
+        var tool = new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.1.0") };
+
+        var result = await Step().Run(core, new PackageSet { Packages = [core, tool] }, TestContext.Current.CancellationToken);
+
+        result.Value.ShouldNotBeNull().LatestInLine.ShouldBeFalse();
+    }
+
     private async Task<ReleaseState> Classify(string version)
     {
         var project = new Project { Name = "My.Package", Version = NuGetVersion.Parse(version) };
-        var result = await Step().Run(project, TestContext.Current.CancellationToken);
+        var result = await Step().Run(project, new PackageSet { Packages = [project] }, TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeFalse();
         return result.Value.ShouldNotBeNull();
     }
+
+    private void PublishedFor(string packageId, params string[] versions) =>
+        _nuget.GetPublishedVersions(Arg.Any<NuGetFeed>(), packageId, Arg.Any<CancellationToken>())
+            .Returns([.. versions.Select(NuGetVersion.Parse)]);
 
     private void Published(params string[] versions) =>
         _nuget.GetPublishedVersions(Arg.Any<NuGetFeed>(), Arg.Any<string>(), Arg.Any<CancellationToken>())

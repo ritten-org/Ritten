@@ -3,19 +3,8 @@
   <PropertyGroup>
     <Title>Ritten.Core</Title>
     <Description>The workflow engine Ritten is built on: declare workflows, jobs, and steps, and run them anywhere.</Description>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <Authors>Tom Wolfe</Authors>
-    <Copyright>Copyright © 2026 Tom Wolfe</Copyright>
     <RootNamespace>Ritten</RootNamespace>
-    <!-- Not published until the workflow model can release more than one package from a repo;
-         the project boundary is enforced now, the package ships later. -->
-    <IsPackable>false</IsPackable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <LangVersion>latest</LangVersion>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <PackageTags>devops;cicd;build;automation;workflows;pipelines;engine</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,6 +15,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
     <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
     <PackageReference Include="Spectre.Console" />
   </ItemGroup>
 
