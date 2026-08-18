@@ -35,6 +35,9 @@ public sealed class GitHubActionsRuntime : Runtime
     ];
 
     /// <inheritdoc />
+    public override bool IsDebug(Func<string, string?> environment) => GitHubEnvironment.IsDebug(environment);
+
+    /// <inheritdoc />
     public override void ConfigureServices(IServiceCollection services, Func<string, string?> environment)
     {
         // The runtime's comment and release plumbing talk to the GitHub API, so it brings the

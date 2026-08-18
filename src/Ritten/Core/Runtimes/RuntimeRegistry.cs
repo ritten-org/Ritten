@@ -43,10 +43,15 @@ public sealed class RuntimeRegistry
     }
 
     /// <summary>
+    /// Detects the active runtime from the process environment.
+    /// </summary>
+    public Result<DetectRuntimeResult> Detect() => Detect(Environment.GetEnvironmentVariable);
+
+    /// <summary>
     /// Detects the active runtime.
     /// </summary>
     /// <param name="environment">The environment to detect against.</param>
-    internal Result<DetectRuntimeResult> Detect(Func<string, string?> environment)
+    public Result<DetectRuntimeResult> Detect(Func<string, string?> environment)
     {
         var matches = _runtimes
             .Select(runtime => (Runtime: runtime, Evidence: runtime.Markers.Where(m => environment(m) is not null).ToList()))
@@ -75,5 +80,5 @@ public sealed class RuntimeRegistry
         && !claimant.Evidence.All(other.Runtime.Claims.Contains);
 
     private static DetectRuntimeResult Select(Runtime runtime, Func<string, string?> environment) =>
-        new(runtime, name => runtime.Claims.Contains(name) ? null : environment(name));
+        new(runtime, environment);
 }

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- **Debug logging belongs to the runtime.** `RUNNER_DEBUG` now enables verbose output only when the run is actually on GitHub Actions.
+
 ### Fixed
 
 - **A test run that dies before reporting shows its output.** When `dotnet test` fails without producing any test results, the step and the pull request comment now carry the command's output tail, instead of requiring `--verbose`.

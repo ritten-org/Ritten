@@ -65,7 +65,7 @@ public class DetectRuntimeResultTests
     {
         var selection = new RuntimeRegistry().Detect(Env()).Value.ShouldNotBeNull();
 
-        selection.CreateConsole(PipelineLogLevel.Detail).ShouldBeOfType<SpectreProgressReporter>();
+        selection.CreateConsole(PipelineLogLevel.Detail).ShouldBeOfType<SpectrePipelineConsole>();
     }
 
     private static DetectRuntimeResult Detect(Runtime runtime, params (string Name, string Value)[] variables) =>
