@@ -1,10 +1,11 @@
 using Ritten.Contracts;
 using Ritten.Engine;
+using Ritten.Engine.Workflows;
+using Ritten.Tests.Support;
 using Ritten.Workflows.DotNetPackage;
 using Ritten.Workflows.DotNetTool;
-using Ritten.Tests.Support;
 
-namespace Ritten.Tests.Engine;
+namespace Ritten.Tests.Engine.Workflows;
 
 public class WorkflowRegistryTests
 {

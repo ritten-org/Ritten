@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
+using Ritten.Reporting;
 
 namespace Ritten.Commands;
 

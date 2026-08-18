@@ -1,6 +1,7 @@
 using Ritten.Contracts;
+using Ritten.Reporting;
 
-namespace Ritten.Engine;
+namespace Ritten.Engine.Workflows;
 
 /// <summary>
 /// A declared workflow job.

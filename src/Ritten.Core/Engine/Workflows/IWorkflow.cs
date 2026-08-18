@@ -1,4 +1,4 @@
-namespace Ritten.Engine;
+namespace Ritten.Engine.Workflows;
 
 /// <summary>
 /// A workflow: a named set of jobs a project can run.

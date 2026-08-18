@@ -1,4 +1,5 @@
 using Ritten.Contracts;
+using Ritten.Reporting;
 using ILogMessage = NuGet.Common.ILogMessage;
 using NuGetILogger = NuGet.Common.ILogger;
 using NuGetLogLevel = NuGet.Common.LogLevel;

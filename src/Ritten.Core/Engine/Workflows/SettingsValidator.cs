@@ -1,8 +1,9 @@
 using System.Linq.Expressions;
 using System.Text.Json;
 using Ritten.Contracts;
+using Ritten.Reporting;
 
-namespace Ritten.Engine;
+namespace Ritten.Engine.Workflows;
 
 /// <summary>
 /// Allows a job to validate its settings before it's run.

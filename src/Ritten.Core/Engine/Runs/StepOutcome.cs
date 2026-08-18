@@ -1,6 +1,6 @@
 using Ritten.Contracts;
 
-namespace Ritten.Engine;
+namespace Ritten.Engine.Runs;
 
 /// <summary>
 /// A step paired with the result it ran to.

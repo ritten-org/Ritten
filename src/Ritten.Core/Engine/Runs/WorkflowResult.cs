@@ -1,4 +1,4 @@
-namespace Ritten.Engine;
+namespace Ritten.Engine.Runs;
 
 /// <summary>
 /// Represents the result of a workflow execution, including the exit code and the outcome of each step.

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
+using Ritten.Reporting;
 
 namespace Ritten.DotNet.Steps;
 

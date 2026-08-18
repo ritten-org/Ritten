@@ -6,6 +6,7 @@ using Ritten.DotNet;
 using Ritten.GitHub;
 using Ritten.GitHub.Steps;
 using Ritten.Releases;
+using Ritten.Reporting;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.GitHub;

@@ -1,6 +1,8 @@
+using Ritten.Contracts;
 using Ritten.Engine;
+using Ritten.Engine.Runs;
 
-namespace Ritten.Contracts;
+namespace Ritten.Reporting;
 
 /// <summary>
 /// Receives lifecycle notifications from the workflow runner.

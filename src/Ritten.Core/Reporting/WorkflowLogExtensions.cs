@@ -1,6 +1,7 @@
+using Ritten.Contracts;
 using Ritten.Engine;
 
-namespace Ritten.Contracts;
+namespace Ritten.Reporting;
 
 /// <summary>
 /// Provides level-specific write methods for <see cref="IWorkflowLog"/>.

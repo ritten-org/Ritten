@@ -1,4 +1,4 @@
-namespace Ritten.Contracts;
+namespace Ritten.Engine;
 
 /// <summary>
 /// The process exit codes a workflow run can produce.

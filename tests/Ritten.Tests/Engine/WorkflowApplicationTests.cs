@@ -2,8 +2,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Engine;
 using Ritten.GitHub;
-using Ritten.Workflows.DotNetTool;
+using Ritten.Reporting;
 using Ritten.Tests.Support;
+using Ritten.Workflows.DotNetTool;
 
 namespace Ritten.Tests.Engine;
 

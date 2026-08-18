@@ -4,10 +4,10 @@ using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
 using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.Workflows;
 using Ritten.Releases;
 using Ritten.Reporting;
 using Ritten.Tests.Engine.Helpers;
+using Ritten.Workflows;
 
 namespace Ritten.Tests.Changelogs;
 

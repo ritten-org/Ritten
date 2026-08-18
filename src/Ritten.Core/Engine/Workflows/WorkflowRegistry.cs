@@ -1,7 +1,7 @@
 using Ritten.Contracts;
 using Ritten.Engine.Rules;
 
-namespace Ritten.Engine;
+namespace Ritten.Engine.Workflows;
 
 /// <summary>
 /// The workflows a host can run, found by the name a project's <c>ritten.json</c> declares.

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ritten.Engine;
+namespace Ritten.Engine.Workflows;
 
 /// <summary>
 /// The settings every workflow's <c>ritten.json</c> shares.

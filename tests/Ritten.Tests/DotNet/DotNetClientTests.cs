@@ -3,6 +3,7 @@ using Ritten.Commands;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
+using Ritten.Reporting;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.DotNet;

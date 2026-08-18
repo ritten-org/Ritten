@@ -4,6 +4,7 @@ using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.Git.Steps;
+using Ritten.Reporting;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Git;

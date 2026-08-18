@@ -3,6 +3,7 @@ using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.Releases;
+using Ritten.Reporting;
 
 namespace Ritten.NuGet.Steps;
 

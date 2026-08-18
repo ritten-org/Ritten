@@ -1,4 +1,4 @@
-namespace Ritten.Contracts;
+namespace Ritten.Engine;
 
 /// <summary>
 /// The command-line arguments Ritten understands.

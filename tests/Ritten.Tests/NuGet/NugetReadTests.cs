@@ -5,6 +5,7 @@ using Ritten.DotNet;
 using Ritten.NuGet;
 using Ritten.NuGet.Steps;
 using Ritten.Releases;
+using Ritten.Reporting;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.NuGet;

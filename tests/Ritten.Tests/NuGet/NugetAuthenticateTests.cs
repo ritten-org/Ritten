@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.NuGet;
 using Ritten.NuGet.Steps;
+using Ritten.Reporting;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.NuGet;

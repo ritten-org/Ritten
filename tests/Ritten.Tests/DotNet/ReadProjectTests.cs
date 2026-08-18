@@ -2,10 +2,11 @@ using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
-using Ritten.Engine;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
+using Ritten.Engine;
 using Ritten.Git;
+using Ritten.Reporting;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.DotNet;

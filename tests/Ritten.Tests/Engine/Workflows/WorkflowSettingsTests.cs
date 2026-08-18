@@ -1,9 +1,10 @@
 using System.Text.Json;
 using Ritten.Engine;
-using Ritten.Workflows;
+using Ritten.Engine.Workflows;
 using Ritten.Releases;
+using Ritten.Workflows;
 
-namespace Ritten.Tests.Engine;
+namespace Ritten.Tests.Engine.Workflows;
 
 public class WorkflowSettingsTests : IDisposable
 {

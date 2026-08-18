@@ -1,4 +1,4 @@
-namespace Ritten.Contracts;
+namespace Ritten.Reporting;
 
 /// <summary>
 /// The kind of message being written to an <see cref="IWorkflowLog"/>.

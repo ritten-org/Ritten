@@ -6,10 +6,10 @@ using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
-using Ritten.Workflows;
 using Ritten.Reporting;
 using Ritten.Tests.Engine.Helpers;
 using Ritten.Tests.Support;
+using Ritten.Workflows;
 
 namespace Ritten.Tests.Changelogs;
 

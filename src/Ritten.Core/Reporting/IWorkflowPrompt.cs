@@ -1,4 +1,4 @@
-namespace Ritten.Contracts;
+namespace Ritten.Reporting;
 
 /// <summary>
 /// Asks whoever is running the workflow to approve something before it happens.

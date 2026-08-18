@@ -1,4 +1,4 @@
-namespace Ritten.Engine;
+namespace Ritten.Engine.Workflows;
 
 /// <summary>
 /// The directory layout every workflow step shares.

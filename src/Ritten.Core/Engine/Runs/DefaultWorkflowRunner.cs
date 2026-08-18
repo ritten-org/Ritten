@@ -1,7 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
+using Ritten.Reporting;
 
-namespace Ritten.Engine.Runner;
+namespace Ritten.Engine.Runs;
 
 internal class DefaultWorkflowRunner(
     IWorkflowLog log,

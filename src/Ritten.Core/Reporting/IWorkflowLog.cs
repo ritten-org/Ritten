@@ -1,4 +1,4 @@
-namespace Ritten.Contracts;
+namespace Ritten.Reporting;
 
 /// <summary>
 /// Writes workflow output to the terminal.

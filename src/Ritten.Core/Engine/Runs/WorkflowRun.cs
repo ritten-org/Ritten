@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
-using Ritten.Engine.Runner;
+using Ritten.Engine.Runs;
 
-namespace Ritten.Engine;
+namespace Ritten.Engine.Runs;
 
 /// <summary>
 /// An assembled run, ready to execute.

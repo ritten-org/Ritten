@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
+using Ritten.Reporting;
 
 namespace Ritten.Git.Steps;
 

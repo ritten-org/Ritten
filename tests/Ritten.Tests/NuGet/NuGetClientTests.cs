@@ -3,6 +3,7 @@ using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.NuGet;
+using Ritten.Reporting;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.NuGet;

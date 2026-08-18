@@ -1,4 +1,4 @@
-namespace Ritten.Engine.Runner;
+namespace Ritten.Engine.Runs;
 
 /// <summary>
 /// Exposes an interface for running workflows.
