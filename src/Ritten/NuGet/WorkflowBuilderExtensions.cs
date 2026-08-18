@@ -20,7 +20,7 @@ public static class WorkflowBuilderExtensions
         {
             builder.AddCommandRunner();
             builder.Services.TryAddSingleton<INuGet, NuGetClient>();
-            builder.DryRun.Decorate<INuGet, DryRunNuGet>();
+            builder.Decorators.Decorate<INuGet, DryRunNuGet>();
             builder.Services.Configure<NuGetOptions>(o =>
             {
                 o.Feed = feed;

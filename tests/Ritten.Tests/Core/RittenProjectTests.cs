@@ -21,7 +21,7 @@ public class RittenProjectTests : IDisposable
     {
         WriteRittenJson(_root);
 
-        var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
+        var project = await RittenProject.Resolve(_root, RittenProject.DefaultFileName, TestContext.Current.CancellationToken);
 
         project.Value.ShouldNotBeNull().Directory.ShouldBe(_root);
     }
@@ -32,7 +32,7 @@ public class RittenProjectTests : IDisposable
         WriteRittenJson(_root);
         var nested = Directory.CreateDirectory(Path.Combine(_root, "src", "Thing", "bin")).FullName;
 
-        var project = await RittenProject.Resolve(nested, TestContext.Current.CancellationToken);
+        var project = await RittenProject.Resolve(nested, RittenProject.DefaultFileName, TestContext.Current.CancellationToken);
 
         project.Value.ShouldNotBeNull().Directory.ShouldBe(_root);
     }
@@ -45,7 +45,7 @@ public class RittenProjectTests : IDisposable
         var nested = Directory.CreateDirectory(Path.Combine(_root, "nested")).FullName;
         WriteRittenJson(nested);
 
-        var project = await RittenProject.Resolve(Path.Combine(nested, "src"), TestContext.Current.CancellationToken);
+        var project = await RittenProject.Resolve(Path.Combine(nested, "src"), RittenProject.DefaultFileName, TestContext.Current.CancellationToken);
 
         project.Value.ShouldNotBeNull().Directory.ShouldBe(nested);
     }
@@ -55,7 +55,7 @@ public class RittenProjectTests : IDisposable
     {
         Directory.CreateDirectory(_root);
 
-        var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
+        var project = await RittenProject.Resolve(_root, RittenProject.DefaultFileName, TestContext.Current.CancellationToken);
 
         project.IsError.ShouldBeTrue();
         project.Errors.ShouldHaveSingleItem().Message.ShouldContain("No ritten.json found");
@@ -66,7 +66,7 @@ public class RittenProjectTests : IDisposable
     {
         WriteRittenJson(_root, "{ not json");
 
-        var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
+        var project = await RittenProject.Resolve(_root, RittenProject.DefaultFileName, TestContext.Current.CancellationToken);
 
         project.IsError.ShouldBeTrue();
         var error = project.Errors.ShouldHaveSingleItem();
@@ -79,7 +79,7 @@ public class RittenProjectTests : IDisposable
     {
         WriteRittenJson(_root, """{ "workflow": "dotnet-tool", "build": { "project": "src/Thing/Thing.csproj" } }""");
 
-        var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
+        var project = await RittenProject.Resolve(_root, RittenProject.DefaultFileName, TestContext.Current.CancellationToken);
 
         project.Value.ShouldNotBeNull().GetWorkflowName().Value.ShouldBe("dotnet-tool");
     }
@@ -89,18 +89,30 @@ public class RittenProjectTests : IDisposable
     {
         WriteRittenJson(_root);
 
-        var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
+        var project = await RittenProject.Resolve(_root, RittenProject.DefaultFileName, TestContext.Current.CancellationToken);
         var name = project.Value.ShouldNotBeNull().GetWorkflowName();
 
         name.IsError.ShouldBeTrue();
         var error = name.Errors.ShouldHaveSingleItem();
-        error.Message.ShouldContain(RittenProject.FileName);
+        error.Message.ShouldContain(RittenProject.DefaultFileName);
         error.Message.ShouldContain("workflow");
+    }
+
+    [Fact]
+    public async Task Resolve_FindsAProjectFileTheHostRenamed()
+    {
+        // An embedding host names the file itself, so building on Ritten needn't be announced.
+        Directory.CreateDirectory(_root);
+        File.WriteAllText(Path.Combine(_root, "build.json"), "{}");
+
+        var project = await RittenProject.Resolve(_root, "build.json", TestContext.Current.CancellationToken);
+
+        project.Value.ShouldNotBeNull().FilePath.ShouldBe(Path.Combine(_root, "build.json"));
     }
 
     private static void WriteRittenJson(string directory, string content = "{}")
     {
         Directory.CreateDirectory(directory);
-        File.WriteAllText(Path.Combine(directory, RittenProject.FileName), content);
+        File.WriteAllText(Path.Combine(directory, RittenProject.DefaultFileName), content);
     }
 }

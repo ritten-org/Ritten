@@ -16,13 +16,21 @@ public sealed class WorkflowApplication
     private readonly RuntimeRegistry _runtimes;
     private readonly IReadOnlyList<ServiceDescriptor> _services;
     private readonly DecoratorRegistry _decorators;
+    private readonly string _projectFileName;
 
-    internal WorkflowApplication(WorkflowRegistry workflows, RuntimeRegistry runtimes, IReadOnlyList<ServiceDescriptor> services, DecoratorRegistry decorators)
+    internal WorkflowApplication(
+        WorkflowRegistry workflows,
+        RuntimeRegistry runtimes,
+        IReadOnlyList<ServiceDescriptor> services,
+        DecoratorRegistry decorators,
+        string projectFileName
+    )
     {
         _workflows = workflows;
         _runtimes = runtimes;
         _services = services;
         _decorators = decorators;
+        _projectFileName = projectFileName;
     }
 
     /// <summary>
@@ -54,7 +62,7 @@ public sealed class WorkflowApplication
         // From now on, we have a fancy forge-specific logger that can handle error reporting and escaping and stuff.
         var console = runtime.Value.CreateConsole(args.LogLevel);
 
-        var project = await RittenProject.Resolve(args.Directory, ct);
+        var project = await RittenProject.Resolve(args.Directory, _projectFileName, ct);
         if (project.IsError)
         {
             return ConfigurationError(console, project.Errors);

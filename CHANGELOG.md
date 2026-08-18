@@ -6,9 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-## Added
+### Added
 
 - **Decorators are builder-level now.** Service decorators and replacements for dry runs can now be registered directly on the builder using `builder.Decorators`.
+- **The project file is the host's to name.** An application built on the engine can point at its own file (`builder.ProjectFileName = "build.json"`), and every error message names that file, so embedding Ritten never has to be announced in the repository.
 
 ## [0.1.0] - 2026-08-18
 

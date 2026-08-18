@@ -24,10 +24,11 @@ internal static class WorkflowRunBuilderHelpers
         bool dryRun = false,
         IWorkflowLog? log = null,
         string settings = "{}",
-        RuntimeRegistry? runtimes = null)
+        RuntimeRegistry? runtimes = null,
+        string fileName = RittenProject.DefaultFileName)
     {
         var builder = new WorkflowRunBuilder(
-                new RittenProject { Directory = Path.GetTempPath(), Settings = JsonSerializer.Deserialize<JsonElement>(settings) },
+                new RittenProject { Directory = Path.GetTempPath(), FileName = fileName, Settings = JsonSerializer.Deserialize<JsonElement>(settings) },
                 (runtimes ?? new RuntimeRegistry()).Detect(environment ?? Complete).Value.ShouldNotBeNull(),
                 new SpectreWorkflowConsole(AnsiConsole.Console, WorkflowLogLevel.Detail))
             .WithWorkflowLabel(workflowName)

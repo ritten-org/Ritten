@@ -16,5 +16,5 @@ public interface IWorkflowBuilder
     /// <summary>
     /// The dry-run decorators declared alongside the services.
     /// </summary>
-    DecoratorRegistry DryRun { get; }
+    DecoratorRegistry Decorators { get; }
 }

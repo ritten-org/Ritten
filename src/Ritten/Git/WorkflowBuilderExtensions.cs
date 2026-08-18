@@ -19,7 +19,7 @@ public static class WorkflowBuilderExtensions
         {
             builder.AddCommandRunner();
             builder.Services.TryAddSingleton<IGit, GitClient>();
-            builder.DryRun.Decorate<IGit, DryRunGit>();
+            builder.Decorators.Decorate<IGit, DryRunGit>();
             builder.Services.Configure<GitOptions>(o => o.TagPrefix = tagPrefix);
             builder.Services.Configure<GitOptions>(GitOptions.ConfigureFromEnvironment);
             return builder;

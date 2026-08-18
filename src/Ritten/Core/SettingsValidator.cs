@@ -14,14 +14,16 @@ public sealed class SettingsValidator<TSettings> where TSettings : WorkflowSetti
     private readonly Func<string, string?> _environment;
     private readonly bool _dryRun;
     private readonly IWorkflowLog _log;
+    private readonly string _fileName;
     private readonly List<Error> _errors = [];
 
-    internal SettingsValidator(TSettings settings, Func<string, string?> environment, bool dryRun, IWorkflowLog log)
+    internal SettingsValidator(TSettings settings, Func<string, string?> environment, bool dryRun, IWorkflowLog log, string fileName)
     {
         _settings = settings;
         _environment = environment;
         _dryRun = dryRun;
         _log = log;
+        _fileName = fileName;
     }
 
     /// <summary>
@@ -37,7 +39,7 @@ public sealed class SettingsValidator<TSettings> where TSettings : WorkflowSetti
     {
         if (string.IsNullOrEmpty(setting.Compile()(_settings)))
         {
-            _errors.Add(Result.Error($"'{SettingKey(setting)}' not set in {RittenProject.FileName}."));
+            _errors.Add(Result.Error($"'{SettingKey(setting)}' not set in {_fileName}."));
         }
 
         return this;

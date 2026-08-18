@@ -60,6 +60,18 @@ public class WorkflowRunTests
     }
 
     [Fact]
+    public void Build_NamesTheHostsProjectFileInSettingsErrors()
+    {
+        // The error points at the file the reader actually has, whatever the host called it.
+        var job = new TestJob("deploy", validate: s => s.Require(x => x.Build.Project));
+        var builder = WorkflowRunBuilderHelpers.Create(fileName: "build.json");
+
+        var result = builder.Build(job);
+
+        result.Errors.ShouldHaveSingleItem().Message.ShouldBe("'build.project' not set in build.json.");
+    }
+
+    [Fact]
     public void Build_RunsRulesTheWorkflowRegisters()
     {
         var rule = Substitute.For<IJobRule>();
