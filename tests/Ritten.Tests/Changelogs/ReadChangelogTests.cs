@@ -8,6 +8,7 @@ using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Workflows;
 using Ritten.Reporting;
+using Ritten.Tests.Core.Helpers;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Changelogs;
@@ -15,9 +16,9 @@ namespace Ritten.Tests.Changelogs;
 public class ReadChangelogTests
 {
     // The real client, so these tests exercise the actual parser.
-    private static readonly IChangelog Changelogs = new ServiceCollection()
+    private static readonly IChangelog Changelogs = WorkflowRunBuilderHelpers.Create()
         .AddChangelogs(new ChangelogSettings())
-        .BuildServiceProvider()
+        .Services.BuildServiceProvider()
         .GetRequiredService<IChangelog>();
 
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Ritten.CodeCoverage;
 using Ritten.Core;
 using Ritten.DotNet;
@@ -12,7 +11,7 @@ namespace Ritten.Workflows.DotNet;
 internal abstract class DotNetJob : Job<DotNetSettings>
 {
     /// <inheritdoc />
-    protected override void ConfigureServices(IServiceCollection services, DotNetSettings settings) => services
+    protected override void Configure(IWorkflowBuilder builder, DotNetSettings settings) => builder
         .AddDotNet(settings.Build)
         .AddCoverage(settings.Coverage)
         .AddBuildReporting();

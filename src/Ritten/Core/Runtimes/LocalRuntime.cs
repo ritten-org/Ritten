@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace Ritten.Core.Runtimes;
 
 /// <summary>
@@ -17,7 +15,7 @@ internal sealed class LocalRuntime : Runtime
     public override IReadOnlyCollection<string> Claims { get; } = [];
 
     /// <inheritdoc />
-    public override void ConfigureServices(IServiceCollection services, Func<string, string?> environment)
+    public override void Configure(IWorkflowBuilder builder, Func<string, string?> environment)
     {
     }
 }

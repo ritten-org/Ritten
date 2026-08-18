@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Ritten.Core;
 using Ritten.Workflows;
 
 namespace Ritten.CodeCoverage;
@@ -6,21 +7,21 @@ namespace Ritten.CodeCoverage;
 /// <summary>
 /// Registers the coverage domain.
 /// </summary>
-public static class ServiceCollectionExtensions
+public static class WorkflowBuilderExtension
 {
-    extension(IServiceCollection services)
+    extension(IWorkflowBuilder builder)
     {
         /// <summary>
         /// Adds coverage collection and thresholds, configured from the project's settings.
         /// </summary>
-        public IServiceCollection AddCoverage(CoverageSettings settings)
+        public IWorkflowBuilder AddCoverage(CoverageSettings settings)
         {
-            services.Configure<CoverageOptions>(o =>
+            builder.Services.Configure<CoverageOptions>(o =>
             {
                 o.MinimumLine = settings.Line;
                 o.MinimumBranch = settings.Branch;
             });
-            return services;
+            return builder;
         }
     }
 }

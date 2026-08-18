@@ -133,7 +133,7 @@ sealed class StubRuntime : Runtime
 
     public override IReadOnlyCollection<string> Claims { get; } = ["STUB_CI", "STUB_SECRET"];
 
-    public override void ConfigureServices(IServiceCollection services, Func<string, string?> environment) =>
+    public override void Configure(IWorkflowBuilder builder, Func<string, string?> environment) =>
         SeenSecret = environment("STUB_SECRET");
 }
 

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Reporting;
 using Spectre.Console;
@@ -26,11 +25,11 @@ public abstract class Runtime
     public abstract IReadOnlyCollection<string> Claims { get; }
 
     /// <summary>
-    /// Registers the services this runtime provides.
+    /// Registers the services and anything else this runtime provides.
     /// </summary>
-    /// <param name="services">The service collection the job is assembled into.</param>
+    /// <param name="builder">The configuration area: services and dry-run decorators.</param>
     /// <param name="environment">The unfiltered environment; the runtime owns its claims.</param>
-    public abstract void ConfigureServices(IServiceCollection services, Func<string, string?> environment);
+    public abstract void Configure(IWorkflowBuilder builder, Func<string, string?> environment);
 
     /// <summary>
     /// Whether this environment has asked for debug logging.

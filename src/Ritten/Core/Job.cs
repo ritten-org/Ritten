@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 
 namespace Ritten.Core;
@@ -16,13 +15,11 @@ public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
     public abstract IReadOnlyList<Step> Steps { get; }
 
     /// <summary>
-    /// Registers the services the job's steps need, deferred until a project's settings exist to
-    /// configure them. Only the job being run registers anything, so jobs pay for exactly the
-    /// services they declare.
+    /// Registers the services the job's steps need.
     /// </summary>
-    /// <param name="services">The service collection the job is assembled into.</param>
+    /// <param name="builder">The service collection the job is assembled into.</param>
     /// <param name="settings">The project's parsed settings.</param>
-    protected virtual void ConfigureServices(IServiceCollection services, TSettings settings)
+    protected virtual void Configure(IWorkflowBuilder builder, TSettings settings)
     {
     }
 
@@ -50,6 +47,5 @@ public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
             : new Result<WorkflowSettings>(settings.Value);
     }
 
-    void IJob.ConfigureServices(IServiceCollection services, WorkflowSettings settings) =>
-        ConfigureServices(services, (TSettings)settings);
+    void IJob.Configure(IWorkflowBuilder builder, WorkflowSettings settings) => Configure(builder, (TSettings)settings);
 }

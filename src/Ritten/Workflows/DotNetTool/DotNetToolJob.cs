@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Ritten.Changelogs;
 using Ritten.CodeCoverage;
 using Ritten.Core;
@@ -16,7 +15,7 @@ namespace Ritten.Workflows.DotNetTool;
 internal abstract class DotNetToolJob : Job<DotNetToolSettings>
 {
     /// <inheritdoc />
-    protected override void ConfigureServices(IServiceCollection services, DotNetToolSettings settings) => services
+    protected override void Configure(IWorkflowBuilder builder, DotNetToolSettings settings) => builder
         .AddChangelogs(settings.Changelog)
         .AddDotNet(settings.Build, settings.Repository)
         .AddCoverage(settings.Coverage)

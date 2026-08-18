@@ -1,8 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
+using Ritten.Core;
 using Ritten.GitHub;
 using Ritten.Reporting.Sinks;
+using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.GitHub;
 
@@ -86,29 +88,29 @@ public class GitHubActionsRuntimeTests
     [Fact]
     public void ConfigureServices_RegistersTheReportChannels()
     {
-        var services = Services(filteredEnvironment: []);
+        var builder = Builder(filteredEnvironment: []);
 
-        new GitHubActionsRuntime().ConfigureServices(services, new Dictionary<string, string>().GetValueOrDefault);
+        new GitHubActionsRuntime().Configure(builder, new Dictionary<string, string>().GetValueOrDefault);
 
-        services.Count(d => d.ServiceType == typeof(IReportSink)).ShouldBe(2);
-        services.Count(d => d.ServiceType == typeof(ICommentService)).ShouldBe(1);
-        services.ShouldContain(d => d.ImplementationType == typeof(PendingCommentReporter));
+        builder.Services.Count(d => d.ServiceType == typeof(IReportSink)).ShouldBe(2);
+        builder.Services.Count(d => d.ServiceType == typeof(ICommentService)).ShouldBe(1);
+        builder.Services.ShouldContain(d => d.ImplementationType == typeof(PendingCommentReporter));
     }
 
     private static ServiceProvider Build(
         Dictionary<string, string> runtimeEnvironment,
         Dictionary<string, string>? filteredEnvironment = null)
     {
-        var services = Services(filteredEnvironment ?? []);
-        new GitHubActionsRuntime().ConfigureServices(services, runtimeEnvironment.GetValueOrDefault);
-        return services.BuildServiceProvider();
+        var builder = Builder(filteredEnvironment ?? []);
+        new GitHubActionsRuntime().Configure(builder, runtimeEnvironment.GetValueOrDefault);
+        return builder.Services.BuildServiceProvider();
     }
 
-    private static ServiceCollection Services(Dictionary<string, string> filteredEnvironment)
+    private static WorkflowRunBuilder Builder(Dictionary<string, string> filteredEnvironment)
     {
-        var services = new ServiceCollection();
-        services.AddSingleton(new WorkflowEnvironment(filteredEnvironment.GetValueOrDefault));
-        services.AddSingleton(Substitute.For<IWorkflowLog>());
-        return services;
+        var builder = WorkflowRunBuilderHelpers.Create();
+        builder.Services.AddSingleton(new WorkflowEnvironment(filteredEnvironment.GetValueOrDefault));
+        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
+        return builder;
     }
 }

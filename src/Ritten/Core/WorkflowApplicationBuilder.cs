@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
+using Ritten.Core.DryRun;
 using Ritten.Core.Runtimes;
 
 namespace Ritten.Core;
@@ -7,7 +8,7 @@ namespace Ritten.Core;
 /// <summary>
 /// Configures a <see cref="WorkflowApplication"/>.
 /// </summary>
-public sealed class WorkflowApplicationBuilder
+public sealed class WorkflowApplicationBuilder : IWorkflowBuilder
 {
     internal WorkflowApplicationBuilder()
     {
@@ -29,6 +30,11 @@ public sealed class WorkflowApplicationBuilder
     public IServiceCollection Services { get; } = new ServiceCollection();
 
     /// <summary>
+    /// The dry-run pairings for the shared services.
+    /// </summary>
+    public DecoratorRegistry DryRun { get; } = new();
+
+    /// <summary>
     /// Builds and validates the workflow application.
     /// </summary>
     public Result<WorkflowApplication> Build()
@@ -42,6 +48,6 @@ public sealed class WorkflowApplicationBuilder
             return model;
         }
 
-        return new WorkflowApplication(Workflows, Runtimes, [.. Services]);
+        return new WorkflowApplication(Workflows, Runtimes, [.. Services], DryRun);
     }
 }

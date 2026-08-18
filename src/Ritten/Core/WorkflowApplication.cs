@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
+using Ritten.Core.DryRun;
 using Ritten.Core.Runtimes;
 using Ritten.Reporting;
 using Spectre.Console;
@@ -14,12 +15,14 @@ public sealed class WorkflowApplication
     private readonly WorkflowRegistry _workflows;
     private readonly RuntimeRegistry _runtimes;
     private readonly IReadOnlyList<ServiceDescriptor> _services;
+    private readonly DecoratorRegistry _decorators;
 
-    internal WorkflowApplication(WorkflowRegistry workflows, RuntimeRegistry runtimes, IReadOnlyList<ServiceDescriptor> services)
+    internal WorkflowApplication(WorkflowRegistry workflows, RuntimeRegistry runtimes, IReadOnlyList<ServiceDescriptor> services, DecoratorRegistry decorators)
     {
         _workflows = workflows;
         _runtimes = runtimes;
         _services = services;
+        _decorators = decorators;
     }
 
     /// <summary>
@@ -85,7 +88,8 @@ public sealed class WorkflowApplication
             .WithWorkflowLabel(workflow.Label)
             .WithDryRun(args.DryRun)
             .WithAutoApprove(args.AutoApprove)
-            .WithServices(_services);
+            .WithServices(_services)
+            .WithDecorators(_decorators);
 
         var run = builder.Build(declared);
         if (run.IsError)
