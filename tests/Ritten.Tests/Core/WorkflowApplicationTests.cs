@@ -84,6 +84,26 @@ public class WorkflowApplicationTests : IDisposable
         exitCode.ShouldBe(WorkflowExitCodes.ConfigurationError);
     }
 
+    [Fact]
+    public async Task Run_ResolvesTheProjectFileTheHostRenamed()
+    {
+        // The host names the file on the application builder; nothing else changes shape.
+        Directory.CreateDirectory(_root);
+        await File.WriteAllTextAsync(Path.Combine(_root, "build.json"), """{ "workflow": "test" }""", TestContext.Current.CancellationToken);
+        var probe = new StepProbe();
+        var builder = WorkflowApplication.CreateBuilder();
+        builder.ProjectFileName = "build.json";
+        builder.Workflows.Add(new TestWorkflow(jobs: [new TestJob(steps: [Step.FromType<ProbeStep>()])]));
+        builder.Services.AddSingleton(probe);
+        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
+        var application = builder.Build().Value.ShouldNotBeNull();
+
+        var exitCode = await application.Run(new RunJobArgs("verify") { Directory = _root }, Empty, TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(WorkflowExitCodes.Success);
+        probe.Ran.ShouldHaveSingleItem();
+    }
+
     private static Func<string, string?> Empty { get; } = _ => null;
 
     private static WorkflowApplication Application(TestWorkflow workflow)

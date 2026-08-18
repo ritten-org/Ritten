@@ -26,7 +26,7 @@ public class DecoratorTests : IDisposable
         using var run = Build(dryRun: true, builder =>
         {
             builder.Services.AddSingleton<IOutwardClient>(client);
-            builder.DryRun.Decorate<IOutwardClient, RehearsingClient>();
+            builder.Decorators.Decorate<IOutwardClient, RehearsingClient>();
         });
 
         await run.Run(TestContext.Current.CancellationToken);
@@ -41,7 +41,7 @@ public class DecoratorTests : IDisposable
         using var run = Build(dryRun: true, builder =>
         {
             builder.Services.AddSingleton<IOutwardClient>(client);
-            builder.DryRun.Replace<IOutwardClient, NullClient>();
+            builder.Decorators.Replace<IOutwardClient, NullClient>();
         });
 
         await run.Run(TestContext.Current.CancellationToken);
@@ -57,7 +57,7 @@ public class DecoratorTests : IDisposable
         using var run = Build(dryRun: false, builder =>
         {
             builder.Services.AddSingleton<IOutwardClient>(client);
-            builder.DryRun.Decorate<IOutwardClient, RehearsingClient>();
+            builder.Decorators.Decorate<IOutwardClient, RehearsingClient>();
         });
 
         await run.Run(TestContext.Current.CancellationToken);
@@ -72,7 +72,7 @@ public class DecoratorTests : IDisposable
         // is a no-op, not an error.
         var builder = WorkflowRunBuilderHelpers.Create(dryRun: true);
         builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
-        builder.DryRun.Decorate<IOutwardClient, RehearsingClient>();
+        builder.Decorators.Decorate<IOutwardClient, RehearsingClient>();
 
         var result = builder.Build(new TestJob());
 
@@ -92,7 +92,7 @@ public class DecoratorTests : IDisposable
         builder.Workflows.Add(new TestWorkflow(jobs: [new TestJob(steps: [Step.FromType<PushStep>()])]));
         builder.Services.AddSingleton<IOutwardClient>(client);
         builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
-        builder.DryRun.Decorate<IOutwardClient, RehearsingClient>();
+        builder.Decorators.Decorate<IOutwardClient, RehearsingClient>();
         var application = builder.Build().Value.ShouldNotBeNull();
 
         var args = new RunJobArgs("verify") { Directory = _root, DryRun = true };

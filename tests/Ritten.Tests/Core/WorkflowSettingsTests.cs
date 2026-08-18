@@ -103,7 +103,7 @@ public class WorkflowSettingsTests : IDisposable
     public async Task Read_RejectsAnUnrecognisedEnumValue()
     {
         WriteRittenJson(_root, """{ "release": { "lines": "patch" } }""");
-        var project = await RittenProject.Resolve(_root, TestContext.Current.CancellationToken);
+        var project = await RittenProject.Resolve(_root, RittenProject.DefaultFileName, TestContext.Current.CancellationToken);
 
         var settings = WorkflowSettings.Read<DotNetToolSettings>(project.Value.ShouldNotBeNull());
 
@@ -129,7 +129,7 @@ public class WorkflowSettingsTests : IDisposable
 
     private static async Task<DotNetToolSettings> Read(string directory, CancellationToken ct)
     {
-        var project = await RittenProject.Resolve(directory, ct);
+        var project = await RittenProject.Resolve(directory, RittenProject.DefaultFileName, ct);
         var settings = WorkflowSettings.Read<DotNetToolSettings>(project.Value.ShouldNotBeNull());
         settings.IsError.ShouldBeFalse();
         return settings.Value;
@@ -138,6 +138,6 @@ public class WorkflowSettingsTests : IDisposable
     private static void WriteRittenJson(string directory, string content = "{}")
     {
         Directory.CreateDirectory(directory);
-        File.WriteAllText(Path.Combine(directory, RittenProject.FileName), content);
+        File.WriteAllText(Path.Combine(directory, RittenProject.DefaultFileName), content);
     }
 }

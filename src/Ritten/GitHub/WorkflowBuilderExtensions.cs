@@ -37,7 +37,7 @@ internal static class WorkflowBuilderExtensions
                 });
 
                 builder.Services.TryAddSingleton<IReleaseService, ReleaseService>();
-                builder.DryRun.Replace<IReleaseService, DryRunReleaseService>();
+                builder.Decorators.Replace<IReleaseService, DryRunReleaseService>();
             }
 
             if (clientName is not null)

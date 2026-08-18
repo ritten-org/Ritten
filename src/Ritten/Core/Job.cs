@@ -40,7 +40,7 @@ public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
             return new Result<WorkflowSettings>(settings.Errors);
         }
 
-        var validator = new SettingsValidator<TSettings>(settings.Value, environment, dryRun, log);
+        var validator = new SettingsValidator<TSettings>(settings.Value, environment, dryRun, log, project.FileName);
         ValidateSettings(validator);
         return validator.Errors.Count > 0
             ? new Result<WorkflowSettings>(validator.Errors)

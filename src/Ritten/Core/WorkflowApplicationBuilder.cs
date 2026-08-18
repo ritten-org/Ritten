@@ -15,6 +15,11 @@ public sealed class WorkflowApplicationBuilder : IWorkflowBuilder
     }
 
     /// <summary>
+    /// The name of the file that marks a project's root and declares its workflow.
+    /// </summary>
+    public string ProjectFileName { get; set; } = RittenProject.DefaultFileName;
+
+    /// <summary>
     /// The workflows the application can run.
     /// </summary>
     public WorkflowRegistry Workflows { get; } = new();
@@ -30,9 +35,9 @@ public sealed class WorkflowApplicationBuilder : IWorkflowBuilder
     public IServiceCollection Services { get; } = new ServiceCollection();
 
     /// <summary>
-    /// The dry-run pairings for the shared services.
+    /// The decorators applied during a dry run, for the shared services.
     /// </summary>
-    public DecoratorRegistry DryRun { get; } = new();
+    public DecoratorRegistry Decorators { get; } = new();
 
     /// <summary>
     /// Builds and validates the workflow application.
@@ -48,6 +53,6 @@ public sealed class WorkflowApplicationBuilder : IWorkflowBuilder
             return model;
         }
 
-        return new WorkflowApplication(Workflows, Runtimes, [.. Services], DryRun);
+        return new WorkflowApplication(Workflows, Runtimes, [.. Services], Decorators, ProjectFileName);
     }
 }

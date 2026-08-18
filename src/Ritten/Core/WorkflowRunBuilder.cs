@@ -51,9 +51,9 @@ public class WorkflowRunBuilder : IWorkflowBuilder
     public IServiceCollection Services { get; } = new ServiceCollection();
 
     /// <summary>
-    /// The dry-run pairings for the run's services.
+    /// The decorators applied during a dry run, for the run's services.
     /// </summary>
-    public DecoratorRegistry DryRun { get; } = new();
+    public DecoratorRegistry Decorators { get; } = new();
 
     /// <summary>
     /// Names the workflow the job belongs to, for the run's narrative.
@@ -142,7 +142,7 @@ public class WorkflowRunBuilder : IWorkflowBuilder
         if (_dryRun)
         {
             // These stub mappings let us decorate or outright replace services so they can't accidentally do anything irreversible.
-            var decorators = DryRun.GetAll()
+            var decorators = Decorators.GetAll()
                 .GroupBy(p => p.ServiceType)
                 .Select(g => g.Last())
                 .ToList();
@@ -177,7 +177,7 @@ public class WorkflowRunBuilder : IWorkflowBuilder
     {
         foreach (var decorator in decorators.GetAll())
         {
-            DryRun.Add(decorator);
+            Decorators.Add(decorator);
         }
 
         return this;

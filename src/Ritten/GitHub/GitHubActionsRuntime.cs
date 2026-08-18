@@ -63,7 +63,7 @@ public sealed class GitHubActionsRuntime : Runtime
         }
 
         builder.Services.TryAddSingleton<ICommentService, CommentService>();
-        builder.DryRun.Replace<ICommentService, DryRunCommentService>();
+        builder.Decorators.Replace<ICommentService, DryRunCommentService>();
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IProgressReporter, PendingCommentReporter>());
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IReportSink, GitHubReportSink>());
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IReportSink, GitHubCommentSink>());
