@@ -36,32 +36,40 @@ public class PipelineHost : IDisposable
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     public static async Task<int> RunJob(PipelineRegistry pipelines, RuntimeRegistry runtimes, RunJobArgs args, CancellationToken cancellationToken = default)
     {
-        var reporter = new SpectreProgressReporter(AnsiConsole.Console, args.LogLevel);
-
         // The whole registered model is judged before anything is loaded, so a malformed
         // pipeline or runtime fails every run at startup, not just the run that selects it.
         List<Error> model = [.. pipelines.Validate(), .. runtimes.Validate()];
         if (model.Count > 0)
         {
-            return ConfigurationError(reporter, model);
+            return ConfigurationError(EngineConsole(args), model);
         }
+
+        var runtime = runtimes.Detect();
+        if (runtime.IsError)
+        {
+            return ConfigurationError(EngineConsole(args), runtime.Errors);
+        }
+
+        // The runtime speaks from here on: it knows whether debug logging was asked for, and how
+        // this environment wants the narrative rendered.
+        var console = runtime.Value.CreateConsole(args.LogLevel);
 
         var project = await RittenProject.Resolve(Environment.CurrentDirectory);
         if (project.IsError)
         {
-            return ConfigurationError(reporter, project.Errors);
+            return ConfigurationError(console, project.Errors);
         }
 
         var knownPipelines = Result.Error($"Known pipelines: {string.Join(", ", pipelines.Names)}.");
         var name = project.Value.GetPipelineName();
         if (name.IsError)
         {
-            return ConfigurationError(reporter, [.. name.Errors, knownPipelines]);
+            return ConfigurationError(console, [.. name.Errors, knownPipelines]);
         }
 
         if (pipelines.Find(name.Value) is not { } pipeline)
         {
-            return ConfigurationError(reporter, [Result.Error($"'{project.Value.FilePath}' declares the unknown pipeline '{name.Value}'."), knownPipelines]);
+            return ConfigurationError(console, [Result.Error($"'{project.Value.FilePath}' declares the unknown pipeline '{name.Value}'."), knownPipelines]);
         }
 
         // The job is picked out of the static model before settings are parsed: a typo'd
@@ -70,22 +78,29 @@ public class PipelineHost : IDisposable
         var declared = jobs.FirstOrDefault(j => j.Name == args.Job);
         if (declared is null)
         {
-            return ConfigurationError(reporter, [
+            return ConfigurationError(console, [
                 Result.Error($"The {pipeline.Label} pipeline has no job named '{args.Job}'."),
                 Result.Error($"Known jobs: {string.Join(", ", jobs.Select(j => j.Name))}.")
             ]);
         }
 
-        var builder = new PipelineHostBuilder(project.Value, pipeline.Label, reporter, args.DryRun, args.AutoApprove, runtimes: runtimes);
+        var builder = new PipelineHostBuilder(project.Value, runtime.Value, console)
+            .WithPipelineLabel(pipeline.Label)
+            .WithDryRun(args.DryRun)
+            .WithAutoApprove(args.AutoApprove);
         var host = builder.Build(declared);
         if (host.IsError)
         {
-            return ConfigurationError(reporter, host.Errors);
+            return ConfigurationError(console, host.Errors);
         }
 
         using var _ = host.Value;
         return await host.Value.Run(cancellationToken);
     }
+
+    // Before a runtime is selected there's nothing to ask for a console, so errors that early
+    // print through the engine's own renderer.
+    private static SpectrePipelineConsole EngineConsole(RunJobArgs args) => new(AnsiConsole.Console, args.LogLevel);
 
     private static int ConfigurationError(IPipelineLog log, IEnumerable<Error> errors)
     {

@@ -61,12 +61,7 @@ internal static class GitHubEnvironment
     public const string RunnerDebug = "RUNNER_DEBUG";
 
     /// <summary>
-    /// Whether the run asked for debug logging, as "Re-run with debug logging" does.
-    /// </summary>
-    public static bool IsDebug() => IsDebug(Environment.GetEnvironmentVariable);
-
-    /// <summary>
-    /// Whether the given environment asked for debug logging.
+    /// Whether the given environment asked for debug logging, as "Re-run with debug logging" does.
     /// </summary>
     internal static bool IsDebug(Func<string, string?> envVar) => envVar(RunnerDebug) == "1";
 }

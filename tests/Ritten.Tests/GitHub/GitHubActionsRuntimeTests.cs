@@ -20,6 +20,18 @@ public class GitHubActionsRuntimeTests
     }
 
     [Fact]
+    public void IsDebug_HonoursTheRunnersDebugFlag()
+    {
+        // RUNNER_DEBUG is claimed, so only this runtime may honour it: exported in a local shell
+        // it belongs to no runtime that's present, and stays an ordinary variable.
+        var runtime = new GitHubActionsRuntime();
+
+        runtime.IsDebug(new Dictionary<string, string> { ["RUNNER_DEBUG"] = "1" }.GetValueOrDefault).ShouldBeTrue();
+        runtime.IsDebug(new Dictionary<string, string>().GetValueOrDefault).ShouldBeFalse();
+        runtime.Claims.ShouldContain("RUNNER_DEBUG");
+    }
+
+    [Fact]
     public void ConfigureServices_ReadsTheActionsContextFromItsClaims()
     {
         var provider = Build(runtimeEnvironment: new Dictionary<string, string>

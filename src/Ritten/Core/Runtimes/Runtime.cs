@@ -1,4 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
+using Ritten.Contracts;
+using Ritten.Reporting;
+using Spectre.Console;
 
 namespace Ritten.Core.Runtimes;
 
@@ -28,4 +31,17 @@ public abstract class Runtime
     /// <param name="services">The service collection the job is assembled into.</param>
     /// <param name="environment">The unfiltered environment; the runtime owns its claims.</param>
     public abstract void ConfigureServices(IServiceCollection services, Func<string, string?> environment);
+
+    /// <summary>
+    /// Whether this environment has asked for debug logging.
+    /// </summary>
+    /// <param name="environment">The unfiltered environment; the runtime owns its claims.</param>
+    public virtual bool IsDebug(Func<string, string?> environment) => false;
+
+    /// <summary>
+    /// Creates the console narrative for a run in this environment.
+    /// </summary>
+    /// <param name="level">The lowest level of message the console should print.</param>
+    public virtual IPipelineConsole CreateConsole(PipelineLogLevel level) =>
+        new SpectrePipelineConsole(AnsiConsole.Console, level);
 }

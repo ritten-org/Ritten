@@ -5,14 +5,14 @@ using Spectre.Console.Testing;
 
 namespace Ritten.Tests.Reporting;
 
-public class SpectreProgressReporterTests
+public class SpectrePipelineConsoleTests
 {
     [Fact]
     public async Task QuietStillShowsTheJobsStructure()
     {
         // Headings, outcomes, and timings are the job's shape, not chatter.
         var console = new TestConsole();
-        var sut = new SpectreProgressReporter(console, PipelineLogLevel.Warning);
+        var sut = new SpectrePipelineConsole(console, PipelineLogLevel.Warning);
         var step = new Step("git tag", StepKind.Publish, null, []);
 
         await sut.OnStepStarted(step, TestContext.Current.CancellationToken);
@@ -26,7 +26,7 @@ public class SpectreProgressReporterTests
     public void QuietSilencesWhatStepsSay()
     {
         var console = new TestConsole();
-        var sut = new SpectreProgressReporter(console, PipelineLogLevel.Warning);
+        var sut = new SpectrePipelineConsole(console, PipelineLogLevel.Warning);
 
         sut.Log(PipelineLogLevel.Detail, "Restored everything.");
 
@@ -37,7 +37,7 @@ public class SpectreProgressReporterTests
     public async Task FailuresRenderTheirErrorsAtEveryLevel()
     {
         var console = new TestConsole();
-        var sut = new SpectreProgressReporter(console, PipelineLogLevel.Warning);
+        var sut = new SpectrePipelineConsole(console, PipelineLogLevel.Warning);
         var step = new Step("changelog", StepKind.Check, null, []);
 
         await sut.OnStepStarted(step, TestContext.Current.CancellationToken);
@@ -65,7 +65,7 @@ public class SpectreProgressReporterTests
     [InlineData(PipelineLogLevel.Warning, PipelineLogLevel.Error, true)]
     public void IsEnabled_ComparesAgainstTheMinimumLevel(PipelineLogLevel minimum, PipelineLogLevel level, bool expected)
     {
-        var sut = new SpectreProgressReporter(AnsiConsole.Console, minimum);
+        var sut = new SpectrePipelineConsole(AnsiConsole.Console, minimum);
 
         sut.IsEnabled(level).ShouldBe(expected);
     }
