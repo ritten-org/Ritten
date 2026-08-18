@@ -11,15 +11,15 @@ namespace Ritten.GitHub;
 /// <summary>
 /// Provides extension methods for registering the GitHub client.
 /// </summary>
-internal static class WorkflowRunBuilderExtensions
+internal static class WorkflowBuilderExtensions
 {
-    extension(WorkflowRunBuilder builder)
+    extension(IWorkflowBuilder builder)
     {
         /// <summary>
         /// Adds the client the workflow talks to GitHub itself with.
         /// </summary>
         /// <param name="clientName">The product name used to identify this workflow to the GitHub API.</param>
-        public WorkflowRunBuilder AddGitHubClient(string? clientName = null)
+        public IWorkflowBuilder AddGitHubClient(string? clientName = null)
         {
             if (builder.Services.All(d => d.ServiceType != typeof(GitHubClientMarker)))
             {

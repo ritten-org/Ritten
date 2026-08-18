@@ -7,15 +7,15 @@ namespace Ritten.Reporting;
 /// <summary>
 /// Registers build reporting.
 /// </summary>
-public static class WorkflowRunBuilderExtensions
+public static class WorkflowBuilderExtensions
 {
-    extension(WorkflowRunBuilder builder)
+    extension(IWorkflowBuilder builder)
     {
         /// <summary>
         /// Adds <see cref="IBuildReport"/> to the service collection and registers the
         /// <see cref="BuildReportPublisher"/> that publishes it when the workflow finishes.
         /// </summary>
-        public WorkflowRunBuilder AddBuildReporting()
+        public IWorkflowBuilder AddBuildReporting()
         {
             if (builder.Services.Any(d => d.ServiceType == typeof(BuildReportingMarker)))
             {

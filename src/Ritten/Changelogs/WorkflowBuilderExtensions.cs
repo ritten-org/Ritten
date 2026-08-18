@@ -8,14 +8,14 @@ namespace Ritten.Changelogs;
 /// <summary>
 /// Registers the changelog domain.
 /// </summary>
-public static class WorkflowRunBuilderExtensions
+public static class WorkflowBuilderExtensions
 {
-    extension(WorkflowRunBuilder builder)
+    extension(IWorkflowBuilder builder)
     {
         /// <summary>
         /// Adds changelog checks.
         /// </summary>
-        public WorkflowRunBuilder AddChangelogs(ChangelogSettings settings)
+        public IWorkflowBuilder AddChangelogs(ChangelogSettings settings)
         {
             builder.Services.TryAddSingleton<IChangelog, ChangelogClient>();
             builder.Services.Configure<ChangelogOptions>(o => o.File = settings.File);

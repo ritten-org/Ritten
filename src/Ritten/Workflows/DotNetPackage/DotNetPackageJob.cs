@@ -15,7 +15,7 @@ namespace Ritten.Workflows.DotNetPackage;
 internal abstract class DotNetPackageJob : Job<DotNetPackageSettings>
 {
     /// <inheritdoc />
-    protected override void Configure(WorkflowRunBuilder builder, DotNetPackageSettings settings) => builder
+    protected override void Configure(IWorkflowBuilder builder, DotNetPackageSettings settings) => builder
         .AddChangelogs(settings.Changelog)
         .AddDotNet(settings.Build, settings.Repository)
         .AddCoverage(settings.Coverage)

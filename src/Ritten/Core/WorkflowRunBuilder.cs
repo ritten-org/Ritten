@@ -14,7 +14,7 @@ namespace Ritten.Core;
 /// <summary>
 /// Assembles a declared <see cref="IJob"/> into a runnable <see cref="WorkflowRun"/> for one project.
 /// </summary>
-public class WorkflowRunBuilder
+public class WorkflowRunBuilder : IWorkflowBuilder
 {
     private readonly RittenProject _project;
     private readonly DetectRuntimeResult _runtime;

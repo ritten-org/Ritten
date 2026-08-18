@@ -9,14 +9,14 @@ namespace Ritten.DotNet;
 /// <summary>
 /// Registers the .NET domain.
 /// </summary>
-public static class WorkflowRunBuilderExtensions
+public static class WorkflowBuilderExtensions
 {
-    extension(WorkflowRunBuilder builder)
+    extension(IWorkflowBuilder builder)
     {
         /// <summary>
         /// Adds the .NET client and build settings, configured from the project's settings.
         /// </summary>
-        public WorkflowRunBuilder AddDotNet(DotNetBuildSettings settings, string? repository = null)
+        public IWorkflowBuilder AddDotNet(DotNetBuildSettings settings, string? repository = null)
         {
             builder.AddCommandRunner();
             builder.Services.TryAddSingleton<IDotNet, DotNetClient>();

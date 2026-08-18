@@ -25,5 +25,5 @@ public interface IJob
     /// <summary>
     /// Configures the run with the given settings.
     /// </summary>
-    internal void Configure(WorkflowRunBuilder builder, WorkflowSettings settings);
+    internal void Configure(IWorkflowBuilder builder, WorkflowSettings settings);
 }

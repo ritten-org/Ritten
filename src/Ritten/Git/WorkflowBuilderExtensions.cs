@@ -8,14 +8,14 @@ namespace Ritten.Git;
 /// <summary>
 /// Registers the git domain.
 /// </summary>
-public static class WorkflowRunBuilderExtensions
+public static class WorkflowBuilderExtensions
 {
-    extension(WorkflowRunBuilder builder)
+    extension(IWorkflowBuilder builder)
     {
         /// <summary>
         /// Adds release tagging, configured from the project's settings.
         /// </summary>
-        public WorkflowRunBuilder AddGit(string tagPrefix)
+        public IWorkflowBuilder AddGit(string tagPrefix)
         {
             builder.AddCommandRunner();
             builder.Services.TryAddSingleton<IGit, GitClient>();

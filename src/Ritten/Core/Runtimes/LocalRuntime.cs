@@ -15,7 +15,7 @@ internal sealed class LocalRuntime : Runtime
     public override IReadOnlyCollection<string> Claims { get; } = [];
 
     /// <inheritdoc />
-    public override void Configure(WorkflowRunBuilder builder, Func<string, string?> environment)
+    public override void Configure(IWorkflowBuilder builder, Func<string, string?> environment)
     {
     }
 }

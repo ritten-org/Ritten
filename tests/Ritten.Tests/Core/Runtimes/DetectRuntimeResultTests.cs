@@ -84,7 +84,7 @@ public class DetectRuntimeResultTests
 
         public override IReadOnlyCollection<string> Claims { get; } = ["STUB_CI", "STUB_DEBUG"];
 
-        public override void Configure(WorkflowRunBuilder builder, Func<string, string?> environment)
+        public override void Configure(IWorkflowBuilder builder, Func<string, string?> environment)
         {
         }
 

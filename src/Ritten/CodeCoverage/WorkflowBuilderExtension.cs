@@ -7,14 +7,14 @@ namespace Ritten.CodeCoverage;
 /// <summary>
 /// Registers the coverage domain.
 /// </summary>
-public static class WorkflowRunBuilderExtensions
+public static class WorkflowBuilderExtension
 {
-    extension(WorkflowRunBuilder builder)
+    extension(IWorkflowBuilder builder)
     {
         /// <summary>
         /// Adds coverage collection and thresholds, configured from the project's settings.
         /// </summary>
-        public WorkflowRunBuilder AddCoverage(CoverageSettings settings)
+        public IWorkflowBuilder AddCoverage(CoverageSettings settings)
         {
             builder.Services.Configure<CoverageOptions>(o =>
             {

@@ -9,14 +9,14 @@ namespace Ritten.NuGet;
 /// <summary>
 /// Registers the NuGet domain.
 /// </summary>
-public static class WorkflowRunBuilderExtensions
+public static class WorkflowBuilderExtensions
 {
-    extension(WorkflowRunBuilder builder)
+    extension(IWorkflowBuilder builder)
     {
         /// <summary>
         /// Adds NuGet publishing, configured from the project's settings.
         /// </summary>
-        public WorkflowRunBuilder AddNuGet(string feed, ReleaseLine lines)
+        public IWorkflowBuilder AddNuGet(string feed, ReleaseLine lines)
         {
             builder.AddCommandRunner();
             builder.Services.TryAddSingleton<INuGet, NuGetClient>();

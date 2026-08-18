@@ -39,7 +39,7 @@ public sealed class GitHubActionsRuntime : Runtime
     public override bool IsDebug(Func<string, string?> environment) => GitHubEnvironment.IsDebug(environment);
 
     /// <inheritdoc />
-    public override void Configure(WorkflowRunBuilder builder, Func<string, string?> environment)
+    public override void Configure(IWorkflowBuilder builder, Func<string, string?> environment)
     {
         // The runtime's comment and release plumbing talk to the GitHub API, so it brings the
         // client with it rather than requiring every job on this runtime to know that.

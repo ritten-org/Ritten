@@ -19,7 +19,7 @@ public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
     /// </summary>
     /// <param name="builder">The service collection the job is assembled into.</param>
     /// <param name="settings">The project's parsed settings.</param>
-    protected virtual void Configure(WorkflowRunBuilder builder, TSettings settings)
+    protected virtual void Configure(IWorkflowBuilder builder, TSettings settings)
     {
     }
 
@@ -47,5 +47,5 @@ public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
             : new Result<WorkflowSettings>(settings.Value);
     }
 
-    void IJob.Configure(WorkflowRunBuilder builder, WorkflowSettings settings) => Configure(builder, (TSettings)settings);
+    void IJob.Configure(IWorkflowBuilder builder, WorkflowSettings settings) => Configure(builder, (TSettings)settings);
 }

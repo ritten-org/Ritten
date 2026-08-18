@@ -15,7 +15,7 @@ namespace Ritten.Workflows.DotNetTool;
 internal abstract class DotNetToolJob : Job<DotNetToolSettings>
 {
     /// <inheritdoc />
-    protected override void Configure(WorkflowRunBuilder builder, DotNetToolSettings settings) => builder
+    protected override void Configure(IWorkflowBuilder builder, DotNetToolSettings settings) => builder
         .AddChangelogs(settings.Changelog)
         .AddDotNet(settings.Build, settings.Repository)
         .AddCoverage(settings.Coverage)

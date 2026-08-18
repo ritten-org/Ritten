@@ -27,9 +27,9 @@ public abstract class Runtime
     /// <summary>
     /// Registers the services and anything else this runtime provides.
     /// </summary>
-    /// <param name="builder">The run being assembled; services and decorators hang off it.</param>
+    /// <param name="builder">The configuration area: services and dry-run decorators.</param>
     /// <param name="environment">The unfiltered environment; the runtime owns its claims.</param>
-    public abstract void Configure(WorkflowRunBuilder builder, Func<string, string?> environment);
+    public abstract void Configure(IWorkflowBuilder builder, Func<string, string?> environment);
 
     /// <summary>
     /// Whether this environment has asked for debug logging.

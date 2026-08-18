@@ -16,7 +16,7 @@ using Ritten.Tests.Core.Helpers;
 
 namespace Ritten.Tests.Extensions;
 
-public class WorkflowRunBuilderExtensionsTests
+public class WorkflowBuilderExtensionsTests
 {
     private static readonly DotNetToolSettings Settings = new()
     {

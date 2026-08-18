@@ -6,14 +6,14 @@ namespace Ritten.Commands;
 /// <summary>
 /// Registers the command runner.
 /// </summary>
-public static class WorkflowRunBuilderExtensions
+public static class WorkflowBuilderExtensions
 {
-    extension(WorkflowRunBuilder builder)
+    extension(IWorkflowBuilder builder)
     {
         /// <summary>
         /// Adds <see cref="ICommandRunner"/> to the service collection.
         /// </summary>
-        public WorkflowRunBuilder AddCommandRunner()
+        public IWorkflowBuilder AddCommandRunner()
         {
             builder.Services.TryAddSingleton<ICommandRunner, CommandRunner>();
             return builder;

@@ -8,7 +8,7 @@ namespace Ritten.Core;
 /// <summary>
 /// Configures a <see cref="WorkflowApplication"/>.
 /// </summary>
-public sealed class WorkflowApplicationBuilder
+public sealed class WorkflowApplicationBuilder : IWorkflowBuilder
 {
     internal WorkflowApplicationBuilder()
     {

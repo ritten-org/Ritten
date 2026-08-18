@@ -149,7 +149,7 @@ public class RuntimeRegistryTests
 
         public override IReadOnlyCollection<string> Claims => claims;
 
-        public override void Configure(WorkflowRunBuilder builder, Func<string, string?> environment)
+        public override void Configure(IWorkflowBuilder builder, Func<string, string?> environment)
         {
         }
     }
