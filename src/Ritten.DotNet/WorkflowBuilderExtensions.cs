@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Commands;
 using Ritten.Engine;
-using Ritten.Workflows;
 
 namespace Ritten.DotNet;
 
@@ -14,20 +13,18 @@ public static class WorkflowBuilderExtensions
     extension(IWorkflowBuilder builder)
     {
         /// <summary>
-        /// Adds the .NET client and build settings, configured from the project's settings.
+        /// Adds the .NET client, building the given projects with the given configuration.
         /// </summary>
-        public IWorkflowBuilder AddDotNet(DotNetBuildSettings settings, string? repository = null)
+        /// <param name="projects">The project files to work on; the first is the metadata source.</param>
+        /// <param name="configuration">The build configuration used to build, test, and pack.</param>
+        /// <param name="repository">The repository URL packages carry, when the host knows it.</param>
+        public IWorkflowBuilder AddDotNet(IReadOnlyList<string> projects, string configuration, string? repository = null)
         {
             builder.AddCommandRunner();
             builder.Services.TryAddSingleton<IDotNet, DotNetClient>();
             builder.Services.Configure<DotNetOptions>(o =>
             {
-                // `project` and `projects` are two spellings of one setting; validation has
-                // already refused files that use both.
-                var projects = settings.Projects is { Count: > 0 }
-                    ? settings.Projects
-                    : settings.Project is null ? [] : [settings.Project];
-                o.Configuration = settings.Configuration;
+                o.Configuration = configuration;
                 o.ProjectFile = projects.FirstOrDefault() ?? "";
                 o.Repository = repository;
                 o.Projects = projects;
