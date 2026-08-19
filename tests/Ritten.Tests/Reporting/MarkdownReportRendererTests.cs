@@ -13,7 +13,7 @@ public class MarkdownReportRendererTests
     {
         var section = new ReportSection("Build").Failure("The solution failed to build.");
 
-        var markdown = _renderer.Render(new Report("Workflow", Succeeded: false, [section]));
+        var markdown = _renderer.Render(new WorkflowReport("Workflow", Succeeded: false, [section]));
 
         markdown.ShouldContain("## ❌ Workflow");
         markdown.ShouldContain("### ❌ Build");
@@ -25,7 +25,7 @@ public class MarkdownReportRendererTests
     {
         var failure = Failure("dotnet restore", "Command 'dotnet' exited with code 1.");
 
-        var markdown = _renderer.Render(new Report("Workflow", Succeeded: false, [], failure));
+        var markdown = _renderer.Render(new WorkflowReport("Workflow", Succeeded: false, [], failure));
 
         markdown.ShouldContain("### ❌ dotnet restore");
         markdown.ShouldContain("Command 'dotnet' exited with code 1.");
@@ -35,7 +35,7 @@ public class MarkdownReportRendererTests
     [Fact]
     public void AdmitsWhenTheFailureLeftNothingBehind()
     {
-        var markdown = _renderer.Render(new Report("Workflow", Succeeded: false, []));
+        var markdown = _renderer.Render(new WorkflowReport("Workflow", Succeeded: false, []));
 
         markdown.ShouldContain("check the build logs");
     }
@@ -46,7 +46,7 @@ public class MarkdownReportRendererTests
         var section = new ReportSection("Build").Failure("The solution failed to build.");
         var failure = Failure("dotnet build", "error CS0103");
 
-        var markdown = _renderer.Render(new Report("Workflow", Succeeded: false, [section], failure));
+        var markdown = _renderer.Render(new WorkflowReport("Workflow", Succeeded: false, [section], failure));
 
         markdown.ShouldNotContain("### ❌ dotnet build");
     }

@@ -13,7 +13,7 @@ internal class GitHubJobSummaryResultSink(
     IOptions<GitHubActionsOptions> options
 ) : IWorkflowResultSink
 {
-    public async Task Publish(Report report, CancellationToken cancellationToken = default)
+    public async Task Publish(WorkflowReport report, CancellationToken cancellationToken = default)
     {
         if (options.Value.SummaryFile is not { } path)
         {

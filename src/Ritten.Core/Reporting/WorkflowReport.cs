@@ -1,21 +1,12 @@
+using Ritten.Engine.Runs;
+
 namespace Ritten.Reporting;
 
-internal class WorkflowReport : IWorkflowReport
-{
-    private readonly List<ReportSection> _sections = [];
-
-    public IReadOnlyList<ReportSection> Sections => _sections;
-
-    public ReportSection Section(string title)
-    {
-        var existing = _sections.FirstOrDefault(s => s.Title == title);
-        if (existing != null)
-        {
-            return existing;
-        }
-
-        var section = new ReportSection(title);
-        _sections.Add(section);
-        return section;
-    }
-}
+/// <summary>
+/// The finished run's report.
+/// </summary>
+/// <param name="Title">The name the run is reported under.</param>
+/// <param name="Succeeded">Whether the run succeeded.</param>
+/// <param name="Sections">The sections the steps authored.</param>
+/// <param name="Failure">The failing step and its result, for renderings whose sections don't already explain the failure.</param>
+public sealed record WorkflowReport(string Title, bool Succeeded, IReadOnlyList<ReportSection> Sections, StepOutcome? Failure = null);

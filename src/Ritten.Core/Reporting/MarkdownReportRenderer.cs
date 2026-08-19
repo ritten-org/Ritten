@@ -9,7 +9,7 @@ public class MarkdownReportRenderer
     /// Renders the report as GitHub-flavored Markdown.
     /// </summary>
     /// <param name="report">The finished run's report.</param>
-    public string Render(Report report)
+    public string Render(WorkflowReport report)
     {
         var blocks = new List<string> { $"## {(report.Succeeded ? "✅" : "❌")} {report.Title}" };
 

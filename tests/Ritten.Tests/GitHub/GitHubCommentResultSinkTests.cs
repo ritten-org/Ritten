@@ -60,7 +60,7 @@ public class GitHubCommentResultSinkTests
         await _comments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, TestContext.Current.CancellationToken);
     }
 
-    private static Report Success => new("Ritten", Succeeded: true, []);
+    private static WorkflowReport Success => new("Ritten", Succeeded: true, []);
 
     private GitHubCommentResultSink Sink() =>
         new(new MarkdownReportRenderer(), new RunContext { Title = "Ritten" }, Options.Create(_options), _comments);

@@ -25,7 +25,7 @@ internal class GitHubCommentResultSink(
         return comments.CreateOrUpdate($"## ⏳ {context.Title}\n\n{job.Name} job in progress…", cancellationToken);
     }
 
-    public Task Publish(Report report, CancellationToken cancellationToken = default)
+    public Task Publish(WorkflowReport report, CancellationToken cancellationToken = default)
     {
         if (!options.Value.IsPullRequest)
         {

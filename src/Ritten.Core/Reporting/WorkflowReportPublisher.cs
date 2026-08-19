@@ -9,11 +9,26 @@ namespace Ritten.Reporting;
 /// </summary>
 internal class WorkflowReportPublisher(
     IWorkflowLog log,
+    RunContext context,
+    IWorkflowReport report,
     IEnumerable<IWorkflowResultSink> sinks
 ) : IWorkflowProgress
 {
     /// <inheritdoc />
-    public Task OnWorkflowStarted(WorkflowJob job, CancellationToken cancellationToken) => Task.CompletedTask;
+    public async Task OnWorkflowStarted(WorkflowJob job, CancellationToken cancellationToken)
+    {
+        foreach (var sink in sinks)
+        {
+            try
+            {
+                await sink.Started(job, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                log.Warning($"Failed to announce the run via {sink.GetType().Name}", ex);
+            }
+        }
+    }
 
     /// <inheritdoc />
     public Task OnStepStarted(Step step, CancellationToken cancellationToken) => Task.CompletedTask;
@@ -24,11 +39,12 @@ internal class WorkflowReportPublisher(
     /// <inheritdoc />
     public async Task OnWorkflowCompleted(WorkflowResult result, CancellationToken cancellationToken)
     {
+        var finished = new WorkflowReport(context.Title, result.IsSuccess, report.Sections, result.FailedStep);
         foreach (var sink in sinks)
         {
             try
             {
-                await sink.Publish(result, cancellationToken);
+                await sink.Publish(finished, cancellationToken);
             }
             catch (Exception ex)
             {

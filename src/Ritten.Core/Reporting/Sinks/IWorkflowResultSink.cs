@@ -19,5 +19,5 @@ public interface IWorkflowResultSink
     /// </summary>
     /// <param name="report">The report to publish.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    Task Publish(Report report, CancellationToken cancellationToken = default);
+    Task Publish(WorkflowReport report, CancellationToken cancellationToken = default);
 }

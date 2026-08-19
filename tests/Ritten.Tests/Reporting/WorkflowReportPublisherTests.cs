@@ -24,15 +24,15 @@ public class WorkflowReportPublisherTests
     [Fact]
     public async Task OnWorkflowCompleted_ComposesTheReportOnceForEverySink()
     {
-        var report = new WorkflowReport();
+        var report = new WorkflowReportBuilder();
         report.Section("Build").Failure("The solution failed to build.");
 
         await Publisher(report).OnWorkflowCompleted(new WorkflowResult(ExitCode.Failed, []), TestContext.Current.CancellationToken);
 
         await _first.Received().Publish(
-            Arg.Is<Report>(r => r.Title == "Test" && !r.Succeeded && r.Sections.Count == 1),
+            Arg.Is<WorkflowReport>(r => r.Title == "Test" && !r.Succeeded && r.Sections.Count == 1),
             TestContext.Current.CancellationToken);
-        await _second.Received().Publish(Arg.Any<Report>(), TestContext.Current.CancellationToken);
+        await _second.Received().Publish(Arg.Any<WorkflowReport>(), TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -40,16 +40,16 @@ public class WorkflowReportPublisherTests
     {
         // The publisher owns the resilience, so no sink has to guard its own destination.
         _first.Started(Arg.Any<WorkflowJob>(), Arg.Any<CancellationToken>()).Returns<Task>(_ => throw new InvalidOperationException("boom"));
-        _first.Publish(Arg.Any<Report>(), Arg.Any<CancellationToken>()).Returns<Task>(_ => throw new InvalidOperationException("boom"));
+        _first.Publish(Arg.Any<WorkflowReport>(), Arg.Any<CancellationToken>()).Returns<Task>(_ => throw new InvalidOperationException("boom"));
         var publisher = Publisher();
 
         await publisher.OnWorkflowStarted(Job, TestContext.Current.CancellationToken);
         await publisher.OnWorkflowCompleted(new WorkflowResult(ExitCode.Success, []), TestContext.Current.CancellationToken);
 
         await _second.Received().Started(Job, Arg.Any<CancellationToken>());
-        await _second.Received().Publish(Arg.Any<Report>(), Arg.Any<CancellationToken>());
+        await _second.Received().Publish(Arg.Any<WorkflowReport>(), Arg.Any<CancellationToken>());
     }
 
     private WorkflowReportPublisher Publisher(IWorkflowReport? report = null) =>
-        new(Substitute.For<IWorkflowLog>(), new RunContext { Title = "Test" }, report ?? new WorkflowReport(), [_first, _second]);
+        new(Substitute.For<IWorkflowLog>(), new RunContext { Title = "Test" }, report ?? new WorkflowReportBuilder(), [_first, _second]);
 }

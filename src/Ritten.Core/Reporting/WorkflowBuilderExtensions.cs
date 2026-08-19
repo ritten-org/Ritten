@@ -22,7 +22,7 @@ public static class WorkflowBuilderExtensions
             }
 
             builder.Services.AddSingleton<BuildReportingMarker>();
-            builder.Services.AddSingleton<IWorkflowReport, WorkflowReport>();
+            builder.Services.AddSingleton<IWorkflowReport, WorkflowReportBuilder>();
             builder.Services.AddSingleton<MarkdownReportRenderer>();
             builder.Services.AddSingleton<IWorkflowProgress, WorkflowReportPublisher>();
             return builder;

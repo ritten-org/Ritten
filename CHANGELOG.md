@@ -6,9 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **Steps can read the pull request under review.** The engine owns a `PullRequest` contract (number, base ref) and an `IPullRequestLabels` read returning `Label` values (name, colour, description), and the active runtime supplies them — GitHub Actions fills both from its own claims and the GitHub API. Where nothing can answer — a local run, a runtime without the concept — labels read as null, distinct from a pull request that simply carries none, and a host can always register its own implementation to take precedence.
+
 ### Changed
 
 - **IBuildReport is now IWorkflowReport.** It more accurately reflects that the report covers one workflow execution.
+- **Run context is injected directly.** `RunContext` (and the new `PullRequest`) are immutable records that steps and services take by type, no longer configured or consumed through `IOptions`.
+- **Exit codes are value objects.** `ExitCode` replaces the bare `int` (and the `WorkflowExitCodes` constants, which now live on it as `ExitCode.Success` and friends). It converts implicitly to and from `int` at the process boundaries.
+- **Result sinks are called on start and finish.** `IWorkflowResultSink` (was `IReportSink`) can announce the run when it starts with a pending pull request comment, and publishes a single artifact.
+- **`MarkdownReportRenderer` is public.** And now takes the `Report` whole, for any sinks that want to render in Markdown.
 
 ## [0.3.0] - 2026-08-19
 
