@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Git can read files and changes.** `IGit` gains `Show` (a file's content as it exists at a reference) and `ChangedFiles` (the paths that differ from the committed state, untracked files included), so checks can compare against a base branch through the same client that tags.
+
 ## [0.4.0] - 2026-08-19
 
 ### Added

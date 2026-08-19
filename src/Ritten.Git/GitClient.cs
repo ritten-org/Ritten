@@ -14,6 +14,38 @@ internal class GitClient(ICommandRunner commands) : IGit
             : null;
     }
 
+    public async Task<string?> Show(string reference, string path, CancellationToken cancellationToken = default)
+    {
+        // A file that doesn't exist at the reference is an expected answer, not a failure.
+        var result = await commands.Run(
+            Command.Create("git").WithArguments("show", $"{reference}:{path}"),
+            cancellationToken);
+        return result.IsSuccess ? result.StandardOutput : null;
+    }
+
+    public async Task<IReadOnlyList<string>> ChangedFiles(string path, CancellationToken cancellationToken = default)
+    {
+        // --porcelain rather than `diff --quiet` so that untracked files are reported too.
+        var result = await commands.Run(
+            Command.Create("git").WithArguments("status", "--porcelain", "--", path).ThrowOnError(),
+            cancellationToken);
+
+        // Porcelain status codes are fixed-width ("XY <path>"), so the path starts at offset 3 —
+        // trimming earlier would shift entries like " M path". Renames appear as "XY <old> -> <new>",
+        // and the new path is the one that exists now.
+        return
+        [
+            .. result.StandardOutput
+                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => line.Length > 3 ? line[3..].Trim() : line.Trim())
+                .Select(line => line.Contains("->", StringComparison.Ordinal)
+                    ? line[(line.IndexOf("->", StringComparison.Ordinal) + 2)..].Trim()
+                    : line)
+                .Select(line => line.Trim('"'))
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+        ];
+    }
+
     public async Task<bool> TagExists(string tag, CancellationToken cancellationToken = default)
     {
         var result = await commands.Run(

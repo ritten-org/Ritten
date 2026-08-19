@@ -12,6 +12,14 @@ internal class DryRunGit(IWorkflowLog log, IGit inner) : IGit
         inner.GetRemoteUrl(remote, cancellationToken);
 
     /// <inheritdoc />
+    public Task<string?> Show(string reference, string path, CancellationToken cancellationToken = default) =>
+        inner.Show(reference, path, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<string>> ChangedFiles(string path, CancellationToken cancellationToken = default) =>
+        inner.ChangedFiles(path, cancellationToken);
+
+    /// <inheritdoc />
     public Task<bool> TagExists(string tag, CancellationToken cancellationToken = default) =>
         inner.TagExists(tag, cancellationToken);
 
