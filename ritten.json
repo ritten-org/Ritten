@@ -4,6 +4,8 @@
     "projects": [
       "src/Ritten/Ritten.csproj",
       "src/Ritten.Core/Ritten.Core.csproj",
+      "src/Ritten.Git/Ritten.Git.csproj",
+      "src/Ritten.DotNet/Ritten.DotNet.csproj",
       "src/Ritten.GitHub/Ritten.GitHub.csproj"
     ]
   }

@@ -11,6 +11,8 @@
     <File Path="ritten.json" />
   </Folder>
   <Project Path="src\Ritten.Core\Ritten.Core.csproj" />
+  <Project Path="src\Ritten.DotNet\Ritten.DotNet.csproj" />
+  <Project Path="src\Ritten.Git\Ritten.Git.csproj" />
   <Project Path="src\Ritten.GitHub\Ritten.GitHub.csproj" />
   <Project Path="src\Ritten\Ritten.csproj" />
   <Project Path="tests\Ritten.Tests\Ritten.Tests.csproj" />

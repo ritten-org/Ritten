@@ -26,5 +26,5 @@ public class GitOptions
     /// Configures the given options from the given environment.
     /// </summary>
     private static void ConfigureFromEnvironment(GitOptions options, Func<string, string?> envVar) =>
-        options.CommitSha = envVar(RittenEnvironment.CommitSha);
+        options.CommitSha = envVar(GitEnvironment.CommitSha);
 }
