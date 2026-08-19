@@ -7,7 +7,7 @@ namespace Ritten.Contracts;
 public sealed record Label(string Name)
 {
     /// <summary>
-    /// The label's display colour, in the forge's own notation, or null when it has none.
+    /// The label's display color, in the forge's own notation, or null when it has none.
     /// </summary>
     public string? Color { get; init; }
 
