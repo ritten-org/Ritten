@@ -14,7 +14,7 @@ namespace Ritten.Changelogs.Steps;
 /// <param name="report">The build report.</param>
 /// <param name="changelogs">The changelog client.</param>
 [Step("read changelog", StepKind.Work)]
-public class ReadChangelog(IWorkflowLog log, IOptions<ChangelogOptions> options, IFileSystem fileSystem, IBuildReport report, IChangelog changelogs)
+public class ReadChangelog(IWorkflowLog log, IOptions<ChangelogOptions> options, IFileSystem fileSystem, IWorkflowReport report, IChangelog changelogs)
 {
     /// <summary>
     /// Reads the configured changelog file.

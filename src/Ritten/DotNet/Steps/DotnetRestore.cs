@@ -10,7 +10,7 @@ namespace Ritten.DotNet.Steps;
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
 [Step("dotnet restore", StepKind.Work)]
-public class DotnetRestore(IWorkflowLog log, IDotNet dotnet, IBuildReport report)
+public class DotnetRestore(IWorkflowLog log, IDotNet dotnet, IWorkflowReport report)
 {
     /// <summary>
     /// Restores the solution's packages.

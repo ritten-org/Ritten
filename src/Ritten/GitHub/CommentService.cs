@@ -8,7 +8,7 @@ namespace Ritten.GitHub;
 internal class CommentService(
     IWorkflowLog log,
     IOptions<GitHubActionsOptions> options,
-    IOptions<RunContext> context,
+    RunContext context,
     IGitHubClient client
 ) : ICommentService
 {
@@ -43,7 +43,7 @@ internal class CommentService(
     }
 
     // One comment per workflow, found again on later runs by this invisible prefix.
-    private string Marker => $"<!-- ritten:{Slug(context.Value.Title)} -->";
+    private string Marker => $"<!-- ritten:{Slug(context.Title)} -->";
 
     private static string Slug(string value) =>
         string.Concat(value.ToLowerInvariant().Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-'));

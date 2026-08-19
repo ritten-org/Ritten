@@ -14,7 +14,7 @@ public class CoverageCheckTests
     private static readonly Coverage ThreeQuarters =
         new() { LinesCovered = 75, LinesValid = 100, BranchesCovered = 3, BranchesValid = 4 };
 
-    private readonly IBuildReport _report = Substitute.For<IBuildReport>();
+    private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
     private readonly ReportSection _section = new("Coverage");
     private readonly CoverageOptions _options = new();
 

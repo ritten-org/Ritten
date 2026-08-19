@@ -1,4 +1,3 @@
-using Ritten.Contracts;
 using Ritten.Reporting;
 using Spectre.Console;
 

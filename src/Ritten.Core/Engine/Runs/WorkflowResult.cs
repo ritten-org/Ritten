@@ -1,14 +1,16 @@
+using Ritten.Contracts;
+
 namespace Ritten.Engine.Runs;
 
 /// <summary>
 /// Represents the result of a workflow execution, including the exit code and the outcome of each step.
 /// </summary>
-public class WorkflowResult(int exitCode, IEnumerable<StepOutcome> steps)
+public class WorkflowResult(ExitCode exitCode, IEnumerable<StepOutcome> steps)
 {
     /// <summary>
     /// Gets the exit code of the overall workflow execution.
     /// </summary>
-    public int ExitCode { get; } = exitCode;
+    public ExitCode ExitCode { get; } = exitCode;
 
     /// <summary>
     /// Gets the outcome of each step in the workflow execution.
@@ -18,7 +20,7 @@ public class WorkflowResult(int exitCode, IEnumerable<StepOutcome> steps)
     /// <summary>
     /// Gets whether the workflow was successful.
     /// </summary>
-    public bool IsSuccess => ExitCode == 0;
+    public bool IsSuccess => ExitCode.IsSuccess;
 
     /// <summary>
     /// Gets the first failure of the run, when there was one.

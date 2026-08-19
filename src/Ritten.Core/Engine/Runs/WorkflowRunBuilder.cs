@@ -4,7 +4,6 @@ using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Engine.DryRun;
 using Ritten.Engine.FileSystem;
-using Ritten.Engine.Runs;
 using Ritten.Engine.Runtimes;
 using Ritten.Engine.Workflows;
 using Ritten.Reporting;
@@ -42,7 +41,7 @@ public class WorkflowRunBuilder : IWorkflowBuilder
         Services.AddSingleton(TimeProvider.System);
         Services.TryAddSingleton<IWorkflowRunner, DefaultWorkflowRunner>();
         Services.TryAddSingleton<IFileSystem, ProjectFileSystem>();
-        Services.AddSingleton<IProgressReporter>(console);
+        Services.AddSingleton<IWorkflowProgress>(console);
         Services.TryAddSingleton<IWorkflowPrompt>(_ => new ConsolePrompt(AnsiConsole.Console));
     }
 
@@ -133,6 +132,13 @@ public class WorkflowRunBuilder : IWorkflowBuilder
         Services.AddSingleton(new WorkflowJob(_workflowLabel, job.Name, _dryRun, _autoApprove));
         _runtime.Runtime.Configure(this, _runtime.Raw);
         job.Configure(this, settings.Value);
+
+        // Capability defaults land after the runtime's and the job's registrations: runtimes
+        // declare theirs with TryAdd so an explicit host choice preempts them, and the engine
+        // answers last of all, only for runs where nobody knows better.
+        Services.TryAddSingleton(new RunContext());
+        Services.TryAddSingleton(new PullRequest());
+        Services.TryAddSingleton<IPullRequestLabels, NoPullRequestLabels>();
 
         Services.AddSingleton(job.Steps);
         foreach (var step in job.Steps)

@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Contracts;
 using Ritten.Engine;
 using Ritten.Engine.Runtimes;
-using Ritten.Reporting;
 using Ritten.Reporting.Sinks;
 
 namespace Ritten.GitHub;
@@ -28,6 +27,7 @@ public sealed class GitHubActionsRuntime : Runtime
         GitHubEnvironment.DefaultToken,
         GitHubEnvironment.RepositoryId,
         GitHubEnvironment.Ref,
+        GitHubEnvironment.BaseRef,
         GitHubEnvironment.StepSummary,
         GitHubEnvironment.Workflow,
         GitHubEnvironment.ServerUrl,
@@ -51,8 +51,12 @@ public sealed class GitHubActionsRuntime : Runtime
 
         if (environment(GitHubEnvironment.Workflow) is { } workflow)
         {
-            builder.Services.Configure<RunContext>(context => context.Title = workflow);
+            builder.Services.TryAddSingleton(new RunContext { Title = workflow });
         }
+
+        var actions = new GitHubActionsOptions();
+        GitHubActionsOptions.ConfigureFromEnvironment(actions, environment);
+        builder.Services.TryAddSingleton(new PullRequest { Number = actions.PullRequestNumber, BaseRef = actions.BaseRef });
 
         // The workflow's own token backs the GitHub client when no explicit GH_TOKEN is given.
         // Other runtimes define GITHUB_TOKEN for workflow compatibility with a token for *their*
@@ -63,10 +67,11 @@ public sealed class GitHubActionsRuntime : Runtime
             builder.Services.PostConfigure<GitHubClientOptions>(options => options.Token ??= token);
         }
 
+        builder.Services.TryAddSingleton<IPullRequestLabels, GitHubPullRequestLabels>();
+
         builder.Services.TryAddSingleton<ICommentService, CommentService>();
         builder.Decorators.Replace<ICommentService, DryRunCommentService>();
-        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IProgressReporter, PendingCommentReporter>());
-        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IReportSink, GitHubReportSink>());
-        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IReportSink, GitHubCommentSink>());
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkflowResultSink, GitHubJobSummaryResultSink>());
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkflowResultSink, GitHubCommentResultSink>());
     }
 }

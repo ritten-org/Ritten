@@ -1,8 +1,5 @@
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
-using Ritten.Engine;
 using Ritten.Engine.Runs;
-using Ritten.Reporting;
 using Ritten.Reporting.Sinks;
 
 namespace Ritten.Reporting;
@@ -10,16 +7,28 @@ namespace Ritten.Reporting;
 /// <summary>
 /// Publishes the final build report to every registered sink when the workflow finishes.
 /// </summary>
-internal class BuildReportPublisher(
+internal class WorkflowReportPublisher(
     IWorkflowLog log,
-    IOptions<RunContext> context,
-    IBuildReport report,
-    MarkdownReportRenderer renderer,
-    IEnumerable<IReportSink> sinks
-) : IProgressReporter
+    RunContext context,
+    IWorkflowReport report,
+    IEnumerable<IWorkflowResultSink> sinks
+) : IWorkflowProgress
 {
     /// <inheritdoc />
-    public Task OnWorkflowStarted(WorkflowJob job, CancellationToken cancellationToken) => Task.CompletedTask;
+    public async Task OnWorkflowStarted(WorkflowJob job, CancellationToken cancellationToken)
+    {
+        foreach (var sink in sinks)
+        {
+            try
+            {
+                await sink.Started(job, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                log.Warning($"Failed to announce the run via {sink.GetType().Name}", ex);
+            }
+        }
+    }
 
     /// <inheritdoc />
     public Task OnStepStarted(Step step, CancellationToken cancellationToken) => Task.CompletedTask;
@@ -30,12 +39,12 @@ internal class BuildReportPublisher(
     /// <inheritdoc />
     public async Task OnWorkflowCompleted(WorkflowResult result, CancellationToken cancellationToken)
     {
-        var markdown = renderer.Render(context.Value.Title, result.IsSuccess, report.Sections, result.FailedStep);
+        var finished = new WorkflowReport(context.Title, result.IsSuccess, report.Sections, result.FailedStep);
         foreach (var sink in sinks)
         {
             try
             {
-                await sink.Publish(markdown, cancellationToken);
+                await sink.Publish(finished, cancellationToken);
             }
             catch (Exception ex)
             {

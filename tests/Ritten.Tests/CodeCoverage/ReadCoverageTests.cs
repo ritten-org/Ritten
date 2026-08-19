@@ -1,6 +1,5 @@
 using System.Text;
 using Ritten.CodeCoverage.Steps;
-using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Reporting;
 

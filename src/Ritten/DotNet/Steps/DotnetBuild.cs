@@ -11,7 +11,7 @@ namespace Ritten.DotNet.Steps;
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
 [Step("dotnet build", StepKind.Work)]
-public class DotnetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IBuildReport report)
+public class DotnetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IWorkflowReport report)
 {
     /// <summary>
     /// Builds the solution.

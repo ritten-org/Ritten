@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
-using Ritten.Engine;
 using Ritten.Engine.Runs;
 using Ritten.GitHub;
 using Ritten.Reporting;
@@ -20,6 +19,7 @@ public class GitHubActionsRuntimeTests
         runtime.Markers.ShouldBe(["GITHUB_ACTIONS"]);
         runtime.Claims.ShouldContain("GITHUB_ACTIONS");
         runtime.Claims.ShouldContain("GITHUB_TOKEN");
+        runtime.Claims.ShouldContain("GITHUB_BASE_REF");
         runtime.Claims.ShouldNotContain("GH_TOKEN", "an explicit GH_TOKEN is the user's instruction to the GitHub client, not the runner's");
     }
 
@@ -52,19 +52,70 @@ public class GitHubActionsRuntimeTests
     }
 
     [Fact]
+    public void ConfigureServices_DescribesThePullRequestUnderReview()
+    {
+        var provider = Build(runtimeEnvironment: new Dictionary<string, string>
+        {
+            ["GITHUB_REF"] = "refs/pull/42/merge",
+            ["GITHUB_BASE_REF"] = "main"
+        });
+
+        var pullRequest = provider.GetRequiredService<PullRequest>();
+        pullRequest.IsPullRequest.ShouldBeTrue();
+        pullRequest.Number.ShouldBe(42);
+        pullRequest.BaseRef.ShouldBe("main");
+    }
+
+    [Fact]
+    public void ConfigureServices_SaysSoWhenTheRunReviewsNoPullRequest()
+    {
+        var provider = Build(runtimeEnvironment: new Dictionary<string, string> { ["GITHUB_REF"] = "refs/heads/main" });
+
+        provider.GetRequiredService<PullRequest>().IsPullRequest.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void ConfigureServices_ReadsLabelsFromTheGitHubApi()
+    {
+        var builder = Builder(filteredEnvironment: []);
+
+        new GitHubActionsRuntime().Configure(builder, new Dictionary<string, string>().GetValueOrDefault);
+
+        builder.Services.ShouldContain(d =>
+            d.ServiceType == typeof(IPullRequestLabels) && d.ImplementationType == typeof(GitHubPullRequestLabels));
+    }
+
+    [Fact]
+    public void ConfigureServices_LeavesALabelReadTheHostBrought()
+    {
+        // Capability defaults are TryAdd: a host that supplied its own implementation keeps it,
+        // and the runtime only fills the gap.
+        var own = Substitute.For<IPullRequestLabels>();
+        var builder = Builder(filteredEnvironment: []);
+        builder.Services.AddSingleton(own);
+
+        new GitHubActionsRuntime().Configure(builder, new Dictionary<string, string>().GetValueOrDefault);
+
+        builder.Services.Where(d => d.ServiceType == typeof(IPullRequestLabels))
+            .ShouldHaveSingleItem().ImplementationInstance.ShouldBeSameAs(own);
+    }
+
+    [Fact]
     public void ConfigureServices_TitlesTheRunAfterTheWorkflow()
     {
         var provider = Build(runtimeEnvironment: new Dictionary<string, string> { ["GITHUB_WORKFLOW"] = "My Workflow" });
 
-        provider.GetRequiredService<IOptions<RunContext>>().Value.Title.ShouldBe("My Workflow");
+        provider.GetRequiredService<RunContext>().Title.ShouldBe("My Workflow");
     }
 
     [Fact]
-    public void ConfigureServices_LeavesTheRunTitleAloneWithoutAWorkflow()
+    public void ConfigureServices_LeavesTheRunTitleToTheEngineWithoutAWorkflow()
     {
+        // Registering nothing lets the engine's default land; claiming the title with a fallback
+        // here would shadow one the host declared.
         var provider = Build(runtimeEnvironment: []);
 
-        provider.GetRequiredService<IOptions<RunContext>>().Value.Title.ShouldBe("Workflow");
+        provider.GetService<RunContext>().ShouldBeNull();
     }
 
     [Fact]
@@ -94,9 +145,8 @@ public class GitHubActionsRuntimeTests
 
         new GitHubActionsRuntime().Configure(builder, new Dictionary<string, string>().GetValueOrDefault);
 
-        builder.Services.Count(d => d.ServiceType == typeof(IReportSink)).ShouldBe(2);
+        builder.Services.Count(d => d.ServiceType == typeof(IWorkflowResultSink)).ShouldBe(2);
         builder.Services.Count(d => d.ServiceType == typeof(ICommentService)).ShouldBe(1);
-        builder.Services.ShouldContain(d => d.ImplementationType == typeof(PendingCommentReporter));
     }
 
     private static ServiceProvider Build(

@@ -20,7 +20,7 @@ public class DotnetTest(
     IOptions<DotNetOptions> options,
     IFileSystem fileSystem,
     IDotNet dotnet,
-    IBuildReport report
+    IWorkflowReport report
 )
 {
     private const int MaxFailures = 20;

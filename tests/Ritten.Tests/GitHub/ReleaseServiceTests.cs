@@ -1,6 +1,5 @@
 using System.Net;
 using Octokit;
-using Ritten.Contracts;
 using Ritten.GitHub;
 using Ritten.Reporting;
 

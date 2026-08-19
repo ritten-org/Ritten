@@ -1,6 +1,6 @@
 namespace Ritten.Reporting;
 
-internal class BuildReport : IBuildReport
+internal class WorkflowReportBuilder : IWorkflowReport
 {
     private readonly List<ReportSection> _sections = [];
 

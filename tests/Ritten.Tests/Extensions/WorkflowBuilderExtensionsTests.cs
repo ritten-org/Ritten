@@ -5,7 +5,6 @@ using Ritten.Changelogs;
 using Ritten.Commands;
 using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.Engine;
 using Ritten.Engine.Runs;
 using Ritten.Git;
 using Ritten.GitHub;
@@ -47,7 +46,7 @@ public class WorkflowBuilderExtensionsTests
         services.Count(d => d.ServiceType == typeof(INuGet)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IGitHubClient)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IReleaseService)).ShouldBe(1);
-        services.Count(d => d.ServiceType == typeof(IBuildReport)).ShouldBe(1);
+        services.Count(d => d.ServiceType == typeof(IWorkflowReport)).ShouldBe(1);
     }
 
     [Fact]

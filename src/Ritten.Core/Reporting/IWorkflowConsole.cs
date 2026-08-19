@@ -1,6 +1,6 @@
 namespace Ritten.Reporting;
 
 /// <summary>
-/// The console narrative.
+/// The entire console narrative.
 /// </summary>
-public interface IWorkflowConsole : IProgressReporter, IWorkflowLog;
+public interface IWorkflowConsole : IWorkflowProgress, IWorkflowLog;

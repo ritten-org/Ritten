@@ -10,7 +10,7 @@ namespace Ritten.DotNet.Steps;
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
 [Step("dotnet format", StepKind.Check)]
-public class DotnetFormat(IDotNet dotnet, IBuildReport report)
+public class DotnetFormat(IDotNet dotnet, IWorkflowReport report)
 {
     /// <summary>
     /// Checks the solution's formatting without changing anything.

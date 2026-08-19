@@ -1,5 +1,3 @@
-using Ritten.Engine;
-
 namespace Ritten.Git;
 
 /// <summary>
@@ -27,6 +25,6 @@ public class GitOptions
     /// <summary>
     /// Configures the given options from the given environment.
     /// </summary>
-    internal static void ConfigureFromEnvironment(GitOptions options, Func<string, string?> envVar) =>
+    private static void ConfigureFromEnvironment(GitOptions options, Func<string, string?> envVar) =>
         options.CommitSha = envVar(RittenEnvironment.CommitSha);
 }

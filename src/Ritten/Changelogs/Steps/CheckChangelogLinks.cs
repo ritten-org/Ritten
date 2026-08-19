@@ -16,7 +16,7 @@ namespace Ritten.Changelogs.Steps;
 /// <param name="report">The build report.</param>
 /// <param name="changelogs">The changelog client.</param>
 [Step("check changelog links", StepKind.Check)]
-public class CheckChangelogLinks(IWorkflowLog log, IOptions<ChangelogOptions> options, IOptions<GitOptions> release, IBuildReport report, IChangelog changelogs)
+public class CheckChangelogLinks(IWorkflowLog log, IOptions<ChangelogOptions> options, IOptions<GitOptions> release, IWorkflowReport report, IChangelog changelogs)
 {
     /// <summary>
     /// Validates the changelog's version links.

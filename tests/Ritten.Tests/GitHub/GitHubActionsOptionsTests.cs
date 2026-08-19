@@ -11,6 +11,7 @@ public class GitHubActionsOptionsTests
         {
             ["GITHUB_REPOSITORY_ID"] = "12345",
             ["GITHUB_REF"] = "refs/pull/42/merge",
+            ["GITHUB_BASE_REF"] = "main",
             ["GITHUB_STEP_SUMMARY"] = "/tmp/summary.md",
             ["GITHUB_SERVER_URL"] = "https://github.com",
             ["GITHUB_REPOSITORY"] = "example/repo",
@@ -20,6 +21,7 @@ public class GitHubActionsOptionsTests
         options.RepositoryId.ShouldBe(12345);
         options.PullRequestNumber.ShouldBe(42);
         options.IsPullRequest.ShouldBeTrue();
+        options.BaseRef.ShouldBe("main");
         options.SummaryFile.ShouldBe("/tmp/summary.md");
         options.RunUrl.ShouldBe("https://github.com/example/repo/actions/runs/987654");
     }
@@ -73,6 +75,7 @@ public class GitHubActionsOptionsTests
         {
             RepositoryId = 99,
             PullRequestNumber = 7,
+            BaseRef = "stale",
             SummaryFile = "/stale/summary.md",
             RunUrl = "https://github.com/example/repo/actions/runs/1"
         };
@@ -81,6 +84,7 @@ public class GitHubActionsOptionsTests
 
         options.RepositoryId.ShouldBeNull();
         options.PullRequestNumber.ShouldBeNull();
+        options.BaseRef.ShouldBeNull();
         options.SummaryFile.ShouldBeNull();
         options.RunUrl.ShouldBeNull();
     }

@@ -1,5 +1,4 @@
 using Ritten.Commands;
-using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Reporting;
 
@@ -12,7 +11,7 @@ public class CommandRunnerTests
     {
         var result = await Runner().Run(Shell("printf 'one\ntwo\n'"), TestContext.Current.CancellationToken);
 
-        result.ExitCode.ShouldBe(0);
+        result.ExitCode.Value.ShouldBe(0);
         result.IsSuccess.ShouldBeTrue();
         result.StandardOutput.ShouldBe("one\ntwo\n");
     }
@@ -30,7 +29,7 @@ public class CommandRunnerTests
     {
         var result = await Runner().Run(Shell("exit 4"), TestContext.Current.CancellationToken);
 
-        result.ExitCode.ShouldBe(4);
+        result.ExitCode.Value.ShouldBe(4);
         result.IsError.ShouldBeTrue();
     }
 
@@ -43,7 +42,7 @@ public class CommandRunnerTests
 
         exception.Message.ShouldContain("exited with code 1");
         exception.Message.ShouldContain("boom");
-        exception.Result.ExitCode.ShouldBe(1);
+        exception.Result.ExitCode.Value.ShouldBe(1);
     }
 
     [Fact]

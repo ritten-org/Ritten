@@ -46,13 +46,13 @@ public sealed class WorkflowApplication
     /// </summary>
     /// <param name="args">What the command line asked for.</param>
     /// <param name="ct">Cancellation token.</param>
-    public Task<int> Run(RunJobArgs args, CancellationToken ct) =>
+    public Task<ExitCode> Run(RunJobArgs args, CancellationToken ct) =>
         Run(args, Environment.GetEnvironmentVariable, ct);
 
     /// <summary>
     /// Runs the requested job against the given directory and environment.
     /// </summary>
-    internal async Task<int> Run(RunJobArgs args, Func<string, string?> environment, CancellationToken ct)
+    internal async Task<ExitCode> Run(RunJobArgs args, Func<string, string?> environment, CancellationToken ct)
     {
         var runtime = _runtimes.Detect(environment);
         if (runtime.IsError)
@@ -116,9 +116,9 @@ public sealed class WorkflowApplication
     internal static SpectreWorkflowConsole EngineConsole(WorkflowLogLevel level = WorkflowLogLevel.Detail) =>
         new(AnsiConsole.Console, level);
 
-    private static int ConfigurationError(IWorkflowLog log, IEnumerable<Error> errors)
+    private static ExitCode ConfigurationError(IWorkflowLog log, IEnumerable<Error> errors)
     {
         log.Errors(errors);
-        return WorkflowExitCodes.ConfigurationError;
+        return ExitCode.ConfigurationError;
     }
 }

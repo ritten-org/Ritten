@@ -11,7 +11,7 @@ namespace Ritten.CodeCoverage.Steps;
 /// <param name="options">The workflow's coverage options.</param>
 /// <param name="report">The build report.</param>
 [Step("check coverage", StepKind.Check)]
-public class CoverageCheck(IOptions<CoverageOptions> options, IBuildReport report)
+public class CoverageCheck(IOptions<CoverageOptions> options, IWorkflowReport report)
 {
     /// <summary>
     /// Judges the collected coverage.

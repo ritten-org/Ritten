@@ -100,7 +100,7 @@ public class DecoratorTests : IDisposable
         var args = new RunJobArgs("verify") { Directory = _root, DryRun = true };
         var exitCode = await application.Run(args, _ => null, TestContext.Current.CancellationToken);
 
-        exitCode.ShouldBe(WorkflowExitCodes.Success);
+        exitCode.ShouldBe(ExitCode.Success);
         client.Pushes.ShouldBe(0, "an application-level decorator must reach the run");
     }
 

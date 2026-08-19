@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
-using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Reporting;
 using Ritten.Tests.Engine.Helpers;
@@ -22,7 +21,7 @@ public class ReadChangelogTests
         .GetRequiredService<IChangelog>();
 
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
-    private readonly IBuildReport _report = Substitute.For<IBuildReport>();
+    private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
     private readonly ReportSection _changelogSection = new("Changelog");
     private readonly ChangelogOptions _options = TestOptions.Changelog();
 

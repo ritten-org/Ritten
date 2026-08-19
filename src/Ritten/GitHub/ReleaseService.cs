@@ -1,5 +1,4 @@
 using Octokit;
-using Ritten.Contracts;
 using Ritten.Reporting;
 
 namespace Ritten.GitHub;

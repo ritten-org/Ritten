@@ -13,7 +13,7 @@ namespace Ritten.NuGet.Steps;
 /// <param name="nuget">The NuGet client.</param>
 /// <param name="report">The build report.</param>
 [Step("nuget push", StepKind.Publish)]
-public class NugetPush(IWorkflowLog log, INuGet nuget, IBuildReport report)
+public class NugetPush(IWorkflowLog log, INuGet nuget, IWorkflowReport report)
 {
     /// <summary>
     /// Pushes the packed packages.

@@ -1,5 +1,4 @@
 using Ritten.Commands;
-using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Git;
 using Ritten.Reporting;

@@ -1,3 +1,5 @@
+using Ritten.Contracts;
+
 namespace Ritten.Commands;
 
 /// <summary>
@@ -6,17 +8,17 @@ namespace Ritten.Commands;
 /// <param name="ExitCode">The exit code of the process.</param>
 /// <param name="StandardOutput">The contents of standard out pipe.</param>
 /// <param name="StandardError">The contents of the standard error pipe.</param>
-public record CommandResult(int ExitCode, string StandardOutput, string StandardError)
+public record CommandResult(ExitCode ExitCode, string StandardOutput, string StandardError)
 {
     /// <summary>
     /// True if the command completed successfully, otherwise false.
     /// </summary>
-    public bool IsSuccess => ExitCode == 0;
+    public bool IsSuccess => ExitCode.IsSuccess;
 
     /// <summary>
     /// True if the command exited non-zero, otherwise false.
     /// </summary>
-    public bool IsError => ExitCode != 0;
+    public bool IsError => !ExitCode.IsSuccess;
 
     /// <summary>
     /// The last few lines the command wrote stderr.

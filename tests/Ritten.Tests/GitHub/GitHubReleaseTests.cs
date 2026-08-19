@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
-using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.GitHub;
 using Ritten.GitHub.Steps;
