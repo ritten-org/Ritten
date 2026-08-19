@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **GitHub ships as a package.** The GitHub Actions runtime now ship as `Ritten.GitHub`.
 - **The engine runs external commands.** The `Ritten.Commands` module moved from the CLI into `Ritten.Core`.
 - **Steps can read the pull request under review.** The engine owns a `PullRequest` contract (number, base ref) and an `IPullRequestLabels` read returning `Label` values (name, color, description), and the active runtime supplies them — GitHub Actions fills both from its own claims and the GitHub API. Where nothing can answer — a local run, a runtime without the concept — labels read as null, distinct from a pull request that simply carries none, and a host can always register its own implementation to take precedence.
 

@@ -5,7 +5,7 @@ namespace Ritten.GitHub;
 /// <summary>
 /// Reports what would be released instead of releasing it.
 /// </summary>
-internal class DryRunReleaseService(IWorkflowLog log) : IReleaseService
+internal class GitHubDryRunReleaseService(IWorkflowLog log) : IGitHubReleaseService
 {
     /// <inheritdoc />
     public Task<bool> Exists(RepositoryPath repository, string tag, CancellationToken cancellationToken = default)

@@ -25,9 +25,3 @@ public class TestStep
         return OnRun is null ? StepResult.Successful : await OnRun(cancellationToken);
     }
 }
-
-public sealed class TestStepA : TestStep;
-
-public sealed class TestStepB : TestStep;
-
-public sealed class TestStepC : TestStep;

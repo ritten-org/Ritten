@@ -45,7 +45,7 @@ public class WorkflowBuilderExtensionsTests
         services.Count(d => d.ServiceType == typeof(IGit)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(INuGet)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IGitHubClient)).ShouldBe(1);
-        services.Count(d => d.ServiceType == typeof(IReleaseService)).ShouldBe(1);
+        services.Count(d => d.ServiceType == typeof(IGitHubReleaseService)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IWorkflowReport)).ShouldBe(1);
     }
 
@@ -73,7 +73,7 @@ public class WorkflowBuilderExtensionsTests
         var services = Builder().AddBuildReporting().Services;
 
         services.ShouldNotContain(d => d.ServiceType == typeof(IGitHubClient));
-        services.ShouldNotContain(d => d.ServiceType == typeof(ICommentService));
+        services.ShouldNotContain(d => d.ServiceType == typeof(IGitHubCommentService));
     }
 
     [Fact]

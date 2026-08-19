@@ -69,8 +69,8 @@ public sealed class GitHubActionsRuntime : Runtime
 
         builder.Services.TryAddSingleton<IPullRequestLabels, GitHubPullRequestLabels>();
 
-        builder.Services.TryAddSingleton<ICommentService, CommentService>();
-        builder.Decorators.Replace<ICommentService, DryRunCommentService>();
+        builder.Services.TryAddSingleton<IGitHubCommentService, GitHubGitHubCommentService>();
+        builder.Decorators.Replace<IGitHubCommentService, GitHubDryRunCommentService>();
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkflowResultSink, GitHubJobSummaryResultSink>());
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkflowResultSink, GitHubCommentResultSink>());
     }

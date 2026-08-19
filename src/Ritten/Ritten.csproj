@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ritten.Core\Ritten.Core.csproj" />
+    <ProjectReference Include="..\Ritten.GitHub\Ritten.GitHub.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,7 +37,6 @@
     <PackageReference Include="NuGet.Common" />
     <PackageReference Include="NuGet.Protocol" />
     <PackageReference Include="NuGet.Versioning" />
-    <PackageReference Include="Octokit" />
     <PackageReference Include="Spectre.Console" />
     <PackageReference Include="System.CommandLine" />
   </ItemGroup>

@@ -9,8 +9,8 @@ using Ritten.Reporting;
 namespace Ritten.GitHub.Steps;
 
 /// <summary>
-/// Creates the GitHub release for the version being shipped, with its changelog entry as the
-/// notes. Prereleases are skipped, and so is a release a previous run already created.
+/// Creates the GitHub release for the version being shipped, with its changelog entry as the notes.
+/// Prereleases are skipped, and so is a release a previous run already created.
 /// </summary>
 /// <param name="log">The workflow log.</param>
 /// <param name="options">The workflow's release options.</param>
@@ -20,7 +20,7 @@ namespace Ritten.GitHub.Steps;
 public class GitHubRelease(
     IWorkflowLog log,
     IOptions<GitOptions> options,
-    IReleaseService releases,
+    IGitHubReleaseService releases,
     IChangelog changelogs
 )
 {

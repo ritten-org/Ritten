@@ -3,7 +3,8 @@
   "build": {
     "projects": [
       "src/Ritten/Ritten.csproj",
-      "src/Ritten.Core/Ritten.Core.csproj"
+      "src/Ritten.Core/Ritten.Core.csproj",
+      "src/Ritten.GitHub/Ritten.GitHub.csproj"
     ]
   }
 }
