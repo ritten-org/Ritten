@@ -7,7 +7,7 @@ internal class GitClient(ICommandRunner commands) : IGit
     public async Task<string?> GetRemoteUrl(string remote, CancellationToken cancellationToken = default)
     {
         var result = await commands.Run(
-            Command.Create("git").WithArguments("remote", "get-url", remote),
+            Command.Create("git").WithArguments("remote", "get-url", remote).QuietOutput(),
             cancellationToken);
         return result.IsSuccess && !string.IsNullOrWhiteSpace(result.StandardOutput)
             ? result.StandardOutput.Trim()
@@ -18,7 +18,7 @@ internal class GitClient(ICommandRunner commands) : IGit
     {
         // A file that doesn't exist at the reference is an expected answer, not a failure.
         var result = await commands.Run(
-            Command.Create("git").WithArguments("show", $"{reference}:{path}"),
+            Command.Create("git").WithArguments("show", $"{reference}:{path}").QuietOutput(),
             cancellationToken);
         return result.IsSuccess ? result.StandardOutput : null;
     }
@@ -27,7 +27,7 @@ internal class GitClient(ICommandRunner commands) : IGit
     {
         // --porcelain rather than `diff --quiet` so that untracked files are reported too.
         var result = await commands.Run(
-            Command.Create("git").WithArguments("status", "--porcelain", "--", path).ThrowOnError(),
+            Command.Create("git").WithArguments("status", "--porcelain", "--", path).QuietOutput().ThrowOnError(),
             cancellationToken);
 
         // Porcelain status codes are fixed-width ("XY <path>"), so the path starts at offset 3 —
@@ -49,7 +49,7 @@ internal class GitClient(ICommandRunner commands) : IGit
     public async Task<bool> TagExists(string tag, CancellationToken cancellationToken = default)
     {
         var result = await commands.Run(
-            Command.Create("git").WithArguments("rev-parse", "--verify", "--quiet", $"refs/tags/{tag}"),
+            Command.Create("git").WithArguments("rev-parse", "--verify", "--quiet", $"refs/tags/{tag}").QuietOutput(),
             cancellationToken);
         return result.IsSuccess;
     }
@@ -57,7 +57,7 @@ internal class GitClient(ICommandRunner commands) : IGit
     public async Task<bool> RemoteTagExists(string remote, string tag, CancellationToken cancellationToken = default)
     {
         var result = await commands.Run(
-            Command.Create("git").WithArguments("ls-remote", "--tags", remote, $"refs/tags/{tag}").ThrowOnError(),
+            Command.Create("git").WithArguments("ls-remote", "--tags", remote, $"refs/tags/{tag}").QuietOutput().ThrowOnError(),
             cancellationToken);
         return !string.IsNullOrWhiteSpace(result.StandardOutput);
     }

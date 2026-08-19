@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-08-19
+
+### Changed
+
+- **Commands show their output.** A command's output now prints by default, so long-running tools like `dotnet test` narrate themselves the way they do outside Ritten.
+- **`AddGit()` needs no tag prefix.** The prefix configures the tagging steps, not the client, so a host that never tags adds the client alone.
+
 ## [0.5.0] - 2026-08-19
 
 ### Added
@@ -141,6 +148,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.6.0]: https://github.com/ritten-org/Ritten/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ritten-org/Ritten/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ritten-org/Ritten/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ritten-org/Ritten/compare/v0.2.0...v0.3.0

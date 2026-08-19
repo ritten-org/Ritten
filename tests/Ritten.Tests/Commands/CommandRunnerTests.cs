@@ -25,6 +25,28 @@ public class CommandRunnerTests
     }
 
     [Fact]
+    public async Task Run_ShowsOutputByDefault()
+    {
+        // The tool's output is the step's story: a six-minute test run should narrate itself.
+        var log = Substitute.For<IWorkflowLog>();
+        var result = await Runner(log).Run(Shell("echo narrating"), TestContext.Current.CancellationToken);
+
+        result.IsSuccess.ShouldBeTrue();
+        log.Received().Log(WorkflowLogLevel.Detail, "narrating");
+    }
+
+    [Fact]
+    public async Task Run_KeepsQuietedOutputToVerbose()
+    {
+        var log = Substitute.For<IWorkflowLog>();
+        var result = await Runner(log).Run(Shell("echo probing").QuietOutput(), TestContext.Current.CancellationToken);
+
+        result.IsSuccess.ShouldBeTrue();
+        log.Received().Log(WorkflowLogLevel.Verbose, "probing");
+        log.DidNotReceive().Log(WorkflowLogLevel.Detail, "probing");
+    }
+
+    [Fact]
     public async Task Run_ReturnsANonZeroExitCodeWithoutThrowing()
     {
         var result = await Runner().Run(Shell("exit 4"), TestContext.Current.CancellationToken);
@@ -98,11 +120,14 @@ public class CommandRunnerTests
         result.StandardOutput.TrimEnd('\n').ShouldEndWith(Path.Combine("sub"));
     }
 
-    private static CommandRunner Runner(string? currentDirectory = null)
+    private static CommandRunner Runner(string? currentDirectory = null) =>
+        Runner(Substitute.For<IWorkflowLog>(), currentDirectory);
+
+    private static CommandRunner Runner(IWorkflowLog log, string? currentDirectory = null)
     {
         var fileSystem = Substitute.For<IFileSystem>();
         fileSystem.ProjectRoot.AbsolutePath.Returns(currentDirectory ?? Path.GetTempPath());
-        return new CommandRunner(Substitute.For<IWorkflowLog>(), fileSystem);
+        return new CommandRunner(log, fileSystem);
     }
 
     private static Command Shell(string script) => Command.Create("/bin/sh").WithArguments("-c", script);

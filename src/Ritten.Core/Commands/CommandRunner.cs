@@ -32,13 +32,16 @@ internal class CommandRunner(IWorkflowLog log, IFileSystem fileSystem) : IComman
             process.StartInfo.Environment[key] = value;
         }
 
+        // The tool's output is the step's story by default; probes quiet theirs down to --verbose.
+        var outputLevel = command.OutputQuieted ? WorkflowLogLevel.Verbose : WorkflowLogLevel.Detail;
+
         var stdOut = new StringBuilder();
         var stdOutDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        process.OutputDataReceived += CaptureOutput(stdOut, command.OutputRedacted, stdOutDone);
+        process.OutputDataReceived += CaptureOutput(stdOut, command.OutputRedacted, outputLevel, stdOutDone);
 
         var stdErr = new StringBuilder();
         var stdErrDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        process.ErrorDataReceived += CaptureOutput(stdErr, command.OutputRedacted, stdErrDone);
+        process.ErrorDataReceived += CaptureOutput(stdErr, command.OutputRedacted, outputLevel, stdErrDone);
 
         var exitTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         process.Exited += (_, _) => exitTcs.TrySetResult();
@@ -104,7 +107,7 @@ internal class CommandRunner(IWorkflowLog log, IFileSystem fileSystem) : IComman
         return tail.Count == 0 ? message : $"{message}\n{string.Join('\n', tail)}";
     }
 
-    private DataReceivedEventHandler CaptureOutput(StringBuilder sb, bool hide, TaskCompletionSource tcs) => (_, e) =>
+    private DataReceivedEventHandler CaptureOutput(StringBuilder sb, bool hide, WorkflowLogLevel level, TaskCompletionSource tcs) => (_, e) =>
     {
         if (e.Data is null)
         {
@@ -115,7 +118,7 @@ internal class CommandRunner(IWorkflowLog log, IFileSystem fileSystem) : IComman
         sb.AppendLine(e.Data);
         if (!hide)
         {
-            log.Verbose(e.Data);
+            log.Log(level, e.Data);
         }
     };
 }
