@@ -9,7 +9,7 @@ namespace Ritten.DotNet.Steps;
 /// </summary>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
-[Step("dotnet format", StepKind.Check)]
+[Step("check formatting", StepKind.Check)]
 public class DotnetFormat(IDotNet dotnet, IWorkflowReport report)
 {
     /// <summary>

@@ -53,6 +53,45 @@ public class GitClientTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Show_ReadsTheFileAsItExistsAtTheReference()
+    {
+        await File.WriteAllTextAsync(Path.Combine(_repository, "a.txt"), "committed", TestContext.Current.CancellationToken);
+        await Git("add", "a.txt");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", "add a.txt");
+        await File.WriteAllTextAsync(Path.Combine(_repository, "a.txt"), "changed", TestContext.Current.CancellationToken);
+
+        var content = await _git.Show("HEAD", "a.txt", TestContext.Current.CancellationToken);
+
+        content.ShouldNotBeNull().Trim().ShouldBe("committed");
+    }
+
+    [Fact]
+    public async Task Show_IsNullWhenTheFileDoesNotExistAtTheReference()
+    {
+        (await _git.Show("HEAD", "missing.txt", TestContext.Current.CancellationToken)).ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task ChangedFiles_ReportsModifiedAndUntrackedFiles()
+    {
+        await File.WriteAllTextAsync(Path.Combine(_repository, "tracked.txt"), "committed", TestContext.Current.CancellationToken);
+        await Git("add", "tracked.txt");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", "add tracked.txt");
+        await File.WriteAllTextAsync(Path.Combine(_repository, "tracked.txt"), "changed", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(_repository, "untracked.txt"), "new", TestContext.Current.CancellationToken);
+
+        var changes = await _git.ChangedFiles(".", TestContext.Current.CancellationToken);
+
+        changes.ShouldBe(["tracked.txt", "untracked.txt"], ignoreOrder: true);
+    }
+
+    [Fact]
+    public async Task ChangedFiles_IsEmptyForACleanPath()
+    {
+        (await _git.ChangedFiles(".", TestContext.Current.CancellationToken)).ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task TagExists_IsFalseForAMissingTag()
     {
         (await _git.TagExists("v9.9.9", TestContext.Current.CancellationToken)).ShouldBeFalse();

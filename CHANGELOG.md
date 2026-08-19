@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-08-19
+
+### Added
+
+- **Git can read files and changes.** `IGit` gains `Show` (a file's content as it exists at a reference) and `ChangedFiles` (the paths that differ from the committed state, untracked files included), so checks can compare against a base branch through the same client that tags.
+
 ## [0.4.0] - 2026-08-19
 
 ### Added
@@ -135,6 +141,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.5.0]: https://github.com/ritten-org/Ritten/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ritten-org/Ritten/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ritten-org/Ritten/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ritten-org/Ritten/compare/v0.1.0...v0.2.0
