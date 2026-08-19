@@ -6,14 +6,14 @@ namespace Ritten.Engine.Runs;
 
 internal class DefaultWorkflowRunner(
     IWorkflowLog log,
-    IEnumerable<IProgressReporter> reporters,
+    IEnumerable<IWorkflowProgress> reporters,
     IReadOnlyList<Step> steps,
     IServiceProvider services,
     WorkflowJob job
 ) : IWorkflowRunner
 {
 
-    private readonly IReadOnlyCollection<IProgressReporter> _reporters = [.. reporters];
+    private readonly IReadOnlyCollection<IWorkflowProgress> _reporters = [.. reporters];
 
     public async Task<WorkflowResult> Run(CancellationToken cancellationToken)
     {
@@ -21,8 +21,8 @@ internal class DefaultWorkflowRunner(
         var outcomes = await RunSteps(cancellationToken);
 
         var exitCode = cancellationToken.IsCancellationRequested
-            ? WorkflowExitCodes.Cancelled
-            : outcomes.FirstOrDefault(o => o.Result.IsFailure)?.Result.ExitCode ?? WorkflowExitCodes.Success;
+            ? ExitCode.Cancelled
+            : outcomes.FirstOrDefault(o => o.Result.IsFailure)?.Result.ExitCode ?? ExitCode.Success;
 
         var result = new WorkflowResult(exitCode, outcomes);
         await NotifyReporters(r => r.OnWorkflowCompleted(result, cancellationToken), reverse: true);
@@ -77,7 +77,7 @@ internal class DefaultWorkflowRunner(
         }
     }
 
-    private async Task NotifyReporters(Func<IProgressReporter, Task> action, bool reverse = false)
+    private async Task NotifyReporters(Func<IWorkflowProgress, Task> action, bool reverse = false)
     {
         var reporters = reverse ? _reporters.Reverse() : _reporters;
         foreach (var reporter in reporters)

@@ -18,6 +18,11 @@ public class GitHubActionsOptions
     public int? PullRequestNumber { get; set; }
 
     /// <summary>
+    /// The ref the pull request wants to merge into, if the run is one.
+    /// </summary>
+    public string? BaseRef { get; set; }
+
+    /// <summary>
     /// The web page for the current workflow run, where the logs live.
     /// </summary>
     public string? RunUrl { get; set; }
@@ -40,6 +45,7 @@ public class GitHubActionsOptions
     {
         options.RepositoryId = ParseRepositoryId(envVar(GitHubEnvironment.RepositoryId));
         options.PullRequestNumber = ParsePullRequestNumber(envVar(GitHubEnvironment.Ref));
+        options.BaseRef = envVar(GitHubEnvironment.BaseRef);
         options.SummaryFile = envVar(GitHubEnvironment.StepSummary);
         options.RunUrl = BuildRunUrl(envVar(GitHubEnvironment.ServerUrl), envVar(GitHubEnvironment.Repository), envVar(GitHubEnvironment.RunId));
     }

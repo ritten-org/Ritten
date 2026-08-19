@@ -1,7 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using NuGet.Versioning;
 using Ritten.Contracts;
-using Ritten.DotNet;
 using Ritten.Engine;
 using Ritten.Engine.Runs;
 using Ritten.Engine.Runtimes;
@@ -25,7 +23,7 @@ public class WorkflowRunTests
         var exitCode = await host.Run(TestContext.Current.CancellationToken);
 
         // Assert
-        exitCode.ShouldBe(WorkflowExitCodes.Success);
+        exitCode.ShouldBe(ExitCode.Success);
         probe.Ran.ShouldHaveSingleItem();
     }
 
@@ -40,7 +38,7 @@ public class WorkflowRunTests
         var exitCode = await host.Run(TestContext.Current.CancellationToken);
 
         // Assert
-        exitCode.ShouldBe(WorkflowExitCodes.Failed);
+        exitCode.ShouldBe(ExitCode.Failed);
     }
 
     [Fact]
@@ -103,6 +101,45 @@ public class WorkflowRunTests
         result.Value.Dispose();
         // The runtime reads its claimed variables from the unfiltered environment: they're its own.
         runtime.SeenSecret.ShouldBe("set");
+    }
+
+    [Fact]
+    public void Build_SuppliesTheRunFactDefaultsWhenNothingElseDoes()
+    {
+        // The engine's defaults keep ValidateOnBuild happy on runtimes that know nothing about
+        // these facts: steps see "not a pull request" and "no labels", never a missing
+        // registration.
+        var builder = WorkflowRunBuilderHelpers.Create();
+        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
+
+        var result = builder.Build(new TestJob());
+
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Dispose();
+        builder.Services.Single(d => d.ServiceType == typeof(RunContext)).ImplementationInstance
+            .ShouldBeOfType<RunContext>().Title.ShouldBe("Workflow");
+        builder.Services.Single(d => d.ServiceType == typeof(PullRequest)).ImplementationInstance
+            .ShouldBeOfType<PullRequest>().IsPullRequest.ShouldBeFalse();
+        builder.Services.ShouldContain(d =>
+            d.ServiceType == typeof(IPullRequestLabels) && d.ImplementationType == typeof(NoPullRequestLabels));
+    }
+
+    [Fact]
+    public void Build_LeavesALabelReadTheHostRegistered()
+    {
+        // The default is only for runs where nobody knows better; anything the host or a runtime
+        // declared wins over it.
+        var own = Substitute.For<IPullRequestLabels>();
+        var builder = WorkflowRunBuilderHelpers.Create();
+        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
+        builder.Services.AddSingleton(own);
+
+        var result = builder.Build(new TestJob());
+
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Dispose();
+        builder.Services.Where(d => d.ServiceType == typeof(IPullRequestLabels))
+            .ShouldHaveSingleItem().ImplementationInstance.ShouldBeSameAs(own);
     }
 
     [Fact]

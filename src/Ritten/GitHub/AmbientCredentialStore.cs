@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Commands;
-using Ritten.Contracts;
 using Ritten.Reporting;
 
 namespace Ritten.GitHub;

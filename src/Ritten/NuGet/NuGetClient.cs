@@ -3,7 +3,6 @@ using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using Ritten.Commands;
-using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Reporting;
 

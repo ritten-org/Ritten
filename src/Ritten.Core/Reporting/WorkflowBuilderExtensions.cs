@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Ritten.Contracts;
 using Ritten.Engine;
 
 namespace Ritten.Reporting;
@@ -13,7 +12,7 @@ public static class WorkflowBuilderExtensions
     {
         /// <summary>
         /// Adds <see cref="IWorkflowReport"/> to the service collection and registers the
-        /// <see cref="BuildReportPublisher"/> that publishes it when the workflow finishes.
+        /// <see cref="WorkflowReportPublisher"/> that publishes it when the workflow finishes.
         /// </summary>
         public IWorkflowBuilder AddBuildReporting()
         {
@@ -25,7 +24,7 @@ public static class WorkflowBuilderExtensions
             builder.Services.AddSingleton<BuildReportingMarker>();
             builder.Services.AddSingleton<IWorkflowReport, WorkflowReport>();
             builder.Services.AddSingleton<MarkdownReportRenderer>();
-            builder.Services.AddSingleton<IProgressReporter, BuildReportPublisher>();
+            builder.Services.AddSingleton<IWorkflowProgress, WorkflowReportPublisher>();
             return builder;
         }
     }

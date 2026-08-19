@@ -1,8 +1,5 @@
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
-using Ritten.Engine;
 using Ritten.Engine.Runs;
-using Ritten.Reporting;
 using Ritten.Reporting.Sinks;
 
 namespace Ritten.Reporting;
@@ -10,13 +7,10 @@ namespace Ritten.Reporting;
 /// <summary>
 /// Publishes the final build report to every registered sink when the workflow finishes.
 /// </summary>
-internal class BuildReportPublisher(
+internal class WorkflowReportPublisher(
     IWorkflowLog log,
-    IOptions<RunContext> context,
-    IWorkflowReport report,
-    MarkdownReportRenderer renderer,
-    IEnumerable<IReportSink> sinks
-) : IProgressReporter
+    IEnumerable<IWorkflowResultSink> sinks
+) : IWorkflowProgress
 {
     /// <inheritdoc />
     public Task OnWorkflowStarted(WorkflowJob job, CancellationToken cancellationToken) => Task.CompletedTask;
@@ -30,12 +24,11 @@ internal class BuildReportPublisher(
     /// <inheritdoc />
     public async Task OnWorkflowCompleted(WorkflowResult result, CancellationToken cancellationToken)
     {
-        var markdown = renderer.Render(context.Value.Title, result.IsSuccess, report.Sections, result.FailedStep);
         foreach (var sink in sinks)
         {
             try
             {
-                await sink.Publish(markdown, cancellationToken);
+                await sink.Publish(result, cancellationToken);
             }
             catch (Exception ex)
             {

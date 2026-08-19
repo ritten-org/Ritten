@@ -9,38 +9,38 @@ namespace Ritten.Contracts;
 /// <param name="ExitCode">The exit code of the individual step.</param>
 /// <param name="Continue">True if the workflow should continue execution, otherwise false.</param>
 /// <param name="Errors">Any errors associated with the result.</param>
-public record StepResult(int ExitCode, bool Continue, IReadOnlyCollection<Error>? Errors)
+public record StepResult(ExitCode ExitCode, bool Continue, IReadOnlyCollection<Error>? Errors)
 {
     /// <summary>
     /// Represents a successful workflow step execution with no exceptions and continuation.
     /// </summary>
-    public static readonly StepResult Successful = new(WorkflowExitCodes.Success, true, null);
+    public static readonly StepResult Successful = new(ExitCode.Success, true, null);
 
     /// <summary>
     /// Indicates that cancellation was requested, and the workflow should stop execution.
     /// </summary>
-    public static readonly StepResult StoppedAfterCancel = new(WorkflowExitCodes.Cancelled, false, [new Error("Stopped after cancel.")]);
+    public static readonly StepResult StoppedAfterCancel = new(ExitCode.Cancelled, false, [new Error("Stopped after cancel.")]);
 
     /// <summary>
     /// Indicates that the step found no work left for the job: the workflow stops here, successfully.
     /// </summary>
-    public static readonly StepResult NothingToDo = new(WorkflowExitCodes.Success, false, null);
+    public static readonly StepResult NothingToDo = new(ExitCode.Success, false, null);
 
     /// <summary>
     /// Indicates that the step failed with an error.
     /// </summary>
-    public static StepResult Failed(Error error) => new(WorkflowExitCodes.Failed, false, [error]);
+    public static StepResult Failed(Error error) => new(ExitCode.Failed, false, [error]);
 
     /// <summary>
     /// Indicates that the step failed with multiple errors.
     /// </summary>
-    public static StepResult Failed(IEnumerable<Error> errors) => new(WorkflowExitCodes.Failed, false, [.. errors]);
+    public static StepResult Failed(IEnumerable<Error> errors) => new(ExitCode.Failed, false, [.. errors]);
 
     /// <summary>
     /// Gets whether this result represents a failure.
     /// </summary>
     [MemberNotNullWhen(true, nameof(Errors))]
-    public bool IsFailure => ExitCode != WorkflowExitCodes.Success;
+    public bool IsFailure => !ExitCode.IsSuccess;
 
     /// <summary>
     /// Converts an error into a failed step result.

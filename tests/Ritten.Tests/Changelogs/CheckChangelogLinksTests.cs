@@ -3,7 +3,6 @@ using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
-using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Reporting;
 using Ritten.Tests.Engine.Helpers;

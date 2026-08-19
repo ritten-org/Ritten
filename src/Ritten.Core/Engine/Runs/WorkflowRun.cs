@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using Ritten.Engine.Runs;
+using Ritten.Contracts;
 
 namespace Ritten.Engine.Runs;
 
@@ -21,7 +21,7 @@ public sealed class WorkflowRun : IDisposable
         _services.Dispose();
     }
 
-    internal async Task<int> Run(CancellationToken cancellationToken)
+    internal async Task<ExitCode> Run(CancellationToken cancellationToken)
     {
         var runner = _services.GetRequiredService<IWorkflowRunner>();
         var result = await runner.Run(cancellationToken);

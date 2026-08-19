@@ -9,7 +9,7 @@ internal static class DefaultWorkflowRunnerHelpers
 {
     public static DefaultWorkflowRunner CreateRunner(
         object[]? steps = null,
-        IProgressReporter[]? reporters = null,
+        IWorkflowProgress[]? reporters = null,
         WorkflowJob? job = null,
         IWorkflowLog? log = null
     )

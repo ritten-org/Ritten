@@ -20,7 +20,7 @@ builder.Runtimes
 var built = builder.Build();
 if (built.IsError)
 {
-    return WorkflowExitCodes.ConfigurationError;
+    return ExitCode.ConfigurationError;
 }
 
 var workflow = built.Value;
@@ -66,7 +66,7 @@ return await root.Parse(args).InvokeAsync();
 Command JobCommand(string name, string description)
 {
     var command = new Command(name, description);
-    command.SetAction((parseResult, cancellationToken) =>
+    command.SetAction(async (parseResult, cancellationToken) =>
     {
         var logLevel = parseResult.GetValue(verbose)
             ? WorkflowLogLevel.Verbose
@@ -80,7 +80,7 @@ Command JobCommand(string name, string description)
             AutoApprove = parseResult.GetValue(autoApprove)
         };
 
-        return workflow.Run(args, cancellationToken);
+        return await workflow.Run(args, cancellationToken);
     });
     return command;
 }

@@ -61,7 +61,7 @@ public class DefaultWorkflowRunnerTests
 
         // Assert
         step1.Runs.ShouldBe(0);
-        summary.ExitCode.ShouldBe(WorkflowExitCodes.Cancelled);
+        summary.ExitCode.ShouldBe(ExitCode.Cancelled);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class DefaultWorkflowRunnerTests
         var summary = await sut.Run(cts.Token);
 
         // Assert
-        summary.ExitCode.ShouldBe(WorkflowExitCodes.Cancelled);
+        summary.ExitCode.ShouldBe(ExitCode.Cancelled);
         summary.Steps.ShouldHaveSingleItem().Result.ShouldBe(StepResult.StoppedAfterCancel);
     }
 
@@ -92,7 +92,7 @@ public class DefaultWorkflowRunnerTests
     public async Task RunWorkflow_StepFailsButAsksToContinue_StillFailsTheWorkflow()
     {
         // Arrange
-        var failed = new StepResult(WorkflowExitCodes.Failed, Continue: true, ["Failed, but not fatally."]);
+        var failed = new StepResult(ExitCode.Failed, Continue: true, ["Failed, but not fatally."]);
         var step1 = new TestStepA { OnRun = _ => Task.FromResult(failed) };
         var step2 = new TestStepB();
 
@@ -103,7 +103,7 @@ public class DefaultWorkflowRunnerTests
 
         // Assert
         step2.Runs.ShouldBe(1);
-        summary.ExitCode.ShouldBe(WorkflowExitCodes.Failed);
+        summary.ExitCode.ShouldBe(ExitCode.Failed);
         summary.IsSuccess.ShouldBeFalse();
     }
 
@@ -117,7 +117,7 @@ public class DefaultWorkflowRunnerTests
         var summary = await sut.Run(CancellationToken.None);
 
         // Assert
-        summary.ExitCode.ShouldBe(WorkflowExitCodes.Success);
+        summary.ExitCode.ShouldBe(ExitCode.Success);
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public class DefaultWorkflowRunnerTests
     {
         // Arrange
         var log = Substitute.For<IWorkflowLog>();
-        var reporter = Substitute.For<IProgressReporter>();
+        var reporter = Substitute.For<IWorkflowProgress>();
         reporter.OnWorkflowStarted(Arg.Any<WorkflowJob>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("Reporter is broken."));
 
@@ -159,7 +159,7 @@ public class DefaultWorkflowRunnerTests
         var summary = await sut.Run(CancellationToken.None);
 
         // Assert
-        summary.ExitCode.ShouldBe(WorkflowExitCodes.Success);
+        summary.ExitCode.ShouldBe(ExitCode.Success);
         log.Received().Log(
             WorkflowLogLevel.Warning,
             Arg.Any<string>(),
@@ -180,7 +180,7 @@ public class DefaultWorkflowRunnerTests
         var summary = await sut.Run(CancellationToken.None);
 
         // Assert
-        summary.ExitCode.ShouldBe(WorkflowExitCodes.Failed);
+        summary.ExitCode.ShouldBe(ExitCode.Failed);
     }
 
     [Fact]
@@ -206,7 +206,7 @@ public class DefaultWorkflowRunnerTests
     {
         // Arrange
         var journal = new List<object>();
-        var reporter = Substitute.For<IProgressReporter>();
+        var reporter = Substitute.For<IWorkflowProgress>();
         reporter.OnWorkflowStarted(Arg.Any<WorkflowJob>(), Arg.Any<CancellationToken>())
             .Returns(_ =>
             {
@@ -229,7 +229,7 @@ public class DefaultWorkflowRunnerTests
     {
         // Arrange
         var journal = new List<object>();
-        var reporter = Substitute.For<IProgressReporter>();
+        var reporter = Substitute.For<IWorkflowProgress>();
         reporter.OnWorkflowCompleted(Arg.Any<WorkflowResult>(), Arg.Any<CancellationToken>())
             .Returns(_ =>
             {
@@ -252,7 +252,7 @@ public class DefaultWorkflowRunnerTests
     {
         // Arrange
         var journal = new List<object>();
-        var reporter = Substitute.For<IProgressReporter>();
+        var reporter = Substitute.For<IWorkflowProgress>();
         reporter.OnStepStarted(Arg.Any<Step>(), Arg.Any<CancellationToken>())
             .Returns(_ =>
             {

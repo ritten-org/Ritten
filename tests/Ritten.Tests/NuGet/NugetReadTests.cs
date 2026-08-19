@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
-using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.NuGet;
 using Ritten.NuGet.Steps;

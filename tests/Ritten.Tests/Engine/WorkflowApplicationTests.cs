@@ -59,7 +59,7 @@ public class WorkflowApplicationTests : IDisposable
 
         var exitCode = await application.Run(new RunJobArgs("verify") { Directory = _root }, Empty, TestContext.Current.CancellationToken);
 
-        exitCode.ShouldBe(WorkflowExitCodes.Success);
+        exitCode.ShouldBe(ExitCode.Success);
         probe.Ran.ShouldHaveSingleItem();
     }
 
@@ -71,7 +71,7 @@ public class WorkflowApplicationTests : IDisposable
 
         var exitCode = await application.Run(new RunJobArgs("deploy") { Directory = _root }, Empty, TestContext.Current.CancellationToken);
 
-        exitCode.ShouldBe(WorkflowExitCodes.ConfigurationError);
+        exitCode.ShouldBe(ExitCode.ConfigurationError);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class WorkflowApplicationTests : IDisposable
 
         var exitCode = await application.Run(new RunJobArgs("verify") { Directory = _root }, Empty, TestContext.Current.CancellationToken);
 
-        exitCode.ShouldBe(WorkflowExitCodes.ConfigurationError);
+        exitCode.ShouldBe(ExitCode.ConfigurationError);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class WorkflowApplicationTests : IDisposable
 
         var exitCode = await application.Run(new RunJobArgs("verify") { Directory = _root }, Empty, TestContext.Current.CancellationToken);
 
-        exitCode.ShouldBe(WorkflowExitCodes.Success);
+        exitCode.ShouldBe(ExitCode.Success);
         probe.Ran.ShouldHaveSingleItem();
     }
 

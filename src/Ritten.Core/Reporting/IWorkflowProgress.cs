@@ -1,5 +1,4 @@
 using Ritten.Contracts;
-using Ritten.Engine;
 using Ritten.Engine.Runs;
 
 namespace Ritten.Reporting;
@@ -7,7 +6,7 @@ namespace Ritten.Reporting;
 /// <summary>
 /// Receives lifecycle notifications from the workflow runner.
 /// </summary>
-public interface IProgressReporter
+public interface IWorkflowProgress
 {
     /// <summary>
     /// Called when the job is about to start.

@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using NuGet.Versioning;
 using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
-using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Releases;
 using Ritten.Reporting;

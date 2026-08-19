@@ -26,6 +26,11 @@ internal static class GitHubEnvironment
     public const string Ref = "GITHUB_REF";
 
     /// <summary>
+    /// The ref a pull request wants to merge into; set only on pull request runs.
+    /// </summary>
+    public const string BaseRef = "GITHUB_BASE_REF";
+
+    /// <summary>
     /// Set whenever a workflow is running in GitHub Actions.
     /// </summary>
     public const string Actions = "GITHUB_ACTIONS";

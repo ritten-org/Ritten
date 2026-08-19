@@ -5,7 +5,6 @@ using Ritten.Changelogs;
 using Ritten.Commands;
 using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.Engine;
 using Ritten.Engine.Runs;
 using Ritten.Git;
 using Ritten.GitHub;

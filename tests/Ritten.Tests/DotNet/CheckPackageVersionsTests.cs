@@ -1,5 +1,4 @@
 using NuGet.Versioning;
-using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.Reporting;
