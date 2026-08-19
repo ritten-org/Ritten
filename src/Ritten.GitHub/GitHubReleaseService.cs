@@ -3,7 +3,7 @@ using Ritten.Reporting;
 
 namespace Ritten.GitHub;
 
-internal class ReleaseService(IWorkflowLog log, IGitHubClient client) : IReleaseService
+internal class GitHubReleaseService(IWorkflowLog log, IGitHubClient client) : IGitHubReleaseService
 {
     public async Task<bool> Exists(RepositoryPath repository, string tag, CancellationToken cancellationToken = default)
     {

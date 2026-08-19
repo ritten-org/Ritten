@@ -3,7 +3,7 @@ namespace Ritten.GitHub;
 /// <summary>
 /// Manages GitHub releases for a repository.
 /// </summary>
-public interface IReleaseService
+public interface IGitHubReleaseService
 {
     /// <summary>
     /// Checks whether a release exists for the given tag.

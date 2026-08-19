@@ -5,16 +5,16 @@ using Ritten.Reporting;
 
 namespace Ritten.Tests.GitHub;
 
-public class ReleaseServiceTests
+public class GitHubReleaseServiceTests
 {
     private static readonly RepositoryPath Repository = new("example", "repo");
 
     private readonly IGitHubClient _client = Substitute.For<IGitHubClient>();
-    private readonly ReleaseService _service;
+    private readonly GitHubReleaseService _service;
 
-    public ReleaseServiceTests()
+    public GitHubReleaseServiceTests()
     {
-        _service = new ReleaseService(Substitute.For<IWorkflowLog>(), _client);
+        _service = new GitHubReleaseService(Substitute.For<IWorkflowLog>(), _client);
     }
 
     [Fact]

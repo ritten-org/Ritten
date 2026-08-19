@@ -12,7 +12,7 @@ internal class GitHubCommentResultSink(
     MarkdownReportRenderer renderer,
     RunContext context,
     IOptions<GitHubActionsOptions> options,
-    ICommentService comments
+    IGitHubCommentService comments
 ) : IWorkflowResultSink
 {
     public Task Started(WorkflowJob job, CancellationToken cancellationToken = default)

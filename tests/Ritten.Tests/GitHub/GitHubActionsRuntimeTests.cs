@@ -146,7 +146,7 @@ public class GitHubActionsRuntimeTests
         new GitHubActionsRuntime().Configure(builder, new Dictionary<string, string>().GetValueOrDefault);
 
         builder.Services.Count(d => d.ServiceType == typeof(IWorkflowResultSink)).ShouldBe(2);
-        builder.Services.Count(d => d.ServiceType == typeof(ICommentService)).ShouldBe(1);
+        builder.Services.Count(d => d.ServiceType == typeof(IGitHubCommentService)).ShouldBe(1);
     }
 
     private static ServiceProvider Build(

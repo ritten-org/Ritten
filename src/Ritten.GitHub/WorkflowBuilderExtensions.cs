@@ -11,7 +11,7 @@ namespace Ritten.GitHub;
 /// <summary>
 /// Provides extension methods for registering the GitHub client.
 /// </summary>
-internal static class WorkflowBuilderExtensions
+public static class WorkflowBuilderExtensions
 {
     extension(IWorkflowBuilder builder)
     {
@@ -36,8 +36,8 @@ internal static class WorkflowBuilderExtensions
                     return new GitHubClient(new ProductHeaderValue(options.ClientName), provider.GetRequiredService<ICredentialStore>());
                 });
 
-                builder.Services.TryAddSingleton<IReleaseService, ReleaseService>();
-                builder.Decorators.Replace<IReleaseService, DryRunReleaseService>();
+                builder.Services.TryAddSingleton<IGitHubReleaseService, GitHubReleaseService>();
+                builder.Decorators.Replace<IGitHubReleaseService, GitHubDryRunReleaseService>();
             }
 
             if (clientName is not null)

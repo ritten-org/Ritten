@@ -20,7 +20,7 @@ namespace Ritten.GitHub.Steps;
 public class GitHubRelease(
     IWorkflowLog log,
     IOptions<GitOptions> options,
-    IReleaseService releases,
+    IGitHubReleaseService releases,
     IChangelog changelogs
 )
 {

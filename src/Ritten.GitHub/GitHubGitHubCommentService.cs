@@ -5,12 +5,12 @@ using Ritten.Reporting;
 
 namespace Ritten.GitHub;
 
-internal class CommentService(
+internal class GitHubGitHubCommentService(
     IWorkflowLog log,
     IOptions<GitHubActionsOptions> options,
     RunContext context,
     IGitHubClient client
-) : ICommentService
+) : IGitHubCommentService
 {
     public async Task CreateOrUpdate(string body, CancellationToken cancellationToken = default)
     {

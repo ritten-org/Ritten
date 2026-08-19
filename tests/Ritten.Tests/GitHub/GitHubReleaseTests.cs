@@ -15,7 +15,7 @@ public class GitHubReleaseTests
     private static readonly ReleaseState Releasable = new ReleaseState(Published: false, LatestInLine: true, null, null);
     private static readonly RepositoryPath Repository = new("example", "repo");
 
-    private readonly IReleaseService _releases = Substitute.For<IReleaseService>();
+    private readonly IGitHubReleaseService _releases = Substitute.For<IGitHubReleaseService>();
     private readonly IChangelog _changelogs = Substitute.For<IChangelog>();
     private readonly ChangelogEntry _entry = new() { Version = NuGetVersion.Parse("1.2.0"), Added = ["A thing."] };
     private readonly Changelog _changelog;

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Title>Ritten.GitHub</Title>
+    <Description>GitHub for Ritten workflows: the GitHub Actions runtime, pull request comments and job summaries, and GitHub releases as a destination.</Description>
+    <PackageTags>devops;cicd;build;automation;workflows;pipelines;github;github-actions</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Ritten.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ritten.Core\Ritten.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+    <PackageReference Include="Octokit" />
+  </ItemGroup>
+
+</Project>
