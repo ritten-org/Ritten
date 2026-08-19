@@ -41,6 +41,11 @@ public record Command
     public bool OutputRedacted { get; init; }
 
     /// <summary>
+    /// Indicates whether the command's output stays out of the default narrative.
+    /// </summary>
+    public bool OutputQuieted { get; init; }
+
+    /// <summary>
     /// Indicates whether the runner throws a <see cref="CommandFailedException"/> when the command exits non-zero.
     /// </summary>
     public bool ThrowsOnError { get; init; }
@@ -84,6 +89,12 @@ public record Command
     /// Returns a copy of the command with its output redacted from the logs.
     /// </summary>
     public Command RedactOutput() => this with { OutputRedacted = true };
+
+    /// <summary>
+    /// Returns a copy of the command whose output only prints with --verbose — for probes whose
+    /// output is an implementation detail the caller consumes, not the step's story.
+    /// </summary>
+    public Command QuietOutput() => this with { OutputQuieted = true };
 
     /// <summary>
     /// Returns a copy of the command with both its arguments and output redacted from the logs.
