@@ -12,7 +12,7 @@ public static class WorkflowBuilderExtensions
     extension(IWorkflowBuilder builder)
     {
         /// <summary>
-        /// Adds <see cref="IBuildReport"/> to the service collection and registers the
+        /// Adds <see cref="IWorkflowReport"/> to the service collection and registers the
         /// <see cref="BuildReportPublisher"/> that publishes it when the workflow finishes.
         /// </summary>
         public IWorkflowBuilder AddBuildReporting()
@@ -23,7 +23,7 @@ public static class WorkflowBuilderExtensions
             }
 
             builder.Services.AddSingleton<BuildReportingMarker>();
-            builder.Services.AddSingleton<IBuildReport, BuildReport>();
+            builder.Services.AddSingleton<IWorkflowReport, WorkflowReport>();
             builder.Services.AddSingleton<MarkdownReportRenderer>();
             builder.Services.AddSingleton<IProgressReporter, BuildReportPublisher>();
             return builder;

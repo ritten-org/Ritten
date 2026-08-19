@@ -8,7 +8,7 @@ namespace Ritten.DotNet.Steps;
 /// </summary>
 /// <param name="report">The build report.</param>
 [Step("check package versions", StepKind.Check)]
-public class CheckPackageVersions(IBuildReport report)
+public class CheckPackageVersions(IWorkflowReport report)
 {
     /// <summary>
     /// Judges every package's version against the release's.

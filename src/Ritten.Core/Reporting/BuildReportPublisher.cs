@@ -13,7 +13,7 @@ namespace Ritten.Reporting;
 internal class BuildReportPublisher(
     IWorkflowLog log,
     IOptions<RunContext> context,
-    IBuildReport report,
+    IWorkflowReport report,
     MarkdownReportRenderer renderer,
     IEnumerable<IReportSink> sinks
 ) : IProgressReporter

@@ -8,7 +8,7 @@ namespace Ritten.Tests.DotNet;
 
 public class CheckPackageVersionsTests
 {
-    private readonly IBuildReport _report = Substitute.For<IBuildReport>();
+    private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
     private readonly ReportSection _versionSection = new("Version");
 
     public CheckPackageVersionsTests()

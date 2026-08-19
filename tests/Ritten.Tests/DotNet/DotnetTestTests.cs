@@ -14,7 +14,7 @@ public class DotnetTestTests
     private readonly IWorkflowLog _log = Substitute.For<IWorkflowLog>();
     private readonly IDotNet _dotnet = Substitute.For<IDotNet>();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
-    private readonly IBuildReport _report = Substitute.For<IBuildReport>();
+    private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
     private readonly ReportSection _section = new("Tests");
 
     public DotnetTestTests()

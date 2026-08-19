@@ -11,7 +11,7 @@ namespace Ritten.Tests.NuGet;
 
 public class CheckVersionTests
 {
-    private readonly IBuildReport _report = Substitute.For<IBuildReport>();
+    private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
     private readonly ReportSection _versionSection = new("Version");
     private readonly NuGetOptions _options = TestOptions.NuGet();
 

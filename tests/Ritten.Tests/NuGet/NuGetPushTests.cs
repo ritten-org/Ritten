@@ -14,7 +14,7 @@ public class NugetPushTests
     private static readonly Project TheProject = new() { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") };
 
     private readonly INuGet _nuget = Substitute.For<INuGet>();
-    private readonly IBuildReport _report = Substitute.For<IBuildReport>();
+    private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
     private readonly ReportSection _releaseSection = new("Release");
     private readonly NuGetOptions _options = TestOptions.NuGet();
     private readonly IFile _package = Substitute.For<IFile>();

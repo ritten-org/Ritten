@@ -23,7 +23,7 @@ public class CheckChangelogEntryTests
     private static readonly ReleaseState AlreadyPublished =
         new(Published: true, LatestInLine: true, NuGetVersion.Parse("1.1.0"), NuGetVersion.Parse("1.1.0"));
 
-    private readonly IBuildReport _report = Substitute.For<IBuildReport>();
+    private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
     private readonly ReportSection _changelogSection = new("Changelog");
 
     public CheckChangelogEntryTests()

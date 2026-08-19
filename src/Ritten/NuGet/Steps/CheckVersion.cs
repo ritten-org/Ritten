@@ -13,7 +13,7 @@ namespace Ritten.NuGet.Steps;
 /// <param name="options">The workflow's NuGet options.</param>
 /// <param name="report">The build report.</param>
 [Step("check version", StepKind.Check)]
-public class CheckVersion(IOptions<NuGetOptions> options, IBuildReport report)
+public class CheckVersion(IOptions<NuGetOptions> options, IWorkflowReport report)
 {
 
     // TODO: Split this up. Something else should produce the versions (NPM, NuGet, etc.) this step should do the actual enforcement.
