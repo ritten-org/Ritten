@@ -98,6 +98,7 @@ public sealed class WorkflowApplication
             .WithWorkflowLabel(workflow.Label)
             .WithDryRun(args.DryRun)
             .WithAutoApprove(args.AutoApprove)
+            .WithForce(args.Force)
             .WithServices(_services)
             .WithDecorators(_decorators);
 

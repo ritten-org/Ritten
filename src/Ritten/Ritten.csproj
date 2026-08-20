@@ -7,14 +7,10 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>ritten</ToolCommandName>
     <PackageId>Ritten</PackageId>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>devops;cicd;build;automation;workflows;pipelines;deployment</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="/">
-      <Link>README.md</Link>
-    </None>
     <None Include="..\..\CHANGELOG.md" Pack="true" PackagePath="/">
       <Link>CHANGELOG.md</Link>
     </None>

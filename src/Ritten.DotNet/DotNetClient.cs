@@ -20,7 +20,13 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         // Directory.Build.props, conditions, and SDK defaults are all resolved.
         var command = Command
             .Create("dotnet")
-            .WithArguments("msbuild", file.AbsolutePath, "-getProperty:PackageId", "-getProperty:Version", "-getProperty:RepositoryUrl")
+            .WithArguments(
+                "msbuild", file.AbsolutePath,
+                "-getProperty:PackageId", "-getProperty:Version", "-getProperty:RepositoryUrl",
+                "-getProperty:PackAsTool", "-getProperty:ToolCommandName",
+                "-getProperty:Description", "-getProperty:PackageReadmeFile",
+                "-getProperty:PackageLicenseExpression", "-getProperty:PackageLicenseFile"
+            )
             .ThrowOnError();
         var result = await commands.Run(command, cancellationToken);
 
@@ -53,9 +59,61 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         {
             Name = packageId,
             Version = NuGetVersion.Parse(version),
-            Repository = repository
+            Repository = repository,
+            IsTool = string.Equals(Property(properties, "PackAsTool"), "true", StringComparison.OrdinalIgnoreCase),
+            ToolCommand = Property(properties, "ToolCommandName"),
+            Metadata = new PackageMetadata
+            {
+                Description = Property(properties, "Description"),
+                ReadmeFile = Property(properties, "PackageReadmeFile"),
+                LicenseExpression = Property(properties, "PackageLicenseExpression"),
+                LicenseFile = Property(properties, "PackageLicenseFile")
+            }
         };
     }
+
+    public async Task<NuGetVersion?> InstalledToolVersion(string packageId, CancellationToken cancellationToken = default)
+    {
+        // A probe whose output the caller consumes, not part of the step's story.
+        var command = Command.Create("dotnet").WithArguments("tool", "list", "--global").QuietOutput().ThrowOnError();
+        var result = await commands.Run(command, cancellationToken);
+
+        // The table's first two lines are the header and its underline, and ids print lowercased.
+        foreach (var line in result.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries).Skip(2))
+        {
+            var columns = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (columns.Length >= 2 && string.Equals(columns[0], packageId, StringComparison.OrdinalIgnoreCase))
+            {
+                return NuGetVersion.Parse(columns[1]);
+            }
+        }
+
+        return null;
+    }
+
+    public async Task ToolInstall(ToolInstallArgs args, CancellationToken cancellationToken = default)
+    {
+        // --source rather than --add-source: the artifacts directory replaces every configured
+        // feed, so a published package with the same version can't shadow the build being installed.
+        var command = Command
+            .Create("dotnet")
+            .WithArguments(
+                "tool", "install", args.PackageId,
+                "--global",
+                "--version", args.Version.ToString(),
+                "--source", args.Source.AbsolutePath)
+            .ThrowOnError();
+        await commands.Run(command, cancellationToken);
+    }
+
+    public async Task ToolUninstall(string packageId, CancellationToken cancellationToken = default)
+    {
+        var command = Command.Create("dotnet").WithArguments("tool", "uninstall", packageId, "--global").ThrowOnError();
+        await commands.Run(command, cancellationToken);
+    }
+
+    private static string? Property(JsonElement properties, string name) =>
+        properties.TryGetProperty(name, out var value) && value.GetString() is { Length: > 0 } text ? text : null;
 
     public async Task<RestoreResult> Restore(RestoreArgs args, CancellationToken cancellationToken = default)
     {

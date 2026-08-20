@@ -28,6 +28,21 @@ public record Project
     public string ProjectFile { get; init; } = "";
 
     /// <summary>
+    /// Whether the project packs as a .NET tool (<c>PackAsTool</c>).
+    /// </summary>
+    public bool IsTool { get; init; }
+
+    /// <summary>
+    /// The command the tool installs as (<c>ToolCommandName</c>), when the project names one.
+    /// </summary>
+    public string? ToolCommand { get; init; }
+
+    /// <summary>
+    /// The metadata a feed surfaces for the package: description, readme, and license.
+    /// </summary>
+    public PackageMetadata Metadata { get; init; } = new();
+
+    /// <summary>
     /// Whether this version is a prerelease.
     /// </summary>
     public bool IsPrerelease => Version.IsPrerelease;

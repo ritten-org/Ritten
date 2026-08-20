@@ -16,6 +16,7 @@
     <AssemblyVersion>$(Version.Split('-')[0])</AssemblyVersion>
     <FileVersion>$(Version.Split('-')[0])</FileVersion>
     <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/ritten-org/Ritten</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ritten-org/Ritten.git</RepositoryUrl>
@@ -30,6 +31,9 @@
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)icon.png" Pack="true" PackagePath="/">
       <Link>icon.png</Link>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="/">
+      <Link>README.md</Link>
     </None>
   </ItemGroup>
 

@@ -21,6 +21,7 @@ public class WorkflowRunBuilder : IWorkflowBuilder
     private string _workflowLabel = "";
     private bool _dryRun;
     private bool _autoApprove;
+    private bool _force;
     private IWorkflowLog _log;
 
     /// <summary>
@@ -87,6 +88,16 @@ public class WorkflowRunBuilder : IWorkflowBuilder
     }
 
     /// <summary>
+    /// Redoes work that's already in place, like reinstalling an installed tool.
+    /// </summary>
+    /// <param name="force">Whether work that already looks done is redone.</param>
+    public WorkflowRunBuilder WithForce(bool force = true)
+    {
+        _force = force;
+        return this;
+    }
+
+    /// <summary>
     /// Adds registrations shared by every job.
     /// </summary>
     /// <param name="services">The shared registrations to copy in.</param>
@@ -129,7 +140,7 @@ public class WorkflowRunBuilder : IWorkflowBuilder
         }
 
         Services.AddSingleton(new WorkflowEnvironment(_runtime.Environment));
-        Services.AddSingleton(new WorkflowJob(_workflowLabel, job.Name, _dryRun, _autoApprove));
+        Services.AddSingleton(new WorkflowJob(_workflowLabel, job.Name, _dryRun, _autoApprove, _force));
         _runtime.Runtime.Configure(this, _runtime.Raw);
         job.Configure(this, settings.Value);
 

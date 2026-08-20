@@ -1,20 +1,17 @@
-using Ritten.Changelogs.Steps;
-using Ritten.CodeCoverage;
 using Ritten.Contracts;
 using Ritten.DotNet.Steps;
 using Ritten.Engine.Workflows;
-using Ritten.NuGet.Steps;
 using Ritten.Workflows.Steps;
 
 namespace Ritten.Workflows.DotNetTool;
 
 /// <summary>
-/// Validates a pull request: formatting, version, changelog, compile, tests, and pack.
+/// Builds, packs, and installs the tool globally from the working tree — no feed required.
 /// </summary>
-internal sealed class CheckJob : DotNetToolJob
+internal sealed class InstallJob : DotNetToolJob
 {
     /// <inheritdoc />
-    public override string Name => "check";
+    public override string Name => "install";
 
     /// <inheritdoc />
     protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => settings
@@ -26,19 +23,9 @@ internal sealed class CheckJob : DotNetToolJob
     [
         Step.FromType<Clean>(),
         Step.FromType<ReadProjects>(),
-        Step.FromType<ResolveRelease>(),
-        Step.FromType<ReadChangelog>(),
-        Step.FromType<CheckChangelogLinks>(),
-        Step.FromType<NugetRead>(),
-        Step.FromType<CheckVersion>(),
-        Step.FromType<CheckPackageVersions>(),
-        Step.FromType<CheckPackageMetadata>(),
-        Step.FromType<CheckChangelogEntry>(),
         Step.FromType<DotnetRestore>(),
-        Step.FromType<DotnetFormat>(),
         Step.FromType<DotnetBuild>(),
-        Step.FromType<DotnetTest>(),
-        .. CoverageSteps.All,
-        Step.FromType<DotnetPack>()
+        Step.FromType<DotnetPack>(),
+        Step.FromType<DotnetToolInstall>()
     ];
 }

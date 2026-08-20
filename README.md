@@ -27,6 +27,7 @@ Then run a job from anywhere in the repository:
 
 ```sh
 dotnet ritten build    # compile and test
+dotnet ritten install  # build, pack, and install the tool globally from the working tree
 dotnet ritten check    # build, plus release checks: formatting, version, and changelog
 dotnet ritten deploy   # check, then pack, tag, release, and publish
 ```

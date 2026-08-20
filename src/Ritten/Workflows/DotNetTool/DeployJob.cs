@@ -34,6 +34,7 @@ internal sealed class DeployJob : DotNetToolJob
         Step.FromType<NugetRead>(),
         Step.FromType<CheckVersion>(),
         Step.FromType<CheckPackageVersions>(),
+        Step.FromType<CheckPackageMetadata>(),
         Step.FromType<CheckChangelogEntry>(),
         Step.FromType<ReleasableGate>(),
         Step.FromType<DotnetRestore>(),

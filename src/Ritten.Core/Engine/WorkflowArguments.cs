@@ -16,6 +16,11 @@ public static class WorkflowArguments
     public const string DryRun = "dry-run";
 
     /// <summary>
+    /// Redoes work that's already in place, like reinstalling an installed tool.
+    /// </summary>
+    public const string Force = "force";
+
+    /// <summary>
     /// Shows every log entry in its highest detail.
     /// </summary>
     public const string Verbose = "verbose";

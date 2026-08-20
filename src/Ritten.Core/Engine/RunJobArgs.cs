@@ -27,4 +27,9 @@ public sealed record RunJobArgs(string Job)
     /// Approves a job that would otherwise stop and ask.
     /// </summary>
     public bool AutoApprove { get; init; }
+
+    /// <summary>
+    /// Redoes work that's already in place, like reinstalling an installed tool.
+    /// </summary>
+    public bool Force { get; init; }
 }

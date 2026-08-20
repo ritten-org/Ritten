@@ -27,10 +27,115 @@ public class DotNetClientTests
         var project = await _client.ReadProject(ProjectFile("/repo/src/My.Package.csproj"), TestContext.Current.CancellationToken);
 
         _commands.Executed.ShouldHaveSingleItem().Arguments
-            .ShouldBe(["msbuild", "/repo/src/My.Package.csproj", "-getProperty:PackageId", "-getProperty:Version", "-getProperty:RepositoryUrl"]);
+            .ShouldBe([
+                "msbuild", "/repo/src/My.Package.csproj",
+                "-getProperty:PackageId", "-getProperty:Version", "-getProperty:RepositoryUrl",
+                "-getProperty:PackAsTool", "-getProperty:ToolCommandName",
+                "-getProperty:Description", "-getProperty:PackageReadmeFile",
+                "-getProperty:PackageLicenseExpression", "-getProperty:PackageLicenseFile"
+            ]);
         project.IsSuccess.ShouldBeTrue();
         project.Value.Name.ShouldBe("My.Package");
         project.Value.Version.ShouldBe(NuGetVersion.Parse("1.2.3-beta.1"));
+    }
+
+    [Fact]
+    public async Task ReadProject_ReadsToolAndPackageMetadata()
+    {
+        _commands.Respond(
+            c => c.Arguments.Contains("msbuild"),
+            new CommandResult(
+                0,
+                """
+                {"Properties":{"PackageId":"My.Tool","Version":"1.2.3","PackAsTool":"true","ToolCommandName":"mytool",
+                "Description":"A tool.","PackageReadmeFile":"README.md","PackageLicenseExpression":"MIT","PackageLicenseFile":""}}
+                """,
+                ""));
+
+        var project = await _client.ReadProject(ProjectFile("/repo/src/My.Tool.csproj"), TestContext.Current.CancellationToken);
+
+        project.IsSuccess.ShouldBeTrue();
+        project.Value.IsTool.ShouldBeTrue();
+        project.Value.ToolCommand.ShouldBe("mytool");
+        project.Value.Metadata.Description.ShouldBe("A tool.");
+        project.Value.Metadata.HasDescription.ShouldBeTrue();
+        project.Value.Metadata.HasReadme.ShouldBeTrue();
+        project.Value.Metadata.HasLicense.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ReadProject_ReadsALibraryAsBareMetadata()
+    {
+        // MSBuild reports unset properties as empty strings, and the SDK substitutes a
+        // placeholder description; neither counts as metadata.
+        _commands.Respond(
+            c => c.Arguments.Contains("msbuild"),
+            new CommandResult(
+                0,
+                """
+                {"Properties":{"PackageId":"My.Package","Version":"1.2.3","PackAsTool":"","ToolCommandName":"",
+                "Description":"Package Description","PackageReadmeFile":"","PackageLicenseExpression":"","PackageLicenseFile":""}}
+                """,
+                ""));
+
+        var project = await _client.ReadProject(ProjectFile("/repo/src/My.Package.csproj"), TestContext.Current.CancellationToken);
+
+        project.IsSuccess.ShouldBeTrue();
+        project.Value.IsTool.ShouldBeFalse();
+        project.Value.ToolCommand.ShouldBeNull();
+        project.Value.Metadata.HasDescription.ShouldBeFalse();
+        project.Value.Metadata.HasReadme.ShouldBeFalse();
+        project.Value.Metadata.HasLicense.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task InstalledToolVersion_FindsTheToolCaseInsensitively()
+    {
+        // `dotnet tool list` prints package ids lowercased.
+        _commands.Respond(
+            c => c.Arguments.Contains("list"),
+            new CommandResult(0, "Package Id      Version      Commands\n----------------------------------------\nmy.tool         1.2.3        mytool\nother           2.0.0        other\n", ""));
+
+        var version = await _client.InstalledToolVersion("My.Tool", TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(["tool", "list", "--global"]);
+        version.ShouldBe(NuGetVersion.Parse("1.2.3"));
+    }
+
+    [Fact]
+    public async Task InstalledToolVersion_ReturnsNullWhenTheToolIsNotInstalled()
+    {
+        _commands.Respond(
+            c => c.Arguments.Contains("list"),
+            new CommandResult(0, "Package Id      Version      Commands\n----------------------------------------\nother           2.0.0        other\n", ""));
+
+        var version = await _client.InstalledToolVersion("My.Tool", TestContext.Current.CancellationToken);
+
+        version.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task ToolInstall_ReplacesTheFeedsWithTheSource()
+    {
+        // --source, not --add-source: a published package with the same version must not
+        // shadow the build being installed.
+        var source = Substitute.For<IDirectory>();
+        source.AbsolutePath.Returns("/repo/artifacts");
+
+        await _client.ToolInstall(
+            new ToolInstallArgs { PackageId = "My.Tool", Version = NuGetVersion.Parse("1.2.3"), Source = source },
+            TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().Arguments
+            .ShouldBe(["tool", "install", "My.Tool", "--global", "--version", "1.2.3", "--source", "/repo/artifacts"]);
+    }
+
+    [Fact]
+    public async Task ToolUninstall_RemovesTheGlobalTool()
+    {
+        await _client.ToolUninstall("My.Tool", TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(["tool", "uninstall", "My.Tool", "--global"]);
     }
 
     [Fact]

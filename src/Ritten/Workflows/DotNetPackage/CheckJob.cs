@@ -32,6 +32,7 @@ internal sealed class CheckJob : DotNetPackageJob
         Step.FromType<NugetRead>(),
         Step.FromType<CheckVersion>(),
         Step.FromType<CheckPackageVersions>(),
+        Step.FromType<CheckPackageMetadata>(),
         Step.FromType<CheckChangelogEntry>(),
         Step.FromType<DotnetRestore>(),
         Step.FromType<DotnetFormat>(),
