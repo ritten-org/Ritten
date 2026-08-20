@@ -37,7 +37,7 @@ public class CheckChangelogLinks(IWorkflowLog log, IOptions<ChangelogOptions> op
         if (!changelog.Links.SequenceEqual(expected))
         {
             var block = string.Join('\n', expected.Select(l => l.ToMarkdown()));
-            report.Section("Changelog")
+            report.Section(SectionName.Changelog)
                 .Failure($"The version links in `{options.Value.File}` are missing or out of date. Replace the link block at the bottom of the file with:\n```\n{block}\n```");
 
             return new Error($"The version links in {options.Value.File} are missing or out of date. Expected:")

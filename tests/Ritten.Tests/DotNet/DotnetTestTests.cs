@@ -14,11 +14,11 @@ public class DotnetTestTests
     private readonly IDotNet _dotnet = Substitute.For<IDotNet>();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
-    private readonly ReportSection _section = new("Tests");
+    private readonly ReportSection _section = new(SectionName.Tests);
 
     public DotnetTestTests()
     {
-        _report.Section("Tests").Returns(_section);
+        _report.Section(SectionName.Tests).Returns(_section);
         _fileSystem.Temp.GetDirectory("test-results").Returns(Substitute.For<IDirectory>());
     }
 

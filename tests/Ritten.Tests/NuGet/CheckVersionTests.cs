@@ -12,12 +12,12 @@ namespace Ritten.Tests.NuGet;
 public class CheckVersionTests
 {
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
-    private readonly ReportSection _versionSection = new("Version");
+    private readonly ReportSection _versionSection = new(SectionName.Version);
     private readonly NuGetOptions _options = TestOptions.NuGet();
 
     public CheckVersionTests()
     {
-        _report.Section("Version").Returns(_versionSection);
+        _report.Section(SectionName.Version).Returns(_versionSection);
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using NuGet.Versioning;
 using Ritten.Contracts.FileSystem;
 using Ritten.Engine;
 
@@ -43,6 +44,21 @@ public interface IDotNet
     /// Reads the outcome of a test run from the given TRX results file.
     /// </summary>
     Task<TestRun> ReadTestResults(IFile file, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads the version of the given tool installed globally, or null when it isn't installed.
+    /// </summary>
+    Task<NuGetVersion?> InstalledToolVersion(string packageId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs <c>dotnet tool install --global</c> against the given source alone, throwing a <see cref="Commands.CommandFailedException"/> on failure.
+    /// </summary>
+    Task ToolInstall(ToolInstallArgs args, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs <c>dotnet tool uninstall --global</c>, throwing a <see cref="Commands.CommandFailedException"/> on failure.
+    /// </summary>
+    Task ToolUninstall(string packageId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Extracts the compiler and MSBuild diagnostics from <c>dotnet build</c> output.

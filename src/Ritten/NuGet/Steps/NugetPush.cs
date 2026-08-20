@@ -45,7 +45,7 @@ public class NugetPush(IWorkflowLog log, INuGet nuget, IWorkflowReport report)
         }
 
         // The report tells what actually went up, not what the plan said should.
-        report.Section("Release")
+        report.Section(SectionName.Release)
             .Success($"Published **{string.Join(", ", pushed)} {project.Version}** to NuGet.");
 
         return StepResult.Successful;

@@ -16,12 +16,13 @@ public class DotNetToolWorkflowTests
     [Fact]
     public void DeclaresTheJobsTheCliOffers()
     {
-        new DotNetToolWorkflow().Jobs.Select(j => j.Name).ShouldBe(["status", "build", "check", "deploy"]);
+        new DotNetToolWorkflow().Jobs.Select(j => j.Name).ShouldBe(["status", "build", "install", "check", "deploy"]);
     }
 
     [Theory]
     [InlineData("status")]
     [InlineData("build")]
+    [InlineData("install")]
     [InlineData("check")]
     [InlineData("deploy")]
     public void EveryJobTheCliOffers_Builds(string job)
@@ -44,6 +45,7 @@ public class DotNetToolWorkflowTests
 
     [Theory]
     [InlineData("status")]
+    [InlineData("install")]
     [InlineData("check")]
     [InlineData("deploy")]
     public void ShippingJobs_RequireAProject(string job)
@@ -56,6 +58,7 @@ public class DotNetToolWorkflowTests
 
     [Theory]
     [InlineData("status")]
+    [InlineData("install")]
     [InlineData("check")]
     [InlineData("deploy")]
     public void ShippingJobs_AcceptProjectsAsThePluralSpelling(string job)

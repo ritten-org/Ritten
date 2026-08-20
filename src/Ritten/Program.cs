@@ -49,14 +49,22 @@ var dryRun = new Option<bool>($"--{WorkflowArguments.DryRun}")
     Recursive = true
 };
 
+var force = new Option<bool>($"--{WorkflowArguments.Force}")
+{
+    Description = "Redo work that's already in place, like reinstalling an installed tool.",
+    Recursive = true
+};
+
 var root = new RootCommand("The Ritten build workflow.")
 {
     verbose,
     quiet,
     dryRun,
     autoApprove,
+    force,
     JobCommand("status", "Reports where the project stands: version, release state, and changelog."),
     JobCommand("build", "Compiles and tests, without any release checks."),
+    JobCommand("install", "Builds, packs, and installs the tool globally from the working tree."),
     JobCommand("check", "Checks a pull request: formatting, version, changelog, compile, tests, and pack."),
     JobCommand("deploy", "Checks, packs, tags, creates the GitHub release, and publishes to NuGet.")
 };
@@ -77,7 +85,8 @@ Command JobCommand(string name, string description)
         {
             LogLevel = logLevel,
             DryRun = parseResult.GetValue(dryRun),
-            AutoApprove = parseResult.GetValue(autoApprove)
+            AutoApprove = parseResult.GetValue(autoApprove),
+            Force = parseResult.GetValue(force)
         };
 
         return await workflow.Run(args, cancellationToken);

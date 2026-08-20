@@ -22,6 +22,7 @@ public static class WorkflowBuilderExtensions
         {
             builder.AddCommandRunner();
             builder.Services.TryAddSingleton<IDotNet, DotNetClient>();
+            builder.Decorators.Decorate<IDotNet, DryRunDotNet>();
             builder.Services.Configure<DotNetOptions>(o =>
             {
                 o.Configuration = configuration;

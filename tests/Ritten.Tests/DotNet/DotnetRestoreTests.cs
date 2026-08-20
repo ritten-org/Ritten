@@ -9,11 +9,11 @@ public class DotnetRestoreTests
     private readonly IWorkflowLog _log = Substitute.For<IWorkflowLog>();
     private readonly IDotNet _dotnet = Substitute.For<IDotNet>();
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
-    private readonly ReportSection _section = new("Restore");
+    private readonly ReportSection _section = new(SectionName.Restore);
 
     public DotnetRestoreTests()
     {
-        _report.Section("Restore").Returns(_section);
+        _report.Section(SectionName.Restore).Returns(_section);
     }
 
     [Fact]

@@ -22,12 +22,12 @@ public class ReadChangelogTests
 
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
-    private readonly ReportSection _changelogSection = new("Changelog");
+    private readonly ReportSection _changelogSection = new(SectionName.Changelog);
     private readonly ChangelogOptions _options = TestOptions.Changelog();
 
     public ReadChangelogTests()
     {
-        _report.Section("Changelog").Returns(_changelogSection);
+        _report.Section(SectionName.Changelog).Returns(_changelogSection);
     }
 
     [Fact]

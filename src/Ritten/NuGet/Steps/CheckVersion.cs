@@ -32,26 +32,26 @@ public class CheckVersion(IOptions<NuGetOptions> options, IWorkflowReport report
         {
             if (releaseState.Published)
             {
-                report.Section("Version")
+                report.Section(SectionName.Version)
                     .Failure($"Version **{project.Version}** is already published, and **{releaseState.LatestVersionInLine}** is newer{line}. Bump `<Version>` in the project file.");
                 return StepResult.Failed($"Version {project.Version} is already published, and {releaseState.LatestVersionInLine} is newer{line}.");
             }
 
-            report.Section("Version")
+            report.Section(SectionName.Version)
                 .Failure($"Version **{project.Version}** must be higher than **{releaseState.LatestVersionInLine}**, the latest published version{line}. Bump `<Version>` in the project file.");
             return StepResult.Failed($"Project version {project.Version} must be higher than {releaseState.LatestVersionInLine}, the latest published version{line}.");
         }
 
         if (releaseState.Published)
         {
-            report.Section("Version")
+            report.Section(SectionName.Version)
                 .Success(releaseState.OnLatestLine
                     ? $"Version **{project.Version}** is the latest published version; nothing new to release."
                     : $"Version **{project.Version}** is the latest on the {options.Value.Lines.Label(project.Version)} line; nothing new to release (latest overall: **{releaseState.LatestVersion}**).");
             return StepResult.Successful;
         }
 
-        report.Section("Version")
+        report.Section(SectionName.Version)
             .Success(releaseState.LatestVersion == null
                 ? $"Version **{project.Version}** will be the first published version of {project.Name}."
                 : project.Version < releaseState.LatestVersion

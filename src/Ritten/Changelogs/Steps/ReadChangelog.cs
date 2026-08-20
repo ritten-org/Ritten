@@ -30,7 +30,7 @@ public class ReadChangelog(IWorkflowLog log, IOptions<ChangelogOptions> options,
             return parsed;
         }
 
-        report.Section("Changelog").Failure("The changelog file does not exist.");
+        report.Section(SectionName.Changelog).Failure("The changelog file does not exist.");
         return StepResult.Failed($"Could not find changelog file '{options.Value.File}'.");
     }
 }
