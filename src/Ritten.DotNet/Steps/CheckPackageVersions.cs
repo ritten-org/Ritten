@@ -23,7 +23,7 @@ public class CheckPackageVersions(IWorkflowReport report)
             // A single package can't drift from itself; saying so would be noise.
             if (packages.Packages.Count > 1)
             {
-                report.Section("Version")
+                report.Section(SectionName.Version)
                     .Success($"All {packages.Packages.Count} packages agree on **{project.Version}**.");
             }
 
@@ -31,7 +31,7 @@ public class CheckPackageVersions(IWorkflowReport report)
         }
 
         var details = string.Join(", ", drifted.Select(p => $"{p.Name} is {p.Version}"));
-        report.Section("Version")
+        report.Section(SectionName.Version)
             .Failure($"Packages release in lockstep, but {details} while the release is **{project.Version}**. Align `<Version>` across the packages.");
         return StepResult.Failed($"Packages release in lockstep, but {details} while the release is {project.Version}.");
     }

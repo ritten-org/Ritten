@@ -8,11 +8,11 @@ namespace Ritten.Tests.DotNet;
 public class CheckPackageMetadataTests
 {
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
-    private readonly ReportSection _metadataSection = new("Metadata");
+    private readonly ReportSection _metadataSection = new(SectionName.Metadata);
 
     public CheckPackageMetadataTests()
     {
-        _report.Section("Metadata").Returns(_metadataSection);
+        _report.Section(SectionName.Metadata).Returns(_metadataSection);
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public class CheckPackageMetadataTests
     [Fact]
     public void FailsListingEveryGapOfEveryPackage()
     {
-        var bare = Complete("My.Package.Core") with { Metadata = new PackageMetadata { Description = "Real." } };
+        var bare = Complete("My.Package.Core") with { Metadata = Metadata() with { ReadmeFile = null, LicenseExpression = null } };
 
         var result = Step().Run(Packages(Complete("My.Package"), bare));
 
@@ -45,10 +45,7 @@ public class CheckPackageMetadataTests
     {
         // The SDK substitutes "Package Description" when a project sets none; that's exactly
         // the package NuGet warns about.
-        var placeholder = Complete("My.Package") with
-        {
-            Metadata = new PackageMetadata { Description = "Package Description", ReadmeFile = "README.md", LicenseExpression = "MIT" }
-        };
+        var placeholder = Complete("My.Package") with { Metadata = Metadata() with { Description = "Package Description" } };
 
         var result = Step().Run(Packages(placeholder));
 
@@ -56,11 +53,49 @@ public class CheckPackageMetadataTests
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("a description (Description)");
     }
 
+    [Fact]
+    public void WarnsWithoutFailingForTheRecommendedMetadata()
+    {
+        // A package without tags still publishes cleanly, so the report says so and the job carries on.
+        var untagged = Complete("My.Package") with { Metadata = Metadata() with { Tags = null, Icon = null } };
+
+        var result = Step().Run(Packages(untagged));
+
+        result.IsFailure.ShouldBeFalse();
+        _metadataSection.Tone.ShouldBe(ReportTone.Warning);
+    }
+
+    [Fact]
+    public void NamesTheReplacementForADeprecatedLicenseUrl()
+    {
+        var deprecated = Complete("My.Package") with
+        {
+            Metadata = Metadata() with { LicenseExpression = null, LicenseUrl = "https://example.com/LICENSE" }
+        };
+
+        var result = Step().Run(Packages(deprecated));
+
+        result.IsFailure.ShouldBeTrue();
+        _metadataSection.Entries
+            .OfType<ReportParagraph>()
+            .ShouldContain(e => e.Markdown.Contains("`PackageLicenseUrl` is deprecated"));
+    }
+
+    private static PackageMetadata Metadata() => new()
+    {
+        Description = "Real.",
+        ReadmeFile = "README.md",
+        LicenseExpression = "MIT",
+        Icon = "icon.png",
+        ProjectUrl = "https://example.com",
+        Tags = "build"
+    };
+
     private static Project Complete(string name) => new()
     {
         Name = name,
         Version = NuGetVersion.Parse("1.2.0"),
-        Metadata = new PackageMetadata { Description = "Real.", ReadmeFile = "README.md", LicenseExpression = "MIT" }
+        Metadata = Metadata()
     };
 
     private static PackageSet Packages(params Project[] projects) => new() { Packages = projects };

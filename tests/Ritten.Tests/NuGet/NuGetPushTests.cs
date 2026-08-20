@@ -15,13 +15,13 @@ public class NugetPushTests
 
     private readonly INuGet _nuget = Substitute.For<INuGet>();
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
-    private readonly ReportSection _releaseSection = new("Release");
+    private readonly ReportSection _releaseSection = new(SectionName.Release);
     private readonly NuGetOptions _options = TestOptions.NuGet();
     private readonly IFile _package = Substitute.For<IFile>();
 
     public NugetPushTests()
     {
-        _report.Section("Release").Returns(_releaseSection);
+        _report.Section(SectionName.Release).Returns(_releaseSection);
     }
 
     [Fact]

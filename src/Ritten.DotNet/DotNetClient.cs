@@ -25,7 +25,9 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
                 "-getProperty:PackageId", "-getProperty:Version", "-getProperty:RepositoryUrl",
                 "-getProperty:PackAsTool", "-getProperty:ToolCommandName",
                 "-getProperty:Description", "-getProperty:PackageReadmeFile",
-                "-getProperty:PackageLicenseExpression", "-getProperty:PackageLicenseFile"
+                "-getProperty:PackageLicenseExpression", "-getProperty:PackageLicenseFile", "-getProperty:PackageLicenseUrl",
+                "-getProperty:PackageIcon", "-getProperty:PackageIconUrl",
+                "-getProperty:PackageProjectUrl", "-getProperty:PackageTags"
             )
             .ThrowOnError();
         var result = await commands.Run(command, cancellationToken);
@@ -67,7 +69,12 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
                 Description = Property(properties, "Description"),
                 ReadmeFile = Property(properties, "PackageReadmeFile"),
                 LicenseExpression = Property(properties, "PackageLicenseExpression"),
-                LicenseFile = Property(properties, "PackageLicenseFile")
+                LicenseFile = Property(properties, "PackageLicenseFile"),
+                LicenseUrl = Property(properties, "PackageLicenseUrl"),
+                Icon = Property(properties, "PackageIcon"),
+                IconUrl = Property(properties, "PackageIconUrl"),
+                ProjectUrl = Property(properties, "PackageProjectUrl"),
+                Tags = Property(properties, "PackageTags")
             }
         };
     }

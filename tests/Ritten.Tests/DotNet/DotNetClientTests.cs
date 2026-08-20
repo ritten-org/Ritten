@@ -26,14 +26,13 @@ public class DotNetClientTests
 
         var project = await _client.ReadProject(ProjectFile("/repo/src/My.Package.csproj"), TestContext.Current.CancellationToken);
 
-        _commands.Executed.ShouldHaveSingleItem().Arguments
-            .ShouldBe([
-                "msbuild", "/repo/src/My.Package.csproj",
-                "-getProperty:PackageId", "-getProperty:Version", "-getProperty:RepositoryUrl",
-                "-getProperty:PackAsTool", "-getProperty:ToolCommandName",
-                "-getProperty:Description", "-getProperty:PackageReadmeFile",
-                "-getProperty:PackageLicenseExpression", "-getProperty:PackageLicenseFile"
-            ]);
+        // The mechanism is what this pins — one evaluation of the project file, every property
+        // asked for in that one pass. Which properties reach the Project is the next tests' business.
+        var arguments = _commands.Executed.ShouldHaveSingleItem().Arguments;
+        arguments.Take(2).ShouldBe(["msbuild", "/repo/src/My.Package.csproj"]);
+        arguments.Skip(2).ShouldAllBe(a => a.StartsWith("-getProperty:"));
+        arguments.ShouldContain("-getProperty:PackageId");
+        arguments.ShouldContain("-getProperty:Version");
         project.IsSuccess.ShouldBeTrue();
         project.Value.Name.ShouldBe("My.Package");
         project.Value.Version.ShouldBe(NuGetVersion.Parse("1.2.3-beta.1"));

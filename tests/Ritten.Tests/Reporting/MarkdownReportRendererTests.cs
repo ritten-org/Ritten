@@ -11,7 +11,7 @@ public class MarkdownReportRendererTests
     [Fact]
     public void RendersTheAuthoredSections()
     {
-        var section = new ReportSection("Build").Failure("The solution failed to build.");
+        var section = new ReportSection(SectionName.Build).Failure("The solution failed to build.");
 
         var markdown = _renderer.Render(new WorkflowReport("Workflow", Succeeded: false, [section]));
 
@@ -43,7 +43,7 @@ public class MarkdownReportRendererTests
     [Fact]
     public void LeavesAnAuthoredFailureToSpeakForItself()
     {
-        var section = new ReportSection("Build").Failure("The solution failed to build.");
+        var section = new ReportSection(SectionName.Build).Failure("The solution failed to build.");
         var failure = Failure("dotnet build", "error CS0103");
 
         var markdown = _renderer.Render(new WorkflowReport("Workflow", Succeeded: false, [section], failure));

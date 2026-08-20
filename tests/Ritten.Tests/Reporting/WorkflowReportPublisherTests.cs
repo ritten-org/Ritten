@@ -25,7 +25,7 @@ public class WorkflowReportPublisherTests
     public async Task OnWorkflowCompleted_ComposesTheReportOnceForEverySink()
     {
         var report = new WorkflowReportBuilder();
-        report.Section("Build").Failure("The solution failed to build.");
+        report.Section(SectionName.Build).Failure("The solution failed to build.");
 
         await Publisher(report).OnWorkflowCompleted(new WorkflowResult(ExitCode.Failed, []), TestContext.Current.CancellationToken);
 

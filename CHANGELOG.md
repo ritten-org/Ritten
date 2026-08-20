@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - **Tools install from source.** The dotnet-tool workflow gains an `install` job: it builds, packs, and installs the tool globally from the working tree, so no feed is needed to try a build. A version that's already installed stops the job early; `--force` reinstalls it.
 - **Package metadata is checked.** `check` and `deploy` now fail when a shipped package is missing a description, readme, or license — the gaps NuGet only warns about after the push.
+- **Report sections share a vocabulary.** `SectionName` is a value object for the sections of the workflow report.
 
 ### Fixed
 

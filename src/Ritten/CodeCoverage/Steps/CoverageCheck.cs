@@ -36,11 +36,11 @@ public class CoverageCheck(IOptions<CoverageOptions> options, IWorkflowReport re
 
         if (failures.Count > 0)
         {
-            report.Section("Coverage").Failure(rows);
+            report.Section(SectionName.Coverage).Failure(rows);
             return StepResult.Failed(failures);
         }
 
-        report.Section("Coverage").Success(rows);
+        report.Section(SectionName.Coverage).Success(rows);
         return StepResult.Successful;
     }
 

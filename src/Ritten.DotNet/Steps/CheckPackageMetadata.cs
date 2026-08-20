@@ -19,49 +19,110 @@ public class CheckPackageMetadata(IWorkflowReport report)
     {
         List<Error> errors = [];
         List<string> failures = [];
+        List<string> warnings = [];
         foreach (var package in packages.Packages)
         {
-            List<(string What, string Property)> missing = [];
-            if (!package.Metadata.HasDescription)
+            if (Required(package.Metadata) is { Count: > 0 } missing)
             {
-                missing.Add(("a description", "Description"));
+                failures.Add($"**{package.Name}** is missing {Join(missing, markdown: true)}.");
+                errors.Add(new Error($"{package.Name} is missing {Join(missing, markdown: false)}."));
             }
 
-            if (!package.Metadata.HasReadme)
+            if (Recommended(package.Metadata) is { Count: > 0 } absent)
             {
-                missing.Add(("a readme", "PackageReadmeFile"));
+                warnings.Add($"**{package.Name}** could also carry {Join(absent, markdown: true)}.");
             }
-
-            if (!package.Metadata.HasLicense)
-            {
-                missing.Add(("a license", "PackageLicenseExpression"));
-            }
-
-            if (missing.Count == 0)
-            {
-                continue;
-            }
-
-            failures.Add($"**{package.Name}** is missing {string.Join(", ", missing.Select(m => $"{m.What} (`{m.Property}`)"))}.");
-            errors.Add(new Error($"{package.Name} is missing {string.Join(", ", missing.Select(m => $"{m.What} ({m.Property})"))}."));
         }
 
-        if (errors.Count == 0)
+        var section = report.Section(SectionName.Metadata);
+        if (failures.Count == 0 && warnings.Count == 0)
         {
-            report.Section("Metadata")
-                .Success(packages.Packages.Count == 1
-                    ? "The package carries a description, readme, and license."
-                    : $"All {packages.Packages.Count} packages carry a description, readme, and license.");
+            section.Success(packages.Packages.Count == 1
+                ? "The package carries everything a feed asks for."
+                : $"All {packages.Packages.Count} packages carry everything a feed asks for.");
             return StepResult.Successful;
         }
 
-        var section = report.Section("Metadata");
         foreach (var failure in failures)
         {
             section.Failure(failure);
         }
 
+        // Recommendations never fail the job: a package without tags still publishes cleanly.
+        foreach (var warning in warnings)
+        {
+            section.Warning(warning);
+        }
+
+        // The URL forms predate the packed ones and nuget.org no longer honours them, so a project
+        // carrying only those reads as licensed or illustrated when the package itself isn't.
+        if (packages.Packages.Any(p => p.Metadata.LicensedByUrlOnly))
+        {
+            section.Note("`PackageLicenseUrl` is deprecated: set `PackageLicenseExpression` to an SPDX id like `MIT`, or `PackageLicenseFile` for custom terms.");
+        }
+
+        if (packages.Packages.Any(p => p.Metadata.IconByUrlOnly))
+        {
+            section.Note("`PackageIconUrl` is deprecated: pack the image and name it in `PackageIcon`.");
+        }
+
+        if (errors.Count == 0)
+        {
+            return StepResult.Successful;
+        }
+
         section.Note("NuGet warns on push without these. Set them in the project file or Directory.Build.props.");
         return StepResult.Failed(errors);
     }
+
+    /// <summary>
+    /// What a package cannot publish cleanly without.
+    /// </summary>
+    private static List<(string What, string Property)> Required(PackageMetadata metadata)
+    {
+        List<(string, string)> missing = [];
+        if (!metadata.HasDescription)
+        {
+            missing.Add(("a description", "Description"));
+        }
+
+        if (!metadata.HasReadme)
+        {
+            missing.Add(("a readme", "PackageReadmeFile"));
+        }
+
+        if (!metadata.HasLicense)
+        {
+            missing.Add(("a license", "PackageLicenseExpression"));
+        }
+
+        return missing;
+    }
+
+    /// <summary>
+    /// What makes a package findable and legible on the feed, but never blocks a push.
+    /// </summary>
+    private static List<(string What, string Property)> Recommended(PackageMetadata metadata)
+    {
+        List<(string, string)> missing = [];
+        if (!metadata.HasIcon)
+        {
+            missing.Add(("an icon", "PackageIcon"));
+        }
+
+        if (!metadata.HasProjectUrl)
+        {
+            missing.Add(("a project URL", "PackageProjectUrl"));
+        }
+
+        if (!metadata.HasTags)
+        {
+            missing.Add(("search tags", "PackageTags"));
+        }
+
+        return missing;
+    }
+
+    private static string Join(List<(string What, string Property)> items, bool markdown) =>
+        string.Join(", ", items.Select(i => markdown ? $"{i.What} (`{i.Property}`)" : $"{i.What} ({i.Property})"));
 }

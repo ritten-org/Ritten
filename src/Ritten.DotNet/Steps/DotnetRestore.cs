@@ -26,7 +26,7 @@ public class DotnetRestore(IWorkflowLog log, IDotNet dotnet, IWorkflowReport rep
             return StepResult.Successful;
         }
 
-        var section = report.Section("Restore").Failure("The solution's packages failed to restore.");
+        var section = report.Section(SectionName.Restore).Failure("The solution's packages failed to restore.");
         if (result.Diagnostics.Count == 0)
         {
             return StepResult.Failed("The solution's packages failed to restore. Re-run with --verbose to see the restore output.");

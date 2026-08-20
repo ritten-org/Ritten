@@ -8,11 +8,11 @@ namespace Ritten.Tests.DotNet;
 public class CheckPackageVersionsTests
 {
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
-    private readonly ReportSection _versionSection = new("Version");
+    private readonly ReportSection _versionSection = new(SectionName.Version);
 
     public CheckPackageVersionsTests()
     {
-        _report.Section("Version").Returns(_versionSection);
+        _report.Section(SectionName.Version).Returns(_versionSection);
     }
 
     [Fact]

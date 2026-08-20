@@ -24,12 +24,12 @@ public class CheckChangelogLinksTests
         .GetRequiredService<IChangelog>();
 
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
-    private readonly ReportSection _changelogSection = new("Changelog");
+    private readonly ReportSection _changelogSection = new(SectionName.Changelog);
     private readonly ChangelogOptions _options = TestOptions.Changelog();
 
     public CheckChangelogLinksTests()
     {
-        _report.Section("Changelog").Returns(_changelogSection);
+        _report.Section(SectionName.Changelog).Returns(_changelogSection);
     }
 
     [Fact]

@@ -26,7 +26,7 @@ public class DotnetBuild(IOptions<DotNetOptions> options, IDotNet dotnet, IWorkf
             return StepResult.Successful;
         }
 
-        var section = report.Section("Build").Failure("The solution failed to build.");
+        var section = report.Section(SectionName.Build).Failure("The solution failed to build.");
         if (result.Diagnostics.Count == 0)
         {
             return StepResult.Failed("The solution failed to build. Re-run with --verbose to see the compiler output.");

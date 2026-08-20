@@ -26,12 +26,12 @@ public class DotnetFormat(IDotNet dotnet, IWorkflowReport report)
 
         if (result.UnformattedFiles.Count == 0)
         {
-            report.Section("Formatting").Failure("`dotnet format --verify-no-changes` failed — check the build logs for details.");
+            report.Section(SectionName.Formatting).Failure("`dotnet format --verify-no-changes` failed — check the build logs for details.");
             return StepResult.Failed("Formatting check failed. Re-run with --verbose to see the output.");
         }
 
         var summary = $"{result.UnformattedFiles.Count} {(result.UnformattedFiles.Count == 1 ? "file isn't" : "files aren't")} formatted — run `dotnet format` and commit the result";
-        report.Section("Formatting").Failure(
+        report.Section(SectionName.Formatting).Failure(
             $"{summary}:\n" + string.Join('\n', result.UnformattedFiles.Select(f => $"- `{f}`")));
 
         return StepResult.Failed([

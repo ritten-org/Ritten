@@ -15,12 +15,12 @@ public class CoverageCheckTests
         new() { LinesCovered = 75, LinesValid = 100, BranchesCovered = 3, BranchesValid = 4 };
 
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
-    private readonly ReportSection _section = new("Coverage");
+    private readonly ReportSection _section = new(SectionName.Coverage);
     private readonly CoverageOptions _options = new();
 
     public CoverageCheckTests()
     {
-        _report.Section("Coverage").Returns(_section);
+        _report.Section(SectionName.Coverage).Returns(_section);
     }
 
     [Fact]

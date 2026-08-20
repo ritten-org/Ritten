@@ -46,7 +46,7 @@ public class DotnetTest(
         {
             if (result.Total > 0)
             {
-                report.Section("Tests").Success(
+                report.Section(SectionName.Tests).Success(
                     result.Skipped > 0
                         ? $"**{result.Passed}** tests passed, {result.Skipped} skipped."
                         : $"All **{result.Passed}** tests passed.");
@@ -64,7 +64,7 @@ public class DotnetTest(
 
         if (result.Failures.Count == 0)
         {
-            var section = report.Section("Tests").Failure("`dotnet test` failed before reporting any results.");
+            var section = report.Section(SectionName.Tests).Failure("`dotnet test` failed before reporting any results.");
             if (result.FailureOutput.Count == 0)
             {
                 return StepResult.Failed("Tests failed. Re-run with --verbose to see the output.");
@@ -78,7 +78,7 @@ public class DotnetTest(
         }
 
         var summary = $"{result.Failed} {(result.Failed == 1 ? "test" : "tests")} failed ({result.Passed} passed, {result.Skipped} skipped)";
-        report.Section("Tests")
+        report.Section(SectionName.Tests)
             .Failure($"**{result.Failed}** {(result.Failed == 1 ? "test" : "tests")} failed ({result.Passed} passed, {result.Skipped} skipped).")
             .Details("Failed tests", DescribeFailures(result.Failures));
 

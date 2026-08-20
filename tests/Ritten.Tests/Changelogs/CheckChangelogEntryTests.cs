@@ -23,11 +23,11 @@ public class CheckChangelogEntryTests
         new(Published: true, LatestInLine: true, NuGetVersion.Parse("1.1.0"), NuGetVersion.Parse("1.1.0"));
 
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
-    private readonly ReportSection _changelogSection = new("Changelog");
+    private readonly ReportSection _changelogSection = new(SectionName.Changelog);
 
     public CheckChangelogEntryTests()
     {
-        _report.Section("Changelog").Returns(_changelogSection);
+        _report.Section(SectionName.Changelog).Returns(_changelogSection);
     }
 
     [Fact]
