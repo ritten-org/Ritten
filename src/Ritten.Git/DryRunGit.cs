@@ -1,3 +1,4 @@
+using Ritten.Contracts.FileSystem;
 using Ritten.Reporting;
 
 namespace Ritten.Git;
@@ -7,6 +8,10 @@ namespace Ritten.Git;
 /// </summary>
 internal class DryRunGit(IWorkflowLog log, IGit inner) : IGit
 {
+    /// <inheritdoc />
+    public Task<IDirectory?> RepositoryRoot(CancellationToken cancellationToken = default) =>
+        inner.RepositoryRoot(cancellationToken);
+
     /// <inheritdoc />
     public Task<string?> GetRemoteUrl(string remote, CancellationToken cancellationToken = default) =>
         inner.GetRemoteUrl(remote, cancellationToken);

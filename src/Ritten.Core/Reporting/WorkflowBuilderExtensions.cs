@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Engine;
+using Ritten.Reporting.Sinks;
 
 namespace Ritten.Reporting;
 
@@ -25,6 +27,7 @@ public static class WorkflowBuilderExtensions
             builder.Services.AddSingleton<IWorkflowReport, WorkflowReportBuilder>();
             builder.Services.AddSingleton<MarkdownReportRenderer>();
             builder.Services.AddSingleton<IWorkflowProgress, WorkflowReportPublisher>();
+            builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkflowResultSink, FileResultSink>());
             return builder;
         }
     }
