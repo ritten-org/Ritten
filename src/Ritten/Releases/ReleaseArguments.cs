@@ -13,10 +13,10 @@ public static class ReleaseArguments
     /// <summary>
     /// The version to prepare, in place of the one derived from the changelog.
     /// </summary>
-    public static JobArgument<RequestedVersion> Version { get; } = JobArgument.Value(
+    public static JobArgument<NuGetVersion> Version { get; } = JobArgument.Value(
         "version",
         "The version to prepare, in place of the one derived from the changelog.",
         text => NuGetVersion.TryParse(text, out var version)
-            ? new Result<RequestedVersion>(new RequestedVersion(version))
+            ? new Result<NuGetVersion>(version)
             : Result.Error($"'{text}' is not a version. Give one like 1.2.0."));
 }

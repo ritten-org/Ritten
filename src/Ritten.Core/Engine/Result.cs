@@ -40,7 +40,7 @@ public static class Result
 /// Either a value or the reasons one couldn't be produced.
 /// </summary>
 /// <typeparam name="T">The type of the value produced on success.</typeparam>
-public class Result<T> where T : class
+public class Result<T>
 {
     /// <summary>
     /// Creates a successful result carrying the given value.
@@ -52,7 +52,7 @@ public class Result<T> where T : class
     /// Creates a failed result carrying the given errors.
     /// </summary>
     /// <param name="errors">Everything that was wrong, not just the first thing.</param>
-    public Result(IEnumerable<Error> errors) : this(null, errors) { }
+    public Result(IEnumerable<Error> errors) : this(default, errors) { }
 
     private Result(T? value, IEnumerable<Error>? errors)
     {

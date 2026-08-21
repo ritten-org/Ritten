@@ -28,8 +28,7 @@ public sealed class JobArguments
         _values.TryGetValue(argument, out var value) ? value as T : null;
 
     /// <summary>
-    /// Whether the caller passed the given flag.
+    /// The declarations a value was supplied for.
     /// </summary>
-    /// <param name="flag">The declaration to read, as the job declared it.</param>
-    public bool IsSet(FlagArgument flag) => _values.TryGetValue(flag, out var value) && value is true;
+    public IReadOnlyCollection<JobArgument> Arguments => [.. _values.Keys];
 }
