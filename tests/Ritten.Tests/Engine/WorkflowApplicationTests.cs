@@ -74,7 +74,7 @@ public class WorkflowApplicationTests : IDisposable
         JobArguments? received = null;
         var exitCode = await Run(
             new TestJob(arguments: [Release], configure: (_, args) => received = args),
-            new JobArgumentsBuilder().Set(Release, new Uri("https://releases.example/1.2.0")).Build());
+            Given(Release, new Uri("https://releases.example/1.2.0")));
 
         exitCode.ShouldBe(ExitCode.Success);
         received.ShouldNotBeNull().Get(Release).ShouldBe(new Uri("https://releases.example/1.2.0"));
@@ -114,6 +114,10 @@ public class WorkflowApplicationTests : IDisposable
         "Which release.",
         text => new Result<Uri>(new Uri($"https://releases.example/{text}")),
         required: true);
+
+    /// <summary>The values a front end would have read, as the job will be handed them.</summary>
+    private static JobArguments Given<T>(JobArgument<T> argument, T value) =>
+        new(new Dictionary<JobArgument, object?> { [argument] = value });
 
     private async Task<ExitCode> Run(TestJob job, JobArguments arguments, StepProbe? probe = null)
     {
