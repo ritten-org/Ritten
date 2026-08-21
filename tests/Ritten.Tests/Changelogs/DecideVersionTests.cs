@@ -8,11 +8,11 @@ using Ritten.Reporting;
 
 namespace Ritten.Tests.Changelogs;
 
-public class ProposeVersionTests
+public class DecideVersionTests
 {
     private readonly IWorkflowPrompt _prompt = Substitute.For<IWorkflowPrompt>();
 
-    public ProposeVersionTests()
+    public DecideVersionTests()
     {
         _prompt.IsInteractive.Returns(true);
         _prompt.Confirm(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
@@ -92,7 +92,7 @@ public class ProposeVersionTests
     private static ReleaseState Unpublished() =>
         new(Published: false, LatestInLine: true, NuGetVersion.Parse("1.2.0"), NuGetVersion.Parse("1.2.0"));
 
-    private ProposeVersion Step(string? version = null, bool autoApprove = false) =>
+    private DecideVersion Step(string? version = null, bool autoApprove = false) =>
         new(
             new WorkflowJob("dotnet tool", "prepare", AutoApprove: autoApprove),
             version is null ? RequestedVersion.None : new RequestedVersion(NuGetVersion.Parse(version)),

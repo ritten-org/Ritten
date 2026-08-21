@@ -8,7 +8,7 @@ namespace Ritten.Tests.DotNet;
 
 /// <summary>
 /// Tests for the <see cref="DotNetClient"/> operations that run dotnet commands and interpret
-/// their output: <c>Restore</c>, <c>Build</c>, <c>Test</c>, and <c>CheckFormat</c>.
+/// their output: <c>Restore</c>, <c>Build</c>, <c>Test</c>, and <c>Format</c>.
 /// </summary>
 public class DotNetClientRunTests
 {
@@ -153,7 +153,7 @@ public class DotNetClientRunTests
     }
 
     [Fact]
-    public async Task CheckFormat_ReadsTheReportOnFailure()
+    public async Task Format_ReadsTheReportWhenVerifyingRefusesTheSolution()
     {
         var reportDirectory = ReportDirectory();
         var reportFile = FileWithContent("""[{"FilePath": "/repo/src/B.cs"}, {"FilePath": "/repo/src/A.cs"}]""");
@@ -161,7 +161,7 @@ public class DotNetClientRunTests
         reportDirectory.GetFile("format-report.json").Returns(reportFile);
         _commands.Respond(c => c.Arguments.Contains("format"), new CommandResult(2, "", ""));
 
-        var result = await _client.CheckFormat(new FormatArgs(), TestContext.Current.CancellationToken);
+        var result = await _client.Format(new FormatArgs { VerifyNoChanges = true }, TestContext.Current.CancellationToken);
 
         _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(
             ["format", "whitespace", "--verify-no-changes", "--report", "/repo/temp/format"]);
@@ -171,15 +171,33 @@ public class DotNetClientRunTests
     }
 
     [Fact]
-    public async Task CheckFormat_SucceedsWithoutReadingTheReport()
+    public async Task Format_ReportsTheFilesItRewrote()
+    {
+        // Formatting for real is the same command without --verify-no-changes, and the report
+        // then names what it changed rather than what it refused.
+        var reportDirectory = ReportDirectory();
+        var reportFile = FileWithContent("""[{"FilePath": "/repo/src/A.cs"}]""");
+        reportFile.Exists.Returns(true);
+        reportDirectory.GetFile("format-report.json").Returns(reportFile);
+
+        var result = await _client.Format(new FormatArgs(), TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(
+            ["format", "whitespace", "--report", "/repo/temp/format"]);
+        result.Succeeded.ShouldBeTrue();
+        result.UnformattedFiles.ShouldBe(["src/A.cs"]);
+        reportDirectory.Received().Delete();
+    }
+
+    [Fact]
+    public async Task Format_ReportsNothingWhenEverythingIsFormatted()
     {
         var reportDirectory = ReportDirectory();
 
-        var result = await _client.CheckFormat(new FormatArgs(), TestContext.Current.CancellationToken);
+        var result = await _client.Format(new FormatArgs { VerifyNoChanges = true }, TestContext.Current.CancellationToken);
 
         result.Succeeded.ShouldBeTrue();
         result.UnformattedFiles.ShouldBeEmpty();
-        reportDirectory.DidNotReceiveWithAnyArgs().GetFile(default!);
         reportDirectory.Received().Delete();
     }
 

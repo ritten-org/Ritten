@@ -1,7 +1,7 @@
 namespace Ritten.DotNet;
 
 /// <summary>
-/// The outcome of a <see cref="IDotNet.CheckFormat"/> invocation.
+/// The outcome of a <see cref="IDotNet.Format"/> invocation.
 /// </summary>
 public record FormatResult
 {

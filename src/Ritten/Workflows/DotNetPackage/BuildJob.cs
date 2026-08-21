@@ -21,7 +21,7 @@ internal sealed class BuildJob : DotNetPackageJob
     [
         Step.FromType<Clean>(),
         Step.FromType<DotnetRestore>(),
-        Step.FromType<DotnetFormat>(),
+        Step.FromType<DotnetFormatCheck>(),
         Step.FromType<DotnetBuild>(),
         Step.FromType<DotnetTest>(),
         .. CoverageSteps.All

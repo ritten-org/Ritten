@@ -242,7 +242,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         };
     }
 
-    public async Task<FormatResult> CheckFormat(FormatArgs args, CancellationToken cancellationToken = default)
+    public async Task<FormatResult> Format(FormatArgs args, CancellationToken cancellationToken = default)
     {
         // The report is this client's working space, not the caller's concern: created here,
         // read here, and removed here, so a run leaves nothing behind.
@@ -250,22 +250,23 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         reportDirectory.Create();
         try
         {
-            var command = Command
-                .Create("dotnet")
-                .WithArguments("format", "whitespace", "--verify-no-changes", "--report", reportDirectory.AbsolutePath);
+            var command = Command.Create("dotnet").WithArguments("format", "whitespace");
+            if (args.VerifyNoChanges)
+            {
+                command = command.AndArguments("--verify-no-changes");
+            }
+
+            command = command.AndArguments("--report", reportDirectory.AbsolutePath);
             if (args.NoRestore)
             {
                 command = command.AndArguments("--no-restore");
             }
+
             var result = await commands.Run(command, cancellationToken);
-            if (result.IsSuccess)
-            {
-                return new FormatResult { Succeeded = true };
-            }
 
             return new FormatResult
             {
-                Succeeded = false,
+                Succeeded = result.IsSuccess,
                 UnformattedFiles = await ReadUnformattedFiles(reportDirectory.GetFile("format-report.json"), cancellationToken)
             };
         }

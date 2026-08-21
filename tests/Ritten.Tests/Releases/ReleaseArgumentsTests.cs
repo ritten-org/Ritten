@@ -8,7 +8,7 @@ namespace Ritten.Tests.Releases;
 /// The declaration owns reading its own text, so a bad value is refused where it was given
 /// rather than by whichever step eventually needed it.
 /// </summary>
-public class ReleaseInputsTests
+public class ReleaseArgumentsTests
 {
     [Fact]
     public void ReadsAVersion()
@@ -32,14 +32,14 @@ public class ReleaseInputsTests
     public void IsOptional()
     {
         // Prepare derives a version when nobody names one, so requiring it would defeat the point.
-        ReleaseInputs.Version.Required.ShouldBeFalse();
-        ReleaseInputs.Version.TakesValue.ShouldBeTrue();
+        ReleaseArguments.Version.Required.ShouldBeFalse();
+        ReleaseArguments.Version.TakesValue.ShouldBeTrue();
     }
 
     private static Ritten.Engine.Result<RequestedVersion> Read(string text)
     {
         // Read through the declaration exactly as the engine does.
-        var read = ((IReadableInput)ReleaseInputs.Version).Read(text);
+        var read = ((IReadableArgument)ReleaseArguments.Version).Read(text);
         return read.IsError
             ? new Ritten.Engine.Result<RequestedVersion>(read.Errors)
             : new Ritten.Engine.Result<RequestedVersion>((RequestedVersion)read.Value);

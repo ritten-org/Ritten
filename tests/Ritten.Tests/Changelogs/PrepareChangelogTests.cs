@@ -7,7 +7,6 @@ using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
 using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
-using Ritten.Git;
 using Ritten.Releases;
 using Ritten.Reporting;
 using Ritten.Tests.Engine.Helpers;

@@ -31,8 +31,17 @@ internal class DryRunDotNet(IWorkflowLog log, IDotNet inner) : IDotNet
         inner.Test(args, cancellationToken);
 
     /// <inheritdoc />
-    public Task<FormatResult> CheckFormat(FormatArgs args, CancellationToken cancellationToken = default) =>
-        inner.CheckFormat(args, cancellationToken);
+    public Task<FormatResult> Format(FormatArgs args, CancellationToken cancellationToken = default) =>
+        // Verifying changes nothing, so it passes through; formatting becomes verifying, which
+        // names the same files without rewriting one. The step narrates which run it got.
+        inner.Format(args with { VerifyNoChanges = true }, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<IReadOnlyList<string>>> SetVersion(SetVersionArgs args, CancellationToken cancellationToken = default)
+    {
+        log.Skipped($"Would set the version to {args.Version}.");
+        return Task.FromResult(Result.Success<IReadOnlyList<string>>([]));
+    }
 
     /// <inheritdoc />
     public Task<TestRun> ReadTestResults(IFile file, CancellationToken cancellationToken = default) =>

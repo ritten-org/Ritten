@@ -1,32 +1,34 @@
 using Microsoft.Extensions.DependencyInjection;
+using Ritten.Changelogs.Steps;
 using Ritten.Contracts;
-using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.Engine;
 using Ritten.Engine.Workflows;
-using Ritten.Workflows.Steps;
+using Ritten.NuGet.Steps;
+using Ritten.Releases;
+using Ritten.Releases.Steps;
 
 namespace Ritten.Workflows.DotNetTool;
 
 /// <summary>
-/// Builds, packs, and installs the tool globally from the working tree — no feed required.
+/// Stages the repository for its next release, fixing what it can of whatever stands in the way.
 /// </summary>
-internal sealed class InstallJob : DotNetToolJob
+internal sealed class PrepareJob : DotNetToolJob
 {
     /// <inheritdoc />
-    public override string Name => "install";
+    public override string Name => "prepare";
 
     /// <inheritdoc />
-    public override string Description => "Builds, packs, and installs the tool globally from the working tree.";
+    public override string Description => "Stages the next release: rolls the changelog, sets the version, and formats.";
 
     /// <inheritdoc />
-    public override IReadOnlyList<JobArgument> Arguments { get; } = [ToolArguments.Reinstall];
+    public override IReadOnlyList<JobArgument> Arguments { get; } = [ReleaseArguments.Version];
 
     /// <inheritdoc />
     protected override void Configure(IWorkflowBuilder builder, DotNetToolSettings settings, JobArguments args)
     {
         base.Configure(builder, settings, args);
-        builder.Services.AddSingleton(new ForceReinstall(args.IsSet(ToolArguments.Reinstall)));
+        builder.Services.AddSingleton(args.Get(ReleaseArguments.Version) ?? RequestedVersion.None);
     }
 
     /// <inheritdoc />
@@ -37,11 +39,13 @@ internal sealed class InstallJob : DotNetToolJob
     /// <inheritdoc />
     public override IReadOnlyList<Step> Steps { get; } =
     [
-        Step.FromType<Clean>(),
         Step.FromType<ReadProjects>(),
-        Step.FromType<DotnetRestore>(),
-        Step.FromType<DotnetBuild>(),
-        Step.FromType<DotnetPack>(),
-        Step.FromType<DotnetToolInstall>()
+        Step.FromType<ResolveRelease>(),
+        Step.FromType<ReadChangelog>(),
+        Step.FromType<NugetRead>(),
+        Step.FromType<DecideVersion>(),
+        Step.FromType<PrepareChangelog>(),
+        Step.FromType<PrepareVersion>(),
+        Step.FromType<DotnetFormat>()
     ];
 }

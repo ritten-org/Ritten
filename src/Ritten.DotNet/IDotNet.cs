@@ -36,12 +36,7 @@ public interface IDotNet
     Task<TestResult> Test(TestArgs args, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Runs <c>dotnet format --verify-no-changes</c> and returns the outcome.
-    /// </summary>
-    Task<FormatResult> CheckFormat(FormatArgs args, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Runs <c>dotnet format</c>, fixing what it can, and reports which files it changed.
+    /// Runs <c>dotnet format</c> and reports which files weren't formatted.
     /// </summary>
     Task<FormatResult> Format(FormatArgs args, CancellationToken cancellationToken = default);
 

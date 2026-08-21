@@ -1,6 +1,5 @@
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
-using Ritten.Engine;
 using Ritten.Reporting;
 
 namespace Ritten.DotNet.Steps;
@@ -9,11 +8,12 @@ namespace Ritten.DotNet.Steps;
 /// Installs every packed tool globally, so the working tree's build runs from anywhere.
 /// </summary>
 /// <param name="job">The job being run.</param>
+/// <param name="force">Whether to replace an install that already carries this version.</param>
 /// <param name="log">The workflow log.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 [Step("dotnet tool install", StepKind.Work)]
-public class DotnetToolInstall(WorkflowJob job, IWorkflowLog log, IFileSystem fileSystem, IDotNet dotnet)
+public class DotnetToolInstall(WorkflowJob job, ForceReinstall force, IWorkflowLog log, IFileSystem fileSystem, IDotNet dotnet)
 {
     /// <summary>
     /// Installs each tool the repository ships.
@@ -39,9 +39,9 @@ public class DotnetToolInstall(WorkflowJob job, IWorkflowLog log, IFileSystem fi
             }
 
             var current = await dotnet.InstalledToolVersion(tool.Name, cancellationToken);
-            if (current == tool.Version && !job.Force)
+            if (current == tool.Version && !force.Requested)
             {
-                log.Skipped($"{tool.Name} {tool.Version} is already installed; pass --{WorkflowArguments.Force} to reinstall this build.");
+                log.Skipped($"{tool.Name} {tool.Version} is already installed; pass --{ToolArguments.Reinstall.Name} to reinstall this build.");
                 continue;
             }
 

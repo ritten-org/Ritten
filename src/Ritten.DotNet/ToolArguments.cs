@@ -5,7 +5,7 @@ namespace Ritten.DotNet;
 /// <summary>
 /// What a tool job can be asked for.
 /// </summary>
-public static class ToolInputs
+public static class ToolArguments
 {
     /// <summary>
     /// Reinstalls a tool whose installed version already matches the one just built.
