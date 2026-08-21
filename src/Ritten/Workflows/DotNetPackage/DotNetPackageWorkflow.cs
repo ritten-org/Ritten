@@ -18,6 +18,7 @@ public class DotNetPackageWorkflow : IWorkflow
     [
         new StatusJob(),
         new BuildJob(),
+        new PrepareJob(),
         new CheckJob(),
         new DeployJob()
     ];

@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.,
       Added: [
         Something upcoming.
       ],
+      ReleaseKind: Features,
       IsEmpty: false
     },
     {
@@ -43,6 +44,7 @@ The big release.
       Fixed: [
         A bug.
       ],
+      ReleaseKind: Features,
       IsEmpty: false
     },
     {
@@ -56,6 +58,7 @@ The big release.
       Changed: [
         Existing behaviour.
       ],
+      ReleaseKind: Breaking,
       IsEmpty: false
     }
   ],

@@ -14,11 +14,14 @@ internal sealed class CheckJob : DotNetJob
     public override string Name => "check";
 
     /// <inheritdoc />
+    public override string Description => "Checks a pull request: formatting, compile, and tests.";
+
+    /// <inheritdoc />
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<Clean>(),
         Step.FromType<DotnetRestore>(),
-        Step.FromType<DotnetFormat>(),
+        Step.FromType<DotnetFormatCheck>(),
         Step.FromType<DotnetBuild>(),
         Step.FromType<DotnetTest>(),
         .. CoverageSteps.All

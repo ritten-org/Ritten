@@ -18,6 +18,7 @@ public static class WorkflowBuilderExtensions
         public IWorkflowBuilder AddChangelogs(ChangelogSettings settings)
         {
             builder.Services.TryAddSingleton<IChangelog, ChangelogClient>();
+            builder.Decorators.Decorate<IChangelog, DryRunChangelog>();
             builder.Services.Configure<ChangelogOptions>(o => o.File = settings.File);
             return builder;
         }

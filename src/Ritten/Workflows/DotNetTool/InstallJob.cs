@@ -1,5 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
+using Ritten.DotNet;
 using Ritten.DotNet.Steps;
+using Ritten.Engine;
 using Ritten.Engine.Workflows;
 using Ritten.Workflows.Steps;
 
@@ -12,6 +15,19 @@ internal sealed class InstallJob : DotNetToolJob
 {
     /// <inheritdoc />
     public override string Name => "install";
+
+    /// <inheritdoc />
+    public override string Description => "Builds, packs, and installs the tool globally from the working tree.";
+
+    /// <inheritdoc />
+    public override IReadOnlyList<JobArgument> Arguments { get; } = [ToolArguments.Reinstall];
+
+    /// <inheritdoc />
+    protected override void Configure(IWorkflowBuilder builder, DotNetToolSettings settings, JobArguments args)
+    {
+        base.Configure(builder, settings, args);
+        builder.Services.AddSingleton(new ForceReinstall(args.Get(ToolArguments.Reinstall)));
+    }
 
     /// <inheritdoc />
     protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => settings

@@ -16,7 +16,7 @@ public class WorkflowRegistryTests
             .Add(new DotNetPackageWorkflow());
 
         registry.Workflows.Select(p => p.Name).ShouldBe(["dotnet-tool", "dotnet-package"]);
-        registry.Find("dotnet-tool").ShouldNotBeNull().Jobs.Select(j => j.Name).ShouldBe(["status", "build", "install", "check", "deploy"]);
+        registry.Find("dotnet-tool").ShouldNotBeNull().Jobs.Select(j => j.Name).ShouldBe(["status", "build", "install", "prepare", "check", "deploy"]);
     }
 
     [Fact]

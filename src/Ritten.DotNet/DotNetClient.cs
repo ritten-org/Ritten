@@ -12,6 +12,9 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
     /// <summary>The name the coverage report is written under; the coverage step globs for it.</summary>
     private const string CoverageFileName = "coverage.cobertura.xml";
 
+    /// <summary>The file a repository shares build properties through, version included.</summary>
+    private const string DirectoryBuildProps = "Directory.Build.props";
+
     private static readonly JsonSerializerOptions FormatReportJson = new() { PropertyNameCaseInsensitive = true };
 
     public async Task<Result<Project>> ReadProject(IFile file, CancellationToken cancellationToken = default)
@@ -242,7 +245,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         };
     }
 
-    public async Task<FormatResult> CheckFormat(FormatArgs args, CancellationToken cancellationToken = default)
+    public async Task<FormatResult> Format(FormatArgs args, CancellationToken cancellationToken = default)
     {
         // The report is this client's working space, not the caller's concern: created here,
         // read here, and removed here, so a run leaves nothing behind.
@@ -250,22 +253,23 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         reportDirectory.Create();
         try
         {
-            var command = Command
-                .Create("dotnet")
-                .WithArguments("format", "whitespace", "--verify-no-changes", "--report", reportDirectory.AbsolutePath);
+            var command = Command.Create("dotnet").WithArguments("format", "whitespace");
+            if (args.VerifyNoChanges)
+            {
+                command = command.AndArguments("--verify-no-changes");
+            }
+
+            command = command.AndArguments("--report", reportDirectory.AbsolutePath);
             if (args.NoRestore)
             {
                 command = command.AndArguments("--no-restore");
             }
+
             var result = await commands.Run(command, cancellationToken);
-            if (result.IsSuccess)
-            {
-                return new FormatResult { Succeeded = true };
-            }
 
             return new FormatResult
             {
-                Succeeded = false,
+                Succeeded = result.IsSuccess,
                 UnformattedFiles = await ReadUnformattedFiles(reportDirectory.GetFile("format-report.json"), cancellationToken)
             };
         }
@@ -275,10 +279,85 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         }
     }
 
+    public async Task<Result<IReadOnlyList<string>>> SetVersion(SetVersionArgs args, CancellationToken cancellationToken = default)
+    {
+        var current = args.Current.ToString();
+        List<string> written = [];
+        foreach (var candidate in DeclarationCandidates(args.Projects))
+        {
+            var file = fileSystem.ProjectRoot.GetFile(candidate);
+            if (!file.Exists)
+            {
+                continue;
+            }
+
+            string text;
+            using (var reader = new StreamReader(file.OpenRead()))
+            {
+                text = await reader.ReadToEndAsync(cancellationToken);
+            }
+
+            // Rewriting the element's text rather than the document: round-tripping XML would
+            // reformat a file the caller has to read, over a change of a few characters.
+            var declaration = $"<Version>{current}</Version>";
+            if (!text.Contains(declaration, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            await WriteText(file, text.Replace(declaration, $"<Version>{args.Version}</Version>", StringComparison.Ordinal), cancellationToken);
+            written.Add(candidate);
+        }
+
+        if (written.Count == 0)
+        {
+            return Result.Error(
+                $"Nothing declares <Version>{current}</Version>, so there's no version to rewrite. " +
+                "Set it in the project file or Directory.Build.props, or pass the version to the tools that compute it.");
+        }
+
+        return written;
+    }
+
     public async Task<TestRun> ReadTestResults(IFile file, CancellationToken cancellationToken = default)
     {
         await using var stream = file.OpenRead();
         return await TrxParser.Parse(stream, cancellationToken);
+    }
+
+    /// <summary>
+    /// Every file that could declare a project's version.
+    /// </summary>
+    private static IEnumerable<string> DeclarationCandidates(IReadOnlyList<string> projects) =>
+        projects.SelectMany(Ancestry).Distinct(StringComparer.Ordinal);
+
+    private static IEnumerable<string> Ancestry(string project)
+    {
+        List<string> candidates = [DirectoryBuildProps];
+        foreach (var directory in Directories(project))
+        {
+            candidates.Add(Path.Combine(directory, DirectoryBuildProps));
+        }
+
+        candidates.Add(project);
+        return candidates;
+    }
+
+    /// <summary>
+    /// The directories containing the given project, outermost first.
+    /// </summary>
+    private static IEnumerable<string> Directories(string project)
+    {
+        var directory = Path.GetDirectoryName(project);
+        return string.IsNullOrEmpty(directory) ? [] : [.. Directories(directory), directory];
+    }
+
+    private static async Task WriteText(IFile file, string text, CancellationToken cancellationToken)
+    {
+        var stream = file.OpenWrite();
+        stream.SetLength(0); // OpenWrite isn't guaranteed to truncate an existing file.
+        await using var writer = new StreamWriter(stream);
+        await writer.WriteAsync(text.AsMemory(), cancellationToken);
     }
 
     public IReadOnlyList<DotNetDiagnostic> ParseDiagnostics(string buildOutput) =>

@@ -7,5 +7,6 @@
   Added: [
     A thing.
   ],
+  ReleaseKind: Features,
   IsEmpty: false
 }

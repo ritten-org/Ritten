@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Title>Ritten.CommandLine</Title>
+    <Description>System.CommandLine for Ritten workflows: renders a command line from the registered workflow model, so a host declares jobs and arguments once.</Description>
+    <RootNamespace>Ritten.CommandLine</RootNamespace>
+    <PackageTags>devops;cicd;build;automation;workflows;pipelines;cli;system.commandline</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Ritten.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ritten.Core\Ritten.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+</Project>

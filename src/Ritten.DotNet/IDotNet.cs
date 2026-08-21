@@ -36,9 +36,18 @@ public interface IDotNet
     Task<TestResult> Test(TestArgs args, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Runs <c>dotnet format --verify-no-changes</c> and returns the outcome.
+    /// Runs <c>dotnet format</c> and reports which files weren't formatted.
     /// </summary>
-    Task<FormatResult> CheckFormat(FormatArgs args, CancellationToken cancellationToken = default);
+    Task<FormatResult> Format(FormatArgs args, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates the current project version.
+    /// </summary>
+    /// <remarks>
+    /// This works by writing a new version into every file that literally declares the current one,
+    /// then returns those files. Fails when the current version isn't found.
+    /// </remarks>
+    Task<Result<IReadOnlyList<string>>> SetVersion(SetVersionArgs args, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Reads the outcome of a test run from the given TRX results file.

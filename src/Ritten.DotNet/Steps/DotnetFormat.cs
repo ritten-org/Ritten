@@ -1,42 +1,53 @@
 using Ritten.Contracts;
-using Ritten.Engine;
 using Ritten.Reporting;
 
 namespace Ritten.DotNet.Steps;
 
 /// <summary>
-/// Fails the workflow when <c>dotnet format whitespace</c> would make changes.
+/// Formats the solution, fixing what <see cref="DotnetFormatCheck"/> would otherwise only report.
 /// </summary>
+/// <param name="job">The job being run.</param>
+/// <param name="log">The workflow log.</param>
 /// <param name="dotnet">The dotnet client.</param>
-/// <param name="report">The build report.</param>
-[Step("check formatting", StepKind.Check)]
-public class DotnetFormat(IDotNet dotnet, IWorkflowReport report)
+[Step("dotnet format", StepKind.Work)]
+public class DotnetFormat(WorkflowJob job, IWorkflowLog log, IDotNet dotnet)
 {
     /// <summary>
-    /// Checks the solution's formatting without changing anything.
+    /// Formats the solution.
     /// </summary>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {
-        var result = await dotnet.CheckFormat(new FormatArgs { NoRestore = true }, cancellationToken);
-        if (result.Succeeded)
+        var result = await dotnet.Format(new FormatArgs(), cancellationToken);
+        if (!result.Succeeded)
         {
+            log.Warning("Could not format the solution. Fix the build and run `dotnet format` again.");
             return StepResult.Successful;
         }
 
-        if (result.UnformattedFiles.Count == 0)
+        var count = result.UnformattedFiles.Count;
+        var files = count == 1 ? "file" : "files";
+        if (count == 0)
         {
-            report.Section(SectionName.Formatting).Failure("`dotnet format --verify-no-changes` failed — check the build logs for details.");
-            return StepResult.Failed("Formatting check failed. Re-run with --verbose to see the output.");
+            log.Detail("Everything is already formatted.");
+            return StepResult.Successful;
         }
 
-        var summary = $"{result.UnformattedFiles.Count} {(result.UnformattedFiles.Count == 1 ? "file isn't" : "files aren't")} formatted — run `dotnet format` and commit the result";
-        report.Section(SectionName.Formatting).Failure(
-            $"{summary}:\n" + string.Join('\n', result.UnformattedFiles.Select(f => $"- `{f}`")));
+        // (The "dry run" version of format just does a check.)
+        if (job.DryRun)
+        {
+            log.Skipped($"Would format {count} {files}.");
+        }
+        else
+        {
+            log.Detail($"Formatted {count} {files}.");
+        }
 
-        return StepResult.Failed([
-            new Error($"{summary}:"),
-            .. result.UnformattedFiles.Select(f => new Error(f))
-        ]);
+        foreach (var file in result.UnformattedFiles)
+        {
+            log.Verbose(file);
+        }
+
+        return StepResult.Successful;
     }
 }

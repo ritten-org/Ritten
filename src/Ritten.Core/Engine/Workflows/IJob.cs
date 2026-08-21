@@ -14,9 +14,19 @@ public interface IJob
     string Name { get; }
 
     /// <summary>
+    /// What the job does, as help text.
+    /// </summary>
+    string Description { get; }
+
+    /// <summary>
     /// The job's steps, in declaration order.
     /// </summary>
     IReadOnlyList<Step> Steps { get; }
+
+    /// <summary>
+    /// The values the job takes from whoever invokes it.
+    /// </summary>
+    IReadOnlyList<JobArgument> Arguments => [];
 
     /// <summary>
     /// Reads the given project's settings as this job's settings type.
@@ -26,5 +36,5 @@ public interface IJob
     /// <summary>
     /// Configures the run with the given settings.
     /// </summary>
-    internal void Configure(IWorkflowBuilder builder, WorkflowSettings settings);
+    internal void Configure(IWorkflowBuilder builder, WorkflowSettings settings, JobArguments args);
 }

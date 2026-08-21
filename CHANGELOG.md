@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-08-21
+
+### Added
+
+- **`ritten prepare` stages the next release.** It gives the unreleased notes a version heading, brings the changelog's version links up to date, updates the project version, and formats the code. The version is derived from the unreleased notes and confirmed before anything is written; use `--version` to name one explicitly.
+- **Jobs can now take arguments.** A job's `Arguments` name what it needs to run. The job reads them in `Configure` and registers the domain values its steps consume, so steps never see a command line and stay reusable.
+- **The command line ships as a package.** `Ritten.CommandLine` renders a System.CommandLine surface from the registered model: commands are the jobs of whichever workflow the repository declares, carrying each job's `Description` and an option per argument it takes. A host wires it up in a line — `await command.InstallRitten(application).
+- **Changelogs can be written, not just read.** `IChangelog.Write` and `Render` join the client's read half, with a dry-run pairing so a rehearsal narrates the file it would write instead of writing it.
+
+### Changed
+
+- **`--force` belongs to the job that honors it.** It was a global flag that every job accepted and only `install` read. It's now an argument `install` declares, so it appears exactly where it means something.
+- **`Changelog` and `ChangelogEntry` are records.** Preparing a release is a change to one entry of an otherwise untouched document, which wants `with`.
+
 ## [0.7.0] - 2026-08-21
 
 ### Added
@@ -160,6 +174,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.8.0]: https://github.com/ritten-org/Ritten/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/ritten-org/Ritten/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/ritten-org/Ritten/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ritten-org/Ritten/compare/v0.4.0...v0.5.0

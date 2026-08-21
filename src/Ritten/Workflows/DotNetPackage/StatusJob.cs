@@ -16,6 +16,9 @@ internal sealed class StatusJob : DotNetPackageJob
     public override string Name => "status";
 
     /// <inheritdoc />
+    public override string Description => "Reports where the project stands: version, release state, and changelog.";
+
+    /// <inheritdoc />
     protected override void ValidateSettings(SettingsValidator<DotNetPackageSettings> settings) => settings
         .Require(s => s.Build.Project is not null || s.Build.Projects is { Count: > 0 }, "Set 'build.project' (one package) or 'build.projects' (several).")
         .Require(s => s.Build.Project is null || s.Build.Projects is null, "'build.project' and 'build.projects' are both set; use one.");

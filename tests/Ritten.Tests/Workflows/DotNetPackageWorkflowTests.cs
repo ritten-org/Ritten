@@ -16,6 +16,7 @@ public class DotNetPackageWorkflowTests
     [Theory]
     [InlineData("status")]
     [InlineData("build")]
+    [InlineData("prepare")]
     [InlineData("check")]
     [InlineData("deploy")]
     public void EveryJobTheCliOffers_Builds(string job)
@@ -38,6 +39,7 @@ public class DotNetPackageWorkflowTests
 
     [Theory]
     [InlineData("status")]
+    [InlineData("prepare")]
     [InlineData("check")]
     [InlineData("deploy")]
     public void ShippingJobs_AcceptProjectsAsThePluralSpelling(string job)
@@ -60,6 +62,7 @@ public class DotNetPackageWorkflowTests
 
     [Theory]
     [InlineData("status")]
+    [InlineData("prepare")]
     [InlineData("check")]
     [InlineData("deploy")]
     public void ShippingJobs_RequireAProject(string job)
