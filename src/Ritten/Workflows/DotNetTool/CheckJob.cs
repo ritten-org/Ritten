@@ -17,6 +17,9 @@ internal sealed class CheckJob : DotNetToolJob
     public override string Name => "check";
 
     /// <inheritdoc />
+    public override string Description => "Checks a pull request: formatting, version, changelog, compile, tests, and pack.";
+
+    /// <inheritdoc />
     protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => settings
         .Require(s => s.Build.Project is not null || s.Build.Projects is { Count: > 0 }, "Set 'build.project' (one package) or 'build.projects' (several).")
         .Require(s => s.Build.Project is null || s.Build.Projects is null, "'build.project' and 'build.projects' are both set; use one.");

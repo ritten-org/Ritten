@@ -19,6 +19,7 @@ public class DotNetToolWorkflow : IWorkflow
         new StatusJob(),
         new BuildJob(),
         new InstallJob(),
+        new PrepareJob(),
         new CheckJob(),
         new DeployJob()
     ];

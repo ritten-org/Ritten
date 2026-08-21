@@ -14,6 +14,9 @@ internal sealed class BuildJob : DotNetJob
     public override string Name => "build";
 
     /// <inheritdoc />
+    public override string Description => "Compiles and tests.";
+
+    /// <inheritdoc />
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<Clean>(),

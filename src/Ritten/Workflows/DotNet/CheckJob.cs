@@ -14,6 +14,9 @@ internal sealed class CheckJob : DotNetJob
     public override string Name => "check";
 
     /// <inheritdoc />
+    public override string Description => "Checks a pull request: formatting, compile, and tests.";
+
+    /// <inheritdoc />
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<Clean>(),
