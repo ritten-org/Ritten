@@ -18,5 +18,5 @@ public enum JobKind
     /// <summary>
     /// Publishes a release, so it runs deliberately rather than on every change.
     /// </summary>
-    Publish
+    Deploy
 }

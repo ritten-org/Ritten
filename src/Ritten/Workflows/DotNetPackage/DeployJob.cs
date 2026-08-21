@@ -22,7 +22,7 @@ internal sealed class DeployJob : DotNetPackageJob
     public override string Description => "Checks, packs, tags, creates the GitHub release, and publishes to NuGet.";
 
     /// <inheritdoc />
-    public override JobKind Kind => JobKind.Publish;
+    public override JobKind Kind => JobKind.Deploy;
 
     /// <inheritdoc />
     protected override void ValidateSettings(SettingsValidator<DotNetPackageSettings> settings) => settings

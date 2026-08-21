@@ -14,7 +14,7 @@ public sealed class WorkflowRegistry
         new ProduceBeforeConsume(),
         new GateBeforePublish(),
         new CheckBeforePublish(),
-        new PublishJobsPublish()
+        new DeployJobsPublish()
     ];
 
     private readonly List<IWorkflow> _workflows = [];
