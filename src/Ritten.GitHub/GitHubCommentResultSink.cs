@@ -22,7 +22,7 @@ internal class GitHubCommentResultSink(
             return Task.CompletedTask;
         }
 
-        return comments.CreateOrUpdate($"## ⏳ {context.Title}\n\n{job.Name} job in progress…", cancellationToken);
+        return comments.CreateOrUpdate(WithRunLogs($"## ⏳ {context.Title}\n\n{job.Name} job in progress…"), cancellationToken);
     }
 
     public Task Publish(WorkflowReport report, CancellationToken cancellationToken = default)
@@ -32,14 +32,13 @@ internal class GitHubCommentResultSink(
             return Task.CompletedTask;
         }
 
-        var markdown = renderer.Render(report);
-
-        // Unlike the job summary, the comment lives away from the run, so it links back to the logs.
-        if (options.Value.RunUrl is { } runUrl)
-        {
-            markdown = $"{markdown}\n[View the run logs]({runUrl})\n";
-        }
-
-        return comments.CreateOrUpdate(markdown, cancellationToken);
+        return comments.CreateOrUpdate(WithRunLogs(renderer.Render(report)), cancellationToken);
     }
+
+    /// <summary>
+    /// Unlike the job summary, the comment lives away from the run, so it links back to the logs —
+    /// never more usefully than while the run is still going and the logs are all there is to see.
+    /// </summary>
+    private string WithRunLogs(string markdown) =>
+        options.Value.RunUrl is { } runUrl ? $"{markdown}\n[View the run logs]({runUrl})\n" : markdown;
 }
