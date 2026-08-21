@@ -5,7 +5,7 @@ namespace Ritten.Changelogs;
 /// <summary>
 /// Represents an entry in a <see cref="Changelog"/>.
 /// </summary>
-public class ChangelogEntry
+public record ChangelogEntry
 {
     /// <summary>
     /// Gets the version that this entry describes the changes for, or <c>null</c> if the changes are unreleased.

@@ -13,7 +13,13 @@ public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
     public abstract string Name { get; }
 
     /// <inheritdoc />
+    public abstract string Description { get; }
+
+    /// <inheritdoc />
     public abstract IReadOnlyList<Step> Steps { get; }
+
+    /// <inheritdoc />
+    public virtual IReadOnlyList<JobArgument> Arguments => [];
 
     /// <summary>
     /// Registers the services the job's steps need.
@@ -23,6 +29,14 @@ public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
     protected virtual void Configure(IWorkflowBuilder builder, TSettings settings)
     {
     }
+
+    /// <summary>
+    /// Registers the services the job's steps need, including whatever it makes of the values it was invoked with.
+    /// </summary>
+    /// <param name="builder">The service collection the job is assembled into.</param>
+    /// <param name="settings">The project's parsed settings.</param>
+    /// <param name="args">The values supplied for the inputs this job declared.</param>
+    protected virtual void Configure(IWorkflowBuilder builder, TSettings settings, JobArguments args) => Configure(builder, settings);
 
     /// <summary>
     /// Judges the inputs the run arrived with, e.g. <c>settings.Require(s =&gt; s.Build.Project)</c>.
@@ -48,5 +62,5 @@ public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
             : new Result<WorkflowSettings>(settings.Value);
     }
 
-    void IJob.Configure(IWorkflowBuilder builder, WorkflowSettings settings) => Configure(builder, (TSettings)settings);
+    void IJob.Configure(IWorkflowBuilder builder, WorkflowSettings settings, JobArguments args) => Configure(builder, (TSettings)settings, args);
 }

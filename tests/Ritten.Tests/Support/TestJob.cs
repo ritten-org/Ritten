@@ -1,4 +1,5 @@
 using Ritten.Contracts;
+using Ritten.Engine;
 using Ritten.Engine.Workflows;
 using Ritten.Workflows;
 
@@ -10,12 +11,21 @@ namespace Ritten.Tests.Support;
 internal sealed class TestJob(
     string name = "verify",
     IReadOnlyList<Step>? steps = null,
-    Action<SettingsValidator<DotNetToolSettings>>? validate = null
+    Action<SettingsValidator<DotNetToolSettings>>? validate = null,
+    IReadOnlyList<JobArgument>? inputs = null,
+    Action<IWorkflowBuilder, JobArguments>? configure = null
 ) : Job<DotNetToolSettings>
 {
     public override string Name => name;
 
+    public override string Description => $"The {name} job, declared by a test.";
+
     public override IReadOnlyList<Step> Steps { get; } = steps ?? [];
 
+    public override IReadOnlyList<JobArgument> Arguments { get; } = inputs ?? [];
+
     protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => validate?.Invoke(settings);
+
+    protected override void Configure(IWorkflowBuilder builder, DotNetToolSettings settings, JobArguments args) =>
+        configure?.Invoke(builder, args);
 }

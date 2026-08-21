@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Engine;
+using Ritten.Engine.Workflows;
 using Ritten.GitHub;
 using Ritten.Reporting;
 using Ritten.Tests.Support;
@@ -61,6 +62,95 @@ public class WorkflowApplicationTests : IDisposable
 
         exitCode.ShouldBe(ExitCode.Success);
         probe.Ran.ShouldHaveSingleItem();
+    }
+
+    [Fact]
+    public async Task Run_ReadsTheValuesTheJobDeclares()
+    {
+        // The engine never learns what a release is: the job names the input, the domain reads the
+        // text, and the job alone sees the result.
+        WriteRittenJson("""{ "workflow": "test" }""");
+        JobArguments? received = null;
+        var exitCode = await Run(
+            new TestJob(inputs: [Release], configure: (_, inputs) => received = inputs),
+            new Dictionary<string, string?> { ["release"] = "1.2.0" });
+
+        exitCode.ShouldBe(ExitCode.Success);
+        received.ShouldNotBeNull().Get(Release).ShouldBe(new Uri("https://releases.example/1.2.0"));
+    }
+
+    [Fact]
+    public async Task Run_LeavesAnOmittedValueUnread()
+    {
+        WriteRittenJson("""{ "workflow": "test" }""");
+        JobArguments? received = null;
+        var exitCode = await Run(new TestJob(inputs: [Release], configure: (_, inputs) => received = inputs), new Dictionary<string, string?>());
+
+        exitCode.ShouldBe(ExitCode.Success);
+        received.ShouldNotBeNull().Get(Release).ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Run_RefusesAValueTheJobDoesNotDeclare()
+    {
+        // Otherwise a typo'd flag is carried, read by nothing, and the run quietly does something else.
+        WriteRittenJson("""{ "workflow": "test" }""");
+
+        var exitCode = await Run(new TestJob(), new Dictionary<string, string?> { ["verison"] = "1.2.0" });
+
+        exitCode.ShouldBe(ExitCode.ConfigurationError);
+    }
+
+    [Fact]
+    public async Task Run_RefusesAValueItCannotRead()
+    {
+        // Before the run is assembled, so an unreadable value never becomes a step's problem.
+        WriteRittenJson("""{ "workflow": "test" }""");
+        var probe = new StepProbe();
+
+        var exitCode = await Run(
+            new TestJob(steps: [Step.FromType<ProbeStep>()], inputs: [Release]),
+            new Dictionary<string, string?> { ["release"] = "not a release" },
+            probe);
+
+        exitCode.ShouldBe(ExitCode.ConfigurationError);
+        probe.Ran.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Run_RefusesAMissingRequiredValue()
+    {
+        WriteRittenJson("""{ "workflow": "test" }""");
+
+        var exitCode = await Run(new TestJob(inputs: [RequiredRelease]), new Dictionary<string, string?>());
+
+        exitCode.ShouldBe(ExitCode.ConfigurationError);
+    }
+
+    /// <summary>An input whose text only the domain that declared it knows how to read.</summary>
+    private static JobArgument<Uri> Release { get; } = JobArgument.Value(
+        "release",
+        "Which release.",
+        text => Uri.TryCreate($"https://releases.example/{text}", UriKind.Absolute, out var uri) && !text.Contains(' ')
+            ? new Result<Uri>(uri)
+            : Result.Error($"'{text}' is not a release."));
+
+    private static JobArgument<Uri> RequiredRelease { get; } = JobArgument.Value(
+        "release",
+        "Which release.",
+        text => new Result<Uri>(new Uri($"https://releases.example/{text}")),
+        required: true);
+
+    private async Task<ExitCode> Run(TestJob job, IReadOnlyDictionary<string, string?> inputs, StepProbe? probe = null)
+    {
+        var builder = WorkflowApplication.CreateBuilder();
+        builder.Workflows.Add(new TestWorkflow(jobs: [job]));
+        builder.Services.AddSingleton(probe ?? new StepProbe());
+        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
+        var application = builder.Build().Value.ShouldNotBeNull();
+
+        var args = new RunJobArgs(job.Name) { Directory = _root, Arguments = inputs };
+        return await application.Run(args, Empty, TestContext.Current.CancellationToken);
     }
 
     [Fact]

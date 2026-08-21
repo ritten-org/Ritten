@@ -112,5 +112,5 @@ public class DotnetToolInstallTests
     };
 
     private DotnetToolInstall Step(bool force = false) =>
-        new(new WorkflowJob("dotnet tool", "install", Force: force), _log, _fileSystem, _dotnet);
+        new(new WorkflowJob("dotnet tool", "install"), new ForceReinstall(force), _log, _fileSystem, _dotnet);
 }

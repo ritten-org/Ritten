@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Ritten.Contracts;
 using Ritten.Engine;
+using Ritten.Engine.Workflows;
 using Ritten.GitHub;
 using Ritten.Reporting;
 using Ritten.Workflows.DotNet;
@@ -23,7 +24,7 @@ if (built.IsError)
     return ExitCode.ConfigurationError;
 }
 
-var workflow = built.Value;
+var application = built.Value;
 
 var verbose = new Option<bool>($"--{WorkflowArguments.Verbose}", "-v")
 {
@@ -49,31 +50,36 @@ var dryRun = new Option<bool>($"--{WorkflowArguments.DryRun}")
     Recursive = true
 };
 
-var force = new Option<bool>($"--{WorkflowArguments.Force}")
-{
-    Description = "Redo work that's already in place, like reinstalling an installed tool.",
-    Recursive = true
-};
-
 var root = new RootCommand("The Ritten build workflow.")
 {
     verbose,
     quiet,
     dryRun,
-    autoApprove,
-    force,
-    JobCommand("status", "Reports where the project stands: version, release state, and changelog."),
-    JobCommand("build", "Compiles and tests, without any release checks."),
-    JobCommand("install", "Builds, packs, and installs the tool globally from the working tree."),
-    JobCommand("check", "Checks a pull request: formatting, version, changelog, compile, tests, and pack."),
-    JobCommand("deploy", "Checks, packs, tags, creates the GitHub release, and publishes to NuGet.")
+    autoApprove
 };
+
+// Commands are dynamic based on the current project's workflow.
+foreach (var job in await application.ResolveJobs(Environment.CurrentDirectory))
+{
+    root.Add(JobCommand(job));
+}
 
 return await root.Parse(args).InvokeAsync();
 
-Command JobCommand(string name, string description)
+Command JobCommand(IJob job)
 {
-    var command = new Command(name, description);
+    var command = new Command(job.Name, job.Description);
+    var options = job.Arguments.ToDictionary(
+        input => input,
+        Option (input) => input.TakesValue
+            ? new Option<string>($"--{input.Name}") { Description = input.Description, Required = input.Required }
+            : new Option<bool>($"--{input.Name}") { Description = input.Description });
+
+    foreach (var option in options.Values)
+    {
+        command.Options.Add(option);
+    }
+
     command.SetAction(async (parseResult, cancellationToken) =>
     {
         var logLevel = parseResult.GetValue(verbose)
@@ -81,15 +87,33 @@ Command JobCommand(string name, string description)
             : parseResult.GetValue(quiet)
                 ? WorkflowLogLevel.Warning
                 : WorkflowLogLevel.Detail;
-        var args = new RunJobArgs(name)
+
+        var args = new RunJobArgs(job.Name)
         {
             LogLevel = logLevel,
             DryRun = parseResult.GetValue(dryRun),
             AutoApprove = parseResult.GetValue(autoApprove),
-            Force = parseResult.GetValue(force)
+            Arguments = Supplied(parseResult, options)
         };
 
-        return await workflow.Run(args, cancellationToken);
+        return await application.Run(args, cancellationToken);
     });
+
     return command;
+}
+
+static Dictionary<string, string?> Supplied(ParseResult parseResult, IReadOnlyDictionary<JobArgument, Option> options)
+{
+    Dictionary<string, string?> supplied = [];
+    foreach (var (input, option) in options)
+    {
+        supplied[input.Name] = option switch
+        {
+            Option<string> value when parseResult.GetValue(value) is { } text => text,
+            Option<bool> flag when parseResult.GetValue(flag) => "",
+            _ => supplied[input.Name]
+        };
+    }
+
+    return supplied;
 }

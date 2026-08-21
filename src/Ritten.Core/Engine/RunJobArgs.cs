@@ -29,7 +29,7 @@ public sealed record RunJobArgs(string Job)
     public bool AutoApprove { get; init; }
 
     /// <summary>
-    /// Redoes work that's already in place, like reinstalling an installed tool.
+    /// The values supplied for the inputs the job declares, keyed by input name.
     /// </summary>
-    public bool Force { get; init; }
+    public IReadOnlyDictionary<string, string?> Arguments { get; init; } = new Dictionary<string, string?>();
 }

@@ -5,7 +5,7 @@ namespace Ritten.Changelogs;
 /// <summary>
 /// Represents a changelog in the format described by https://keepachangelog.com/en/1.1.0/.
 /// </summary>
-public class Changelog
+public record Changelog
 {
     /// <summary>
     /// Gets everything before the first version heading, verbatim.

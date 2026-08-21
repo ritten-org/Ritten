@@ -21,7 +21,7 @@ public class WorkflowRunBuilder : IWorkflowBuilder
     private string _workflowLabel = "";
     private bool _dryRun;
     private bool _autoApprove;
-    private bool _force;
+    private JobArguments _arguments = JobArguments.None;
     private IWorkflowLog _log;
 
     /// <summary>
@@ -88,12 +88,12 @@ public class WorkflowRunBuilder : IWorkflowBuilder
     }
 
     /// <summary>
-    /// Redoes work that's already in place, like reinstalling an installed tool.
+    /// Supplies the values read for the inputs the job declared.
     /// </summary>
-    /// <param name="force">Whether work that already looks done is redone.</param>
-    public WorkflowRunBuilder WithForce(bool force = true)
+    /// <param name="arguments">The values the caller gave, already read into their declared types.</param>
+    public WorkflowRunBuilder WithArguments(JobArguments arguments)
     {
-        _force = force;
+        _arguments = arguments;
         return this;
     }
 
@@ -140,9 +140,9 @@ public class WorkflowRunBuilder : IWorkflowBuilder
         }
 
         Services.AddSingleton(new WorkflowEnvironment(_runtime.Environment));
-        Services.AddSingleton(new WorkflowJob(_workflowLabel, job.Name, _dryRun, _autoApprove, _force));
+        Services.AddSingleton(new WorkflowJob(_workflowLabel, job.Name, _dryRun, _autoApprove));
         _runtime.Runtime.Configure(this, _runtime.Raw);
-        job.Configure(this, settings.Value);
+        job.Configure(this, settings.Value, _arguments);
 
         // Capability defaults land after the runtime's and the job's registrations: runtimes
         // declare theirs with TryAdd so an explicit host choice preempts them, and the engine
