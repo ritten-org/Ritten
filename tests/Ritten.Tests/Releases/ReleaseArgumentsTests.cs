@@ -1,5 +1,4 @@
 using NuGet.Versioning;
-using Ritten.Engine.Workflows;
 using Ritten.Releases;
 
 namespace Ritten.Tests.Releases;
@@ -36,12 +35,5 @@ public class ReleaseArgumentsTests
         ReleaseArguments.Version.TakesValue.ShouldBeTrue();
     }
 
-    private static Ritten.Engine.Result<RequestedVersion> Read(string text)
-    {
-        // Read through the declaration exactly as the engine does.
-        var read = ((IReadableArgument)ReleaseArguments.Version).Read(text);
-        return read.IsError
-            ? new Ritten.Engine.Result<RequestedVersion>(read.Errors)
-            : new Ritten.Engine.Result<RequestedVersion>((RequestedVersion)read.Value);
-    }
+    private static Ritten.Engine.Result<RequestedVersion> Read(string text) => ReleaseArguments.Version.Read(text);
 }

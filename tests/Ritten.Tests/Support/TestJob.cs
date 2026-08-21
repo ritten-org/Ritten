@@ -12,7 +12,7 @@ internal sealed class TestJob(
     string name = "verify",
     IReadOnlyList<Step>? steps = null,
     Action<SettingsValidator<DotNetToolSettings>>? validate = null,
-    IReadOnlyList<JobArgument>? inputs = null,
+    IReadOnlyList<JobArgument>? arguments = null,
     Action<IWorkflowBuilder, JobArguments>? configure = null
 ) : Job<DotNetToolSettings>
 {
@@ -22,7 +22,7 @@ internal sealed class TestJob(
 
     public override IReadOnlyList<Step> Steps { get; } = steps ?? [];
 
-    public override IReadOnlyList<JobArgument> Arguments { get; } = inputs ?? [];
+    public override IReadOnlyList<JobArgument> Arguments { get; } = arguments ?? [];
 
     protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => validate?.Invoke(settings);
 

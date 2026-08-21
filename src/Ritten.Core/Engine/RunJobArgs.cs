@@ -1,3 +1,4 @@
+using Ritten.Engine.Workflows;
 using Ritten.Reporting;
 
 namespace Ritten.Engine;
@@ -29,7 +30,7 @@ public sealed record RunJobArgs(string Job)
     public bool AutoApprove { get; init; }
 
     /// <summary>
-    /// The values supplied for the inputs the job declares, keyed by input name.
+    /// The arguments supplied to the job.
     /// </summary>
-    public IReadOnlyDictionary<string, string?> Arguments { get; init; } = new Dictionary<string, string?>();
+    public JobArguments Arguments { get; init; } = JobArguments.None;
 }

@@ -67,13 +67,13 @@ public class WorkflowApplicationTests : IDisposable
     [Fact]
     public async Task Run_ReadsTheValuesTheJobDeclares()
     {
-        // The engine never learns what a release is: the job names the input, the domain reads the
-        // text, and the job alone sees the result.
+        // The engine never learns what a release is: the job names the argument and alone sees
+        // the value, which arrives already read into the type the declaration chose.
         WriteRittenJson("""{ "workflow": "test" }""");
         JobArguments? received = null;
         var exitCode = await Run(
-            new TestJob(inputs: [Release], configure: (_, inputs) => received = inputs),
-            new Dictionary<string, string?> { ["release"] = "1.2.0" });
+            new TestJob(arguments: [Release], configure: (_, args) => received = args),
+            new JobArgumentsBuilder().Set(Release, new Uri("https://releases.example/1.2.0")).Build());
 
         exitCode.ShouldBe(ExitCode.Success);
         received.ShouldNotBeNull().Get(Release).ShouldBe(new Uri("https://releases.example/1.2.0"));
@@ -84,37 +84,10 @@ public class WorkflowApplicationTests : IDisposable
     {
         WriteRittenJson("""{ "workflow": "test" }""");
         JobArguments? received = null;
-        var exitCode = await Run(new TestJob(inputs: [Release], configure: (_, inputs) => received = inputs), new Dictionary<string, string?>());
+        var exitCode = await Run(new TestJob(arguments: [Release], configure: (_, args) => received = args), JobArguments.None);
 
         exitCode.ShouldBe(ExitCode.Success);
         received.ShouldNotBeNull().Get(Release).ShouldBeNull();
-    }
-
-    [Fact]
-    public async Task Run_RefusesAValueTheJobDoesNotDeclare()
-    {
-        // Otherwise a typo'd flag is carried, read by nothing, and the run quietly does something else.
-        WriteRittenJson("""{ "workflow": "test" }""");
-
-        var exitCode = await Run(new TestJob(), new Dictionary<string, string?> { ["verison"] = "1.2.0" });
-
-        exitCode.ShouldBe(ExitCode.ConfigurationError);
-    }
-
-    [Fact]
-    public async Task Run_RefusesAValueItCannotRead()
-    {
-        // Before the run is assembled, so an unreadable value never becomes a step's problem.
-        WriteRittenJson("""{ "workflow": "test" }""");
-        var probe = new StepProbe();
-
-        var exitCode = await Run(
-            new TestJob(steps: [Step.FromType<ProbeStep>()], inputs: [Release]),
-            new Dictionary<string, string?> { ["release"] = "not a release" },
-            probe);
-
-        exitCode.ShouldBe(ExitCode.ConfigurationError);
-        probe.Ran.ShouldBeEmpty();
     }
 
     [Fact]
@@ -122,12 +95,12 @@ public class WorkflowApplicationTests : IDisposable
     {
         WriteRittenJson("""{ "workflow": "test" }""");
 
-        var exitCode = await Run(new TestJob(inputs: [RequiredRelease]), new Dictionary<string, string?>());
+        var exitCode = await Run(new TestJob(arguments: [RequiredRelease]), JobArguments.None);
 
         exitCode.ShouldBe(ExitCode.ConfigurationError);
     }
 
-    /// <summary>An input whose text only the domain that declared it knows how to read.</summary>
+    /// <summary>An argument whose text only the domain that declared it knows how to read.</summary>
     private static JobArgument<Uri> Release { get; } = JobArgument.Value(
         "release",
         "Which release.",
@@ -141,7 +114,7 @@ public class WorkflowApplicationTests : IDisposable
         text => new Result<Uri>(new Uri($"https://releases.example/{text}")),
         required: true);
 
-    private async Task<ExitCode> Run(TestJob job, IReadOnlyDictionary<string, string?> inputs, StepProbe? probe = null)
+    private async Task<ExitCode> Run(TestJob job, JobArguments arguments, StepProbe? probe = null)
     {
         var builder = WorkflowApplication.CreateBuilder();
         builder.Workflows.Add(new TestWorkflow(jobs: [job]));
@@ -149,7 +122,7 @@ public class WorkflowApplicationTests : IDisposable
         builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
         var application = builder.Build().Value.ShouldNotBeNull();
 
-        var args = new RunJobArgs(job.Name) { Directory = _root, Arguments = inputs };
+        var args = new RunJobArgs(job.Name) { Directory = _root, Arguments = arguments };
         return await application.Run(args, Empty, TestContext.Current.CancellationToken);
     }
 

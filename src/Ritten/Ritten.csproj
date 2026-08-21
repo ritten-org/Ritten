@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Ritten.CommandLine\Ritten.CommandLine.csproj" />
     <ProjectReference Include="..\Ritten.Core\Ritten.Core.csproj" />
     <ProjectReference Include="..\Ritten.DotNet\Ritten.DotNet.csproj" />
     <ProjectReference Include="..\Ritten.Git\Ritten.Git.csproj" />
@@ -35,7 +36,6 @@
     <PackageReference Include="NuGet.Protocol" />
     <PackageReference Include="NuGet.Versioning" />
     <PackageReference Include="Spectre.Console" />
-    <PackageReference Include="System.CommandLine" />
   </ItemGroup>
 
 </Project>

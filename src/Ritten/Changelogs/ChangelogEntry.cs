@@ -1,4 +1,5 @@
 using NuGet.Versioning;
+using Ritten.Releases;
 
 namespace Ritten.Changelogs;
 
@@ -56,6 +57,17 @@ public record ChangelogEntry
     /// Vulnerability fixes.
     /// </summary>
     public IReadOnlyCollection<string> Security { get; init; } = [];
+
+    /// <summary>
+    /// What these notes do to what already shipped.
+    /// </summary>
+    public ReleaseKind ReleaseKind => this switch
+    {
+        { IsEmpty: true } => ReleaseKind.None,
+        { Removed.Count: > 0 } or { Changed.Count: > 0 } => ReleaseKind.Breaking,
+        { Added.Count: > 0 } or { Deprecated.Count: > 0 } => ReleaseKind.Features,
+        _ => ReleaseKind.Fixes
+    };
 
     /// <summary>
     /// True if the entry contains no notes. Otherwise, false.

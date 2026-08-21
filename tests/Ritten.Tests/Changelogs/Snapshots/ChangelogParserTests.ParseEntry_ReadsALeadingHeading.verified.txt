@@ -9,5 +9,6 @@
   Removed: [
     Old thing.
   ],
+  ReleaseKind: Breaking,
   IsEmpty: false
 }
