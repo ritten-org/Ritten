@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - **The report is written to a file.** Every run now leaves its report at `artifacts/report.md`, so the best thing a run produces is no longer readable only on GitHub Actions.
+- **Jobs declare what they're for.** `JobKind` classifies a job the way `StepKind` classifies a step — `Work`, `Check`, or `Publish`.
 - **`PhysicalFile` and `PhysicalDirectory` are public.** `IFile` and `IDirectory` were public with no way for anything outside the engine to produce one, so a module holding a real path had nothing to hand back.
 - **Steps can reach the repository root.** `IGit.RepositoryRoot()` returns the root of the repository the workflow is running in, which isn't always the project root.
 

@@ -22,6 +22,9 @@ internal sealed class DeployJob : DotNetPackageJob
     public override string Description => "Checks, packs, tags, creates the GitHub release, and publishes to NuGet.";
 
     /// <inheritdoc />
+    public override JobKind Kind => JobKind.Publish;
+
+    /// <inheritdoc />
     protected override void ValidateSettings(SettingsValidator<DotNetPackageSettings> settings) => settings
         .Require(s => s.Build.Project is not null || s.Build.Projects is { Count: > 0 }, "Set 'build.project' (one package) or 'build.projects' (several).")
         .Require(s => s.Build.Project is null || s.Build.Projects is null, "'build.project' and 'build.projects' are both set; use one.");

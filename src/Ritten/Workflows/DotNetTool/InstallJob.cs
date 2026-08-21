@@ -20,6 +20,9 @@ internal sealed class InstallJob : DotNetToolJob
     public override string Description => "Builds, packs, and installs the tool globally from the working tree.";
 
     /// <inheritdoc />
+    public override JobKind Kind => JobKind.Work;
+
+    /// <inheritdoc />
     public override IReadOnlyList<JobArgument> Arguments { get; } = [ToolArguments.Reinstall];
 
     /// <inheritdoc />

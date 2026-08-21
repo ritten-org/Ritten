@@ -13,7 +13,8 @@ public sealed class WorkflowRegistry
     private static readonly IJobRule[] Rules = [
         new ProduceBeforeConsume(),
         new GateBeforePublish(),
-        new CheckBeforePublish()
+        new CheckBeforePublish(),
+        new PublishJobsPublish()
     ];
 
     private readonly List<IWorkflow> _workflows = [];
