@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Ritten.CommandLine;
 using Ritten.Contracts;
 using Ritten.Engine;
 using Ritten.Engine.Workflows;

@@ -3,16 +3,10 @@ namespace Ritten.Engine.Workflows;
 /// <summary>
 /// What a run was invoked with, for the inputs its job declared.
 /// </summary>
-public sealed class JobArguments
+/// <param name="values">The read values, keyed by the declaration they were read for.</param>
+public sealed class JobArguments(IReadOnlyDictionary<JobArgument, object?>? values = null)
 {
-    private readonly IReadOnlyDictionary<JobArgument, object?> _values;
-
-    /// <summary>
-    /// Creates a new instance of the <see cref="JobArguments"/>.
-    /// </summary>
-    /// <param name="values">The read values, keyed by the declaration they were read for.</param>
-    internal JobArguments(IReadOnlyDictionary<JobArgument, object?>? values = null) =>
-        _values = values ?? new Dictionary<JobArgument, object?>();
+    private readonly IReadOnlyDictionary<JobArgument, object?> _values = values ?? new Dictionary<JobArgument, object?>();
 
     /// <summary>
     /// An empty set, for a job that declares no inputs.

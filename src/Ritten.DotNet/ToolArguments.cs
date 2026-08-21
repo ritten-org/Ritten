@@ -10,7 +10,7 @@ public static class ToolArguments
     /// <summary>
     /// Reinstalls a tool whose installed version already matches the one just built.
     /// </summary>
-    public static FlagArgument Reinstall { get; } = JobArgument.Flag(
+    public static JobArgument<bool> Reinstall { get; } = JobArgument.Value<bool>(
         "force",
         "Reinstall even when the installed version already matches the one just built."
     );
