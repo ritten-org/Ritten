@@ -21,6 +21,20 @@ public class GitHubCommentResultSinkTests
     }
 
     [Fact]
+    public async Task Started_LinksToTheRunLogsWhileThereIsNothingElseToShow()
+    {
+        // The pending comment says only that the job is running, so the logs are the one useful
+        // thing a reader can reach for — more so than on the finished report, which carries the outcome.
+        _options.RunUrl = "https://github.com/example/repo/actions/runs/987654";
+
+        await Sink().Started(new WorkflowJob("Ritten", "check", DryRun: false), TestContext.Current.CancellationToken);
+
+        await _gitHubComments.Received().CreateOrUpdate(
+            "## ⏳ Ritten\n\ncheck job in progress…\n[View the run logs](https://github.com/example/repo/actions/runs/987654)\n",
+            TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task Started_DoesNothingOutsideOfAPullRequest()
     {
         _options.PullRequestNumber = null;
