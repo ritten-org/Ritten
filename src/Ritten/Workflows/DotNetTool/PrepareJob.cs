@@ -28,7 +28,7 @@ internal sealed class PrepareJob : DotNetToolJob
     protected override void Configure(IWorkflowBuilder builder, DotNetToolSettings settings, JobArguments args)
     {
         base.Configure(builder, settings, args);
-        builder.Services.AddSingleton(args.Get(ReleaseArguments.Version) ?? RequestedVersion.None);
+        builder.Services.AddSingleton(new RequestedVersion(args.Get(ReleaseArguments.Version)));
     }
 
     /// <inheritdoc />

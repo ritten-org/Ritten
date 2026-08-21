@@ -38,26 +38,27 @@ public static class CommandExtensions
     private static Command JobCommand(IJob job, WorkflowFlags flags, WorkflowApplication application)
     {
         var command = new Command(job.Name, job.Description);
-        List<Option> arguments = [.. job.Arguments.Select(argument => argument.ToOption())];
+        List<JobArgumentOption> arguments = [.. job.Arguments.Select(argument => argument.Convert(JobArgumentConverter.Instance))];
         foreach (var argument in arguments)
         {
-            command.Options.Add(argument);
+            command.Options.Add(argument.Option);
         }
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
-            var builder = new JobArgumentsBuilder();
+            var builder = new JobArgumentsBuilder(parseResult);
             foreach (var argument in arguments)
             {
-                builder.Add(argument, parseResult);
+                builder.Add(argument);
             }
+            var jobArgs = builder.Build();
 
             var args = new RunJobArgs(job.Name)
             {
                 LogLevel = flags.LogLevel(parseResult),
                 DryRun = parseResult.GetValue(flags.DryRun),
                 AutoApprove = parseResult.GetValue(flags.AutoApprove),
-                Arguments = builder.Build()
+                Arguments = jobArgs
             };
 
             return await application.Run(args, cancellationToken);

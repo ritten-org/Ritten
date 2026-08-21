@@ -1,11 +1,12 @@
 using NuGet.Versioning;
+using Ritten.Engine;
 using Ritten.Releases;
 
 namespace Ritten.Tests.Releases;
 
 /// <summary>
-/// The declaration owns reading its own text, so a bad value is refused where it was given
-/// rather than by whichever step eventually needed it.
+/// A version is a type no command line can be expected to parse, so the declaration reads it —
+/// and a bad one is refused where it was given rather than by whichever step eventually needed it.
 /// </summary>
 public class ReleaseArgumentsTests
 {
@@ -15,7 +16,7 @@ public class ReleaseArgumentsTests
         var read = Read("1.2.0-beta.1");
 
         read.IsSuccess.ShouldBeTrue();
-        read.Value.ShouldBe(new RequestedVersion(NuGetVersion.Parse("1.2.0-beta.1")));
+        read.Value.ShouldBe(NuGetVersion.Parse("1.2.0-beta.1"));
     }
 
     [Fact]
@@ -32,8 +33,8 @@ public class ReleaseArgumentsTests
     {
         // Prepare derives a version when nobody names one, so requiring it would defeat the point.
         ReleaseArguments.Version.Required.ShouldBeFalse();
-        ReleaseArguments.Version.TakesValue.ShouldBeTrue();
     }
 
-    private static Ritten.Engine.Result<RequestedVersion> Read(string text) => ReleaseArguments.Version.Read(text);
+    private static Result<NuGetVersion> Read(string text) =>
+        ReleaseArguments.Version.Parse.ShouldNotBeNull()(text);
 }

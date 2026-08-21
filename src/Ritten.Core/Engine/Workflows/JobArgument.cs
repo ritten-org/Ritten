@@ -47,24 +47,39 @@ public abstract class JobArgument
     /// </summary>
     /// <typeparam name="TResult">What the declaration maps to.</typeparam>
     /// <param name="converter">The mapper to dispatch to.</param>
-    public abstract TResult Map<TResult>(Func<JobArgument<TResult>, TResult> converter);
+    public abstract TResult Convert<TResult>(IJobArgumentConverter<TResult> converter);
 
     /// <summary>
-    /// Declares a value the caller supplies as text, read by the domain that named it.
+    /// Declares a value of a type the front end can read for itself.
     /// </summary>
-    /// <typeparam name="T">The type the text reads as.</typeparam>
+    /// <typeparam name="T">The type the value reads as.</typeparam>
     /// <param name="name">The name the value is supplied under.</param>
     /// <param name="description">What the value is for, as help text.</param>
-    /// <param name="read">Reads the text, reporting in the domain's own words what a bad one is.</param>
-    /// <param name="alias">A short alternative spelling, when the input has one.</param>
+    /// <param name="alias">A short alternative spelling, when the argument has one.</param>
     /// <param name="required">Whether the job cannot run without it.</param>
     public static JobArgument<T> Value<T>(
         string name,
         string description,
-        Func<string, Result<T>> read,
         string? alias = null,
         bool required = false
-    ) => new(name, description, read, alias, required);
+    ) => new(name, description, null, alias, required);
+
+    /// <summary>
+    /// Declares a value that requires a custom parser.
+    /// </summary>
+    /// <typeparam name="T">The type the text reads as.</typeparam>
+    /// <param name="name">The name the value is supplied under.</param>
+    /// <param name="description">What the value is for, as help text.</param>
+    /// <param name="parse">Parses the argument.</param>
+    /// <param name="alias">A short alternative spelling, when the argument has one.</param>
+    /// <param name="required">Whether the job cannot run without it.</param>
+    public static JobArgument<T> Value<T>(
+        string name,
+        string description,
+        Func<string, Result<T>> parse,
+        string? alias = null,
+        bool required = false
+    ) => new(name, description, parse, alias, required);
 }
 
 /// <summary>
@@ -73,17 +88,14 @@ public abstract class JobArgument
 /// <typeparam name="T">The type the supplied text reads as.</typeparam>
 public sealed class JobArgument<T> : JobArgument
 {
-    private readonly Func<string, Result<T>> _read;
-
-    internal JobArgument(string name, string description, Func<string, Result<T>> read, string? alias, bool required)
-        : base(name, description, alias, required) => _read = read;
-
-    /// <inheritdoc />
-    public override TResult Map<TResult>(Func<JobArgument<TResult>, TResult> converter) => converter((JobArgument<TResult>)this);
+    internal JobArgument(string name, string description, Func<string, Result<T>>? parse, string? alias, bool required)
+        : base(name, description, alias, required) => Parse = parse;
 
     /// <summary>
-    /// Reads supplied text into the declared type, in the words of the domain that declared it.
+    /// Reads supplied text into the declared type, or <c>null</c> when the front end reads it.
     /// </summary>
-    /// <param name="text">The text the caller supplied.</param>
-    public Result<T> Read(string text) => _read(text);
+    public Func<string, Result<T>>? Parse { get; }
+
+    /// <inheritdoc />
+    public override TResult Convert<TResult>(IJobArgumentConverter<TResult> converter) => converter.Convert(this);
 }

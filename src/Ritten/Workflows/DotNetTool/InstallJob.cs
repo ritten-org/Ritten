@@ -26,7 +26,7 @@ internal sealed class InstallJob : DotNetToolJob
     protected override void Configure(IWorkflowBuilder builder, DotNetToolSettings settings, JobArguments args)
     {
         base.Configure(builder, settings, args);
-        builder.Services.AddSingleton(new ForceReinstall(args.IsSet(ToolArguments.Reinstall)));
+        builder.Services.AddSingleton(new ForceReinstall(args.Get(ToolArguments.Reinstall)));
     }
 
     /// <inheritdoc />

@@ -94,11 +94,19 @@ public sealed class WorkflowApplication
             ]);
         }
 
+        // Judged before anything is assembled, so a job that wasn't given what it needs says so
+        // beside "unknown job" rather than failing several steps in. Nothing checks the names:
+        // a value can only be supplied through a declaration, so a stray one can't be expressed.
+        if (Missing(declared, args.Arguments) is { Count: > 0 } missing)
+        {
+            return ConfigurationError(console, missing);
+        }
+
         var builder = new WorkflowRunBuilder(project.Value, runtime.Value, console)
             .WithWorkflowLabel(workflow.Label)
             .WithDryRun(args.DryRun)
             .WithAutoApprove(args.AutoApprove)
-            .WithForce(args.Force)
+            .WithArguments(args.Arguments)
             .WithServices(_services)
             .WithDecorators(_decorators);
 
@@ -111,6 +119,34 @@ public sealed class WorkflowApplication
         using var _ = run.Value;
         return await run.Value.Run(ct);
     }
+
+    /// <summary>
+    /// The jobs a command line should offer in the given project directory.
+    /// </summary>
+    /// <param name="directory">The directory the tool was invoked in.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task<IReadOnlyList<IJob>> ResolveJobs(string directory, CancellationToken ct = default)
+    {
+        var project = await RittenProject.Resolve(directory, _projectFileName, ct);
+        if (project.IsSuccess
+            && project.Value.GetWorkflowName() is { IsSuccess: true } name
+            && _workflows.Find(name.Value) is { } workflow)
+        {
+            return workflow.Jobs;
+        }
+
+        return [.. _workflows.Workflows.SelectMany(w => w.Jobs).DistinctBy(j => j.Name, StringComparer.OrdinalIgnoreCase)];
+    }
+
+    /// <summary>
+    /// The arguments a job declared as required and wasn't given.
+    /// </summary>
+    private static List<Error> Missing(IJob job, JobArguments arguments) =>
+    [
+        .. job.Arguments
+            .Where(argument => argument.Required && !arguments.Arguments.Contains(argument))
+            .Select(argument => Result.Error($"The {job.Name} job needs '{argument.Name}': {argument.Description}"))
+    ];
 
     // Before a runtime is selected there's nothing to ask for a console, so errors that early
     // print through the engine's own renderer.

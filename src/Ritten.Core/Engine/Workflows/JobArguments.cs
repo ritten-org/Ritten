@@ -18,8 +18,8 @@ public sealed class JobArguments(IReadOnlyDictionary<JobArgument, object?>? valu
     /// </summary>
     /// <typeparam name="T">The type the input reads as.</typeparam>
     /// <param name="argument">The declaration to read, as the job declared it.</param>
-    public T? Get<T>(JobArgument<T> argument) where T : class =>
-        _values.TryGetValue(argument, out var value) ? value as T : null;
+    public T? Get<T>(JobArgument<T> argument) =>
+        _values.TryGetValue(argument, out var value) && value is T typed ? typed : default;
 
     /// <summary>
     /// The declarations a value was supplied for.
