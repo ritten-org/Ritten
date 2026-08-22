@@ -18,7 +18,7 @@ public class WorkflowRunBuilder : IWorkflowBuilder
 {
     private readonly RittenProject _project;
     private readonly DetectRuntimeResult _runtime;
-    private string _workflowLabel = "";
+    private SelectedWorkflow? _workflow;
     private bool _dryRun;
     private bool _autoApprove;
     private JobArguments _arguments = JobArguments.None;
@@ -42,6 +42,8 @@ public class WorkflowRunBuilder : IWorkflowBuilder
         Services.AddSingleton(TimeProvider.System);
         Services.TryAddSingleton<IWorkflowRunner, DefaultWorkflowRunner>();
         Services.TryAddSingleton<IFileSystem, ProjectFileSystem>();
+        Services.TryAddSingleton<IProjectFiles, ProjectFileClient>();
+        Decorators.Decorate<IProjectFiles, DryRunProjectFiles>();
         Services.AddSingleton<IWorkflowProgress>(console);
         Services.TryAddSingleton<IWorkflowPrompt>(_ => new ConsolePrompt(AnsiConsole.Console));
     }
@@ -57,12 +59,12 @@ public class WorkflowRunBuilder : IWorkflowBuilder
     public DecoratorRegistry Decorators { get; } = new();
 
     /// <summary>
-    /// Names the workflow the job belongs to, for the run's narrative.
+    /// Sets the workflow the job belongs to.
     /// </summary>
-    /// <param name="label">The human label of the workflow being assembled.</param>
-    public WorkflowRunBuilder WithWorkflowLabel(string label)
+    /// <param name="workflow">The workflow being assembled.</param>
+    public WorkflowRunBuilder WithWorkflow(SelectedWorkflow workflow)
     {
-        _workflowLabel = label;
+        _workflow = workflow;
         return this;
     }
 
@@ -140,7 +142,8 @@ public class WorkflowRunBuilder : IWorkflowBuilder
         }
 
         Services.AddSingleton(new WorkflowEnvironment(_runtime.Environment));
-        Services.AddSingleton(new WorkflowJob(_workflowLabel, job.Name, _dryRun, _autoApprove));
+        Services.AddSingleton(_workflow ?? throw new InvalidOperationException("The run has no workflow; call WithWorkflow first."));
+        Services.AddSingleton(new WorkflowJob(_workflow.Label, job.Name, _dryRun, _autoApprove));
         _runtime.Runtime.Configure(this, _runtime.Raw);
         job.Configure(this, settings.Value, _arguments);
 
