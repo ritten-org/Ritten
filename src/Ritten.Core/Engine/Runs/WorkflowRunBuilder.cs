@@ -143,7 +143,7 @@ public class WorkflowRunBuilder : IWorkflowBuilder
 
         Services.AddSingleton(new WorkflowEnvironment(_runtime.Environment));
         Services.AddSingleton(_workflow ?? throw new InvalidOperationException("The run has no workflow; call WithWorkflow first."));
-        Services.AddSingleton(new WorkflowJob(_workflow.Label, job.Name, _dryRun, _autoApprove));
+        Services.AddSingleton(new WorkflowJob(_workflow.Workflow.Label, job.Name, _dryRun, _autoApprove));
         _runtime.Runtime.Configure(this, _runtime.Raw);
         job.Configure(this, settings.Value, _arguments);
 

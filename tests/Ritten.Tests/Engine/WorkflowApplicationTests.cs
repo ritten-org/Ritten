@@ -253,7 +253,7 @@ public class WorkflowApplicationTests : IDisposable
         var exitCode = await Run(application, "init");
 
         exitCode.ShouldBe(ExitCode.Success);
-        selected.ShouldNotBeNull().Name.ShouldBe("specific");
+        selected.ShouldNotBeNull().Workflow.Name.ShouldBe("specific");
         selected.Recognised.ShouldBe("it packs as a tool");
     }
 
