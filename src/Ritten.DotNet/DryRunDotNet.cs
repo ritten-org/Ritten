@@ -52,20 +52,39 @@ internal class DryRunDotNet(IWorkflowLog log, IDotNet inner) : IDotNet
         inner.ParseDiagnostics(buildOutput);
 
     /// <inheritdoc />
-    public Task<NuGetVersion?> InstalledToolVersion(string packageId, CancellationToken cancellationToken = default) =>
-        inner.InstalledToolVersion(packageId, cancellationToken);
+    public Task<NuGetVersion?> InstalledToolVersion(string packageId, ToolScope scope, CancellationToken cancellationToken = default) =>
+        inner.InstalledToolVersion(packageId, scope, cancellationToken);
 
     /// <inheritdoc />
     public Task ToolInstall(ToolInstallArgs args, CancellationToken cancellationToken = default)
     {
-        log.Skipped($"Would install {args.PackageId} {args.Version} globally from {args.Source.Name}.");
+        log.Skipped($"Would install {Named(args)} {Where(args.Scope)}.");
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task ToolUninstall(string packageId, CancellationToken cancellationToken = default)
+    public Task ToolUpdate(ToolInstallArgs args, CancellationToken cancellationToken = default)
     {
-        log.Skipped($"Would uninstall {packageId}.");
+        log.Skipped($"Would update {Named(args)} {Where(args.Scope)}.");
         return Task.CompletedTask;
     }
+
+    /// <inheritdoc />
+    public Task ToolUninstall(string packageId, ToolScope scope, CancellationToken cancellationToken = default)
+    {
+        log.Skipped($"Would uninstall {packageId} {Where(scope)}.");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task CreateToolManifest(IDirectory directory, CancellationToken cancellationToken = default)
+    {
+        log.Skipped($"Would create a tool manifest in {directory.Name}.");
+        return Task.CompletedTask;
+    }
+
+    private static string Named(ToolInstallArgs args) =>
+        args.Version is { } version ? $"{args.PackageId} {version}" : args.PackageId;
+
+    private static string Where(ToolScope scope) => scope.IsGlobal ? "globally" : "in the tool manifest";
 }

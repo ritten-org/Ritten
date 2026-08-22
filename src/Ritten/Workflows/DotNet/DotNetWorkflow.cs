@@ -1,3 +1,5 @@
+using Ritten.Contracts.FileSystem;
+using Ritten.DotNet;
 using Ritten.Engine.Workflows;
 
 namespace Ritten.Workflows.DotNet;
@@ -16,6 +18,7 @@ public class DotNetWorkflow : IWorkflow
     /// <inheritdoc />
     public IReadOnlyList<IJob> Jobs { get; } =
     [
+        new InitJob(),
         new BuildJob(),
         new CheckJob()
     ];

@@ -14,6 +14,7 @@ public class DotNetPackageWorkflowTests
     private const string Complete = """{ "build": { "project": "src/Thing/Thing.csproj" } }""";
 
     [Theory]
+    [InlineData("init")]
     [InlineData("status")]
     [InlineData("build")]
     [InlineData("prepare")]
@@ -28,10 +29,12 @@ public class DotNetPackageWorkflowTests
         result.Value.Dispose();
     }
 
-    [Fact]
-    public void Build_DoesNotRequireAProject()
+    [Theory]
+    [InlineData("build")]
+    [InlineData("init")]
+    public void JobsThatShipNothing_DoNotRequireAProject(string job)
     {
-        var result = Build("build", "{}");
+        var result = Build(job, "{}");
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.Dispose();

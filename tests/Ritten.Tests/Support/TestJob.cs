@@ -14,7 +14,8 @@ internal sealed class TestJob(
     Action<SettingsValidator<DotNetToolSettings>>? validate = null,
     IReadOnlyList<JobArgument>? arguments = null,
     JobKind kind = JobKind.Work,
-    Action<IWorkflowBuilder, JobArguments>? configure = null
+    Action<IWorkflowBuilder, JobArguments>? configure = null,
+    bool requiresProject = true
 ) : Job<DotNetToolSettings>
 {
     public override string Name => name;
@@ -26,6 +27,8 @@ internal sealed class TestJob(
     public override IReadOnlyList<Step> Steps { get; } = steps ?? [];
 
     public override IReadOnlyList<JobArgument> Arguments { get; } = arguments ?? [];
+
+    public override bool RequiresProject => requiresProject;
 
     protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => validate?.Invoke(settings);
 

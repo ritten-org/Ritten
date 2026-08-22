@@ -55,19 +55,41 @@ public interface IDotNet
     Task<TestRun> ReadTestResults(IFile file, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Reads the version of the given tool installed globally, or null when it isn't installed.
+    /// Runs <c>dotnet tool list</c> and reads the version of the given tool, or null when it isn't installed.
     /// </summary>
-    Task<NuGetVersion?> InstalledToolVersion(string packageId, CancellationToken cancellationToken = default);
+    /// <param name="packageId">The package ID of the tool to look for.</param>
+    /// <param name="scope">Whether to ask the machine or a repository's manifest.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    Task<NuGetVersion?> InstalledToolVersion(string packageId, ToolScope scope, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Runs <c>dotnet tool install --global</c> against the given source alone, throwing a <see cref="Commands.CommandFailedException"/> on failure.
+    /// Runs <c>dotnet tool install</c>.
     /// </summary>
+    /// <param name="args">What to install, and where.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     Task ToolInstall(ToolInstallArgs args, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Runs <c>dotnet tool uninstall --global</c>, throwing a <see cref="Commands.CommandFailedException"/> on failure.
+    /// Runs <c>dotnet tool update</c>.
     /// </summary>
-    Task ToolUninstall(string packageId, CancellationToken cancellationToken = default);
+    /// <param name="args">What to move, and where.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    Task ToolUpdate(ToolInstallArgs args, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs <c>dotnet tool uninstall</c>.
+    /// </summary>
+    /// <param name="packageId">The package ID of the tool to remove.</param>
+    /// <param name="scope">Whether to remove it from the machine or from a repository's manifest.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    Task ToolUninstall(string packageId, ToolScope scope, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs <c>dotnet new tool-manifest</c> in the given directory.
+    /// </summary>
+    /// <param name="directory">The directory to create the manifest in.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    Task CreateToolManifest(IDirectory directory, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Extracts the compiler and MSBuild diagnostics from <c>dotnet build</c> output.

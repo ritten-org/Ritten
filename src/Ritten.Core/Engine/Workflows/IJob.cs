@@ -34,6 +34,11 @@ public interface IJob
     IReadOnlyList<JobArgument> Arguments => [];
 
     /// <summary>
+    /// Whether the job needs a project file to run.
+    /// </summary>
+    bool RequiresProject => true;
+
+    /// <summary>
     /// Reads the given project's settings as this job's settings type.
     /// </summary>
     internal Result<WorkflowSettings> ReadSettings(RittenProject project, Func<string, string?> environment, bool dryRun, IWorkflowLog log);

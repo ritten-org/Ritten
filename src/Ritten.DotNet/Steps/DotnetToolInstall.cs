@@ -38,7 +38,7 @@ public class DotnetToolInstall(WorkflowJob job, ForceReinstall force, IWorkflowL
                 return StepResult.Failed($"{tool.Name} {tool.Version} was not packed; expected {package} in the artifacts.");
             }
 
-            var current = await dotnet.InstalledToolVersion(tool.Name, cancellationToken);
+            var current = await dotnet.InstalledToolVersion(tool.Name, ToolScope.Global, cancellationToken);
             if (current == tool.Version && !force.Requested)
             {
                 log.Skipped($"{tool.Name} {tool.Version} is already installed; pass --{ToolArguments.Reinstall.Name} to reinstall this build.");
@@ -49,11 +49,17 @@ public class DotnetToolInstall(WorkflowJob job, ForceReinstall force, IWorkflowL
             {
                 // `dotnet tool install` refuses while any version is installed, so replacing —
                 // same version or not — starts by removing the old install.
-                await dotnet.ToolUninstall(tool.Name, cancellationToken);
+                await dotnet.ToolUninstall(tool.Name, ToolScope.Global, cancellationToken);
             }
 
             await dotnet.ToolInstall(
-                new ToolInstallArgs { PackageId = tool.Name, Version = tool.Version, Source = fileSystem.Artifacts },
+                new ToolInstallArgs
+                {
+                    PackageId = tool.Name,
+                    Scope = ToolScope.Global,
+                    Version = tool.Version,
+                    Source = fileSystem.Artifacts
+                },
                 cancellationToken);
             installed++;
 

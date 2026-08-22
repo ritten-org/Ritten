@@ -51,14 +51,17 @@ public class RittenProjectTests : IDisposable
     }
 
     [Fact]
-    public async Task Resolve_ReportsNoProjectUpToTheFilesystemRoot()
+    public async Task Resolve_AnswersWithASyntheticProjectWhenThereIsNoneUpToTheFilesystemRoot()
     {
+        // Nothing written yet is a state, not a failure: the job that writes one has to be able to
+        // run here. What's missing is only reported when something needs it.
         Directory.CreateDirectory(_root);
 
         var project = await RittenProject.Resolve(_root, RittenProject.DefaultFileName, TestContext.Current.CancellationToken);
 
-        project.IsError.ShouldBeTrue();
-        project.Errors.ShouldHaveSingleItem().Message.ShouldContain("No ritten.json found");
+        project.IsSuccess.ShouldBeTrue();
+        project.Value.ShouldNotBeNull().IsSynthetic.ShouldBeTrue();
+        project.Value.GetWorkflowName().Errors.ShouldHaveSingleItem().Message.ShouldContain("No ritten.json found");
     }
 
     [Fact]
