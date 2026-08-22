@@ -48,7 +48,7 @@ public sealed class WorkflowRegistry
     /// <summary>
     /// Finds the workflow registered under the given name.
     /// </summary>
-    internal IWorkflow? Find(string name) => _workflows
+    public IWorkflow? Find(string name) => _workflows
         .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>

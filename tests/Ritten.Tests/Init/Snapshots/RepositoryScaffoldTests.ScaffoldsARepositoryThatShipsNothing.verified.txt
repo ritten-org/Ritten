@@ -1,0 +1,72 @@
+﻿──────── ritten.json (seed)
+{
+  "workflow": "dotnet",
+  "build": {
+    "project": "src/My.Tool/My.Tool.csproj"
+  }
+}
+
+──────── CHANGELOG.md (seed)
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+──────── .config/dotnet-tools.json (generated)
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "ritten": {
+      "version": "1.2.3",
+      "commands": [
+        "ritten"
+      ],
+      "rollForward": false
+    }
+  }
+}
+
+──────── .github/workflows/ritten.yml (generated)
+name: Ritten
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    permissions:
+      contents: read
+      # The report is posted as a pull request comment.
+      pull-requests: write
+    concurrency:
+      # A newer push to the same branch supersedes any run still going.
+      group: check-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Run check
+        run: dotnet ritten check
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

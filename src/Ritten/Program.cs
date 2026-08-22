@@ -3,6 +3,7 @@ using Ritten.CommandLine;
 using Ritten.Contracts;
 using Ritten.Engine;
 using Ritten.GitHub;
+using Ritten.Init;
 using Ritten.Workflows.DotNet;
 using Ritten.Workflows.DotNetPackage;
 using Ritten.Workflows.DotNetTool;
@@ -23,9 +24,8 @@ if (built.IsError)
     return ExitCode.ConfigurationError;
 }
 
-var application = built.Value;
-
 var root = new RootCommand("The Ritten build workflow.");
-await root.InstallRitten(application);
+root.Subcommands.Add(InitCommand.Create(builder.Workflows, builder.ProjectFileName));
+await root.InstallRitten(built.Value);
 
 return await root.Parse(args).InvokeAsync();
