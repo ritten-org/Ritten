@@ -5,7 +5,7 @@ namespace Ritten.Engine;
 /// <summary>
 /// A located Ritten build project: where it is, and the settings it declares.
 /// </summary>
-internal sealed class RittenProject
+public sealed class RittenProject
 {
     /// <summary>
     /// The configuration file that marks the root of a project, unless the host renames it.
@@ -34,15 +34,40 @@ internal sealed class RittenProject
     internal JsonElement Settings { get; init; }
 
     /// <summary>
+    /// Whether the project file was created in memory rather than loaded from a file.
+    /// </summary>
+    public bool IsSynthetic { get; private init; }
+
+    /// <summary>
     /// The path of the project file, for error messages.
     /// </summary>
     public string FilePath => Path.Combine(Directory, FileName);
 
     /// <summary>
-    /// Reads which workflow the settings declare.
+    /// The project a repository would have, for a directory that hasn't got one yet.
+    /// </summary>
+    /// <param name="directory">The directory the project file would live in.</param>
+    /// <param name="fileName">The name of the file that marks a project's root.</param>
+    public static RittenProject Synthetic(string directory, string fileName) => new()
+    {
+        Directory = Path.GetFullPath(directory),
+        FileName = fileName,
+        IsSynthetic = true,
+
+        // An empty document, so every setting reads as its default rather than failing to read.
+        Settings = JsonDocument.Parse("{}").RootElement
+    };
+
+    /// <summary>
+    /// Reads which workflow the settings declare. s
     /// </summary>
     public Result<string> GetWorkflowName()
     {
+        if (IsSynthetic)
+        {
+            return Result.Error($"No {FileName} found in '{Directory}' or any parent directory.");
+        }
+
         if (Settings.TryGetProperty("workflow", out var workflowProp))
         {
             var workflow = workflowProp.GetString();
@@ -55,12 +80,13 @@ internal sealed class RittenProject
     }
 
     /// <summary>
-    /// Walks up from the given directory looking for a project.
+    /// Walks up from the given directory looking for a project. A directory
+    /// with no project file resolves to a <see cref="Synthetic"/> one.
     /// </summary>
     /// <param name="directory">The directory to start from, usually the working directory.</param>
     /// <param name="fileName">The name of the file that marks a project's root.</param>
     /// <param name="ct">Cancellation token.</param>
-    public static async Task<Result<RittenProject>> Resolve(string directory, string fileName, CancellationToken ct)
+    internal static async Task<Result<RittenProject>> Resolve(string directory, string fileName, CancellationToken ct)
     {
         var current = new DirectoryInfo(Path.GetFullPath(directory));
         while (current is not null)
@@ -84,6 +110,6 @@ internal sealed class RittenProject
             current = current.Parent;
         }
 
-        return Result.Error($"No {fileName} found in '{Path.GetFullPath(directory)}' or any parent directory.");
+        return Synthetic(directory, fileName);
     }
 }

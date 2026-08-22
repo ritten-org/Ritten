@@ -20,14 +20,14 @@ internal class DryRunChangelog(IWorkflowLog log, IChangelog inner) : IChangelog
     /// <inheritdoc />
     public Task Write(IFile file, Changelog changelog, CancellationToken cancellationToken = default)
     {
-        log.Skipped($"Would rewrite {file.Name}.");
+        log.Skipped($"Would write {file.Name}.");
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task WriteEntry(IFile file, ChangelogEntry entry, CancellationToken cancellationToken = default)
     {
-        log.Skipped($"Would rewrite {file.Name}.");
+        log.Skipped($"Would write {file.Name}.");
         return Task.CompletedTask;
     }
 

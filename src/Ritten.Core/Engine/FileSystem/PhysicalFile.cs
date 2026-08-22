@@ -26,6 +26,9 @@ public class PhysicalFile(string path) : IFile
     public bool Exists => File.Exists(AbsolutePath);
 
     /// <inheritdoc />
+    public IDirectory Directory => new PhysicalDirectory(Path.GetDirectoryName(AbsolutePath) ?? AbsolutePath);
+
+    /// <inheritdoc />
     public void Delete()
     {
         if (!Exists) { return; }

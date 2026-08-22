@@ -1,4 +1,5 @@
 using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.Engine.Rules;
 
 namespace Ritten.Engine.Workflows;
@@ -50,6 +51,24 @@ public sealed class WorkflowRegistry
     /// </summary>
     public IWorkflow? Find(string name) => _workflows
         .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Asks each workflow whether it recognizes the given repository.
+    /// </summary>
+    /// <param name="directory">The repository being set up.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    public async Task<CompatibleWorkflow?> IsCompatible(IDirectory directory, CancellationToken cancellationToken = default)
+    {
+        foreach (var workflow in _workflows)
+        {
+            if (await workflow.IsCompatible(directory, cancellationToken) is { Length: > 0 } reason)
+            {
+                return new CompatibleWorkflow(workflow, reason);
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Validates the entire registered workflow model.

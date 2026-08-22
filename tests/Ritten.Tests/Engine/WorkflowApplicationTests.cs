@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Ritten.CommandLine;
 using Ritten.Contracts;
 using Ritten.Engine;
 using Ritten.Engine.Workflows;
@@ -59,7 +58,7 @@ public class WorkflowApplicationTests : IDisposable
         builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
         var application = builder.Build().Value.ShouldNotBeNull();
 
-        var exitCode = await application.Run(new RunJobArgs("verify") { Directory = _root }, Empty, TestContext.Current.CancellationToken);
+        var exitCode = await Run(application, "verify");
 
         exitCode.ShouldBe(ExitCode.Success);
         probe.Ran.ShouldHaveSingleItem();
@@ -127,8 +126,7 @@ public class WorkflowApplicationTests : IDisposable
         builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
         var application = builder.Build().Value.ShouldNotBeNull();
 
-        var args = new RunJobArgs(job.Name) { Directory = _root, Arguments = arguments };
-        return await application.Run(args, Empty, TestContext.Current.CancellationToken);
+        return await Run(application, job.Name, arguments: arguments);
     }
 
     [Fact]
@@ -137,7 +135,7 @@ public class WorkflowApplicationTests : IDisposable
         WriteRittenJson("""{ "workflow": "test" }""");
         var application = Application(new TestWorkflow());
 
-        var exitCode = await application.Run(new RunJobArgs("deploy") { Directory = _root }, Empty, TestContext.Current.CancellationToken);
+        var exitCode = await Run(application, "deploy");
 
         exitCode.ShouldBe(ExitCode.ConfigurationError);
     }
@@ -148,7 +146,7 @@ public class WorkflowApplicationTests : IDisposable
         WriteRittenJson("""{ "workflow": "imaginary" }""");
         var application = Application(new TestWorkflow());
 
-        var exitCode = await application.Run(new RunJobArgs("verify") { Directory = _root }, Empty, TestContext.Current.CancellationToken);
+        var exitCode = await Run(application, "verify");
 
         exitCode.ShouldBe(ExitCode.ConfigurationError);
     }
@@ -167,18 +165,162 @@ public class WorkflowApplicationTests : IDisposable
         builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
         var application = builder.Build().Value.ShouldNotBeNull();
 
-        var exitCode = await application.Run(new RunJobArgs("verify") { Directory = _root }, Empty, TestContext.Current.CancellationToken);
+        var exitCode = await Run(application, "verify");
 
         exitCode.ShouldBe(ExitCode.Success);
         probe.Ran.ShouldHaveSingleItem();
     }
 
+    [Fact]
+    public async Task Run_RunsAJobThatNeedsNoProjectWithoutOne()
+    {
+        // Nothing has been set up yet: the job that does the setting up is told which workflow to
+        // run, and reads the settings it would have loaded as their defaults.
+        var probe = new StepProbe();
+        var application = Application(new TestWorkflow(jobs:
+            [new TestJob(name: "init", steps: [Step.FromType<ProbeStep>()], requiresProject: false)]), probe);
+
+        var exitCode = await Run(application, "init", workflow: "test");
+
+        exitCode.ShouldBe(ExitCode.Success);
+        probe.Ran.ShouldHaveSingleItem();
+    }
+
+    [Fact]
+    public async Task Run_JudgesNoSettingsForAJobThatNeedsNoProject()
+    {
+        // There is nothing to judge in settings nobody has written: the job that writes them
+        // can't be refused for their not being there.
+        var job = new TestJob(name: "init", requiresProject: false, validate: settings => settings.Require(s => s.Build.Project));
+        var application = Application(new TestWorkflow(jobs: [job]));
+
+        var exitCode = await Run(application, "init", workflow: "test");
+
+        exitCode.ShouldBe(ExitCode.Success);
+    }
+
+    [Fact]
+    public async Task Run_LetsAJobThatNeedsNoProjectFinishAHalfWrittenOne()
+    {
+        // A project file that exists but declares nothing is exactly what init is for; every
+        // other job still gets told the declaration is missing.
+        WriteRittenJson("""{ "build": { "project": "src/Thing/Thing.csproj" } }""");
+        var probe = new StepProbe();
+        var application = Application(new TestWorkflow(jobs:
+            [new TestJob(name: "init", steps: [Step.FromType<ProbeStep>()], requiresProject: false)]), probe);
+
+        var exitCode = await Run(application, "init", workflow: "test");
+
+        exitCode.ShouldBe(ExitCode.Success);
+        probe.Ran.ShouldHaveSingleItem();
+    }
+
+    [Fact]
+    public async Task Run_ReportsAProjectThatDeclaresNoWorkflowForAJobThatNeedsOne()
+    {
+        WriteRittenJson("""{ "build": { "project": "src/Thing/Thing.csproj" } }""");
+        var application = Application(new TestWorkflow(jobs: [new TestJob()], recognises: "there's a project here"));
+
+        var exitCode = await Run(application, "verify");
+
+        exitCode.ShouldBe(ExitCode.ConfigurationError);
+    }
+
+    [Fact]
+    public async Task Run_ReportsTheMissingProjectForAJobThatNeedsOne()
+    {
+        var application = Application(new TestWorkflow(jobs: [new TestJob()], recognises: "there's a project here"));
+
+        var exitCode = await Run(application, "verify");
+
+        exitCode.ShouldBe(ExitCode.ConfigurationError);
+    }
+
+    [Fact]
+    public async Task Run_RecognisesTheWorkflowWhenNothingDeclaresOne()
+    {
+        // Registration order is precedence: the first workflow to recognise the repository wins,
+        // and what it recognised is handed to the run so the job can say why it's doing this.
+        SelectedWorkflow? selected = null;
+        var builder = WorkflowApplication.CreateBuilder();
+        builder.Workflows.Add(new TestWorkflow("indifferent", [new TestJob(name: "init", requiresProject: false)]));
+        builder.Workflows.Add(new TestWorkflow("specific", [
+            new TestJob(name: "init", requiresProject: false, configure: (b, _) => selected = Selected(b))
+        ], recognises: "it packs as a tool"));
+        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
+        var application = builder.Build().Value.ShouldNotBeNull();
+
+        var exitCode = await Run(application, "init");
+
+        exitCode.ShouldBe(ExitCode.Success);
+        selected.ShouldNotBeNull().Workflow.Name.ShouldBe("specific");
+        selected.Recognised.ShouldBe("it packs as a tool");
+    }
+
+    [Fact]
+    public async Task Resolve_RefusesANameTheProjectContradicts()
+    {
+        // A repository that has declared its workflow has settled the question, so a name that
+        // disagrees is a mistaken belief worth reporting — never quietly discarded.
+        WriteRittenJson("""{ "workflow": "declared" }""");
+        var builder = WorkflowApplication.CreateBuilder();
+        builder.Workflows.Add(new TestWorkflow("declared", [new TestJob(name: "init", requiresProject: false)]));
+        builder.Workflows.Add(new TestWorkflow("named", [new TestJob(name: "init", requiresProject: false)]));
+        var application = builder.Build().Value.ShouldNotBeNull();
+
+        var selection = await application.SelectWorkflow(_root, "named", TestContext.Current.CancellationToken);
+
+        selection.IsError.ShouldBeTrue();
+        selection.Errors.First().Message.ShouldContain("'named' can't be run here");
+    }
+
+    [Fact]
+    public async Task Resolve_TakesTheNameWhenItAgreesWithTheProject()
+    {
+        WriteRittenJson("""{ "workflow": "declared" }""");
+        var builder = WorkflowApplication.CreateBuilder();
+        builder.Workflows.Add(new TestWorkflow("declared", [new TestJob(name: "init", requiresProject: false)]));
+        var application = builder.Build().Value.ShouldNotBeNull();
+
+        var selection = await application.SelectWorkflow(_root, "declared", TestContext.Current.CancellationToken);
+
+        selection.IsSuccess.ShouldBeTrue();
+        selection.Value.ShouldNotBeNull().Recognised.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Run_ReportsAWorkflowNameNobodyKnows()
+    {
+        var application = Application(new TestWorkflow(jobs: [new TestJob(name: "init", requiresProject: false)]));
+
+        var exitCode = await Run(application, "init", workflow: "imaginary");
+
+        exitCode.ShouldBe(ExitCode.ConfigurationError);
+    }
+
+    /// <summary>What the run was assembled for, read back out of the registrations it made.</summary>
+    private static SelectedWorkflow? Selected(IWorkflowBuilder builder) => builder.Services
+        .FirstOrDefault(service => service.ServiceType == typeof(SelectedWorkflow))?.ImplementationInstance as SelectedWorkflow;
+
+    /// <summary>
+    /// The whole path a command line takes: resolve what the directory asks for, then run the job
+    /// against it.
+    /// </summary>
+    private async Task<ExitCode> Run(WorkflowApplication application, string job, string? workflow = null, JobArguments? arguments = null)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var selection = await application.SelectWorkflow(_root, workflow, ct);
+        return await application.Run(selection, new RunJobArgs(job) { Arguments = arguments ?? JobArguments.None }, Empty, ct);
+    }
+
     private static Func<string, string?> Empty { get; } = _ => null;
 
-    private static WorkflowApplication Application(TestWorkflow workflow)
+    private static WorkflowApplication Application(TestWorkflow workflow, StepProbe? probe = null)
     {
         var builder = WorkflowApplication.CreateBuilder();
         builder.Workflows.Add(workflow);
+        builder.Services.AddSingleton(probe ?? new StepProbe());
+        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
         return builder.Build().Value.ShouldNotBeNull();
     }
 

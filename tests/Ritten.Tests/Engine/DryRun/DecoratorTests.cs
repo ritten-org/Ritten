@@ -97,8 +97,9 @@ public class DecoratorTests : IDisposable
         builder.Decorators.Decorate<IOutwardClient, RehearsingClient>();
         var application = builder.Build().Value.ShouldNotBeNull();
 
-        var args = new RunJobArgs("verify") { Directory = _root, DryRun = true };
-        var exitCode = await application.Run(args, _ => null, TestContext.Current.CancellationToken);
+        var selection = await application.SelectWorkflow(_root, ct: TestContext.Current.CancellationToken);
+        var args = new RunJobArgs("verify") { DryRun = true };
+        var exitCode = await application.Run(selection, args, _ => null, TestContext.Current.CancellationToken);
 
         exitCode.ShouldBe(ExitCode.Success);
         client.Pushes.ShouldBe(0, "an application-level decorator must reach the run");

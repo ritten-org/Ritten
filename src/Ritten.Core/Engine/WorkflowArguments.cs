@@ -24,4 +24,9 @@ public static class WorkflowArguments
     /// Shows only failures.
     /// </summary>
     public const string Quiet = "quiet";
+
+    /// <summary>
+    /// Names the workflow to run. Offered by jobs that run without a project.
+    /// </summary>
+    public const string Workflow = "workflow";
 }

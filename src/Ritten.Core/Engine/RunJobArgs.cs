@@ -4,7 +4,7 @@ using Ritten.Reporting;
 namespace Ritten.Engine;
 
 /// <summary>
-/// What the command line asked for: the job to run, and how to run it.
+/// What the command line asked of a job.
 /// </summary>
 /// <param name="Job">The name of the job to run.</param>
 public sealed record RunJobArgs(string Job)
@@ -13,11 +13,6 @@ public sealed record RunJobArgs(string Job)
     /// The lowest level of message to print.
     /// </summary>
     public WorkflowLogLevel LogLevel { get; init; } = WorkflowLogLevel.Detail;
-
-    /// <summary>
-    /// The directory on the file system in which to run the job.
-    /// </summary>
-    public string Directory { get; init; } = Environment.CurrentDirectory;
 
     /// <summary>
     /// Rehearses the job without doing anything that reaches outside the working directory.

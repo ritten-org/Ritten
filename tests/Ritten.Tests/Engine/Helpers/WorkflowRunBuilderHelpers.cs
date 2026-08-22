@@ -2,6 +2,7 @@ using System.Text.Json;
 using Ritten.Engine;
 using Ritten.Engine.Runs;
 using Ritten.Engine.Runtimes;
+using Ritten.Engine.Workflows;
 using Ritten.Reporting;
 using Spectre.Console;
 
@@ -27,11 +28,18 @@ internal static class WorkflowRunBuilderHelpers
         RuntimeRegistry? runtimes = null,
         string fileName = RittenProject.DefaultFileName)
     {
+        var project = new RittenProject
+        {
+            Directory = Path.GetTempPath(),
+            FileName = fileName,
+            Settings = JsonSerializer.Deserialize<JsonElement>(settings)
+        };
+
         var builder = new WorkflowRunBuilder(
-                new RittenProject { Directory = Path.GetTempPath(), FileName = fileName, Settings = JsonSerializer.Deserialize<JsonElement>(settings) },
+                project,
                 (runtimes ?? new RuntimeRegistry()).Detect(environment ?? Complete).Value.ShouldNotBeNull(),
                 new SpectreWorkflowConsole(AnsiConsole.Console, WorkflowLogLevel.Detail))
-            .WithWorkflowLabel(workflowName)
+            .WithWorkflow(new SelectedWorkflow(new Support.TestWorkflow(workflowName, label: workflowName), project))
             .WithDryRun(dryRun);
         return log is null ? builder : builder.WithLog(log);
     }

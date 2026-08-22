@@ -31,6 +31,11 @@ public interface IFile
     bool Exists { get; }
 
     /// <summary>
+    /// Gets the directory the file is in, whether or not either exists yet.
+    /// </summary>
+    IDirectory Directory { get; }
+
+    /// <summary>
     /// Deletes the file from the file system if it exists.
     /// </summary>
     void Delete();

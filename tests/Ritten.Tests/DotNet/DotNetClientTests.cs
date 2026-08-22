@@ -95,7 +95,7 @@ public class DotNetClientTests
             c => c.Arguments.Contains("list"),
             new CommandResult(0, "Package Id      Version      Commands\n----------------------------------------\nmy.tool         1.2.3        mytool\nother           2.0.0        other\n", ""));
 
-        var version = await _client.InstalledToolVersion("My.Tool", TestContext.Current.CancellationToken);
+        var version = await _client.InstalledToolVersion("My.Tool", ToolScope.Global, TestContext.Current.CancellationToken);
 
         _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(["tool", "list", "--global"]);
         version.ShouldBe(NuGetVersion.Parse("1.2.3"));
@@ -108,7 +108,7 @@ public class DotNetClientTests
             c => c.Arguments.Contains("list"),
             new CommandResult(0, "Package Id      Version      Commands\n----------------------------------------\nother           2.0.0        other\n", ""));
 
-        var version = await _client.InstalledToolVersion("My.Tool", TestContext.Current.CancellationToken);
+        var version = await _client.InstalledToolVersion("My.Tool", ToolScope.Global, TestContext.Current.CancellationToken);
 
         version.ShouldBeNull();
     }
@@ -122,7 +122,7 @@ public class DotNetClientTests
         source.AbsolutePath.Returns("/repo/artifacts");
 
         await _client.ToolInstall(
-            new ToolInstallArgs { PackageId = "My.Tool", Version = NuGetVersion.Parse("1.2.3"), Source = source },
+            new ToolInstallArgs { PackageId = "My.Tool", Scope = ToolScope.Global, Version = NuGetVersion.Parse("1.2.3"), Source = source },
             TestContext.Current.CancellationToken);
 
         _commands.Executed.ShouldHaveSingleItem().Arguments
@@ -130,9 +130,83 @@ public class DotNetClientTests
     }
 
     [Fact]
+    public async Task InstalledToolVersion_ReadsThePinFromTheManifestGoverningTheDirectory()
+    {
+        _commands.Respond(
+            c => c.Arguments.Contains("list"),
+            new CommandResult(0, "Package Id      Version      Commands      Manifest\n------------------------------------------------\nritten          0.9.0        ritten        /repo/.config/dotnet-tools.json\n", ""));
+
+        var version = await _client.InstalledToolVersion("ritten", ToolScope.Local(In("/repo/services/api")), TestContext.Current.CancellationToken);
+
+        // The scope is the flag the SDK takes and the directory it resolves the manifest from.
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["tool", "list", "--local"]);
+        command.WorkingDirectory.ShouldBe("/repo/services/api");
+        version.ShouldBe(NuGetVersion.Parse("0.9.0"));
+    }
+
+    [Fact]
+    public async Task InstalledToolVersion_AnswersNothingForADirectoryNoManifestGoverns()
+    {
+        _commands.Respond(c => c.Arguments.Contains("list"), new CommandResult(1, "", "Cannot find a manifest file."));
+
+        var version = await _client.InstalledToolVersion("ritten", ToolScope.Local(In("/elsewhere")), TestContext.Current.CancellationToken);
+
+        version.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task CreateToolManifest_AsksTheSdkForOneWhereRepositoriesKeepIt()
+    {
+        // The manifest's schema is the SDK's, so the SDK writes it — this only says where.
+        await _client.CreateToolManifest(In("/repo"), TestContext.Current.CancellationToken);
+
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["new", "tool-manifest", "--output", ".config"]);
+        command.WorkingDirectory.ShouldBe("/repo");
+    }
+
+    [Fact]
+    public async Task ToolInstall_PinsATheManifestsTool()
+    {
+        await _client.ToolInstall(Pin("/repo"), TestContext.Current.CancellationToken);
+
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["tool", "install", "ritten", "--local", "--version", "1.2.3"]);
+        command.WorkingDirectory.ShouldBe("/repo");
+    }
+
+    [Fact]
+    public async Task ToolUpdate_MovesAPinTheManifestAlreadyHas()
+    {
+        await _client.ToolUpdate(Pin("/repo"), TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(["tool", "update", "ritten", "--local", "--version", "1.2.3"]);
+    }
+
+    [Fact]
+    public async Task ToolInstall_AsksTheFeedForTheLatestWhenNoVersionIsNamed()
+    {
+        // Both options are the SDK's to default, so an argument nobody set isn't passed.
+        await _client.ToolInstall(new ToolInstallArgs { PackageId = "ritten", Scope = ToolScope.Global }, TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(["tool", "install", "ritten", "--global"]);
+    }
+
+    private static ToolInstallArgs Pin(string directory) =>
+        new() { PackageId = "ritten", Scope = ToolScope.Local(In(directory)), Version = NuGetVersion.Parse("1.2.3") };
+
+    private static IDirectory In(string path)
+    {
+        var directory = Substitute.For<IDirectory>();
+        directory.AbsolutePath.Returns(path);
+        return directory;
+    }
+
+    [Fact]
     public async Task ToolUninstall_RemovesTheGlobalTool()
     {
-        await _client.ToolUninstall("My.Tool", TestContext.Current.CancellationToken);
+        await _client.ToolUninstall("My.Tool", ToolScope.Global, TestContext.Current.CancellationToken);
 
         _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(["tool", "uninstall", "My.Tool", "--global"]);
     }

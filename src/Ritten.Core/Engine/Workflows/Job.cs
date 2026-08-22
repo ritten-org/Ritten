@@ -24,6 +24,9 @@ public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
     /// <inheritdoc />
     public virtual IReadOnlyList<JobArgument> Arguments => [];
 
+    /// <inheritdoc />
+    public virtual bool RequiresProject => true;
+
     /// <summary>
     /// Registers the services the job's steps need.
     /// </summary>
@@ -56,6 +59,12 @@ public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
         if (settings.IsError)
         {
             return new Result<WorkflowSettings>(settings.Errors);
+        }
+
+        // There is nothing to judge in settings nobody has written yet.
+        if (project.IsSynthetic)
+        {
+            return settings.Value;
         }
 
         var validator = new SettingsValidator<TSettings>(settings.Value, environment, dryRun, log, project.FileName);

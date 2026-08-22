@@ -47,6 +47,16 @@ public static class WorkflowBuilderExtensions
 
             return builder;
         }
+
+        /// <summary>
+        /// Adds the client the workflow maintains its GitHub Actions workflow files with.
+        /// </summary>
+        public IWorkflowBuilder AddGitHubActions()
+        {
+            builder.Services.TryAddSingleton<IActionsWorkflows, ActionsWorkflowClient>();
+            builder.Decorators.Decorate<IActionsWorkflows, DryRunActionsWorkflows>();
+            return builder;
+        }
     }
 
     /// <summary>

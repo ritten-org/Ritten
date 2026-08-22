@@ -82,11 +82,16 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         };
     }
 
-    public async Task<NuGetVersion?> InstalledToolVersion(string packageId, CancellationToken cancellationToken = default)
+    public async Task<NuGetVersion?> InstalledToolVersion(string packageId, ToolScope scope, CancellationToken cancellationToken = default)
     {
-        // A probe whose output the caller consumes, not part of the step's story.
-        var command = Command.Create("dotnet").WithArguments("tool", "list", "--global").QuietOutput().ThrowOnError();
+        // A probe whose output the caller consumes, not part of the step's story. A directory no
+        // manifest governs is a question, not a failure: the answer is that nothing carries it.
+        var command = Tool(scope).WithArguments("tool", "list", scope.Flag).QuietOutput();
         var result = await commands.Run(command, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return null;
+        }
 
         // The table's first two lines are the header and its underline, and ids print lowercased.
         foreach (var line in result.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries).Skip(2))
@@ -101,26 +106,59 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         return null;
     }
 
-    public async Task ToolInstall(ToolInstallArgs args, CancellationToken cancellationToken = default)
+    public Task ToolInstall(ToolInstallArgs args, CancellationToken cancellationToken = default) =>
+        RunTool("install", args, cancellationToken);
+
+    public Task ToolUpdate(ToolInstallArgs args, CancellationToken cancellationToken = default) =>
+        RunTool("update", args, cancellationToken);
+
+    public async Task ToolUninstall(string packageId, ToolScope scope, CancellationToken cancellationToken = default)
     {
-        // --source rather than --add-source: the artifacts directory replaces every configured
-        // feed, so a published package with the same version can't shadow the build being installed.
-        var command = Command
-            .Create("dotnet")
-            .WithArguments(
-                "tool", "install", args.PackageId,
-                "--global",
-                "--version", args.Version.ToString(),
-                "--source", args.Source.AbsolutePath)
+        var command = Tool(scope).WithArguments("tool", "uninstall", packageId, scope.Flag).ThrowOnError();
+        await commands.Run(command, cancellationToken);
+    }
+
+    public async Task CreateToolManifest(IDirectory directory, CancellationToken cancellationToken = default)
+    {
+        // The SDK reads a manifest from either the directory itself or its .config, and the
+        // template's own default has moved between versions. Naming the conventional one keeps
+        // every repository Ritten sets up looking the same.
+        var command = Command.Create("dotnet")
+            .WithArguments("new", "tool-manifest", "--output", DotNetProjects.ToolManifestDirectory)
+            .InDirectory(directory.AbsolutePath)
+            .QuietOutput()
             .ThrowOnError();
         await commands.Run(command, cancellationToken);
     }
 
-    public async Task ToolUninstall(string packageId, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// One <c>dotnet tool</c> verb, spelled the way the SDK spells it.
+    /// </summary>
+    private async Task RunTool(string verb, ToolInstallArgs args, CancellationToken cancellationToken)
     {
-        var command = Command.Create("dotnet").WithArguments("tool", "uninstall", packageId, "--global").ThrowOnError();
-        await commands.Run(command, cancellationToken);
+        var command = Tool(args.Scope).WithArguments("tool", verb, args.PackageId, args.Scope.Flag);
+        if (args.Version is { } version)
+        {
+            command = command.AndArguments("--version", version.ToString());
+        }
+
+        if (args.Source is { } source)
+        {
+            // --source rather than --add-source: the given directory replaces every configured
+            // feed, so a published package of the same version can't shadow the one asked for.
+            command = command.AndArguments("--source", source.AbsolutePath);
+        }
+
+        await commands.Run(command.QuietOutput().ThrowOnError(), cancellationToken);
     }
+
+    /// <summary>
+    /// A tool command runs where its scope resolves the manifest from; a global one runs wherever
+    /// the workflow is.
+    /// </summary>
+    private static Command Tool(ToolScope scope) => scope.Directory is { } directory
+        ? Command.Create("dotnet").InDirectory(directory.AbsolutePath)
+        : Command.Create("dotnet");
 
     private static string? Property(JsonElement properties, string name) =>
         properties.TryGetProperty(name, out var value) && value.GetString() is { Length: > 0 } text ? text : null;

@@ -16,10 +16,11 @@ public class DotNetToolWorkflowTests
     [Fact]
     public void DeclaresTheJobsTheCliOffers()
     {
-        new DotNetToolWorkflow().Jobs.Select(j => j.Name).ShouldBe(["status", "build", "install", "prepare", "check", "deploy"]);
+        new DotNetToolWorkflow().Jobs.Select(j => j.Name).ShouldBe(["init", "status", "build", "install", "prepare", "check", "deploy"]);
     }
 
     [Theory]
+    [InlineData("init")]
     [InlineData("status")]
     [InlineData("build")]
     [InlineData("install")]
@@ -35,10 +36,12 @@ public class DotNetToolWorkflowTests
         result.Value.Dispose();
     }
 
-    [Fact]
-    public void Build_DoesNotRequireAProject()
+    [Theory]
+    [InlineData("build")]
+    [InlineData("init")]
+    public void JobsThatShipNothing_DoNotRequireAProject(string job)
     {
-        var result = Build("build", "{}");
+        var result = Build(job, "{}");
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.Dispose();

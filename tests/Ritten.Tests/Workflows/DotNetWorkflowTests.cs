@@ -12,12 +12,13 @@ namespace Ritten.Tests.Workflows;
 public class DotNetWorkflowTests
 {
     [Fact]
-    public void OffersOnlyBuildAndCheck()
+    public void OffersInitBuildAndCheck()
     {
-        new DotNetWorkflow().Jobs.Select(j => j.Name).ShouldBe(["build", "check"]);
+        new DotNetWorkflow().Jobs.Select(j => j.Name).ShouldBe(["init", "build", "check"]);
     }
 
     [Theory]
+    [InlineData("init")]
     [InlineData("build")]
     [InlineData("check")]
     public void EveryJobTheCliOffers_BuildsWithoutAnySettings(string job)

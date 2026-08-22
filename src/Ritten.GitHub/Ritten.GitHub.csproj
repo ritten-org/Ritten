@@ -19,6 +19,7 @@
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
     <PackageReference Include="Octokit" />
+    <PackageReference Include="YamlDotNet" />
   </ItemGroup>
 
 </Project>

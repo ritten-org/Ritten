@@ -1,49 +1,16 @@
-﻿──────── ritten.json (seed)
-{
-  "workflow": "dotnet-package",
-  "build": {
-    "project": "src/My.Tool/My.Tool.csproj"
-  }
-}
-
-──────── CHANGELOG.md (seed)
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-
-──────── .config/dotnet-tools.json (generated)
-{
-  "version": 1,
-  "isRoot": true,
-  "tools": {
-    "ritten": {
-      "version": "1.2.3",
-      "commands": [
-        "ritten"
-      ],
-      "rollForward": false
-    }
-  }
-}
-
-──────── .github/workflows/ritten.yml (generated)
-name: Ritten
+﻿name: My.Tool
 
 on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       dry-run:
         description: 'Dry Run'
         type: boolean
         default: false
-  pull_request:
-    branches: [ main ]
-  push:
-    branches: [ main ]
 
 jobs:
   check:
@@ -55,8 +22,9 @@ jobs:
       # The report is posted as a pull request comment.
       pull-requests: write
     concurrency:
-      # A newer push to the same branch supersedes any run still going.
-      group: check-${{ github.ref }}
+      # A newer push to the same branch supersedes any run still going. The workflow's own
+      # name keeps one project's runs from cancelling another's.
+      group: ${{ github.workflow }}-check-${{ github.ref }}
       cancel-in-progress: true
     steps:
       - name: Checkout repository
@@ -86,7 +54,7 @@ jobs:
       id-token: write
     concurrency:
       # Releases queue rather than interleave.
-      group: deploy
+      group: ${{ github.workflow }}-deploy
       cancel-in-progress: false
     steps:
       - name: Checkout repository
@@ -113,4 +81,3 @@ jobs:
           RITTEN_NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           RITTEN_COMMIT_SHA: ${{ github.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
