@@ -16,12 +16,13 @@ jobs:
   check:
     name: Check
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
     permissions:
       contents: read
+      # The report is posted as a pull request comment.
       pull-requests: write
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
     concurrency:
-      # A newer push to the same PR or branch supersedes any run still going.
+      # A newer push to the same branch supersedes any run still going.
       group: check-${{ github.ref }}
       cancel-in-progress: true
     steps:
@@ -40,7 +41,6 @@ jobs:
         run: dotnet ritten check
         shell: bash
         env:
-          # No dependabot special-casing: a PR that ships nothing passes as "at rest".
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
@@ -48,10 +48,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     permissions:
+      # Tags and releases are written back to the repository.
       contents: write
       id-token: write
     concurrency:
-      # Deploys queue rather than interleave.
+      # Releases queue rather than interleave.
       group: deploy
       cancel-in-progress: false
     steps:
@@ -63,16 +64,16 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Restore tools
+        run: dotnet tool restore
+
       - name: NuGet login
         uses: NuGet/login@v1
         id: nuget-login
         with:
           user: ${{ secrets.NUGET_USER }}
 
-      - name: Restore tools
-        run: dotnet tool restore
-
-      - name: Run deployment
+      - name: Run deploy
         run: dotnet ritten deploy --auto-approve ${{ inputs['dry-run'] && '--dry-run' || '' }}
         shell: bash
         env:
