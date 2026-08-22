@@ -97,7 +97,7 @@ public class DecoratorTests : IDisposable
         builder.Decorators.Decorate<IOutwardClient, RehearsingClient>();
         var application = builder.Build().Value.ShouldNotBeNull();
 
-        var selection = await application.Resolve(_root, ct: TestContext.Current.CancellationToken);
+        var selection = await application.SelectWorkflow(_root, ct: TestContext.Current.CancellationToken);
         var args = new RunJobArgs("verify") { DryRun = true };
         var exitCode = await application.Run(selection, args, _ => null, TestContext.Current.CancellationToken);
 

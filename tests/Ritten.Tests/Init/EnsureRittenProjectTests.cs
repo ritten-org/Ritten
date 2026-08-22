@@ -123,7 +123,7 @@ public class EnsureRittenProjectTests
         Files,
         _fileSystem,
         Project,
-        new WorkflowSelection(new TestWorkflow("dotnet-tool", label: "dotnet tool"), Project, recognised),
+        new SelectedWorkflow(new TestWorkflow("dotnet-tool", label: "dotnet tool"), Project, recognised),
         new WorkflowJob("dotnet tool", "init"),
         _prompt
     );

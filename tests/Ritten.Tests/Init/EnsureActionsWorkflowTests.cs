@@ -216,7 +216,7 @@ public class EnsureActionsWorkflowTests
         _git,
         _fileSystem,
         Options.Create(new DotNetOptions { ProjectFile = declared }),
-        new WorkflowSelection(
+        new SelectedWorkflow(
             new TestWorkflow("dotnet-tool", [
                 new TestJob(name: "build"),
                 new TestJob(name: "check", kind: JobKind.Check),

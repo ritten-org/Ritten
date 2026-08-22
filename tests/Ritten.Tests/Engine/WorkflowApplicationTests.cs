@@ -241,7 +241,7 @@ public class WorkflowApplicationTests : IDisposable
     {
         // Registration order is precedence: the first workflow to recognise the repository wins,
         // and what it recognised is handed to the run so the job can say why it's doing this.
-        WorkflowSelection? selected = null;
+        SelectedWorkflow? selected = null;
         var builder = WorkflowApplication.CreateBuilder();
         builder.Workflows.Add(new TestWorkflow("indifferent", [new TestJob(name: "init", requiresProject: false)]));
         builder.Workflows.Add(new TestWorkflow("specific", [
@@ -268,7 +268,7 @@ public class WorkflowApplicationTests : IDisposable
         builder.Workflows.Add(new TestWorkflow("named", [new TestJob(name: "init", requiresProject: false)]));
         var application = builder.Build().Value.ShouldNotBeNull();
 
-        var selection = await application.Resolve(_root, "named", TestContext.Current.CancellationToken);
+        var selection = await application.SelectWorkflow(_root, "named", TestContext.Current.CancellationToken);
 
         selection.IsError.ShouldBeTrue();
         selection.Errors.First().Message.ShouldContain("'named' can't be run here");
@@ -282,7 +282,7 @@ public class WorkflowApplicationTests : IDisposable
         builder.Workflows.Add(new TestWorkflow("declared", [new TestJob(name: "init", requiresProject: false)]));
         var application = builder.Build().Value.ShouldNotBeNull();
 
-        var selection = await application.Resolve(_root, "declared", TestContext.Current.CancellationToken);
+        var selection = await application.SelectWorkflow(_root, "declared", TestContext.Current.CancellationToken);
 
         selection.IsSuccess.ShouldBeTrue();
         selection.Value.ShouldNotBeNull().Recognised.ShouldBeNull();
@@ -299,8 +299,8 @@ public class WorkflowApplicationTests : IDisposable
     }
 
     /// <summary>What the run was assembled for, read back out of the registrations it made.</summary>
-    private static WorkflowSelection? Selected(IWorkflowBuilder builder) => builder.Services
-        .FirstOrDefault(service => service.ServiceType == typeof(WorkflowSelection))?.ImplementationInstance as WorkflowSelection;
+    private static SelectedWorkflow? Selected(IWorkflowBuilder builder) => builder.Services
+        .FirstOrDefault(service => service.ServiceType == typeof(SelectedWorkflow))?.ImplementationInstance as SelectedWorkflow;
 
     /// <summary>
     /// The whole path a command line takes: resolve what the directory asks for, then run the job
@@ -309,7 +309,7 @@ public class WorkflowApplicationTests : IDisposable
     private async Task<ExitCode> Run(WorkflowApplication application, string job, string? workflow = null, JobArguments? arguments = null)
     {
         var ct = TestContext.Current.CancellationToken;
-        var selection = await application.Resolve(_root, workflow, ct);
+        var selection = await application.SelectWorkflow(_root, workflow, ct);
         return await application.Run(selection, new RunJobArgs(job) { Arguments = arguments ?? JobArguments.None }, Empty, ct);
     }
 

@@ -39,7 +39,7 @@ internal static class WorkflowRunBuilderHelpers
                 project,
                 (runtimes ?? new RuntimeRegistry()).Detect(environment ?? Complete).Value.ShouldNotBeNull(),
                 new SpectreWorkflowConsole(AnsiConsole.Console, WorkflowLogLevel.Detail))
-            .WithWorkflow(new WorkflowSelection(new Support.TestWorkflow(workflowName, label: workflowName), project))
+            .WithWorkflow(new SelectedWorkflow(new Support.TestWorkflow(workflowName, label: workflowName), project))
             .WithDryRun(dryRun);
         return log is null ? builder : builder.WithLog(log);
     }
