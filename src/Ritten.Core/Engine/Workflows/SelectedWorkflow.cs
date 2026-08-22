@@ -11,5 +11,5 @@ public sealed record SelectedWorkflow(IWorkflow Workflow, RittenProject Project,
     /// <summary>
     /// Why the project declares no workflow.
     /// </summary>
-    internal Error? MissingWorkflowReason { get; init; }
+    internal Error? MissingProjectReason { get; init; }
 }
