@@ -11,6 +11,7 @@ namespace Ritten.Reporting;
 internal sealed class SpectreWorkflowConsole(IAnsiConsole console, WorkflowLogLevel minimumLogLevel) : IWorkflowConsole
 {
     private readonly Stopwatch _stepTimer = new();
+    private bool _inStep;
     private readonly Stopwatch _workflowTimer = new();
 
     /// <inheritdoc />
@@ -27,6 +28,7 @@ internal sealed class SpectreWorkflowConsole(IAnsiConsole console, WorkflowLogLe
     public Task OnStepStarted(Step step, CancellationToken cancellationToken)
     {
         _stepTimer.Restart();
+        _inStep = true;
 
         // The name opens the step and the outcome closes it, so that anything the step says
         // reads as its body. Chronology would put the name last, which reads backwards.
@@ -41,6 +43,7 @@ internal sealed class SpectreWorkflowConsole(IAnsiConsole console, WorkflowLogLe
     public Task OnStepCompleted(Step step, StepResult result, CancellationToken cancellationToken)
     {
         var elapsed = FormatDuration(_stepTimer.Elapsed);
+        _inStep = false;
 
         if (result.IsFailure)
         {
@@ -91,14 +94,18 @@ internal sealed class SpectreWorkflowConsole(IAnsiConsole console, WorkflowLogLe
         if (message != null)
         {
             var text = Markup.Escape(message);
+            // A step's body is indented under its heading. Outside a step — before the first one,
+            // after the last, or in a command that runs no steps at all — there is no heading to
+            // sit under, so everything lines up together.
+            var body = _inStep ? 4 : 2;
             var (indent, markup) = level switch
             {
-                WorkflowLogLevel.Status => (4, $"[grey]{text}[/]"),
-                WorkflowLogLevel.Skipped => (4, $"[mediumpurple]⊘ {text}[/]"),
-                WorkflowLogLevel.Verbose => (4, $"[grey italic]{text}[/]"),
+                WorkflowLogLevel.Status => (body, $"[grey]{text}[/]"),
+                WorkflowLogLevel.Skipped => (body, $"[mediumpurple]⊘ {text}[/]"),
+                WorkflowLogLevel.Verbose => (body, $"[grey italic]{text}[/]"),
                 WorkflowLogLevel.Warning => (2, $"[yellow]⚠ {text}[/]"),
                 WorkflowLogLevel.Error => (2, $"[red]✗ {text}[/]"),
-                _ => (4, $"[grey]{text}[/]")
+                _ => (body, $"[grey]{text}[/]")
             };
 
             Write(indent, markup);

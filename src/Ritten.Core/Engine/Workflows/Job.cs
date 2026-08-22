@@ -16,6 +16,9 @@ public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
     public abstract string Description { get; }
 
     /// <inheritdoc />
+    public abstract JobKind Kind { get; }
+
+    /// <inheritdoc />
     public abstract IReadOnlyList<Step> Steps { get; }
 
     /// <inheritdoc />

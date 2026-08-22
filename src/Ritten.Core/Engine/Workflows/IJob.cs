@@ -19,6 +19,11 @@ public interface IJob
     string Description { get; }
 
     /// <summary>
+    /// What the job is for.
+    /// </summary>
+    JobKind Kind { get; }
+
+    /// <summary>
     /// The job's steps, in declaration order.
     /// </summary>
     IReadOnlyList<Step> Steps { get; }

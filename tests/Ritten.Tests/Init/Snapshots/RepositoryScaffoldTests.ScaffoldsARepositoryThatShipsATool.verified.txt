@@ -1,3 +1,36 @@
+﻿──────── ritten.json (seed)
+{
+  "workflow": "dotnet-tool",
+  "build": {
+    "project": "src/My.Tool/My.Tool.csproj"
+  }
+}
+
+──────── CHANGELOG.md (seed)
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+──────── .config/dotnet-tools.json (generated)
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "ritten": {
+      "version": "1.2.3",
+      "commands": [
+        "ritten"
+      ],
+      "rollForward": false
+    }
+  }
+}
+
+──────── .github/workflows/ritten.yml (generated)
 name: Ritten
 
 on:
@@ -80,3 +113,4 @@ jobs:
           RITTEN_NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           RITTEN_COMMIT_SHA: ${{ github.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

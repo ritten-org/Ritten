@@ -29,11 +29,49 @@ public class GitClientTests : IAsyncLifetime
         await Git("remote", "add", "origin", _remote);
     }
 
+    private ICommandRunner RunnerIn(string directory)
+    {
+        var fileSystem = Substitute.For<IFileSystem>();
+        fileSystem.ProjectRoot.AbsolutePath.Returns(directory);
+        return new CommandRunner(Substitute.For<IWorkflowLog>(), fileSystem);
+    }
+
     public ValueTask DisposeAsync()
     {
         Directory.Delete(_repository, recursive: true);
         Directory.Delete(_remote, recursive: true);
         return ValueTask.CompletedTask;
+    }
+
+    [Fact]
+    public async Task RepositoryRoot_IsTheRepositoryNotTheWorkingDirectory()
+    {
+        // The command runs in a subdirectory, so this proves git answered rather than the path.
+        var nested = Directory.CreateDirectory(Path.Combine(_repository, "src", "Thing"));
+        var git = new GitClient(RunnerIn(nested.FullName));
+
+        var root = await git.RepositoryRoot(TestContext.Current.CancellationToken);
+
+        // Asserted by what the directory is rather than by its path, which the platform is free
+        // to resolve differently — macOS reaches the temp directory through a symlink.
+        root.ShouldNotBeNull().Name.ShouldBe(Path.GetFileName(_repository));
+        root.GetDirectory(".git").Exists.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task RepositoryRoot_IsNullOutsideARepository()
+    {
+        var outside = Directory.CreateTempSubdirectory("ritten-not-a-repo-");
+        try
+        {
+            var git = new GitClient(RunnerIn(outside.FullName));
+
+            (await git.RepositoryRoot(TestContext.Current.CancellationToken)).ShouldBeNull();
+        }
+        finally
+        {
+            outside.Delete(recursive: true);
+        }
     }
 
     [Fact]

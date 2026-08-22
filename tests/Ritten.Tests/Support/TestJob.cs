@@ -13,12 +13,15 @@ internal sealed class TestJob(
     IReadOnlyList<Step>? steps = null,
     Action<SettingsValidator<DotNetToolSettings>>? validate = null,
     IReadOnlyList<JobArgument>? arguments = null,
+    JobKind kind = JobKind.Work,
     Action<IWorkflowBuilder, JobArguments>? configure = null
 ) : Job<DotNetToolSettings>
 {
     public override string Name => name;
 
     public override string Description => $"The {name} job, declared by a test.";
+
+    public override JobKind Kind => kind;
 
     public override IReadOnlyList<Step> Steps { get; } = steps ?? [];
 

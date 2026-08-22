@@ -150,8 +150,8 @@ public sealed class WorkflowApplication
 
     // Before a runtime is selected there's nothing to ask for a console, so errors that early
     // print through the engine's own renderer.
-    internal static SpectreWorkflowConsole EngineConsole(WorkflowLogLevel level = WorkflowLogLevel.Detail) =>
-        new(AnsiConsole.Console, level);
+    internal static IWorkflowConsole EngineConsole(WorkflowLogLevel level = WorkflowLogLevel.Detail) =>
+        Reporting.EngineConsole.Create(level);
 
     private static ExitCode ConfigurationError(IWorkflowLog log, IEnumerable<Error> errors)
     {

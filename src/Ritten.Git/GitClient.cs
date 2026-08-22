@@ -1,9 +1,21 @@
 using Ritten.Commands;
+using Ritten.Contracts.FileSystem;
+using Ritten.Engine.FileSystem;
 
 namespace Ritten.Git;
 
 internal class GitClient(ICommandRunner commands) : IGit
 {
+    public async Task<IDirectory?> RepositoryRoot(CancellationToken cancellationToken = default)
+    {
+        var result = await commands.Run(
+            Command.Create("git").WithArguments("rev-parse", "--show-toplevel").QuietOutput(),
+            cancellationToken);
+        return result.IsSuccess && !string.IsNullOrWhiteSpace(result.StandardOutput)
+            ? new PhysicalDirectory(result.StandardOutput.Trim())
+            : null;
+    }
+
     public async Task<string?> GetRemoteUrl(string remote, CancellationToken cancellationToken = default)
     {
         var result = await commands.Run(

@@ -6,7 +6,7 @@ namespace Ritten.Contracts;
 public enum StepKind
 {
     /// <summary>
-    /// Does the job's labour — compiling, testing, packing. Failure means the build broke.
+    /// Does the job's labor — compiling, testing, packing. Failure means the build broke.
     /// </summary>
     Work,
 

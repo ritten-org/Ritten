@@ -22,6 +22,9 @@ internal sealed class PrepareJob : DotNetPackageJob
     public override string Description => "Stages the next release: rolls the changelog, sets the version, and formats.";
 
     /// <inheritdoc />
+    public override JobKind Kind => JobKind.Work;
+
+    /// <inheritdoc />
     public override IReadOnlyList<JobArgument> Arguments { get; } = [ReleaseArguments.Version];
 
     /// <inheritdoc />

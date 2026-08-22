@@ -1,3 +1,5 @@
+using Ritten.Contracts.FileSystem;
+
 namespace Ritten.Git;
 
 /// <summary>
@@ -5,6 +7,11 @@ namespace Ritten.Git;
 /// </summary>
 public interface IGit
 {
+    /// <summary>
+    /// Gets the root of the repository the workflow is running in, or <c>null</c> when it isn't running in one.
+    /// </summary>
+    Task<IDirectory?> RepositoryRoot(CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Gets the URL of the given remote, or <c>null</c> when the remote doesn't exist.
     /// </summary>
