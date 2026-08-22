@@ -27,9 +27,9 @@ public sealed class ProjectInitializer(
     /// </summary>
     /// <param name="directory">The repository to set up.</param>
     /// <param name="name">The workflow to scaffold for, or null to derive one.</param>
-    /// <param name="check">Report what's missing or drifted without writing anything.</param>
+    /// <param name="mode">How far the scaffolder is allowed to go.</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
-    public async Task<ExitCode> Run(string directory, string? name, bool check, CancellationToken ct = default)
+    public async Task<ExitCode> Run(string directory, string? name, ScaffoldMode mode = ScaffoldMode.Write, CancellationToken ct = default)
     {
         var root = new PhysicalDirectory(directory);
         var workflow = await SelectWorkflow(root, name, ct);
@@ -44,9 +44,9 @@ public sealed class ProjectInitializer(
         }
 
         var files = RepositoryScaffold.For(workflow.Value, ShippedProject(root), Version, projectFile);
-        var outcomes = await new Scaffolder(FileSystemAt(root)).Apply(files, root, check, ct);
+        var outcomes = await new Scaffolder(FileSystemAt(root)).Apply(files, root, mode, ct);
 
-        return Report(workflow.Value, outcomes, check);
+        return Report(workflow.Value, outcomes, mode);
     }
 
     /// <summary>
@@ -127,45 +127,57 @@ public sealed class ProjectInitializer(
     private static string Relative(IDirectory root, IFile file) =>
         Path.GetRelativePath(root.AbsolutePath, file.AbsolutePath).Replace(Path.DirectorySeparatorChar, '/');
 
-    private ExitCode Report(IWorkflow workflow, IReadOnlyList<(ScaffoldedFile File, ScaffoldOutcome Outcome)> outcomes, bool check)
+    private ExitCode Report(IWorkflow workflow, IReadOnlyList<(ScaffoldedFile File, ScaffoldOutcome Outcome)> outcomes, ScaffoldMode mode)
     {
+        var checking = mode == ScaffoldMode.Check;
         foreach (var (file, outcome) in outcomes)
         {
             switch (outcome)
             {
-                case ScaffoldOutcome.Written when check:
+                case ScaffoldOutcome.Written when checking:
                     log.Warning($"{file.Path} is missing.");
                     break;
                 case ScaffoldOutcome.Written:
                     log.Detail($"Wrote {file.Path}.");
                     break;
-                case ScaffoldOutcome.Matches:
-                    log.Verbose($"{file.Path} is up to date.");
+                case ScaffoldOutcome.Rewritten:
+                    log.Detail($"Rewrote {file.Path}.");
                     break;
-                case ScaffoldOutcome.Differs when check:
-                    log.Warning($"{file.Path} differs from what the {workflow.Label} workflow expects.");
+                case ScaffoldOutcome.Differs:
+                    log.Warning($"{file.Path} differs from what the {workflow.Label} workflow generates.");
+
+                    // Asked what's expected, without being asked to write it.
+                    log.Verbose($"{file.Path} should say:\n{file.Content}");
                     break;
                 default:
-                    log.Skipped($"{file.Path} already exists; left as it is.");
+                    log.Verbose($"{file.Path} needs no changes.");
                     break;
             }
         }
 
-        if (!check)
+        var drifted = outcomes.Count(o => o.Outcome is ScaffoldOutcome.Written or ScaffoldOutcome.Differs);
+        if (checking)
         {
-            log.Status($"Set up for the {workflow.Label} workflow. Run `dotnet tool restore`, then `dotnet ritten check`.");
+            if (drifted == 0)
+            {
+                log.Status($"The scaffolding matches the {workflow.Label} workflow.");
+                return ExitCode.Success;
+            }
+
+            log.Error($"{drifted} of {outcomes.Count} files are missing or out of date. Run `ritten init --force` to bring them up to date, or `--verbose` to see what's expected.");
+            return ExitCode.Failed;
+        }
+
+        // Nothing was rewritten because nothing was asked to be: say how, rather than leaving the
+        // drift reported and unfixable.
+        if (outcomes.Any(o => o.Outcome == ScaffoldOutcome.Differs))
+        {
+            log.Status("Run `ritten init --force` to rewrite the files Ritten generates. Your other files are left alone.");
             return ExitCode.Success;
         }
 
-        var drifted = outcomes.Count(o => o.Outcome != ScaffoldOutcome.Matches);
-        if (drifted == 0)
-        {
-            log.Status($"The scaffolding matches the {workflow.Label} workflow.");
-            return ExitCode.Success;
-        }
-
-        log.Error($"{drifted} of {outcomes.Count} files are missing or out of date. Run `ritten init` to see what's expected.");
-        return ExitCode.Failed;
+        log.Status($"Set up for the {workflow.Label} workflow. Run `dotnet tool restore`, then `dotnet ritten check`.");
+        return ExitCode.Success;
     }
 
     private static IFileSystem FileSystemAt(IDirectory root) => new ScaffoldFileSystem(root);

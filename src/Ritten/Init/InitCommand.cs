@@ -22,9 +22,14 @@ internal static class InitCommand
             Description = "Report what's missing or out of date without writing anything."
         };
 
+        var force = new Option<bool>("--force")
+        {
+            Description = "Rewrite the files Ritten generates, discarding local changes to them. Your own files are left alone."
+        };
+
         var verbose = new Option<bool>("--verbose", "-v") { Description = "Show every log entry in its highest detail." };
 
-        var command = new Command("init", "Sets this repository up to run a Ritten workflow.") { workflow, check, verbose };
+        var command = new Command("init", "Sets this repository up to run a Ritten workflow.") { workflow, check, force, verbose };
         command.SetAction(async (parseResult, ct) =>
         {
             var console = EngineConsole.Create(parseResult.GetValue(verbose) ? WorkflowLogLevel.Verbose : WorkflowLogLevel.Detail);
@@ -33,7 +38,11 @@ internal static class InitCommand
             var exitCode = await init.Run(
                 Environment.CurrentDirectory,
                 parseResult.GetValue(workflow),
-                parseResult.GetValue(check),
+                parseResult.GetValue(check)
+                    ? ScaffoldMode.Check
+                    : parseResult.GetValue(force)
+                        ? ScaffoldMode.Rewrite
+                        : ScaffoldMode.Write,
                 ct
             );
 

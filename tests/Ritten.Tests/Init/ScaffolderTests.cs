@@ -62,9 +62,32 @@ public class ScaffolderTests
     {
         var written = SetFile("ritten.json", exists: false);
 
-        var outcomes = await Apply(new ScaffoldedFile("ritten.json", "{}\n"), check: true);
+        var outcomes = await Apply(new ScaffoldedFile("ritten.json", "{}\n"), ScaffoldMode.Check);
 
         outcomes.ShouldHaveSingleItem().Outcome.ShouldBe(ScaffoldOutcome.Written);
+        written.ToArray().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task RewritesAGeneratedFileThatHasDrifted()
+    {
+        var written = SetFile("ritten.yml", exists: true, content: "hand edited");
+
+        var outcomes = await Apply(new ScaffoldedFile("ritten.yml", "generated", Generated: true), ScaffoldMode.Rewrite);
+
+        outcomes.ShouldHaveSingleItem().Outcome.ShouldBe(ScaffoldOutcome.Rewritten);
+        Encoding.UTF8.GetString(written.ToArray()).ShouldBe("generated");
+    }
+
+    [Fact]
+    public async Task LeavesSeedsAloneEvenWhenRewriting()
+    {
+        // --force is for what Ritten generates. A changelog is never Ritten's to overwrite.
+        var written = SetFile("CHANGELOG.md", exists: true, content: "Real entries.");
+
+        var outcomes = await Apply(new ScaffoldedFile("CHANGELOG.md", "# Changelog\n"), ScaffoldMode.Rewrite);
+
+        outcomes.ShouldHaveSingleItem().Outcome.ShouldBe(ScaffoldOutcome.Matches);
         written.ToArray().ShouldBeEmpty();
     }
 
@@ -80,6 +103,6 @@ public class ScaffolderTests
         return written;
     }
 
-    private async Task<IReadOnlyList<(ScaffoldedFile File, ScaffoldOutcome Outcome)>> Apply(ScaffoldedFile file, bool check = false) =>
-        await new Scaffolder(_fileSystem).Apply([file], _root, check, TestContext.Current.CancellationToken);
+    private async Task<IReadOnlyList<(ScaffoldedFile File, ScaffoldOutcome Outcome)>> Apply(ScaffoldedFile file, ScaffoldMode mode = ScaffoldMode.Write) =>
+        await new Scaffolder(_fileSystem).Apply([file], _root, mode, TestContext.Current.CancellationToken);
 }

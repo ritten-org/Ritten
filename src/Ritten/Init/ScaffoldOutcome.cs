@@ -6,17 +6,22 @@ namespace Ritten.Init;
 public enum ScaffoldOutcome
 {
     /// <summary>
-    /// The file was written.
+    /// The file wasn't there, so it was written.
     /// </summary>
     Written,
 
     /// <summary>
-    /// The file was already there and says what it should, so it was left alone.
+    /// The file had drifted from what Ritten generates, so it was written again.
+    /// </summary>
+    Rewritten,
+
+    /// <summary>
+    /// Nothing to do: the file is the repository's, or it already says what it should.
     /// </summary>
     Matches,
 
     /// <summary>
-    /// The file was already there and says something else, so it was left alone.
-    /// </summary>
+    /// The file is Ritten's to generate and says something else
+    /// .</summary>
     Differs
 }

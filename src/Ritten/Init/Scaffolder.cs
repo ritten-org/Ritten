@@ -10,18 +10,17 @@ namespace Ritten.Init;
 public sealed class Scaffolder(IFileSystem fileSystem)
 {
     /// <summary>
-    /// Writes the files that are missing, and reports on the ones already there.
+    /// Puts the scaffolding in place as far as the mode allows, and reports what became of each file.
     /// </summary>
     /// <param name="files">What the repository should have.</param>
     /// <param name="root">The directory the files belong under.</param>
-    /// <param name="check">Report what would happen without writing anything.</param>
-    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    /// <param name="mode">How far to go.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     public async Task<IReadOnlyList<(ScaffoldedFile File, ScaffoldOutcome Outcome)>> Apply(
         IReadOnlyList<ScaffoldedFile> files,
         IDirectory? root = null,
-        bool check = false,
-        CancellationToken ct = default
-    )
+        ScaffoldMode mode = ScaffoldMode.Write,
+        CancellationToken cancellationToken = default)
     {
         root ??= fileSystem.ProjectRoot;
         List<(ScaffoldedFile, ScaffoldOutcome)> outcomes = [];
@@ -32,20 +31,26 @@ public sealed class Scaffolder(IFileSystem fileSystem)
             {
                 // A seed is the repository's the moment it exists; only what Ritten generates
                 // is held to what Ritten would generate.
-                var drifted = file.Generated && await Read(target, ct) != file.Content;
-                outcomes.Add((file, drifted ? ScaffoldOutcome.Differs : ScaffoldOutcome.Matches));
+                if (!file.Generated || await Read(target, cancellationToken) == file.Content)
+                {
+                    outcomes.Add((file, ScaffoldOutcome.Matches));
+                    continue;
+                }
+
+                if (mode != ScaffoldMode.Rewrite)
+                {
+                    outcomes.Add((file, ScaffoldOutcome.Differs));
+                    continue;
+                }
+
+                await Write(root, file, cancellationToken);
+                outcomes.Add((file, ScaffoldOutcome.Rewritten));
                 continue;
             }
 
-            if (!check)
+            if (mode != ScaffoldMode.Check)
             {
-                // .config and .github/workflows won't exist yet in a fresh repository.
-                if (Path.GetDirectoryName(file.Path) is { Length: > 0 } directory)
-                {
-                    root.GetDirectory(directory).Create();
-                }
-
-                await Write(target, file.Content, ct);
+                await Write(root, file, cancellationToken);
             }
 
             outcomes.Add((file, ScaffoldOutcome.Written));
@@ -60,11 +65,17 @@ public sealed class Scaffolder(IFileSystem fileSystem)
         return await reader.ReadToEndAsync(cancellationToken);
     }
 
-    private static async Task Write(IFile file, string content, CancellationToken cancellationToken)
+    private static async Task Write(IDirectory root, ScaffoldedFile file, CancellationToken cancellationToken)
     {
-        var stream = file.OpenWrite();
+        // .config and .github/workflows won't exist yet in a fresh repository.
+        if (Path.GetDirectoryName(file.Path) is { Length: > 0 } directory)
+        {
+            root.GetDirectory(directory).Create();
+        }
+
+        var stream = root.GetFile(file.Path).OpenWrite();
         stream.SetLength(0);
         await using var writer = new StreamWriter(stream);
-        await writer.WriteAsync(content.AsMemory(), cancellationToken);
+        await writer.WriteAsync(file.Content.AsMemory(), cancellationToken);
     }
 }
