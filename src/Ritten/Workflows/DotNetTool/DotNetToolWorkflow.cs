@@ -1,3 +1,5 @@
+using Ritten.Contracts.FileSystem;
+using Ritten.DotNet;
 using Ritten.Engine.Workflows;
 
 namespace Ritten.Workflows.DotNetTool;
@@ -16,6 +18,7 @@ public class DotNetToolWorkflow : IWorkflow
     /// <inheritdoc />
     public IReadOnlyList<IJob> Jobs { get; } =
     [
+        new InitJob(),
         new StatusJob(),
         new BuildJob(),
         new InstallJob(),
@@ -23,4 +26,10 @@ public class DotNetToolWorkflow : IWorkflow
         new CheckJob(),
         new DeployJob()
     ];
+
+    /// <inheritdoc />
+    public async Task<string?> IsCompatible(IDirectory repository, CancellationToken cancellationToken = default) =>
+        await DotNetProjects.FileContainingMsBuildElement(repository, "<PackAsTool>true</PackAsTool>", cancellationToken) is { } project
+            ? $"{repository.RelativePath(project)} packs as a tool"
+            : null;
 }

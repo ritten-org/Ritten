@@ -22,4 +22,10 @@ public class DotNetWorkflow : IWorkflow
         new BuildJob(),
         new CheckJob()
     ];
+
+    /// <inheritdoc />
+    public Task<string?> IsCompatible(IDirectory repository, CancellationToken cancellationToken = default) =>
+        Task.FromResult(DotNetProjects.Projects(repository).FirstOrDefault() is { } project
+            ? $"{repository.RelativePath(project)} is a .NET project"
+            : null);
 }

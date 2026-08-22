@@ -33,6 +33,14 @@ public static class CommandExtensions
     }
 
     /// <summary>
+    /// The option that names a workflow, for jobs that run without one.
+    /// </summary>
+    private static Option<string> WorkflowOption() => new($"--{WorkflowArguments.Workflow}")
+    {
+        Description = "The workflow to run. Recognised from what's in the project when omitted."
+    };
+
+    /// <summary>
     /// Builds the command for a single job.
     /// </summary>
     private static Command JobCommand(IJob job, WorkflowFlags flags, WorkflowApplication application)

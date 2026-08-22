@@ -124,7 +124,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         // template's own default has moved between versions. Naming the conventional one keeps
         // every repository Ritten sets up looking the same.
         var command = Command.Create("dotnet")
-            .WithArguments("new", "tool-manifest", "--output", DotNetRepository.ToolManifestDirectory)
+            .WithArguments("new", "tool-manifest", "--output", DotNetProjects.ToolManifestDirectory)
             .InDirectory(directory.AbsolutePath)
             .QuietOutput()
             .ThrowOnError();
