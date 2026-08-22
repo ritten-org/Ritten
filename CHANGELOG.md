@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **The tool client works the way the SDK does.** `IDotNet`'s tool methods are one per `dotnet tool` verb — `ToolInstall`, `ToolUpdate`, `ToolUninstall`, and `InstalledToolVersion` for `list`.
+- **The engine reads and writes project files.** `IProjectFiles` and `ProjectFile` load a `ritten.json` as a document, set values by key path, and write it back with everything else intact.
+- **`Ritten.GitHub` maintains GitHub Actions workflows.** `IActionsWorkflows` and `ActionsWorkflow` read a workflow file, find its jobs by what they run, and write a job or a trigger back into it without disturbing a line of the rest.
+- **`Ritten.DotNet` manages the tool manifest.** `IDotNet` gains `ToolUpdate` and `CreateToolManifest`, and `DotNetProjects` reads what a repository holds.
+- **Jobs can declare that they run without a project.** `IJob.RequiresProject` is what lets a job create the project file.
+- **Workflows can check compatibility.** `IWorkflow.IsCompatible` answers whether a directory looks like its kind, and `WorkflowRegistry.IsCompatible` asks each in registration order.
+- **A file knows its directory, and a directory can place one.** `IFile.Directory` returns the directory a file is in, so anything writing a nested file can create the path first, and `IDirectory.RelativePath(file)`/`RelativePath(directory)` write a path the way a project file spells one.
+
+### Changed
+
+- **`ritten init` is now a job instead of a command.** It runs like every other job, with `--dry-run`, `--verbose` and the rest, and each workflow declares its own. A repository with no `ritten.json` yet has its workflow detected by what's in it, or `--workflow` sets one explicitly.
+- **Resolving a repository is its own step.** `WorkflowApplication.SelectWorkflow` detects the workflow for a given directory.
+- **Workflows can run without a project file.** `RittenProject.Resolve` answers with a synthetic project when nothing has been written yet.
+- **Init ensures rather than scaffolds.** Every file it touches is loaded as a document, given whatever it's missing, and written back, so a changelog keeps its entries, a `ritten.json` keeps all its keys, a tool manifest keeps the other tools it pins, and an Actions workflow keeps its other jobs, triggers, and comments.
+- **The Actions workflow is named for the project, and found by what it runs.** Ritten owns the jobs it wrote, not the file they live in: a renamed workflow file is updated in place rather than duplicated.
+
 ## [0.9.0] - 2026-08-22
 
 ### Added
