@@ -44,4 +44,44 @@ public class ChangelogEntryTests
     {
         new ChangelogEntry().ReleaseKind.ShouldBe(ReleaseKind.None);
     }
+
+    [Fact]
+    public void MergingGathersTheNotesUnderOneSetOfSections()
+    {
+        var existing = ChangelogParser.ParseEntry("### Added\n\n- A shipped thing.\n\n### Fixed\n\n- An old fix.");
+        var later = ChangelogParser.ParseEntry("### Fixed\n\n- A later fix.\n\n### Added\n\n- A later thing.");
+
+        var merged = existing.Merge(later);
+
+        merged.Added.ShouldBe(["A shipped thing.", "A later thing."]);
+        merged.Fixed.ShouldBe(["An old fix.", "A later fix."]);
+
+        // The sections held every line of both bodies, so the entry renders as one set of them —
+        // the order the author wrote their own sections in is not a reason to keep two.
+        ChangelogRenderer.RenderEntry(merged).ShouldBe("### Added\n\n- A shipped thing.\n- A later thing.\n\n### Fixed\n\n- An old fix.\n- A later fix.");
+    }
+
+    [Fact]
+    public void MergingKeepsBothBodiesWhenTheSectionsCannotHoldThem()
+    {
+        // "Notes" is not one of the six, so it lives on the body alone: rebuilding from the
+        // sections would drop the heading and everything under it.
+        var existing = ChangelogParser.ParseEntry("### Notes\n\n- Something the format has no section for.");
+        var later = ChangelogParser.ParseEntry("### Fixed\n\n- A later fix.");
+
+        var rendered = ChangelogRenderer.RenderEntry(existing.Merge(later));
+
+        rendered.ShouldContain("### Notes");
+        rendered.ShouldContain("- Something the format has no section for.");
+        rendered.ShouldContain("- A later fix.");
+    }
+
+    [Fact]
+    public void MergingIntoAnEntryWithNothingInItKeepsTheNotesArriving()
+    {
+        var merged = new ChangelogEntry().Merge(ChangelogParser.ParseEntry("### Fixed\n\n- A later fix."));
+
+        merged.Fixed.ShouldBe(["A later fix."]);
+        ChangelogRenderer.RenderEntry(merged).ShouldBe("### Fixed\n\n- A later fix.");
+    }
 }

@@ -37,7 +37,7 @@ public class DecideVersion(WorkflowJob job, RequestedVersion requested, IWorkflo
 
         // An unpublished version is already the next one: the project was bumped and never shipped,
         // so preparing again would skip a version nobody released.
-        if (!release.Published)
+        if (!release.AnyPublished)
         {
             log.Detail($"Preparing {project.Version}, which the project already declares and hasn't published.");
             return new PreparedRelease(project.Version, false, "already declared, not yet published");

@@ -40,6 +40,17 @@ public class DecideVersionTests
     }
 
     [Fact]
+    public async Task MovesPastAVersionThatShippedInPart()
+    {
+        // One package of 1.2.0 reached the feed and another didn't: the version is out in the
+        // world, so what's left of it is deploy's to finish and prepare must move past it.
+        var result = await Step().Run(Project("1.2.0"), Changelog(new ChangelogEntry { Fixed = ["A thing."] }), PartlyPublished(), TestContext.Current.CancellationToken);
+
+        result.Value.ShouldNotBeNull().Version.ShouldBe(NuGetVersion.Parse("1.2.1"));
+        result.Value.Bumped.ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task DerivesFromTheUnreleasedNotesAndConfirms()
     {
         var result = await Step().Run(Project("1.2.0"), Changelog(new ChangelogEntry { Added = ["A thing."] }), Published(), TestContext.Current.CancellationToken);
@@ -87,7 +98,16 @@ public class DecideVersionTests
         new() { Entries = unreleased is null ? [] : [unreleased] };
 
     private static ReleaseState Published() =>
-        new(Published: true, LatestInLine: true, NuGetVersion.Parse("1.2.0"), NuGetVersion.Parse("1.2.0"));
+        new(Published: true, LatestInLine: true, NuGetVersion.Parse("1.2.0"), NuGetVersion.Parse("1.2.0"))
+        {
+            Packages = [new PackagePublication("My.Package", true)]
+        };
+
+    private static ReleaseState PartlyPublished() =>
+        new(Published: false, LatestInLine: true, NuGetVersion.Parse("1.2.0"), NuGetVersion.Parse("1.2.0"))
+        {
+            Packages = [new PackagePublication("My.Package", true), new PackagePublication("My.Package.Core", false)]
+        };
 
     private static ReleaseState Unpublished() =>
         new(Published: false, LatestInLine: true, NuGetVersion.Parse("1.2.0"), NuGetVersion.Parse("1.2.0"));

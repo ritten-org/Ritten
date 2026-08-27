@@ -17,6 +17,11 @@ public sealed record ReleaseState(bool Published, bool LatestInLine, NuGetVersio
     public bool OnLatestLine => LatestVersionInLine == LatestVersion;
 
     /// <summary>
+    /// Whether any one package in the build has this version on the feed.
+    /// </summary>
+    public bool AnyPublished => Published || Packages.Any(p => p.Published);
+
+    /// <summary>
     /// Where each shipped package stands individually.
     /// </summary>
     public IReadOnlyList<PackagePublication> Packages { get; init; } = [];
