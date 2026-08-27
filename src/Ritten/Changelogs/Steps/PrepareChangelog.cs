@@ -36,6 +36,7 @@ public class PrepareChangelog(
     /// <param name="ct">A token to monitor for cancellation requests.</param>
     public async Task<StepResult> Run(Changelog changelog, Project project, PreparedRelease release, CancellationToken ct = default)
     {
+        var hasChangelog = changelog.Entry(release.Version) is not null;
         var rolled = WithRelease(changelog, release, out var entry);
         var linked = WithLinks(rolled, project);
 
@@ -54,6 +55,7 @@ public class PrepareChangelog(
         log.Detail(entry switch
         {
             null => $"Updated the version links in {options.Value.File}.",
+            _ when hasChangelog => $"Added the unreleased notes to the entry {release.Version} already had in {options.Value.File}.",
             _ => $"Rolled the unreleased notes into {release.Version} in {options.Value.File}."
         });
 
@@ -61,8 +63,9 @@ public class PrepareChangelog(
     }
 
     /// <summary>
-    /// Dates the unreleased entry and gives it its version, leaving every other entry alone.
-    /// The body renders verbatim, so nobody's prose is reformatted on the way through.
+    /// Dates the unreleased entry and gives it its version — joining the entry that version already
+    /// has, when it has one — and leaves every other entry alone. The body renders verbatim, so
+    /// nobody's prose is reformatted on the way through.
     /// </summary>
     private Changelog WithRelease(Changelog changelog, PreparedRelease release, out ChangelogEntry? rolled)
     {
@@ -80,13 +83,20 @@ public class PrepareChangelog(
             return changelog;
         }
 
-        rolled = unreleased with
-        {
-            Version = release.Version,
-            Date = DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime)
-        };
-
+        var today = DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime);
         var entries = changelog.Entries.ToList();
+
+        // The version may already have an entry: prepared once before and not yet shipped.
+        // Its notes join the ones already under that heading.
+        if (changelog.Entry(release.Version) is { } existing)
+        {
+            rolled = existing.Merge(unreleased) with { Date = today };
+            entries[entries.IndexOf(existing)] = rolled;
+            entries.Remove(unreleased);
+            return changelog with { Entries = entries };
+        }
+
+        rolled = unreleased with { Version = release.Version, Date = today };
         entries[entries.IndexOf(unreleased)] = rolled;
         return changelog with { Entries = entries };
     }

@@ -12,7 +12,7 @@
     <Copyright>Copyright © 2026 Tom Wolfe</Copyright>
     <!-- One version for every package the repository ships: lockstep by construction here,
          and `check` still guards it for repositories that keep per-project versions. -->
-    <Version>0.10.0</Version>
+    <Version>0.11.0</Version>
     <AssemblyVersion>$(Version.Split('-')[0])</AssemblyVersion>
     <FileVersion>$(Version.Split('-')[0])</FileVersion>
     <PackageIcon>icon.png</PackageIcon>

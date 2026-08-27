@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -99,6 +100,24 @@ public class PrepareChangelogTests
 
         result.IsFailure.ShouldBeFalse();
         file.DidNotReceive().OpenWrite();
+    }
+
+    [Fact]
+    public async Task MergesIntoTheEntryTheVersionAlreadyHas()
+    {
+        // The version was prepared before and never shipped, so notes written since belong in the
+        // entry it already has: a second heading for the same version describes it twice.
+        SetChangelog(Existing);
+
+        var result = await Step().Run(Changelog(Existing), Project(), Prepared("1.2.0", bumped: false), TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeFalse();
+        var written = Written();
+        Regex.Matches(written, "^## \\[1\\.2\\.0\\]", RegexOptions.Multiline).Count.ShouldBe(1);
+        written.ShouldContain("## [1.2.0] - 2026-08-21");
+        written.ShouldContain("- **A new thing.** It does something.");
+        written.ShouldContain("- **An old thing.** It was broken.");
+        written.ShouldNotContain("## [Unreleased]");
     }
 
     [Fact]

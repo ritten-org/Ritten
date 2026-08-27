@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-08-27
+
+### Added
+
+- Added shell auto-completion support through the `completion` command.
+
+### Fixed
+
+- **`prepare` no longer describes one version twice.** A version whose packages had shipped in part was read as one that had never shipped at all, so `prepare` staged it a second time.
+- **Notes written after a `prepare` join the entry they belong to.** Preparing a version the changelog already has an entry for now adds the unreleased notes to that entry rather than giving the version a second heading.
+
 ## [0.10.0] - 2026-08-23
 
 ### Added
@@ -209,6 +220,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.11.0]: https://github.com/ritten-org/Ritten/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/ritten-org/Ritten/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/ritten-org/Ritten/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/ritten-org/Ritten/compare/v0.7.0...v0.8.0
