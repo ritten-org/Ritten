@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-09-17
+
+### Added
+
+- **`IGit` can address a repository other than the workflow's.** `InRepository(directory)` returns a client bound to that working tree, for a job that maintains a checkout beside its own.
+- **`IGit` commits and pushes.** `Stage`, `Commit`, `Push` (with an optional `GitCredential`, handed to git through a one-shot credential helper in the environment so it never reaches the remote URL or an argument list), `AddRemote`, `CurrentBranch`, `Upstream` and `CommitsAhead` join the tagging operations. Dry runs report each write instead of making it.
+
 ## [0.11.0] - 2026-08-27
 
 ### Added

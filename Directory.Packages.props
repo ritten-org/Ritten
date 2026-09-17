@@ -24,7 +24,7 @@
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.13.0" />
     <PackageVersion Include="Verify.XunitV3" Version="32.0.0" />
     <PackageVersion Include="Wolfe.CommandLine" Version="0.2.0" />
-    <PackageVersion Include="xunit.v3" Version="4.0.0" />
+    <PackageVersion Include="xunit.v3" Version="4.0.0" /> 
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
 </Project>
