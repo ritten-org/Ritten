@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - **`IGit.IsRepository`.** Whether the directory the client addresses is a working tree or inside one.
+- **`Ritten.Forgejo`.** The Forgejo Actions runtime: detected on `FORGEJO_ACTIONS`, claiming the `GITHUB_*` mirrors the runner exports for GitHub-written workflows so it outranks the GitHub runtime where both are registered.
 - **`Ritten.Docker`.** A docker client for workflows: `IDocker` builds, tags, pushes and logs in, runs a container to completion, and converges or removes a compose stack.
 
 ## [0.12.0] - 2026-09-17
