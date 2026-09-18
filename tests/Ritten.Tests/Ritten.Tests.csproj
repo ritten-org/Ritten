@@ -37,6 +37,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Ritten\Ritten.csproj" />
+    <ProjectReference Include="..\..\src\Ritten.Docker\Ritten.Docker.csproj" />
   </ItemGroup>
 
 </Project>

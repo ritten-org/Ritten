@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-09-18
+
+### Added
+
+- **`Ritten.Docker`.** A docker client for workflows: `IDocker` builds, tags, pushes and logs in, runs a container to completion, and converges or removes a compose stack.
+
 ## [0.12.0] - 2026-09-17
 
 ### Added
@@ -227,6 +233,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.13.0]: https://github.com/ritten-org/Ritten/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/ritten-org/Ritten/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/ritten-org/Ritten/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/ritten-org/Ritten/compare/v0.9.0...v0.10.0
