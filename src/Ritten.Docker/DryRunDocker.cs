@@ -47,4 +47,22 @@ internal sealed class DryRunDocker(IWorkflowLog log, IDocker inner) : IDocker
         log.Skipped($"Would take down the stack in {project.AbsolutePath}.");
         return Task.CompletedTask;
     }
+
+    /// <inheritdoc />
+    public Task ComposeStop(IDirectory project, CancellationToken ct = default)
+    {
+        log.Skipped($"Would stop the stack in {project.AbsolutePath}.");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task ComposeStart(IDirectory project, CancellationToken ct = default)
+    {
+        log.Skipped($"Would start the stack in {project.AbsolutePath}.");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task<ContainerState> Inspect(string container, CancellationToken ct = default) =>
+        inner.Inspect(container, ct);
 }

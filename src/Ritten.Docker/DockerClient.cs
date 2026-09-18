@@ -74,4 +74,30 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
         await commands.Run(
             Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "down").ThrowOnError(),
             ct);
+
+    public async Task ComposeStop(IDirectory project, CancellationToken ct = default) =>
+        await commands.Run(
+            Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "stop").ThrowOnError(),
+            ct);
+
+    public async Task ComposeStart(IDirectory project, CancellationToken ct = default) =>
+        await commands.Run(
+            Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "start").ThrowOnError(),
+            ct);
+
+    public async Task<ContainerState> Inspect(string container, CancellationToken ct = default)
+    {
+        // One template, two facts: an image reference never contains whitespace, so the pair
+        // splits cleanly.
+        var result = await commands.Run(
+            Command.Create("docker").WithArguments("inspect", "--format", "{{.Config.Image}} {{.State.Running}}", container).QuietOutput().ThrowOnError(),
+            ct);
+        var fields = result.StandardOutput.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (fields.Length != 2 || !bool.TryParse(fields[1], out var running))
+        {
+            throw new CommandFailedException($"docker inspect returned '{result.StandardOutput.Trim()}' for {container}, not an image and a state.", result);
+        }
+
+        return new ContainerState(fields[0], running);
+    }
 }
