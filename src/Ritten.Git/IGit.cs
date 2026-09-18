@@ -18,6 +18,11 @@ public interface IGit
     IGit InRepository(IDirectory repository);
 
     /// <summary>
+    /// Checks whether the directory the client addresses is a git working tree, or inside one.
+    /// </summary>
+    Task<bool> IsRepository(CancellationToken ct = default);
+
+    /// <summary>
     /// Gets the root of the repository, or <c>null</c> when the client isn't addressing one.
     /// </summary>
     Task<IDirectory?> RepositoryRoot(CancellationToken ct = default);

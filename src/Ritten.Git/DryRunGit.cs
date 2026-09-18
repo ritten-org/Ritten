@@ -12,6 +12,9 @@ internal class DryRunGit(IWorkflowLog log, IGit inner) : IGit
     public IGit InRepository(IDirectory repository) => new DryRunGit(log, inner.InRepository(repository));
 
     /// <inheritdoc />
+    public Task<bool> IsRepository(CancellationToken ct = default) => inner.IsRepository(ct);
+
+    /// <inheritdoc />
     public Task<IDirectory?> RepositoryRoot(CancellationToken ct = default) =>
         inner.RepositoryRoot(ct);
 

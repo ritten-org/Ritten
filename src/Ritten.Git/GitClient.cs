@@ -21,6 +21,14 @@ internal class GitClient : IGit
 
     public IGit InRepository(IDirectory repository) => new GitClient(_commands, repository);
 
+    public async Task<bool> IsRepository(CancellationToken ct = default)
+    {
+        // Answers "true" inside a working tree and fails outside one (or inside a bare
+        // repository, which has no working tree to commit in), so the exit code is the answer.
+        var result = await _commands.Run(Git("rev-parse", "--is-inside-work-tree").QuietOutput(), ct);
+        return result.IsSuccess && result.StandardOutput.Trim() == "true";
+    }
+
     public async Task<IDirectory?> RepositoryRoot(CancellationToken ct = default)
     {
         var result = await _commands.Run(
