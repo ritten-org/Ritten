@@ -1,3 +1,4 @@
+using Ritten.Commands;
 using Ritten.Docker;
 using Ritten.Engine.FileSystem;
 using Ritten.Tests.Support;
@@ -88,5 +89,34 @@ public class DockerClientTests
 
         _commands.Executed[0].Arguments.ShouldBe(["tag", "org/tool:1.0", "org/tool:latest"]);
         _commands.Executed[1].Arguments.ShouldBe(["push", "org/tool:latest"]);
+    }
+
+    [Fact]
+    public async Task ComposeStop_And_ComposeStart_LeaveContainersInPlace()
+    {
+        await _docker.ComposeStop(new PhysicalDirectory("/srv/stack"), TestContext.Current.CancellationToken);
+        await _docker.ComposeStart(new PhysicalDirectory("/srv/stack"), TestContext.Current.CancellationToken);
+
+        _commands.Executed[0].Arguments.ShouldBe(["compose", "--project-directory", Path.GetFullPath("/srv/stack"), "stop"]);
+        _commands.Executed[1].Arguments.ShouldBe(["compose", "--project-directory", Path.GetFullPath("/srv/stack"), "start"]);
+    }
+
+    [Fact]
+    public async Task Inspect_ReadsTheImageAndWhetherItRuns()
+    {
+        _commands.Respond(c => c.Arguments.Contains("inspect"), new CommandResult(0, "jellyfin/jellyfin:12.0 false\n", ""));
+
+        var state = await _docker.Inspect("jellyfin", TestContext.Current.CancellationToken);
+
+        state.ShouldBe(new ContainerState("jellyfin/jellyfin:12.0", false));
+        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(["inspect", "--format", "{{.Config.Image}} {{.State.Running}}", "jellyfin"]);
+    }
+
+    [Fact]
+    public async Task Inspect_RefusesOutputItCannotRead()
+    {
+        _commands.Respond(c => c.Arguments.Contains("inspect"), new CommandResult(0, "\n", ""));
+
+        await Should.ThrowAsync<CommandFailedException>(() => _docker.Inspect("jellyfin", TestContext.Current.CancellationToken));
     }
 }

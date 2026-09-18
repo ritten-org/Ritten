@@ -51,4 +51,21 @@ public interface IDocker
     /// Stops and removes the compose stack in the given project directory. Volumes stay.
     /// </summary>
     Task ComposeDown(IDirectory project, CancellationToken ct = default);
+
+    /// <summary>
+    /// Stops the compose stack's containers in place.
+    /// </summary>
+    Task ComposeStop(IDirectory project, CancellationToken ct = default);
+
+    /// <summary>
+    /// Starts the compose stack's stopped containers.
+    /// </summary>
+    Task ComposeStart(IDirectory project, CancellationToken ct = default);
+
+    /// <summary>
+    /// What the daemon knows of a container: the image it was created from and whether it is running.
+    /// </summary>
+    /// <param name="container">The container's name or id.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    Task<ContainerState> Inspect(string container, CancellationToken ct = default);
 }
