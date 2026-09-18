@@ -61,6 +61,25 @@ public class GitClientTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task IsRepository_IsTrueInsideAWorkingTreeAndFalseOutside()
+    {
+        var nested = Directory.CreateDirectory(Path.Combine(_repository, "notes"));
+        var outside = Directory.CreateTempSubdirectory("ritten-not-a-repo-");
+        try
+        {
+            (await _git.IsRepository(TestContext.Current.CancellationToken)).ShouldBeTrue();
+            (await _git.InRepository(new PhysicalDirectory(nested.FullName)).IsRepository(TestContext.Current.CancellationToken)).ShouldBeTrue();
+            (await _git.InRepository(new PhysicalDirectory(outside.FullName)).IsRepository(TestContext.Current.CancellationToken)).ShouldBeFalse();
+            // A bare repository is git's, but there is no working tree to commit in.
+            (await _git.InRepository(new PhysicalDirectory(_remote)).IsRepository(TestContext.Current.CancellationToken)).ShouldBeFalse();
+        }
+        finally
+        {
+            outside.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RepositoryRoot_IsNullOutsideARepository()
     {
         var outside = Directory.CreateTempSubdirectory("ritten-not-a-repo-");

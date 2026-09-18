@@ -12,7 +12,9 @@
   </Folder>
   <Project Path="src\Ritten.CommandLine\Ritten.CommandLine.csproj" />
   <Project Path="src\Ritten.Core\Ritten.Core.csproj" />
+  <Project Path="src\Ritten.Docker\Ritten.Docker.csproj" />
   <Project Path="src\Ritten.DotNet\Ritten.DotNet.csproj" />
+  <Project Path="src\Ritten.Forgejo\Ritten.Forgejo.csproj" />
   <Project Path="src\Ritten.Git\Ritten.Git.csproj" />
   <Project Path="src\Ritten.GitHub\Ritten.GitHub.csproj" />
   <Project Path="src\Ritten\Ritten.csproj" />

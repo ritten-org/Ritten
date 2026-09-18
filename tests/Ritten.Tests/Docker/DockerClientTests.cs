@@ -1,0 +1,92 @@
+using Ritten.Docker;
+using Ritten.Engine.FileSystem;
+using Ritten.Tests.Support;
+
+namespace Ritten.Tests.Docker;
+
+public class DockerClientTests
+{
+    private readonly FakeCommandRunner _commands = new();
+    private readonly DockerClient _docker;
+
+    public DockerClientTests() => _docker = new DockerClient(_commands);
+
+    [Fact]
+    public async Task Build_TagsTheContextDirectory()
+    {
+        await _docker.Build(new PhysicalDirectory("/src/tool"), "org/tool:1.0", ct: TestContext.Current.CancellationToken);
+
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Path.ShouldBe("docker");
+        command.Arguments.ShouldBe(["build", "--tag", "org/tool:1.0", Path.GetFullPath("/src/tool")]);
+    }
+
+    [Fact]
+    public async Task Build_NamesThePlatformWhenGivenOne()
+    {
+        await _docker.Build(new PhysicalDirectory("/src/tool"), "org/tool:1.0", "linux/amd64", TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldContain("--platform");
+        _commands.Executed.Single().Arguments.ShouldContain("linux/amd64");
+    }
+
+    [Fact]
+    public async Task Login_HandsThePasswordOverStandardInput()
+    {
+        await _docker.Login("registry.example.com", "AWS", "s3cret", TestContext.Current.CancellationToken);
+
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["login", "--username", "AWS", "--password-stdin", "registry.example.com"]);
+        command.StandardInput.ShouldBe("s3cret");
+    }
+
+    [Fact]
+    public async Task Run_KeepsEnvironmentValuesOffTheCommandLine()
+    {
+        var run = new ContainerRun("org/tool:1.0", ["upload", "/takeout"])
+        {
+            Mounts = [new BindMount(new PhysicalDirectory("/data/takeout"), "/takeout", ReadOnly: true)],
+            Environment = new Dictionary<string, string> { ["API_KEY"] = "s3cret" },
+            Network = "lab"
+        };
+
+        await _docker.Run(run, TestContext.Current.CancellationToken);
+
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe([
+            "run", "--rm", "--network", "lab",
+            "--volume", $"{Path.GetFullPath("/data/takeout")}:/takeout:ro",
+            "--env", "API_KEY",
+            "org/tool:1.0", "upload", "/takeout"
+        ]);
+        command.EnvironmentVariables["API_KEY"].ShouldBe("s3cret");
+    }
+
+    [Fact]
+    public async Task ComposeUp_ConvergesFromTheProjectWithTheEnvironmentGiven()
+    {
+        await _docker.ComposeUp(new PhysicalDirectory("/srv/stack"), new Dictionary<string, string> { ["DB_PASSWORD"] = "pg" }, TestContext.Current.CancellationToken);
+
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["compose", "--project-directory", Path.GetFullPath("/srv/stack"), "up", "-d", "--remove-orphans"]);
+        command.EnvironmentVariables["DB_PASSWORD"].ShouldBe("pg");
+    }
+
+    [Fact]
+    public async Task ComposeDown_LeavesVolumesAlone()
+    {
+        await _docker.ComposeDown(new PhysicalDirectory("/srv/stack"), TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(["compose", "--project-directory", Path.GetFullPath("/srv/stack"), "down"]);
+    }
+
+    [Fact]
+    public async Task Tag_And_Push_SpellTheirVerbs()
+    {
+        await _docker.Tag("org/tool:1.0", "org/tool:latest", TestContext.Current.CancellationToken);
+        await _docker.Push("org/tool:latest", TestContext.Current.CancellationToken);
+
+        _commands.Executed[0].Arguments.ShouldBe(["tag", "org/tool:1.0", "org/tool:latest"]);
+        _commands.Executed[1].Arguments.ShouldBe(["push", "org/tool:latest"]);
+    }
+}
