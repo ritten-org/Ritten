@@ -50,6 +50,10 @@ internal class DryRunGit(IWorkflowLog log, IGit inner) : IGit
         inner.ChangedFiles(path, ct);
 
     /// <inheritdoc />
+    public Task<IReadOnlyList<string>> ChangedFilesSince(string reference, string path, CancellationToken ct = default) =>
+        inner.ChangedFilesSince(reference, path, ct);
+
+    /// <inheritdoc />
     public Task Stage(string path, CancellationToken ct = default)
     {
         log.Skipped($"Would stage the changes under {path}.");

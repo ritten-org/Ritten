@@ -63,6 +63,21 @@ public interface IGit
     Task<IReadOnlyList<string>> ChangedFiles(string path, CancellationToken ct = default);
 
     /// <summary>
+    /// Lists the paths under the given path that this branch has changed since it diverged from
+    /// the given reference.
+    /// </summary>
+    /// <remarks>
+    /// The question a pull request asks: what did THIS work touch, ignoring whatever the base
+    /// has done meanwhile. Throws when the reference cannot be resolved — a shallow checkout
+    /// that has never fetched the base would otherwise answer "nothing changed", and a caller
+    /// skipping work on that answer would skip it silently.
+    /// </remarks>
+    /// <param name="reference">The reference the branch diverged from, such as <c>origin/main</c>.</param>
+    /// <param name="path">The path to limit the answer to.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    Task<IReadOnlyList<string>> ChangedFilesSince(string reference, string path, CancellationToken ct = default);
+
+    /// <summary>
     /// Stages every change under the given path — modifications, additions and deletions alike.
     /// </summary>
     Task Stage(string path, CancellationToken ct = default);

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Title>Ritten.Forgejo</Title>
-    <Description>Forgejo for Ritten workflows: the Forgejo Actions runtime, with the run's facts and its job summary.</Description>
+    <Description>Forgejo for Ritten workflows: the Forgejo Actions runtime.</Description>
     <PackageTags>devops;cicd;build;automation;workflows;pipelines;forgejo;forgejo-actions</PackageTags>
   </PropertyGroup>
 
@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
   </ItemGroup>

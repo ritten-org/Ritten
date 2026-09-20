@@ -91,6 +91,23 @@ internal class GitClient : IGit
         return result.IsSuccess ? result.StandardOutput : null;
     }
 
+    public async Task<IReadOnlyList<string>> ChangedFilesSince(string reference, string path, CancellationToken ct = default)
+    {
+        // Three dots, not two: the merge base rather than the reference's tip, so work the base
+        // has done since the branch started is not reported as this branch's.
+        var result = await _commands.Run(
+            Git("diff", "--name-only", $"{reference}...HEAD", "--", path).QuietOutput().ThrowOnError(),
+            ct);
+
+        return
+        [
+            .. result.StandardOutput
+                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => line.Trim().Trim('"'))
+                .Where(line => line.Length > 0)
+        ];
+    }
+
     public async Task<IReadOnlyList<string>> ChangedFiles(string path, CancellationToken ct = default)
     {
         // --porcelain rather than `diff --quiet` so that untracked files are reported too.

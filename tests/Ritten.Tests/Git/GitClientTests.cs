@@ -284,4 +284,58 @@ public class GitClientTests : IAsyncLifetime
 
     private Task Git(params string[] arguments) =>
         _commands.Run(Command.Create("git").WithArguments(arguments).ThrowOnError(), TestContext.Current.CancellationToken);
+
+    [Fact]
+    public async Task ChangedFilesSince_ReportsWhatTheBranchTouched()
+    {
+        await Git("checkout", "-b", "feature");
+        await File.WriteAllTextAsync(Path.Combine(_repository, "touched.txt"), "x", TestContext.Current.CancellationToken);
+        await Git("add", "touched.txt");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", "touch");
+
+        var changed = await _git.ChangedFilesSince("main", ".", TestContext.Current.CancellationToken);
+
+        changed.ShouldBe(["touched.txt"]);
+    }
+
+    [Fact]
+    public async Task ChangedFilesSince_IgnoresWhatTheBaseDidMeanwhile()
+    {
+        await Git("checkout", "-b", "feature");
+        await File.WriteAllTextAsync(Path.Combine(_repository, "mine.txt"), "x", TestContext.Current.CancellationToken);
+        await Git("add", "mine.txt");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", "mine");
+
+        await Git("checkout", "main");
+        await File.WriteAllTextAsync(Path.Combine(_repository, "theirs.txt"), "x", TestContext.Current.CancellationToken);
+        await Git("add", "theirs.txt");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", "theirs");
+        await Git("checkout", "feature");
+
+        // Two dots would call theirs.txt a change of this branch's; three dots ask the merge base.
+        var changed = await _git.ChangedFilesSince("main", ".", TestContext.Current.CancellationToken);
+
+        changed.ShouldBe(["mine.txt"]);
+    }
+
+    [Fact]
+    public async Task ChangedFilesSince_NarrowsToThePathAsked()
+    {
+        await Git("checkout", "-b", "feature");
+        Directory.CreateDirectory(Path.Combine(_repository, "inside"));
+        await File.WriteAllTextAsync(Path.Combine(_repository, "inside", "a.txt"), "x", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(_repository, "outside.txt"), "x", TestContext.Current.CancellationToken);
+        await Git("add", ".");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", "both");
+
+        var changed = await _git.ChangedFilesSince("main", "inside", TestContext.Current.CancellationToken);
+
+        changed.ShouldBe(["inside/a.txt"]);
+    }
+
+    [Fact]
+    public async Task ChangedFilesSince_RefusesAReferenceItCannotResolve() =>
+        // Empty would mean "nothing changed", which is what makes a caller skip its work.
+        await Should.ThrowAsync<Exception>(
+            _git.ChangedFilesSince("origin/never-fetched", ".", TestContext.Current.CancellationToken));
 }
