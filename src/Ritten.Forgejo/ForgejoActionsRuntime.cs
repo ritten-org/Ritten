@@ -1,5 +1,7 @@
+using System.Net.Http.Headers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Engine;
 using Ritten.Engine.Runtimes;
@@ -41,6 +43,12 @@ public class ForgejoActionsRuntime : Runtime
         ForgejoEnvironment.Mirror(ForgejoEnvironment.RunId),
         ForgejoEnvironment.Workflow,
         ForgejoEnvironment.Mirror(ForgejoEnvironment.Workflow),
+        ForgejoEnvironment.Ref,
+        ForgejoEnvironment.Mirror(ForgejoEnvironment.Ref),
+        ForgejoEnvironment.BaseRef,
+        ForgejoEnvironment.Mirror(ForgejoEnvironment.BaseRef),
+        ForgejoEnvironment.Token,
+        ForgejoEnvironment.Mirror(ForgejoEnvironment.Token),
         ForgejoEnvironment.StepSummary,
         ForgejoEnvironment.RunnerDebug
     ];
@@ -62,6 +70,30 @@ public class ForgejoActionsRuntime : Runtime
             builder.Services.TryAddSingleton(new RunContext { Title = workflow });
         }
 
+        // Read once here as well as through options: what the runtime publishes about the pull
+        // request is a fact of the run, so it is available to a step that never looks at Forgejo.
+        var actions = new ForgejoActionsOptions();
+        ForgejoActionsOptions.ConfigureFromEnvironment(actions, environment);
+        builder.Services.TryAddSingleton(new PullRequest { Number = actions.PullRequestNumber, BaseRef = actions.BaseRef });
+
+        builder.Services.AddHttpClient(ForgejoCommentService.HttpClientName, (provider, client) =>
+        {
+            var forgejo = provider.GetRequiredService<IOptions<ForgejoActionsOptions>>().Value;
+            if (forgejo.ApiUrl is { } apiUrl)
+            {
+                client.BaseAddress = new Uri(apiUrl);
+            }
+
+            if (forgejo.Token is { } token)
+            {
+                // Forgejo's own scheme, not Bearer: a personal or workflow token, presented as-is.
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", token);
+            }
+        });
+
+        builder.Services.TryAddSingleton<IForgejoCommentService, ForgejoCommentService>();
+        builder.Decorators.Replace<IForgejoCommentService, ForgejoDryRunCommentService>();
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkflowResultSink, ForgejoJobSummaryResultSink>());
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkflowResultSink, ForgejoCommentResultSink>());
     }
 }

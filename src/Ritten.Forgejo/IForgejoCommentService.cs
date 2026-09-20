@@ -1,0 +1,12 @@
+namespace Ritten.Forgejo;
+
+/// <summary>
+/// Maintains a single, updatable comment on the pull request that triggered the current run.
+/// </summary>
+public interface IForgejoCommentService
+{
+    /// <summary>
+    /// Creates the workflow's comment on the current pull request, or updates it in place.
+    /// </summary>
+    Task CreateOrUpdate(string body, CancellationToken cancellationToken = default);
+}

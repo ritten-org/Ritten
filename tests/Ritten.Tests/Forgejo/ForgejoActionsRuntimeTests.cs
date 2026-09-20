@@ -42,6 +42,27 @@ public class ForgejoActionsRuntimeTests
         // Declared rather than resolved: the sinks share a constructor dependency on the run's
         // log, which only a run assembles.
         builder.Services.ShouldContain(d => d.ServiceType == typeof(IWorkflowResultSink) && d.ImplementationType == typeof(ForgejoJobSummaryResultSink));
+        builder.Services.ShouldContain(d => d.ServiceType == typeof(IWorkflowResultSink) && d.ImplementationType == typeof(ForgejoCommentResultSink));
+    }
+
+    [Fact]
+    public void Configure_OffersThePullRequestToStepsThatNeverLookAtForgejo()
+    {
+        // A step that decides whether its component changed needs the base ref, and has no
+        // business knowing which forge the run is on to get it.
+        var environment = new Dictionary<string, string>(Environment)
+        {
+            ["FORGEJO_REF"] = "refs/pull/108/head",
+            ["FORGEJO_BASE_REF"] = "main"
+        };
+        var builder = WorkflowApplication.CreateBuilder();
+
+        new ForgejoActionsRuntime().Configure(builder, name => environment.GetValueOrDefault(name));
+        using var services = builder.Services.BuildServiceProvider();
+
+        var pullRequest = services.GetRequiredService<PullRequest>();
+        pullRequest.Number.ShouldBe(108);
+        pullRequest.BaseRef.ShouldBe("main");
     }
 
     [Fact]
