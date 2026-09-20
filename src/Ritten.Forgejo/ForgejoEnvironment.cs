@@ -17,6 +17,22 @@ internal static class ForgejoEnvironment
     public const string RunNumber = "FORGEJO_RUN_NUMBER";
     public const string RunId = "FORGEJO_RUN_ID";
     public const string Workflow = "FORGEJO_WORKFLOW";
+
+    /// <summary>
+    /// The ref being built; pull request runs use <c>refs/pull/&lt;number&gt;/head</c>.
+    /// </summary>
+    public const string Ref = "FORGEJO_REF";
+
+    /// <summary>
+    /// The ref a pull request wants to merge into; set only on pull request runs.
+    /// </summary>
+    public const string BaseRef = "FORGEJO_BASE_REF";
+
+    /// <summary>
+    /// The API token for the instance. The runner offers this as a secret rather than a variable,
+    /// so it is here only when the workflow has passed it through.
+    /// </summary>
+    public const string Token = "FORGEJO_TOKEN";
     public const string StepSummary = "GITHUB_STEP_SUMMARY";
     public const string RunnerDebug = "RUNNER_DEBUG";
 
