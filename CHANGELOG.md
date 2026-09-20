@@ -4,10 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.16.0] - 2026-09-20
 
 ### Added
 
+- **`Ritten.OpenTofu`.** `IOpenTofu` over the `tofu` on the path, with `TofuInit`, `TofuFormatCheck`, `TofuPlan` and `TofuApply` steps.
+- **`SectionName.Infrastructure`.** What a change would do, or did, to the infrastructure.
 - **Docker steps.** `ComposeCheck`, `BuildImages` and `ComposeUp` in `Ritten.Docker`.
 - **`IDocker.ComposeValidate`.** Resolves the compose file without touching anything, and hands back what compose objected to rather than a pass/fail.
 - **The tool registers the Forgejo runtime.** `ritten` on a Forgejo runner now gets the job summary and the pull request comment `Ritten.Forgejo` already knew how to write.
@@ -257,6 +259,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.16.0]: https://github.com/ritten-org/Ritten/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/ritten-org/Ritten/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/ritten-org/Ritten/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/ritten-org/Ritten/compare/v0.12.0...v0.13.0
