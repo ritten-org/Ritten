@@ -9,7 +9,8 @@
       "src/Ritten.DotNet/Ritten.DotNet.csproj",
       "src/Ritten.GitHub/Ritten.GitHub.csproj",
       "src/Ritten.Docker/Ritten.Docker.csproj",
-      "src/Ritten.Forgejo/Ritten.Forgejo.csproj"
+      "src/Ritten.Forgejo/Ritten.Forgejo.csproj",
+      "src/Ritten.OpenTofu/Ritten.OpenTofu.csproj"
     ]
   }
 }
