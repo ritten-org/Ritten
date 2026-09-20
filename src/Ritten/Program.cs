@@ -2,6 +2,7 @@ using System.CommandLine;
 using Ritten.CommandLine;
 using Ritten.Contracts;
 using Ritten.Engine;
+using Ritten.Forgejo;
 using Ritten.GitHub;
 using Ritten.Workflows.DotNet;
 using Ritten.Workflows.DotNetPackage;
@@ -17,6 +18,7 @@ builder.Workflows
     .Add<DotNetWorkflow>();
 
 builder.Runtimes
+    .Add<ForgejoActionsRuntime>()
     .Add<GitHubActionsRuntime>();
 
 var built = builder.Build();

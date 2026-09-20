@@ -55,6 +55,11 @@ public sealed class SectionName
     public static SectionName Release { get; } = Named("Release");
 
     /// <summary>
+    /// What a change would do, or did, to the infrastructure.
+    /// </summary>
+    public static SectionName Infrastructure { get; } = Named("Infrastructure");
+
+    /// <summary>
     /// The section's title, as it appears in the report.
     /// </summary>
     public string Title { get; }

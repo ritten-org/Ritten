@@ -32,6 +32,38 @@ public class DockerClientTests
     }
 
     [Fact]
+    public async Task ComposeValidate_SaysNothingWhenTheFileIsGood()
+    {
+        var error = await _docker.ComposeValidate(new PhysicalDirectory("/src/stack"), ct: TestContext.Current.CancellationToken);
+
+        error.ShouldBeNull();
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["compose", "--project-directory", Path.GetFullPath("/src/stack"), "config", "--quiet"]);
+        // What compose objected to is the answer here, so a bad file must come back rather than throw.
+        command.ThrowsOnError.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task ComposeValidate_HandsBackWhatComposeObjectedTo()
+    {
+        _commands.Respond(c => c.Arguments.Contains("config"), new CommandResult(1, "", "services.web.ports: invalid\n"));
+
+        var error = await _docker.ComposeValidate(new PhysicalDirectory("/src/stack"), ct: TestContext.Current.CancellationToken);
+
+        error.ShouldBe("services.web.ports: invalid");
+    }
+
+    [Fact]
+    public async Task ComposeValidate_FallsBackToStandardOutputWhenComposeSaysNothingOnError()
+    {
+        _commands.Respond(c => c.Arguments.Contains("config"), new CommandResult(1, "no configuration file provided\n", ""));
+
+        var error = await _docker.ComposeValidate(new PhysicalDirectory("/src/stack"), ct: TestContext.Current.CancellationToken);
+
+        error.ShouldBe("no configuration file provided");
+    }
+
+    [Fact]
     public async Task Login_HandsThePasswordOverStandardInput()
     {
         await _docker.Login("registry.example.com", "AWS", "s3cret", TestContext.Current.CancellationToken);

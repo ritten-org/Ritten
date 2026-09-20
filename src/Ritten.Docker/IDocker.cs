@@ -48,6 +48,15 @@ public interface IDocker
     Task ComposeUp(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default);
 
     /// <summary>
+    /// Checks that the compose file in the given project directory is one compose can read.
+    /// </summary>
+    /// <param name="project">The directory holding the compose file.</param>
+    /// <param name="environment">Values the compose file interpolates.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    /// <returns><c>null</c> when the file is valid, otherwise what compose objected to.</returns>
+    Task<string?> ComposeValidate(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default);
+
+    /// <summary>
     /// Stops and removes the compose stack in the given project directory. Volumes stay.
     /// </summary>
     Task ComposeDown(IDirectory project, CancellationToken ct = default);

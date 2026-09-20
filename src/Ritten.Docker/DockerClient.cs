@@ -70,6 +70,26 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
         await commands.Run(command.ThrowOnError(), ct);
     }
 
+    public async Task<string?> ComposeValidate(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default)
+    {
+        var command = Command.Create("docker")
+            .WithArguments("compose", "--project-directory", project.AbsolutePath, "config", "--quiet")
+            .QuietOutput();
+        if (environment is not null)
+        {
+            command = command.WithEnvironmentVariables(environment);
+        }
+
+        // Deliberately not ThrowOnError: what compose objected to is the answer, not a failure.
+        var result = await commands.Run(command, ct);
+        if (result.IsSuccess)
+        {
+            return null;
+        }
+
+        return result.StandardError.Trim() is { Length: > 0 } error ? error : result.StandardOutput.Trim();
+    }
+
     public async Task ComposeDown(IDirectory project, CancellationToken ct = default) =>
         await commands.Run(
             Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "down").ThrowOnError(),

@@ -25,6 +25,7 @@
     <ProjectReference Include="..\Ritten.Core\Ritten.Core.csproj" />
     <ProjectReference Include="..\Ritten.DotNet\Ritten.DotNet.csproj" />
     <ProjectReference Include="..\Ritten.Git\Ritten.Git.csproj" />
+    <ProjectReference Include="..\Ritten.Forgejo\Ritten.Forgejo.csproj" />
     <ProjectReference Include="..\Ritten.GitHub\Ritten.GitHub.csproj" />
   </ItemGroup>
 

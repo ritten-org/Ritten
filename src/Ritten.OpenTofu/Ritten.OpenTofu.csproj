@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Title>Ritten.Docker</Title>
-    <Description>Docker for Ritten workflows: images, one-shot containers and compose stacks, with a rehearsal for each.</Description>
-    <PackageTags>devops;cicd;build;automation;workflows;pipelines;docker;compose</PackageTags>
+    <Title>Ritten.OpenTofu</Title>
+    <Description>OpenTofu for Ritten workflows.</Description>
+    <PackageTags>devops;cicd;build;automation;workflows;pipelines;opentofu;terraform;infrastructure</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
