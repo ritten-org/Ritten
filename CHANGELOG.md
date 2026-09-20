@@ -4,12 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Docker steps.** `ComposeCheck`, `BuildImages` and `ComposeUp` in `Ritten.Docker`.
+- **`IDocker.ComposeValidate`.** Resolves the compose file without touching anything, and hands back what compose objected to rather than a pass/fail.
+- **The tool registers the Forgejo runtime.** `ritten` on a Forgejo runner now gets the job summary and the pull request comment `Ritten.Forgejo` already knew how to write.
+
 ## [0.15.0] - 2026-09-20
 
 ### Added
 
 - **Forgejo PR comments.** `Ritten.Forgejo` now keeps one comment per workflow on the pull request under review.
-- **Better Forgejo envrionmen support.** The runtime now reads the pull request's number and base ref from the run and registers a `PullRequest` info model.
+- **Better Forgejo environment support.** The runtime now reads the pull request's number and base ref from the run and registers a `PullRequest` info model.
 - **`IGit.ChangedFilesSince`.** For checking what files have been changed in a given branch.
 
 ## [0.14.0] - 2026-09-18
