@@ -42,6 +42,10 @@ internal sealed class DryRunDocker(IWorkflowLog log, IDocker inner) : IDocker
     }
 
     /// <inheritdoc />
+    public Task<string?> ComposeValidate(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default) =>
+        inner.ComposeValidate(project, environment, ct);
+
+    /// <inheritdoc />
     public Task ComposeDown(IDirectory project, CancellationToken ct = default)
     {
         log.Skipped($"Would take down the stack in {project.AbsolutePath}.");
