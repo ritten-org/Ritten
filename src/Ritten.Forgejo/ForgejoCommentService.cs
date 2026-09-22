@@ -67,6 +67,25 @@ internal sealed class ForgejoCommentService(
     /// Paged, because the API pages: a long-running pull request pushes the comment off the first
     /// page, and a search that stopped there would post a second one on every run from then on.
     /// </remarks>
+    public async Task Delete(CancellationToken cancellationToken = default)
+    {
+        if (options.Value.Repository is not { } repository || options.Value.ApiUrl is null || options.Value.Token is null || !options.Value.IsPullRequest)
+        {
+            return;
+        }
+
+        var number = options.Value.PullRequestNumber.Value;
+        var client = clients.CreateClient(HttpClientName);
+        if (await FindExisting(client, repository, number, cancellationToken) is not { } existing)
+        {
+            return;
+        }
+
+        log.Detail($"Removing the comment on PR #{number}: nothing to say.");
+        var deleted = await client.DeleteAsync($"repos/{repository}/issues/comments/{existing}", cancellationToken);
+        deleted.EnsureSuccessStatusCode();
+    }
+
     private async Task<long?> FindExisting(HttpClient client, string repository, int number, CancellationToken cancellationToken)
     {
         const int pageSize = 50;

@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
+using Ritten.Engine.Runs;
 using Ritten.GitHub;
 using Ritten.Reporting;
+using Ritten.Tests.Support;
 
 namespace Ritten.Tests.GitHub;
 
@@ -74,7 +76,35 @@ public class GitHubCommentResultSinkTests
         await _gitHubComments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, TestContext.Current.CancellationToken);
     }
 
+    [Fact]
+    public async Task Publish_TakesThePendingCommentBackWhenTheRunHadNothingToSay()
+    {
+        // A check whose component the pull request did not touch stops at its gate with an
+        // empty report; left as a comment, every check would comment on every pull request.
+        await Sink().Publish(Silent, TestContext.Current.CancellationToken);
+
+        await _gitHubComments.Received().Delete(TestContext.Current.CancellationToken);
+        await _gitHubComments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task Publish_StillReportsAnEarlyStopThatSaidSomething()
+    {
+        // Stopping early is not the same as having nothing to say: a plan with no changes
+        // stops the job and is worth reading.
+        var section = new ReportSection("Infrastructure");
+        section.Success("No changes.");
+
+        await Sink().Publish(Silent with { Sections = [section] }, TestContext.Current.CancellationToken);
+
+        await _gitHubComments.Received().CreateOrUpdate(Arg.Any<string>(), TestContext.Current.CancellationToken);
+        await _gitHubComments.DidNotReceive().Delete(TestContext.Current.CancellationToken);
+    }
+
     private static WorkflowReport Success => new("Ritten", Succeeded: true, []);
+
+    private static WorkflowReport Silent =>
+        new("Ritten", Succeeded: true, [], StoppedAt: new StepOutcome(Step.FromType<FirstStep>(), StepResult.NothingToDo));
 
     private GitHubCommentResultSink Sink() =>
         new(new MarkdownReportRenderer(), new RunContext { Title = "Ritten" }, Options.Create(_options), _gitHubComments);

@@ -42,6 +42,24 @@ internal class GitHubGitHubCommentService(
         }
     }
 
+    public async Task Delete(CancellationToken cancellationToken = default)
+    {
+        if (options.Value.RepositoryId is not { } repositoryId || !options.Value.IsPullRequest)
+        {
+            return;
+        }
+
+        var pullRequestNumber = options.Value.PullRequestNumber.Value;
+        var comments = await client.Issue.Comment.GetAllForIssue(repositoryId, pullRequestNumber);
+        if (comments.FirstOrDefault(c => c.Body.StartsWith(Marker, StringComparison.Ordinal)) is not { } existing)
+        {
+            return;
+        }
+
+        log.Detail($"Removing the comment on PR #{pullRequestNumber}: nothing to say.");
+        await client.Issue.Comment.Delete(repositoryId, existing.Id);
+    }
+
     // One comment per workflow, found again on later runs by this invisible prefix.
     private string Marker => $"<!-- ritten:{Slug(context.Title)} -->";
 

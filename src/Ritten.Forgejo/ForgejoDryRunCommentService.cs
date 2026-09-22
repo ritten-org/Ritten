@@ -14,4 +14,10 @@ internal sealed class ForgejoDryRunCommentService(IWorkflowLog log) : IForgejoCo
         log.Skipped("Would post the build report as a pull request comment.");
         return Task.CompletedTask;
     }
+
+    public Task Delete(CancellationToken cancellationToken = default)
+    {
+        log.Skipped("Would remove the pull request comment.");
+        return Task.CompletedTask;
+    }
 }

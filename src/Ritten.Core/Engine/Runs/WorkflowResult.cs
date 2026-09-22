@@ -26,4 +26,10 @@ public class WorkflowResult(ExitCode exitCode, IEnumerable<StepOutcome> steps)
     /// Gets the first failure of the run, when there was one.
     /// </summary>
     public StepOutcome? FailedStep => Steps.FirstOrDefault(s => s.Result.IsFailure);
+
+    /// <summary>
+    /// The step that ended the run early with nothing left to do, or null when every step ran
+    /// or one failed.
+    /// </summary>
+    public StepOutcome? StoppedAt => Steps.FirstOrDefault(s => s.Result is { IsFailure: false, Continue: false });
 }
