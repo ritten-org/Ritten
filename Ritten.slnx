@@ -17,6 +17,7 @@
   <Project Path="src\Ritten.Forgejo\Ritten.Forgejo.csproj" />
   <Project Path="src\Ritten.Git\Ritten.Git.csproj" />
   <Project Path="src\Ritten.GitHub\Ritten.GitHub.csproj" />
+  <Project Path="src\Ritten.OnePassword\Ritten.OnePassword.csproj" />
   <Project Path="src\Ritten.OpenTofu\Ritten.OpenTofu.csproj" />
   <Project Path="src\Ritten\Ritten.csproj" />
   <Project Path="tests\Ritten.Tests\Ritten.Tests.csproj" />

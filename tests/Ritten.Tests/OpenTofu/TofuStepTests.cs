@@ -15,22 +15,50 @@ public class TofuStepTests
     {
         // NothingToDo rather than Successful: the steps behind this one exist to apply a change,
         // and there isn't one. The job still succeeds.
-        _tofu.Plan(Arg.Any<CancellationToken>()).Returns(new TofuPlanResult(false, "No changes."));
+        _tofu.Plan(null, Arg.Any<CancellationToken>()).Returns(new TofuPlanResult(false, "No changes."));
 
-        var result = await new TofuPlan(_tofu, _report, _log).Run(TestContext.Current.CancellationToken);
+        var result = await new TofuPlan(_tofu, _report, _log).Run(null, TestContext.Current.CancellationToken);
 
-        result.IsFailure.ShouldBeFalse();
-        result.Continue.ShouldBeFalse();
+        result.Outcome.IsFailure.ShouldBeFalse();
+        result.Outcome.Continue.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Plan_ProducesTheResultForTheStepsAfterIt()
+    {
+        // The package reports the plan; what the plan means — a change to review, drift to
+        // page about — is the workflow's call, so the result is handed on rather than consumed.
+        var plan = new TofuPlanResult(true, "  + resource \"new\"");
+        _tofu.Plan(null, Arg.Any<CancellationToken>()).Returns(plan);
+
+        var result = await new TofuPlan(_tofu, _report, _log).Run(null, TestContext.Current.CancellationToken);
+
+        result.Value.ShouldBe(plan);
+    }
+
+    [Fact]
+    public async Task TheStepsHandTheResolvedEnvironmentToTheClient()
+    {
+        var environment = new TofuEnvironment();
+        _tofu.Plan(environment, Arg.Any<CancellationToken>()).Returns(new TofuPlanResult(true, "~"));
+
+        await new TofuInit(_tofu).Run(environment, TestContext.Current.CancellationToken);
+        await new TofuPlan(_tofu, _report, _log).Run(environment, TestContext.Current.CancellationToken);
+        await new TofuApply(_tofu, _report).Run(environment, TestContext.Current.CancellationToken);
+
+        await _tofu.Received().Init(environment, Arg.Any<CancellationToken>());
+        await _tofu.Received().Plan(environment, Arg.Any<CancellationToken>());
+        await _tofu.Received().Apply(environment, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Plan_CarriesOnAndReportsTheDiffWhenSomethingMoves()
     {
-        _tofu.Plan(Arg.Any<CancellationToken>()).Returns(new TofuPlanResult(true, "  ~ resource \"dns\"\n  + resource \"new\""));
+        _tofu.Plan(null, Arg.Any<CancellationToken>()).Returns(new TofuPlanResult(true, "  ~ resource \"dns\"\n  + resource \"new\""));
 
-        var result = await new TofuPlan(_tofu, _report, _log).Run(TestContext.Current.CancellationToken);
+        var result = await new TofuPlan(_tofu, _report, _log).Run(null, TestContext.Current.CancellationToken);
 
-        result.Continue.ShouldBeTrue();
+        result.Outcome.Continue.ShouldBeTrue();
         var note = _report.Sections.ShouldHaveSingleItem().Entries.ShouldHaveSingleItem().ShouldBeOfType<ReportParagraph>();
         // OpenTofu's own markers promoted to the first column, where a diff renderer colours them.
         note.Markdown.ShouldContain("!  ~ resource \"dns\"");

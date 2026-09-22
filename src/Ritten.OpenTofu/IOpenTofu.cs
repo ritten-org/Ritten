@@ -8,17 +8,23 @@ public interface IOpenTofu
     /// <summary>
     /// Prepares the root module: downloads its providers and configures its backend.
     /// </summary>
-    Task Init(CancellationToken ct = default);
+    /// <param name="environment">The environment to prepare for, or null for the defaults.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    Task Init(TofuEnvironment? environment = null, CancellationToken ct = default);
 
     /// <summary>
     /// Works out what applying the configuration would change, without changing anything.
     /// </summary>
-    Task<TofuPlanResult> Plan(CancellationToken ct = default);
+    /// <param name="environment">The environment to plan for, or null for the defaults.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    Task<TofuPlanResult> Plan(TofuEnvironment? environment = null, CancellationToken ct = default);
 
     /// <summary>
     /// Applies the configuration.
     /// </summary>
-    Task Apply(CancellationToken ct = default);
+    /// <param name="environment">The environment to apply to, or null for the defaults.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    Task Apply(TofuEnvironment? environment = null, CancellationToken ct = default);
 
     /// <summary>
     /// Checks that every file under the root module is formatted.

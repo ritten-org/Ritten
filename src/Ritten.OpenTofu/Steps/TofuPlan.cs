@@ -21,9 +21,12 @@ public class TofuPlan(IOpenTofu tofu, IWorkflowReport report, IWorkflowLog log)
     /// <summary>
     /// Plans the root module.
     /// </summary>
-    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
+    /// <param name="environment">The environment an earlier step resolved, when one did.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>The plan, for a step after this one to judge; nothing to do when it is empty.</returns>
+    public async Task<StepResult<TofuPlanResult>> Run(TofuEnvironment? environment, CancellationToken cancellationToken = default)
     {
-        var plan = await tofu.Plan(cancellationToken);
+        var plan = await tofu.Plan(environment, cancellationToken);
         if (!plan.HasChanges)
         {
             report.Section(SectionName.Infrastructure).Success("No changes. The infrastructure matches the configuration.");
@@ -32,7 +35,7 @@ public class TofuPlan(IOpenTofu tofu, IWorkflowReport report, IWorkflowLog log)
         }
 
         report.Section(SectionName.Infrastructure).Note(AsDiff(plan.Output));
-        return StepResult.Successful;
+        return plan;
     }
 
     /// <summary>

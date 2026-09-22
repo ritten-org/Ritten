@@ -14,9 +14,11 @@ public class TofuApply(IOpenTofu tofu, IWorkflowReport report)
     /// <summary>
     /// Applies the root module.
     /// </summary>
-    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
+    /// <param name="environment">The environment an earlier step resolved, when one did.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    public async Task<StepResult> Run(TofuEnvironment? environment, CancellationToken cancellationToken = default)
     {
-        await tofu.Apply(cancellationToken);
+        await tofu.Apply(environment, cancellationToken);
         report.Section(SectionName.Infrastructure).Success("Applied.");
         return StepResult.Successful;
     }

@@ -12,9 +12,11 @@ public class TofuInit(IOpenTofu tofu)
     /// <summary>
     /// Initialises the root module.
     /// </summary>
-    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
+    /// <param name="environment">The environment an earlier step resolved, when one did.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    public async Task<StepResult> Run(TofuEnvironment? environment, CancellationToken cancellationToken = default)
     {
-        await tofu.Init(cancellationToken);
+        await tofu.Init(environment, cancellationToken);
         return StepResult.Successful;
     }
 }
