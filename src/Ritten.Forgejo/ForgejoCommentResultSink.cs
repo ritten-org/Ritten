@@ -32,6 +32,14 @@ internal sealed class ForgejoCommentResultSink(
             return Task.CompletedTask;
         }
 
+        // A run that stopped before it had anything to say — a check whose component the pull
+        // request did not touch — takes its pending comment back rather than replacing it with
+        // an empty report; otherwise every check comments on every pull request.
+        if (report.IsSilent)
+        {
+            return comments.Delete(cancellationToken);
+        }
+
         return comments.CreateOrUpdate(WithRunLogs(renderer.Render(report)), cancellationToken);
     }
 

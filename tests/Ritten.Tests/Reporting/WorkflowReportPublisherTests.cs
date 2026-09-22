@@ -2,6 +2,7 @@ using Ritten.Contracts;
 using Ritten.Engine.Runs;
 using Ritten.Reporting;
 using Ritten.Reporting.Sinks;
+using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Reporting;
 
@@ -33,6 +34,16 @@ public class WorkflowReportPublisherTests
             Arg.Is<WorkflowReport>(r => r.Title == "Test" && !r.Succeeded && r.Sections.Count == 1),
             TestContext.Current.CancellationToken);
         await _second.Received().Publish(Arg.Any<WorkflowReport>(), TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task OnWorkflowCompleted_TellsTheSinksWhereARunStoppedEarly()
+    {
+        var stopped = new StepOutcome(Step.FromType<FirstStep>(), StepResult.NothingToDo);
+
+        await Publisher().OnWorkflowCompleted(new WorkflowResult(ExitCode.Success, [stopped]), TestContext.Current.CancellationToken);
+
+        await _first.Received().Publish(Arg.Is<WorkflowReport>(r => r.StoppedAt == stopped && r.IsSilent), TestContext.Current.CancellationToken);
     }
 
     [Fact]

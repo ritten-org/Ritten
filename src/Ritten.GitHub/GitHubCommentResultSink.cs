@@ -32,6 +32,11 @@ internal class GitHubCommentResultSink(
             return Task.CompletedTask;
         }
 
+        if (report.IsSilent)
+        {
+            return comments.Delete(cancellationToken);
+        }
+
         return comments.CreateOrUpdate(WithRunLogs(renderer.Render(report)), cancellationToken);
     }
 

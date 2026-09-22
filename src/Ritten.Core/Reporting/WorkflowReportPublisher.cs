@@ -39,7 +39,7 @@ internal class WorkflowReportPublisher(
     /// <inheritdoc />
     public async Task OnWorkflowCompleted(WorkflowResult result, CancellationToken cancellationToken)
     {
-        var finished = new WorkflowReport(context.Title, result.IsSuccess, report.Sections, result.FailedStep);
+        var finished = new WorkflowReport(context.Title, result.IsSuccess, report.Sections, result.FailedStep, result.StoppedAt);
         foreach (var sink in sinks)
         {
             try
