@@ -153,6 +153,7 @@ public class WorkflowRunBuilder : IWorkflowBuilder
         Services.TryAddSingleton(new RunContext());
         Services.TryAddSingleton(new PullRequest());
         Services.TryAddSingleton<IPullRequestLabels, NoPullRequestLabels>();
+        Services.TryAddSingleton<ISecretProvider, DefaultSecretProviderProvider>();
 
         Services.AddSingleton(job.Steps);
         foreach (var step in job.Steps)

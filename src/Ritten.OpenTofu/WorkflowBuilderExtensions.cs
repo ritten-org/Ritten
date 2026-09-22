@@ -18,6 +18,7 @@ public static class WorkflowBuilderExtensions
         public IWorkflowBuilder AddOpenTofu()
         {
             builder.AddCommandRunner();
+            builder.Services.AddOptions<OpenTofuOptions>();
             builder.Services.TryAddSingleton<IOpenTofu, OpenTofuClient>();
             builder.Decorators.Decorate<IOpenTofu, DryRunOpenTofu>();
             return builder;
@@ -27,15 +28,10 @@ public static class WorkflowBuilderExtensions
         /// Adds the OpenTofu client, its rehearsal, and the root module to run against.
         /// </summary>
         /// <param name="root">The root module, relative to the project, or null for the project itself.</param>
-        /// <param name="varFile">A variable file relative to the root module, or null for none.</param>
-        public IWorkflowBuilder AddOpenTofu(string? root, string? varFile = null)
+        public IWorkflowBuilder AddOpenTofu(string? root)
         {
             builder.AddOpenTofu();
-            builder.Services.AddOptions<OpenTofuOptions>().Configure(options =>
-            {
-                options.Root = root;
-                options.VarFile = varFile;
-            });
+            builder.Services.AddOptions<OpenTofuOptions>().Configure(options => options.Root = root);
             return builder;
         }
     }

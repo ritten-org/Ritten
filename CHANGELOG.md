@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`ISecretProvider`, the secrets provider a host registers.** `Resolve` turns a reference into the secret it names.
+- **`Ritten.OnePassword`.** The first provider: `AddOnePassword()` resolves `op://vault/item/field` references through the 1Password CLI, authenticated from the environment or a service-account token file.
+- **`EnvironmentFile`.** Reads an env file the way `docker compose --env-file` does — `NAME=value`, comments, quotes — and resolves the references in it through the registered provider, so a file on disk holds the names of secrets and never a value.
+- **`TofuEnvironment`.** The environment a root module is applied to: a variable file and env files, produced by a workflow's own step and read by every OpenTofu step after it.
+
+### Changed
+
+- **The OpenTofu client deploys to any environment.** `Init`, `Plan` and `Apply` take the `TofuEnvironment` per call.
+- **`TofuPlan` produces its `TofuPlanResult`.**
+
 ## [0.16.1] - 2026-09-20
 
 ### Fixed
@@ -265,6 +279,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[Unreleased]: https://github.com/ritten-org/Ritten/compare/v0.16.1...HEAD
 [0.16.1]: https://github.com/ritten-org/Ritten/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/ritten-org/Ritten/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/ritten-org/Ritten/compare/v0.14.0...v0.15.0

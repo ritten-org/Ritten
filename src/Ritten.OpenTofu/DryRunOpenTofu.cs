@@ -8,16 +8,16 @@ namespace Ritten.OpenTofu;
 internal sealed class DryRunOpenTofu(IWorkflowLog log, IOpenTofu inner) : IOpenTofu
 {
     /// <inheritdoc />
-    public Task Init(CancellationToken ct = default) => inner.Init(ct);
+    public Task Init(TofuEnvironment? environment = null, CancellationToken ct = default) => inner.Init(environment, ct);
 
     /// <inheritdoc />
-    public Task<TofuPlanResult> Plan(CancellationToken ct = default) => inner.Plan(ct);
+    public Task<TofuPlanResult> Plan(TofuEnvironment? environment = null, CancellationToken ct = default) => inner.Plan(environment, ct);
 
     /// <inheritdoc />
     public Task<IReadOnlyList<string>?> VerifyFormatting(CancellationToken ct = default) => inner.VerifyFormatting(ct);
 
     /// <inheritdoc />
-    public Task Apply(CancellationToken ct = default)
+    public Task Apply(TofuEnvironment? environment = null, CancellationToken ct = default)
     {
         log.Skipped("Would apply the plan.");
         return Task.CompletedTask;
