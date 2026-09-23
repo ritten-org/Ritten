@@ -35,6 +35,7 @@ internal sealed class CheckJob : DotNetPackageJob
         Step.FromType<ResolveRelease>(),
         Step.FromType<ReadChangelog>(),
         Step.FromType<CheckChangelogLinks>(),
+        Step.FromType<ReadShippedChanges>(),
         Step.FromType<NugetRead>(),
         Step.FromType<CheckVersion>(),
         Step.FromType<CheckPackageVersions>(),

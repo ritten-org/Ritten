@@ -9,6 +9,11 @@ namespace Ritten.NuGet;
 public class NuGetOptions
 {
     /// <summary>
+    /// The environment variable the push API key is read from.
+    /// </summary>
+    public const string ApiKeyVariable = "RITTEN_NUGET_API_KEY";
+
+    /// <summary>
     /// The V3 index URL of the feed.
     /// </summary>
     public string Feed { get; set; } = "https://api.nuget.org/v3/index.json";
@@ -25,6 +30,11 @@ public class NuGetOptions
     public ReleaseLine Lines { get; set; } = ReleaseLine.Major;
 
     /// <summary>
+    /// When a merged change becomes a release.
+    /// </summary>
+    public ReleaseCadence Cadence { get; set; } = ReleaseCadence.Curated;
+
+    /// <summary>
     /// Configures the given options based on the current environment.
     /// </summary>
     public static void ConfigureFromEnvironment(NuGetOptions options) =>
@@ -34,5 +44,5 @@ public class NuGetOptions
     /// Configures the given options from the given environment.
     /// </summary>
     internal static void ConfigureFromEnvironment(NuGetOptions options, Func<string, string?> envVar) =>
-        options.ApiKey = envVar(RittenEnvironment.NuGetApiKey);
+        options.ApiKey = envVar(ApiKeyVariable);
 }

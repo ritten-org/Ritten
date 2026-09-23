@@ -24,7 +24,7 @@ public class NugetAuthenticate(WorkflowJob job, IWorkflowLog log, IOptions<NuGet
 
         if (options.Value.ApiKey is { } configured)
         {
-            log.Detail($"Using the NuGet API key from {RittenEnvironment.NuGetApiKey}.");
+            log.Detail($"Using the NuGet API key from {NuGetOptions.ApiKeyVariable}.");
             return feed.WithApiKey(configured);
         }
 
@@ -37,7 +37,7 @@ public class NugetAuthenticate(WorkflowJob job, IWorkflowLog log, IOptions<NuGet
         if (!prompt.IsInteractive)
         {
             // Hanging on a build agent waiting for a person is worse than refusing to start.
-            return StepResult.Failed($"Pushing to {options.Value.Feed} needs an API key, and there's no terminal to ask at. Set {RittenEnvironment.NuGetApiKey}.");
+            return StepResult.Failed($"Pushing to {options.Value.Feed} needs an API key, and there's no terminal to ask at. Set {NuGetOptions.ApiKeyVariable}.");
         }
 
         if (await prompt.Secret($"Enter the NuGet API key for {options.Value.Feed}:", cancellationToken) is not { } key)

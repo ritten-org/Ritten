@@ -1,8 +1,7 @@
 using Ritten.Contracts;
-using Ritten.Releases;
 using Ritten.Reporting;
 
-namespace Ritten.Workflows.Steps;
+namespace Ritten.Releases.Steps;
 
 /// <summary>
 /// Ends a deploy successfully when this version has already been released.
