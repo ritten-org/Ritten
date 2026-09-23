@@ -24,4 +24,9 @@ public sealed record ReleaseSettings
     /// and <c>minor</c> also allows older minors, for projects that treat the major number as a product version.
     /// </summary>
     public ReleaseLine Lines { get; init; } = ReleaseLine.Major;
+
+    /// <summary>
+    /// When a merged change becomes a release.
+    /// </summary>
+    public ReleaseCadence Cadence { get; init; } = ReleaseCadence.Curated;
 }

@@ -6,6 +6,7 @@ using Ritten.Engine.Workflows;
 using Ritten.Git.Steps;
 using Ritten.GitHub.Steps;
 using Ritten.NuGet.Steps;
+using Ritten.Releases.Steps;
 using Ritten.Workflows.Steps;
 
 namespace Ritten.Workflows.DotNetPackage;
@@ -37,6 +38,7 @@ internal sealed class DeployJob : DotNetPackageJob
         Step.FromType<ResolveRelease>(),
         Step.FromType<ReadChangelog>(),
         Step.FromType<CheckChangelogLinks>(),
+        Step.FromType<ReadShippedChanges>(),
         Step.FromType<NugetRead>(),
         Step.FromType<CheckVersion>(),
         Step.FromType<CheckPackageVersions>(),
