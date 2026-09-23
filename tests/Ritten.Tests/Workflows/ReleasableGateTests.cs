@@ -1,5 +1,6 @@
 using NuGet.Versioning;
 using Ritten.Releases;
+using Ritten.Releases.Steps;
 using Ritten.Reporting;
 using Ritten.Workflows.Steps;
 

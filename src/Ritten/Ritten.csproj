@@ -25,6 +25,7 @@
     <ProjectReference Include="..\Ritten.Core\Ritten.Core.csproj" />
     <ProjectReference Include="..\Ritten.DotNet\Ritten.DotNet.csproj" />
     <ProjectReference Include="..\Ritten.Git\Ritten.Git.csproj" />
+    <ProjectReference Include="..\Ritten.NuGet\Ritten.NuGet.csproj" />
     <ProjectReference Include="..\Ritten.Forgejo\Ritten.Forgejo.csproj" />
     <ProjectReference Include="..\Ritten.GitHub\Ritten.GitHub.csproj" />
   </ItemGroup>
@@ -33,8 +34,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
-    <PackageReference Include="NuGet.Common" />
-    <PackageReference Include="NuGet.Protocol" />
     <PackageReference Include="NuGet.Versioning" />
     <PackageReference Include="Spectre.Console" />
     <PackageReference Include="System.CommandLine" />
