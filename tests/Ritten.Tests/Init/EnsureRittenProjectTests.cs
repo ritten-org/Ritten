@@ -23,7 +23,7 @@ public class EnsureRittenProjectTests
 
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly IWorkflowPrompt _prompt = Substitute.For<IWorkflowPrompt>();
-    private MemoryStream _written = new();
+    private MemoryFile _project = MemoryFile.Missing(RittenProject.DefaultFileName);
 
     public EnsureRittenProjectTests()
     {
@@ -39,7 +39,7 @@ public class EnsureRittenProjectTests
         var result = await Step().Run(Found("src/Thing/Thing.csproj"), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
-        file.Received().OpenWrite();
+        file.Writes.ShouldBe(1);
         Written().ShouldContain("\"workflow\": \"dotnet-tool\"");
         Written().ShouldContain("\"project\": \"src/Thing/Thing.csproj\"");
     }
@@ -65,7 +65,7 @@ public class EnsureRittenProjectTests
         var result = await Step().Run(Found("src/Thing/Thing.csproj"), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
-        file.DidNotReceive().OpenWrite();
+        file.Writes.ShouldBe(0);
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class EnsureRittenProjectTests
         var result = await Step().Run(Found("src/Thing/Thing.csproj"), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeTrue();
-        file.DidNotReceive().OpenWrite();
+        file.Writes.ShouldBe(0);
     }
 
     [Fact]
@@ -131,17 +131,12 @@ public class EnsureRittenProjectTests
     /// <summary>A repository that hasn't written a project file yet.</summary>
     private static RittenProject Project { get; } = RittenProject.Synthetic(Path.GetTempPath(), RittenProject.DefaultFileName);
 
-    private string Written() => Encoding.UTF8.GetString(_written.ToArray());
+    private string Written() => _project.Text.ShouldNotBeNull();
 
-    private IFile SetProjectFile(bool exists, string content = "")
+    private MemoryFile SetProjectFile(bool exists, string content = "")
     {
-        _written = new MemoryStream();
-        var file = Substitute.For<IFile>();
-        file.Name.Returns(RittenProject.DefaultFileName);
-        file.Exists.Returns(exists);
-        file.OpenRead().Returns(_ => new MemoryStream(Encoding.UTF8.GetBytes(content)));
-        file.OpenWrite().Returns(_ => _written);
-        _fileSystem.ProjectRoot.GetFile(RittenProject.DefaultFileName).Returns(file);
-        return file;
+        _project = exists ? MemoryFile.Existing(RittenProject.DefaultFileName, content) : MemoryFile.Missing(RittenProject.DefaultFileName);
+        _fileSystem.ProjectRoot.GetFile(RittenProject.DefaultFileName).Returns(_project);
+        return _project;
     }
 }

@@ -52,7 +52,7 @@ public class PrepareChangelogTests
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly ChangelogOptions _options = TestOptions.Changelog();
     private readonly FakeTimeProvider _time = new(new DateTimeOffset(2026, 8, 21, 9, 0, 0, TimeSpan.Zero));
-    private MemoryStream _written = new();
+    private MemoryFile _changelog = MemoryFile.Missing("CHANGELOG.md");
 
     [Fact]
     public async Task RollsTheUnreleasedNotesIntoTheVersion()
@@ -69,7 +69,7 @@ public class PrepareChangelogTests
         // The notes carry over verbatim — preparing a release must not reword anybody's prose.
         written.ShouldContain("- **A new thing.** It does something.");
         written.ShouldContain("## [1.2.0] - 2026-08-01");
-        file.Received().OpenWrite();
+        file.Writes.ShouldBe(1);
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public class PrepareChangelogTests
         var result = await Step().Run(Changelog(prepared), Project(), Prepared("1.3.0", bumped: false), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
-        file.DidNotReceive().OpenWrite();
+        file.Writes.ShouldBe(0);
     }
 
     [Fact]
@@ -147,20 +147,14 @@ public class PrepareChangelogTests
     private static PreparedRelease Prepared(string version, bool bumped = true) =>
         new(NuGetVersion.Parse(version), bumped, "because");
 
-    private IFile SetChangelog(string content)
+    private MemoryFile SetChangelog(string content)
     {
-        _written = new MemoryStream();
-        var file = Substitute.For<IFile>();
-        file.Name.Returns(_options.File);
-        file.Exists.Returns(true);
-        file.OpenRead().Returns(_ => new MemoryStream(Encoding.UTF8.GetBytes(content)));
-        file.OpenWrite().Returns(_ => _written);
-        _fileSystem.ProjectRoot.GetFile(_options.File).Returns(file);
-        return file;
+        _changelog = MemoryFile.Existing(_options.File, content);
+        _fileSystem.ProjectRoot.GetFile(_options.File).Returns(_changelog);
+        return _changelog;
     }
 
-    // ToArray survives the writer disposing the stream.
-    private string Written() => Encoding.UTF8.GetString(_written.ToArray());
+    private string Written() => _changelog.Text.ShouldNotBeNull();
 
     private PrepareChangelog Step() => new(
         Substitute.For<IWorkflowLog>(),

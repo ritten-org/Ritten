@@ -35,10 +35,7 @@ internal sealed class ProjectFileClient : IProjectFiles
     /// <inheritdoc />
     public async Task Write(IFile file, ProjectFile document, CancellationToken cancellationToken = default)
     {
-        var stream = file.OpenWrite();
-        stream.SetLength(0); // OpenWrite isn't guaranteed to truncate an existing file.
-        await using var writer = new StreamWriter(stream);
-        await writer.WriteAsync(Render(document).AsMemory(), cancellationToken);
+        await file.WriteAllText(Render(document), cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc />

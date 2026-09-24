@@ -2,6 +2,7 @@ using System.Text;
 using NuGet.Versioning;
 using Ritten.Changelogs;
 using Ritten.Contracts.FileSystem;
+using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Changelogs;
 
@@ -34,22 +35,22 @@ public class ChangelogClientTests
     public async Task Write_RoundTripsTheChangelog()
     {
         var changelog = _client.Parse(SampleChangelog.Text);
-        var (file, written) = WritableFile();
+        var file = MemoryFile.Missing("CHANGELOG.md");
 
         await _client.Write(file, changelog, TestContext.Current.CancellationToken);
 
-        Encoding.UTF8.GetString(written.ToArray()).ShouldBe(SampleChangelog.Text);
+        file.Text.ShouldBe(SampleChangelog.Text);
     }
 
     [Fact]
     public async Task WriteEntry_WritesTheRenderedEntry()
     {
         var entry = new ChangelogEntry { Added = ["A thing."] };
-        var (file, written) = WritableFile();
+        var file = MemoryFile.Missing("entry.md");
 
         await _client.WriteEntry(file, entry, TestContext.Current.CancellationToken);
 
-        Encoding.UTF8.GetString(written.ToArray()).ShouldBe("### Added\n\n- A thing.");
+        file.Text.ShouldBe("### Added\n\n- A thing.");
     }
 
     private static IFile FileWithContent(string content)
@@ -57,13 +58,5 @@ public class ChangelogClientTests
         var file = Substitute.For<IFile>();
         file.OpenRead().Returns(_ => new MemoryStream(Encoding.UTF8.GetBytes(content)));
         return file;
-    }
-
-    private static (IFile File, MemoryStream Written) WritableFile()
-    {
-        var stream = new MemoryStream();
-        var file = Substitute.For<IFile>();
-        file.OpenWrite().Returns(stream);
-        return (file, stream);
     }
 }

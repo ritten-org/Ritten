@@ -11,7 +11,7 @@ public class DotNetClientVersionTests
     private readonly FakeCommandRunner _commands = new();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly IDirectory _root = Substitute.For<IDirectory>();
-    private readonly Dictionary<string, MemoryStream> _written = [];
+    private readonly Dictionary<string, MemoryFile> _files = [];
     private readonly DotNetClient _client;
 
     public DotNetClientVersionTests()
@@ -70,7 +70,7 @@ public class DotNetClientVersionTests
 
         result.IsError.ShouldBeTrue();
         result.Errors.ShouldHaveSingleItem().Message.ShouldContain("<Version>1.2.0</Version>");
-        _written.ShouldNotContainKey("Directory.Build.props");
+        _files["Directory.Build.props"].Writes.ShouldBe(0);
     }
 
     private Task<Ritten.Engine.Result<IReadOnlyList<string>>> Set(string[] projects, string current, string version) =>
@@ -85,18 +85,10 @@ public class DotNetClientVersionTests
 
     private void SetFile(string path, string content)
     {
-        var file = Substitute.For<IFile>();
-        file.Exists.Returns(true);
-        file.Name.Returns(Path.GetFileName(path));
-        file.OpenRead().Returns(_ => new MemoryStream(Encoding.UTF8.GetBytes(content)));
-        file.OpenWrite().Returns(_ =>
-        {
-            var stream = new MemoryStream();
-            _written[path] = stream;
-            return stream;
-        });
+        var file = MemoryFile.Existing(Path.GetFileName(path), content);
+        _files[path] = file;
         _root.GetFile(path).Returns(file);
     }
 
-    private string Written(string path) => Encoding.UTF8.GetString(_written[path].ToArray());
+    private string Written(string path) => _files[path].Text.ShouldNotBeNull();
 }

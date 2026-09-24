@@ -47,8 +47,25 @@ public interface IFile
     Stream OpenRead();
 
     /// <summary>
-    /// Opens the file for writing. If the file does not exist, it will be created.
+    /// Opens the file for writing, creating or overwriting it as necessary.
     /// </summary>
     /// <returns>A stream that can be written to.</returns>
     Stream OpenWrite();
+
+    /// <summary>
+    /// Moves this file to <paramref name="destination"/>, replacing it if it exists.
+    /// </summary>
+    /// <param name="destination">Where the file goes.</param>
+    void MoveTo(IFile destination);
+
+    /// <summary>
+    /// Gets the file's Unix permissions, or null when it does not exist or the platform has none.
+    /// </summary>
+    UnixFileMode? GetUnixFileMode();
+
+    /// <summary>
+    /// Sets the file's Unix permissions. Does nothing on a platform without them.
+    /// </summary>
+    /// <param name="mode">The permissions.</param>
+    void SetUnixFileMode(UnixFileMode mode);
 }

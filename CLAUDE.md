@@ -72,6 +72,8 @@ Each domain folder — `Changelogs/`, `CodeCoverage/`, `Commands/`, `DotNet/`, `
 
 **Reporting is two channels:** `IWorkflowLog` is the console narrative (rendered by `SpectreProgressReporter`), while `IBuildReport` accumulates a markdown report that `GitHubCommentSink` posts as the PR comment. Check steps typically write to both.
 
+**Files are written whole, through `FileExtensions`.** `file.WriteAllTextAsync(text)` is atomic and keeps the file's permissions; `ReadAllTextIfExists` reads one that may not be there. Don't open a stream to replace a file's contents by hand.
+
 **Errors flow through `Engine/Result<T>` and `Error`** (accumulated, not thrown) for configuration and client calls; exceptions are reserved for programming errors.
 
 ## Testing conventions

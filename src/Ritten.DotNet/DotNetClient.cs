@@ -390,13 +390,8 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         return string.IsNullOrEmpty(directory) ? [] : [.. Directories(directory), directory];
     }
 
-    private static async Task WriteText(IFile file, string text, CancellationToken cancellationToken)
-    {
-        var stream = file.OpenWrite();
-        stream.SetLength(0); // OpenWrite isn't guaranteed to truncate an existing file.
-        await using var writer = new StreamWriter(stream);
-        await writer.WriteAsync(text.AsMemory(), cancellationToken);
-    }
+    private static Task WriteText(IFile file, string text, CancellationToken cancellationToken) =>
+        file.WriteAllText(text, cancellationToken: cancellationToken);
 
     public IReadOnlyList<DotNetDiagnostic> ParseDiagnostics(string buildOutput) =>
         DotNetOutputParser.ParseDiagnostics(buildOutput);
