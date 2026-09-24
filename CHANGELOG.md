@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-09-24
+
+### Added
+
+- **`WriteAllText` and `ReadAllTextIfExists` on every `IFile`**. Writes are atomic by default.
+- **`IFile.MoveTo`, `GetUnixFileMode` and `SetUnixFileMode`**, the primitives the atomic write is built from.
+
+### Changed
+
+- **`IFile.OpenWrite` truncates.** It used to open an existing file without emptying it, so every whole-file writer carried the same `SetLength(0)` workaround; they all use `WriteAllText` now.
+
 ## [0.19.0] - 2026-09-23
 
 ### Added
@@ -292,6 +303,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.20.0]: https://github.com/ritten-org/Ritten/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/ritten-org/Ritten/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/ritten-org/Ritten/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/ritten-org/Ritten/compare/v0.16.1...v0.17.0

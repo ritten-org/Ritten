@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Changelogs;
 using Ritten.Contracts.FileSystem;
@@ -19,7 +18,7 @@ public class EnsureChangelogTests
 
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly ChangelogOptions _options = TestOptions.Changelog();
-    private MemoryStream _written = new();
+    private MemoryFile _changelog = MemoryFile.Missing("CHANGELOG.md");
 
     [Fact]
     public async Task WritesAChangelogWhenThereIsNone()
@@ -65,23 +64,18 @@ public class EnsureChangelogTests
         var result = await Step().Run(TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
-        file.DidNotReceive().OpenWrite();
+        file.Writes.ShouldBe(0);
     }
 
     private EnsureChangelog Step() =>
         new(Substitute.For<IWorkflowLog>(), Microsoft.Extensions.Options.Options.Create(_options), _fileSystem, Changelogs);
 
-    private string Written() => Encoding.UTF8.GetString(_written.ToArray());
+    private string Written() => _changelog.Text.ShouldNotBeNull();
 
-    private IFile SetChangelog(bool exists, string content = "")
+    private MemoryFile SetChangelog(bool exists, string content = "")
     {
-        _written = new MemoryStream();
-        var file = Substitute.For<IFile>();
-        file.Name.Returns(_options.File);
-        file.Exists.Returns(exists);
-        file.OpenRead().Returns(_ => new MemoryStream(Encoding.UTF8.GetBytes(content)));
-        file.OpenWrite().Returns(_ => _written);
-        _fileSystem.ProjectRoot.GetFile(_options.File).Returns(file);
-        return file;
+        _changelog = exists ? MemoryFile.Existing(_options.File, content) : MemoryFile.Missing(_options.File);
+        _fileSystem.ProjectRoot.GetFile(_options.File).Returns(_changelog);
+        return _changelog;
     }
 }

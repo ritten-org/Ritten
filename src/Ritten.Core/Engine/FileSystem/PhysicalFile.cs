@@ -39,7 +39,23 @@ public class PhysicalFile(string path) : IFile
     public Stream OpenRead() => File.OpenRead(AbsolutePath);
 
     /// <inheritdoc />
-    public Stream OpenWrite() => File.OpenWrite(AbsolutePath);
+    public Stream OpenWrite() => new FileStream(AbsolutePath, FileMode.Create, FileAccess.Write);
+
+    /// <inheritdoc />
+    public void MoveTo(IFile destination) => File.Move(AbsolutePath, destination.AbsolutePath, overwrite: true);
+
+    /// <inheritdoc />
+    public UnixFileMode? GetUnixFileMode() =>
+        OperatingSystem.IsWindows() || !Exists ? null : File.GetUnixFileMode(AbsolutePath);
+
+    /// <inheritdoc />
+    public void SetUnixFileMode(UnixFileMode mode)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(AbsolutePath, mode);
+        }
+    }
 
     /// <inheritdoc />
     public override string ToString() => AbsolutePath;

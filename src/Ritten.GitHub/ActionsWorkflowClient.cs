@@ -34,12 +34,7 @@ internal sealed class ActionsWorkflowClient : IActionsWorkflows
     /// <inheritdoc />
     public async Task Write(IFile file, ActionsWorkflow workflow, CancellationToken cancellationToken = default)
     {
-        file.Directory.Create();
-
-        var stream = file.OpenWrite();
-        stream.SetLength(0); // OpenWrite isn't guaranteed to truncate an existing file.
-        await using var writer = new StreamWriter(stream);
-        await writer.WriteAsync(Render(workflow).AsMemory(), cancellationToken);
+        await file.WriteAllText(Render(workflow), cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc />

@@ -21,12 +21,7 @@ internal class FileResultSink(IWorkflowLog log, MarkdownReportRenderer renderer,
         fileSystem.Artifacts.Create();
         var file = fileSystem.Artifacts.GetFile(FileName);
 
-        var stream = file.OpenWrite();
-        stream.SetLength(0); // OpenWrite isn't guaranteed to truncate an existing file.
-        await using (var writer = new StreamWriter(stream))
-        {
-            await writer.WriteAsync(renderer.Render(report).AsMemory(), cancellationToken);
-        }
+        await file.WriteAllText(renderer.Render(report), cancellationToken: cancellationToken);
 
         log.Detail($"Wrote the report to {fileSystem.Artifacts.Name}/{FileName}.");
     }
