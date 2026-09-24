@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- **`WriteAllText` and `ReadAllText` on every `IFile`**. Writes are atomic by default.
+- **`WriteAllText` and `ReadAllTextIfExists` on every `IFile`**. Writes are atomic by default.
 - **`IFile.MoveTo`, `GetUnixFileMode` and `SetUnixFileMode`**, the primitives the atomic write is built from.
 
 ### Changed
