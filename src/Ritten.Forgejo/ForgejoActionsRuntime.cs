@@ -63,7 +63,7 @@ public class ForgejoActionsRuntime : Runtime
         builder.AddBuildReporting();
 
         builder.Services.AddOptions<ForgejoActionsOptions>()
-            .Configure(options => ForgejoActionsOptions.ConfigureFromEnvironment(options, environment));
+            .Configure(options => ForgejoActionsOptions.ConfigureFromEnvironment(options, environment, ForgejoEnvironment.ReadFile));
 
         if (ForgejoEnvironment.Read(environment, ForgejoEnvironment.Workflow) is { } workflow)
         {
@@ -73,7 +73,7 @@ public class ForgejoActionsRuntime : Runtime
         // Read once here as well as through options: what the runtime publishes about the pull
         // request is a fact of the run, so it is available to a step that never looks at Forgejo.
         var actions = new ForgejoActionsOptions();
-        ForgejoActionsOptions.ConfigureFromEnvironment(actions, environment);
+        ForgejoActionsOptions.ConfigureFromEnvironment(actions, environment, ForgejoEnvironment.ReadFile);
         builder.Services.TryAddSingleton(new PullRequest { Number = actions.PullRequestNumber, BaseRef = actions.BaseRef });
 
         builder.Services.AddHttpClient(ForgejoCommentService.HttpClientName, (provider, client) =>

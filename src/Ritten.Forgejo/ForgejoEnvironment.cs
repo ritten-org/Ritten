@@ -29,10 +29,14 @@ internal static class ForgejoEnvironment
     public const string BaseRef = "FORGEJO_BASE_REF";
 
     /// <summary>
-    /// The API token for the instance. The runner offers this as a secret rather than a variable,
-    /// so it is here only when the workflow has passed it through.
+    /// The run's own API token, which the runner exports to every step.
     /// </summary>
     public const string Token = "FORGEJO_TOKEN";
+
+    /// <summary>
+    /// The file holding the event that triggered the run, as Forgejo sent it.
+    /// </summary>
+    public const string EventPath = "FORGEJO_EVENT_PATH";
     public const string StepSummary = "GITHUB_STEP_SUMMARY";
     public const string RunnerDebug = "RUNNER_DEBUG";
 
@@ -46,6 +50,11 @@ internal static class ForgejoEnvironment
     /// </summary>
     internal static string? Read(Func<string, string?> envVar, string name) =>
         envVar(name) is { Length: > 0 } native ? native : envVar(Mirror(name));
+
+    /// <summary>
+    /// A file's contents, or <c>null</c> when there is no such file.
+    /// </summary>
+    internal static string? ReadFile(string path) => File.Exists(path) ? File.ReadAllText(path) : null;
 
     internal static bool IsDebug(Func<string, string?> envVar) => envVar(RunnerDebug) == "1";
 }
