@@ -4,10 +4,13 @@ namespace Ritten.Tests.Forgejo;
 
 public class ForgejoActionsOptionsTests
 {
-    private static ForgejoActionsOptions Configured(Dictionary<string, string> environment)
+    private static ForgejoActionsOptions Configured(Dictionary<string, string> environment, Dictionary<string, string>? files = null)
     {
         var options = new ForgejoActionsOptions();
-        ForgejoActionsOptions.ConfigureFromEnvironment(options, name => environment.GetValueOrDefault(name));
+        ForgejoActionsOptions.ConfigureFromEnvironment(
+            options,
+            environment.GetValueOrDefault,
+            path => files?.GetValueOrDefault(path));
         return options;
     }
 
@@ -66,9 +69,54 @@ public class ForgejoActionsOptionsTests
     }
 
     [Fact]
-    public void Token_ComesFromTheMirrorBecauseThatIsWhatAWorkflowPassesThrough()
+    public void RunUrl_IsOnThePublicAddressTheEventGivesNotTheOneTheRunnerConnectedTo()
     {
-        // `secrets.GITHUB_TOKEN` is the spelling every Forgejo workflow already uses.
+        // A runner beside Forgejo reaches it over loopback, and reports that as the server URL.
+        var options = Configured(
+            new Dictionary<string, string>
+            {
+                ["FORGEJO_SERVER_URL"] = "http://localhost:3000",
+                ["FORGEJO_REPOSITORY"] = "tom/lab",
+                ["FORGEJO_RUN_NUMBER"] = "42",
+                ["FORGEJO_EVENT_PATH"] = "/run/event.json"
+            },
+            new Dictionary<string, string>
+            {
+                ["/run/event.json"] = """{ "repository": { "html_url": "https://code.example.com/tom/lab/" } }"""
+            });
+
+        options.RunUrl.ShouldBe("https://code.example.com/tom/lab/actions/runs/42");
+        options.ApiUrl.ShouldBe("http://localhost:3000/api/v1/");
+    }
+
+    [Theory]
+    [InlineData("""{ "ref": "refs/heads/main" }""")]
+    [InlineData("""{ "repository": { "html_url": "" } }""")]
+    [InlineData("not json")]
+    public void RunUrl_FallsBackToTheServerUrlWhenTheEventDoesNotSay(string @event)
+    {
+        var options = Configured(
+            new Dictionary<string, string>
+            {
+                ["FORGEJO_SERVER_URL"] = "https://code.example.com",
+                ["FORGEJO_REPOSITORY"] = "tom/lab",
+                ["FORGEJO_RUN_NUMBER"] = "42",
+                ["FORGEJO_EVENT_PATH"] = "/run/event.json"
+            },
+            new Dictionary<string, string> { ["/run/event.json"] = @event });
+
+        options.RunUrl.ShouldBe("https://code.example.com/tom/lab/actions/runs/42");
+    }
+
+    [Fact]
+    public void Token_IsWhatTheRunnerExports()
+    {
+        Configured(new Dictionary<string, string> { ["FORGEJO_TOKEN"] = "abc123" }).Token.ShouldBe("abc123");
+    }
+
+    [Fact]
+    public void Token_FallsBackToTheMirror()
+    {
         Configured(new Dictionary<string, string> { ["GITHUB_TOKEN"] = "abc123" }).Token.ShouldBe("abc123");
     }
 

@@ -34,7 +34,7 @@ internal sealed class ForgejoCommentService(
         // otherwise the only symptom is a comment that never appears.
         if (options.Value.Token is null)
         {
-            log.Detail($"No API token in the environment; skipping the pull request comment. Pass one as {ForgejoEnvironment.Mirror(ForgejoEnvironment.Token)} to enable it.");
+            log.Detail($"No API token in the environment; skipping the pull request comment. Set {ForgejoEnvironment.Token} to enable it.");
             return;
         }
 

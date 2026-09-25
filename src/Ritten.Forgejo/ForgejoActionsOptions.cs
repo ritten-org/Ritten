@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 
 namespace Ritten.Forgejo;
 
@@ -10,6 +11,9 @@ public class ForgejoActionsOptions
     /// <summary>
     /// The Forgejo instance running the workflow.
     /// </summary>
+    /// <remarks>
+    /// The runner reports the address it connected with, not the instance's public one.
+    /// </remarks>
     public string? ServerUrl { get; set; }
 
     /// <summary>
@@ -43,8 +47,8 @@ public class ForgejoActionsOptions
     public string? BaseRef { get; set; }
 
     /// <summary>
-    /// The token the run authenticates to the API with, or <c>null</c> when the workflow has not
-    /// passed one through.
+    /// The token the run authenticates to the API with, or <c>null</c> when the runner did not
+    /// export one.
     /// </summary>
     public string? Token { get; set; }
 
@@ -69,7 +73,7 @@ public class ForgejoActionsOptions
     /// </summary>
     public string? RunUrl { get; set; }
 
-    internal static void ConfigureFromEnvironment(ForgejoActionsOptions options, Func<string, string?> envVar)
+    internal static void ConfigureFromEnvironment(ForgejoActionsOptions options, Func<string, string?> envVar, Func<string, string?> readFile)
     {
         options.ServerUrl = ForgejoEnvironment.Read(envVar, ForgejoEnvironment.ServerUrl)?.TrimEnd('/');
         options.Repository = ForgejoEnvironment.Read(envVar, ForgejoEnvironment.Repository);
@@ -81,9 +85,39 @@ public class ForgejoActionsOptions
         options.Token = ForgejoEnvironment.Read(envVar, ForgejoEnvironment.Token);
         options.SummaryFile = envVar(ForgejoEnvironment.StepSummary);
         options.ApiUrl = options.ServerUrl is null ? null : $"{options.ServerUrl}/api/v1/";
-        options.RunUrl = options.ServerUrl is null || options.Repository is null || options.RunNumber is null
+        var repositoryUrl = ReadRepositoryUrl(ForgejoEnvironment.Read(envVar, ForgejoEnvironment.EventPath), readFile)
+            ?? (options.ServerUrl is null || options.Repository is null ? null : $"{options.ServerUrl}/{options.Repository}");
+        options.RunUrl = repositoryUrl is null || options.RunNumber is null
             ? null
-            : $"{options.ServerUrl}/{options.Repository}/actions/runs/{options.RunNumber}";
+            : $"{repositoryUrl}/actions/runs/{options.RunNumber}";
+    }
+
+    /// <summary>
+    /// The repository's public address, from the event that triggered the run.
+    /// </summary>
+    private static string? ReadRepositoryUrl(string? eventPath, Func<string, string?> readFile)
+    {
+        if (eventPath is null || readFile(eventPath) is not { } json)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                && document.RootElement.TryGetProperty("repository", out var repository)
+                && repository.ValueKind == JsonValueKind.Object
+                && repository.TryGetProperty("html_url", out var url)
+                && url.ValueKind == JsonValueKind.String
+                && url.GetString() is { Length: > 0 } address
+                    ? address.TrimEnd('/')
+                    : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private static long? Parse(string? value) => long.TryParse(value, out var number) ? number : null;
