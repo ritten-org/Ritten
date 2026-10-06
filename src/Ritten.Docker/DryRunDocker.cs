@@ -73,7 +73,7 @@ internal sealed class DryRunDocker(IWorkflowLog log, IDocker inner) : IDocker
     public Task<ContainerState?> Inspect(string container, CancellationToken ct = default) =>
         inner.Inspect(container, ct);
 
-    public Task<Result<string>> ComposeConfig(IDirectory project, IReadOnlyDictionary<string, string>? environment = null,
+    public Task<Result<ComposeProject>> ComposeConfig(IDirectory project, IReadOnlyDictionary<string, string>? environment = null,
         CancellationToken ct = default) =>
         inner.ComposeConfig(project, environment, ct);
 

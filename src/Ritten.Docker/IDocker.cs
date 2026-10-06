@@ -1,4 +1,6 @@
+using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
+using Ritten.Engine;
 
 namespace Ritten.Docker;
 
@@ -55,6 +57,15 @@ public interface IDocker
     /// <param name="ct">A token to monitor for cancellation requests.</param>
     /// <returns><c>null</c> when the file is valid, otherwise what compose objected to.</returns>
     Task<string?> ComposeValidate(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets the compose project with its files merged and the environment interpolated.
+    /// </summary>
+    /// <param name="project">The directory holding the compose file.</param>
+    /// <param name="environment">Values the compose file interpolates.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    /// <returns>The resolved project, or what compose objected to.</returns>
+    Task<Result<ComposeProject>> ComposeConfig(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default);
 
     /// <summary>
     /// Stops and removes the compose stack in the given project directory. Volumes stay.

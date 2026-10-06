@@ -10,6 +10,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - **OpenTelemetry support.** Add a package reference to `Ritten.OpenTelemetry`, call `builder.AddOpenTelemetry(otel => …)` and set `OTEL_EXPORTER_OTLP_ENDPOINT`._
 - **`RunContext.Id` and `RunContext.Url`.** The GitHub and Forgejo runtimes expose the URL to see the build logs.
+- **More of the file system.** Last-write times, moving a directory, listing directories recursively, and `IFileSystem.CreateTempDirectory`.
+- **`IDocker.ComposeConfig` and `IDocker.Exec`.**
+- **`IGit.Tags`, `IGit.IsShallow` and `IGit.TrackedFiles`.**
+
+### Changed
+
+- **`IDocker.Inspect` returns `null` for a container that doesn't exist**, rather than throwing.
+- **`IFile`, `IDirectory` and `IFileSystem` have new members.**
 
 ## [0.20.1] - 2026-09-25
 

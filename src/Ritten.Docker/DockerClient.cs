@@ -1,5 +1,6 @@
 using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
+using Ritten.Engine;
 
 namespace Ritten.Docker;
 
@@ -82,12 +83,28 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
 
         // Deliberately not ThrowOnError: what compose objected to is the answer, not a failure.
         var result = await commands.Run(command, ct);
-        if (result.IsSuccess)
+        return result.IsSuccess ? null : Objection(result);
+    }
+
+    public async Task<Result<ComposeProject>> ComposeConfig(IDirectory project, IReadOnlyDictionary<string, string>? environment = null,
+        CancellationToken ct = default)
+    {
+        var command = Command.Create("docker")
+            .WithArguments("compose", "--project-directory", project.AbsolutePath, "config", "--format", "json")
+            .QuietOutput();
+        if (environment is not null)
         {
-            return null;
+            command = command.WithEnvironmentVariables(environment);
         }
 
-        return result.StandardError.Trim() is { Length: > 0 } error ? error : result.StandardOutput.Trim();
+        // As with validating: a file compose cannot read is an answer the caller reports, not a failure here.
+        var result = await commands.Run(command, ct);
+        if (!result.IsSuccess)
+        {
+            return new Error(Objection(result));
+        }
+
+        return ComposeProject.Parse(result.StandardOutput);
     }
 
     private static string Objection(CommandResult result) =>
@@ -129,5 +146,20 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
         }
 
         return new ContainerState(fields[0], running);
+    }
+
+    public async Task<CommandResult> Exec(ContainerExec exec, CancellationToken ct = default)
+    {
+        // -i only with something to read: without input, an exec that waits on its standard input would hang.
+        string[] input = exec.Input is null ? [] : ["-i"];
+        string[] user = exec.User is { } name ? ["-u", name] : [];
+        var command = Command.Create("docker").WithArguments(["exec", .. input, .. user, exec.Container, .. exec.Arguments]).ThrowOnError();
+        if (exec.Input is { } text)
+        {
+            command = command.WithInput(text);
+        }
+
+        // A read is a probe: its output is the caller's to use, not the step's story.
+        return await commands.Run(exec.IsReadOnly ? command.QuietOutput() : command, ct);
     }
 }
