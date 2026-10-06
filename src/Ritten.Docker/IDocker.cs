@@ -1,4 +1,6 @@
+using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
+using Ritten.Engine;
 
 namespace Ritten.Docker;
 
@@ -57,6 +59,15 @@ public interface IDocker
     Task<string?> ComposeValidate(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default);
 
     /// <summary>
+    /// Gets the compose project with its files merged and the environment interpolated.
+    /// </summary>
+    /// <param name="project">The directory holding the compose file.</param>
+    /// <param name="environment">Values the compose file interpolates.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    /// <returns>The resolved project, or what compose objected to.</returns>
+    Task<Result<ComposeProject>> ComposeConfig(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default);
+
+    /// <summary>
     /// Stops and removes the compose stack in the given project directory. Volumes stay.
     /// </summary>
     Task ComposeDown(IDirectory project, CancellationToken ct = default);
@@ -76,5 +87,14 @@ public interface IDocker
     /// </summary>
     /// <param name="container">The container's name or id.</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
-    Task<ContainerState> Inspect(string container, CancellationToken ct = default);
+    /// <returns>The container's state, or <c>null</c> when there is no such container.</returns>
+    Task<ContainerState?> Inspect(string container, CancellationToken ct = default);
+
+    /// <summary>
+    /// Runs a command in a running container.
+    /// </summary>
+    /// <param name="exec">What to run, and where.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    /// <returns>What the command printed. One that fails throws.</returns>
+    Task<CommandResult> Exec(ContainerExec exec, CancellationToken ct = default);
 }

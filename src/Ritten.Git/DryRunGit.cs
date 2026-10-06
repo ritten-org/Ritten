@@ -84,6 +84,17 @@ internal class DryRunGit(IWorkflowLog log, IGit inner) : IGit
         inner.TagExists(tag, ct);
 
     /// <inheritdoc />
+    public Task<IReadOnlyList<string>> Tags(string pattern = "*", CancellationToken ct = default) =>
+        inner.Tags(pattern, ct);
+
+    /// <inheritdoc />
+    public Task<bool> IsShallow(CancellationToken ct = default) => inner.IsShallow(ct);
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<string>> TrackedFiles(IReadOnlyList<string>? pathspecs = null, CancellationToken ct = default) =>
+        inner.TrackedFiles(pathspecs, ct);
+
+    /// <inheritdoc />
     public Task<bool> RemoteTagExists(string remote, string tag, CancellationToken ct = default) =>
         inner.RemoteTagExists(remote, tag, ct);
 

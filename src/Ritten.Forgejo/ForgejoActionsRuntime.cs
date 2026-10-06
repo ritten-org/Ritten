@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Headers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -65,15 +66,18 @@ public class ForgejoActionsRuntime : Runtime
         builder.Services.AddOptions<ForgejoActionsOptions>()
             .Configure(options => ForgejoActionsOptions.ConfigureFromEnvironment(options, environment, ForgejoEnvironment.ReadFile));
 
-        if (ForgejoEnvironment.Read(environment, ForgejoEnvironment.Workflow) is { } workflow)
-        {
-            builder.Services.TryAddSingleton(new RunContext { Title = workflow });
-        }
-
-        // Read once here as well as through options: what the runtime publishes about the pull
-        // request is a fact of the run, so it is available to a step that never looks at Forgejo.
         var actions = new ForgejoActionsOptions();
         ForgejoActionsOptions.ConfigureFromEnvironment(actions, environment, ForgejoEnvironment.ReadFile);
+
+        if (actions.Workflow is { } workflow)
+        {
+            builder.Services.TryAddSingleton(new RunContext
+            {
+                Title = workflow,
+                Id = actions.RunId?.ToString(CultureInfo.InvariantCulture),
+                Url = actions.RunUrl
+            });
+        }
         builder.Services.TryAddSingleton(new PullRequest { Number = actions.PullRequestNumber, BaseRef = actions.BaseRef });
 
         builder.Services.AddHttpClient(ForgejoCommentService.HttpClientName, (provider, client) =>

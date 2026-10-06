@@ -4,6 +4,7 @@ using Ritten.Contracts;
 using Ritten.Engine;
 using Ritten.Forgejo;
 using Ritten.GitHub;
+using Ritten.OpenTelemetry;
 using Ritten.Workflows.DotNet;
 using Ritten.Workflows.DotNetPackage;
 using Ritten.Workflows.DotNetTool;
@@ -20,6 +21,8 @@ builder.Workflows
 builder.Runtimes
     .Add<ForgejoActionsRuntime>()
     .Add<GitHubActionsRuntime>();
+
+builder.AddOpenTelemetry();
 
 var built = builder.Build();
 if (built.IsError)

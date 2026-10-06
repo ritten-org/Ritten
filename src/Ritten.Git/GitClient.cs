@@ -213,6 +213,27 @@ internal class GitClient : IGit
     /// A git command against the repository this client addresses: the working directory when
     /// none was named, since git finds the repository from wherever it runs.
     /// </summary>
+    public async Task<IReadOnlyList<string>> Tags(string pattern = "*", CancellationToken ct = default)
+    {
+        var result = await _commands.Run(Git("tag", "--list", pattern).QuietOutput().ThrowOnError(), ct);
+        return result.StandardOutput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+
+    public async Task<bool> IsShallow(CancellationToken ct = default)
+    {
+        var result = await _commands.Run(Git("rev-parse", "--is-shallow-repository").QuietOutput().ThrowOnError(), ct);
+        return result.StandardOutput.Trim() == "true";
+    }
+
+    public async Task<IReadOnlyList<string>> TrackedFiles(IReadOnlyList<string>? pathspecs = null, CancellationToken ct = default)
+    {
+        string[] limits = pathspecs is { Count: > 0 } ? ["--", .. pathspecs] : [];
+        var result = await _commands.Run(Git(["ls-files", "-z", .. limits]).QuietOutput().ThrowOnError(), ct);
+
+        // NUL-separated, so a name is read exactly as written; the runner ends what it captured with a newline.
+        return result.StandardOutput.TrimEnd('\n').Split('\0', StringSplitOptions.RemoveEmptyEntries);
+    }
+
     private Command Git(params string[] arguments)
     {
         var command = Command.Create("git").WithArguments(arguments);

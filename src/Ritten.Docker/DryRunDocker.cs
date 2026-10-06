@@ -1,4 +1,7 @@
+using Ritten.Commands;
+using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
+using Ritten.Engine;
 using Ritten.Reporting;
 
 namespace Ritten.Docker;
@@ -67,6 +70,21 @@ internal sealed class DryRunDocker(IWorkflowLog log, IDocker inner) : IDocker
     }
 
     /// <inheritdoc />
-    public Task<ContainerState> Inspect(string container, CancellationToken ct = default) =>
+    public Task<ContainerState?> Inspect(string container, CancellationToken ct = default) =>
         inner.Inspect(container, ct);
+
+    public Task<Result<ComposeProject>> ComposeConfig(IDirectory project, IReadOnlyDictionary<string, string>? environment = null,
+        CancellationToken ct = default) =>
+        inner.ComposeConfig(project, environment, ct);
+
+    public Task<CommandResult> Exec(ContainerExec exec, CancellationToken ct = default)
+    {
+        if (exec.IsReadOnly)
+        {
+            return inner.Exec(exec, ct);
+        }
+
+        log.Skipped($"Would run `{string.Join(' ', exec.Arguments)}` in {exec.Container}.");
+        return Task.FromResult(new CommandResult(ExitCode.Success, "", ""));
+    }
 }

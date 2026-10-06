@@ -198,4 +198,63 @@ public class PhysicalDirectoryTests
         // Assert
         files.ShouldContain(d => d.Name == "TestFile.txt");
     }
+
+    [Fact]
+    public void GetFiles_EveryFileBeneath_IncludesHiddenOnes()
+    {
+        using var root = NewScratch();
+        File.WriteAllText(Path.Combine(root.FullName, ".hidden"), "");
+        Directory.CreateDirectory(Path.Combine(root.FullName, ".config", "nested"));
+        File.WriteAllText(Path.Combine(root.FullName, ".config", "nested", "settings.json"), "");
+
+        var files = new PhysicalDirectory(root.FullName).GetFiles("**/*").Select(file => file.Name);
+
+        files.ShouldBe([".hidden", "settings.json"], ignoreOrder: true);
+    }
+
+    [Fact]
+    public void GetDirectories_Recursive_ReturnsEveryDirectoryBeneath_HiddenOnesIncluded()
+    {
+        using var root = NewScratch();
+        Directory.CreateDirectory(Path.Combine(root.FullName, ".config", "nested"));
+        Directory.CreateDirectory(Path.Combine(root.FullName, "plain"));
+
+        var directory = new PhysicalDirectory(root.FullName);
+
+        directory.GetDirectories().Select(d => d.Name).ShouldBe([".config", "plain"], ignoreOrder: true);
+        directory.GetDirectories(recursive: true).Select(d => d.Name).ShouldBe([".config", "nested", "plain"], ignoreOrder: true);
+    }
+
+    [Fact]
+    public void LastWriteTime_IsWhenAnEntryLastCameOrWent()
+    {
+        using var root = NewScratch();
+        var written = new DateTime(2026, 10, 6, 12, 0, 0, DateTimeKind.Utc);
+        Directory.SetLastWriteTimeUtc(root.FullName, written);
+
+        new PhysicalDirectory(root.FullName).LastWriteTime.ShouldBe(new DateTimeOffset(written));
+    }
+
+    [Fact]
+    public void MoveTo_TakesTheContentsAlong()
+    {
+        using var root = NewScratch();
+        var staging = Directory.CreateDirectory(Path.Combine(root.FullName, "staging"));
+        File.WriteAllText(Path.Combine(staging.FullName, "tool"), "binary");
+        var destination = new PhysicalDirectory(Path.Combine(root.FullName, "1.0.0"));
+
+        new PhysicalDirectory(staging.FullName).MoveTo(destination);
+
+        staging.Exists.ShouldBeFalse();
+        destination.GetFile("tool").Exists.ShouldBeTrue();
+    }
+
+    private static Scratch NewScratch() => new(Directory.CreateTempSubdirectory("ritten-directory-"));
+
+    private sealed class Scratch(DirectoryInfo directory) : IDisposable
+    {
+        public string FullName => directory.FullName;
+
+        public void Dispose() => directory.Delete(recursive: true);
+    }
 }

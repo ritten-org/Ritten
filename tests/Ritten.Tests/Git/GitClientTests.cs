@@ -282,6 +282,63 @@ public class GitClientTests : IAsyncLifetime
         commands.Executed.ShouldHaveSingleItem().EnvironmentVariables.ShouldBeEmpty();
     }
 
+    [Fact]
+    public async Task Tags_ListsTheTagsThePatternMatches()
+    {
+        await Git("tag", "v1.0.0");
+        await Git("tag", "v1.0.1");
+        await Git("tag", "nightly");
+
+        var tags = await _git.Tags("v*", TestContext.Current.CancellationToken);
+
+        tags.ShouldBe(["v1.0.0", "v1.0.1"]);
+    }
+
+    [Fact]
+    public async Task IsShallow_IsFalseForAWholeClone()
+    {
+        (await _git.IsShallow(TestContext.Current.CancellationToken)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task IsShallow_IsTrueForAClonePartOfTheHistory()
+    {
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "--allow-empty", "-m", "second");
+        var clone = Directory.CreateTempSubdirectory("ritten-git-shallow-");
+        try
+        {
+            // file://, not a path: git ignores --depth for a local clone it can hard-link.
+            await Git("clone", "--depth", "1", $"file://{_repository}", clone.FullName);
+
+            (await new GitClient(RunnerIn(clone.FullName)).IsShallow(TestContext.Current.CancellationToken)).ShouldBeTrue();
+        }
+        finally
+        {
+            clone.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task TrackedFiles_ListsWhatGitTracksBeneathTheDirectory_RelativeToIt()
+    {
+        var component = Directory.CreateDirectory(Path.Combine(_repository, "monitoring", "grafana"));
+        await File.WriteAllTextAsync(Path.Combine(component.FullName, "compose.yaml"), "", TestContext.Current.CancellationToken);
+        Directory.CreateDirectory(Path.Combine(component.FullName, "config"));
+        await File.WriteAllTextAsync(Path.Combine(component.FullName, "config", "rules file.yaml"), "", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(component.FullName, "notes.md"), "", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(component.FullName, "scratch.yaml"), "", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(_repository, "elsewhere.yaml"), "", TestContext.Current.CancellationToken);
+        await Git("add", "monitoring/grafana/compose.yaml", "monitoring/grafana/config", "monitoring/grafana/notes.md", "elsewhere.yaml");
+        var git = new GitClient(RunnerIn(component.FullName));
+
+        var all = await git.TrackedFiles(ct: TestContext.Current.CancellationToken);
+        var yaml = await git.TrackedFiles(["*.yaml"], TestContext.Current.CancellationToken);
+
+        // The untracked scratch.yaml is not listed, nor is what lies outside the directory.
+        all.ShouldBe(["compose.yaml", "config/rules file.yaml", "notes.md"]);
+        yaml.ShouldBe(["compose.yaml", "config/rules file.yaml"]);
+    }
+
     private Task Git(params string[] arguments) =>
         _commands.Run(Command.Create("git").WithArguments(arguments).ThrowOnError(), TestContext.Current.CancellationToken);
 

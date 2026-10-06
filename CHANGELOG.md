@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-10-06
+
+### Added
+
+- **OpenTelemetry support.** Add a package reference to `Ritten.OpenTelemetry`, call `builder.AddOpenTelemetry(otel => …)` and set `OTEL_EXPORTER_OTLP_ENDPOINT`._
+- **`RunContext.Id` and `RunContext.Url`.** The GitHub and Forgejo runtimes expose the URL to see the build logs.
+- **More of the file system.** Last-write times, moving a directory, listing directories recursively, and `IFileSystem.CreateTempDirectory`.
+- **`IDocker.ComposeConfig` and `IDocker.Exec`.**
+- **`IGit.Tags`, `IGit.IsShallow` and `IGit.TrackedFiles`.**
+
+### Changed
+
+- **`IDocker.Inspect` returns `null` for a container that doesn't exist**, rather than throwing.
+- **`IFile`, `IDirectory` and `IFileSystem` have new members.**
+
 ## [0.20.1] - 2026-09-25
 
 ### Fixed
@@ -309,6 +324,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.21.0]: https://github.com/ritten-org/Ritten/compare/v0.20.1...v0.21.0
 [0.20.1]: https://github.com/ritten-org/Ritten/compare/v0.20.0...v0.20.1
 [0.20.0]: https://github.com/ritten-org/Ritten/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/ritten-org/Ritten/compare/v0.18.0...v0.19.0
