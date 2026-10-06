@@ -54,6 +54,9 @@ public sealed class MemoryFile : IFile
     public bool Exists => Text is not null;
 
     /// <inheritdoc />
+    public DateTimeOffset LastWriteTime { get; private set; }
+
+    /// <inheritdoc />
     public IDirectory Directory => _directory;
 
     /// <inheritdoc />
@@ -74,6 +77,7 @@ public sealed class MemoryFile : IFile
         return new LandingStream(bytes =>
         {
             Text = Encoding.UTF8.GetString(bytes);
+            LastWriteTime = DateTimeOffset.UtcNow;
             Writes++;
         });
     }
@@ -84,6 +88,7 @@ public sealed class MemoryFile : IFile
         var target = (MemoryFile)destination;
         target.Text = Text;
         target.Mode = Mode;
+        target.LastWriteTime = LastWriteTime;
         target.Writes++;
         Delete();
     }
@@ -145,6 +150,9 @@ public sealed class MemoryDirectory(string path) : IDirectory
     public bool Exists => Created || _files.Values.Any(f => f.Exists);
 
     /// <inheritdoc />
+    public DateTimeOffset LastWriteTime => _files.Values.Where(f => f.Exists).Select(f => f.LastWriteTime).DefaultIfEmpty().Max();
+
+    /// <inheritdoc />
     public void Create() => Created = true;
 
     /// <inheritdoc />
@@ -168,7 +176,10 @@ public sealed class MemoryDirectory(string path) : IDirectory
     public IEnumerable<IFile> GetFiles(string searchPattern = "*") => _files.Values.Where(f => f.Exists);
 
     /// <inheritdoc />
-    public IEnumerable<IDirectory> GetDirectories() => [];
+    public IEnumerable<IDirectory> GetDirectories(bool recursive = false) => [];
+
+    /// <inheritdoc />
+    public void MoveTo(IDirectory destination) => throw new NotSupportedException("A memory directory stays where it is.");
 
     /// <summary>The files that exist here, by name — what a test checks nothing was left behind in.</summary>
     public IEnumerable<string> FileNames => _files.Values.Where(f => f.Exists).Select(f => f.Name);

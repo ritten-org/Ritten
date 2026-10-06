@@ -151,4 +151,77 @@ public class DockerClientTests
 
         await Should.ThrowAsync<CommandFailedException>(() => _docker.Inspect("jellyfin", TestContext.Current.CancellationToken));
     }
+
+    [Fact]
+    public async Task Inspect_AnswersNullForNoSuchContainer()
+    {
+        _commands.Respond(c => c.Arguments.Contains("inspect"), new CommandResult(1, "", "Error: no such object: jellyfin\n"));
+
+        (await _docker.Inspect("jellyfin", TestContext.Current.CancellationToken)).ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Inspect_FailsWhenTheDaemonCannotAnswer()
+    {
+        _commands.Respond(c => c.Arguments.Contains("inspect"), new CommandResult(1, "", "Cannot connect to the Docker daemon.\n"));
+
+        await Should.ThrowAsync<CommandFailedException>(() => _docker.Inspect("jellyfin", TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task ComposeConfig_ReturnsTheResolvedProject()
+    {
+        _commands.Respond(c => c.Arguments.Contains("config"), new CommandResult(0, "{\"name\":\"stack\"}", ""));
+
+        var project = await _docker.ComposeConfig(new PhysicalDirectory("/srv/stack"), new Dictionary<string, string> { ["TOKEN"] = "x" },
+            TestContext.Current.CancellationToken);
+
+        project.Errors.ShouldBeNull();
+        project.Value.ShouldBe("{\"name\":\"stack\"}");
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["compose", "--project-directory", Path.GetFullPath("/srv/stack"), "config", "--format", "json"]);
+        command.EnvironmentVariables["TOKEN"].ShouldBe("x");
+    }
+
+    [Fact]
+    public async Task ComposeConfig_ReturnsWhatComposeObjectedTo()
+    {
+        _commands.Respond(c => c.Arguments.Contains("config"), new CommandResult(1, "", "services.web.image must be a string\n"));
+
+        var project = await _docker.ComposeConfig(new PhysicalDirectory("/srv/stack"), ct: TestContext.Current.CancellationToken);
+
+        project.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldBe("services.web.image must be a string");
+    }
+
+    [Fact]
+    public async Task Exec_RunsInTheContainer_AsTheUser_ReadingItsInput()
+    {
+        await _docker.Exec(new ContainerExec("forgejo", ["forgejo", "actions", "register", "--secret-stdin"]) { User = "git", Input = "secret" },
+            TestContext.Current.CancellationToken);
+
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["exec", "-i", "-u", "git", "forgejo", "forgejo", "actions", "register", "--secret-stdin"]);
+        command.StandardInput.ShouldBe("secret");
+        command.ThrowsOnError.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Exec_WithoutInput_LeavesStandardInputClosed()
+    {
+        await _docker.Exec(new ContainerExec("caddy", ["caddy", "reload"]), TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(["exec", "caddy", "caddy", "reload"]);
+    }
+
+    [Fact]
+    public async Task Exec_ReturnsWhatItPrinted()
+    {
+        _commands.Respond(c => c.Arguments.Contains("exec"), new CommandResult(0, "Current cluster layout version: 3\n", ""));
+
+        var result = await _docker.Exec(new ContainerExec("garage", ["/garage", "layout", "show"]) { IsReadOnly = true },
+            TestContext.Current.CancellationToken);
+
+        result.StandardOutput.ShouldBe("Current cluster layout version: 3\n");
+        _commands.Executed.ShouldHaveSingleItem().OutputQuieted.ShouldBeTrue();
+    }
 }

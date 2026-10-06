@@ -53,6 +53,11 @@ public interface IFile
     Stream OpenWrite();
 
     /// <summary>
+    /// Gets when the file was last written, in UTC.
+    /// </summary>
+    DateTimeOffset LastWriteTime { get; }
+
+    /// <summary>
     /// Moves this file to <paramref name="destination"/>, replacing it if it exists.
     /// </summary>
     /// <param name="destination">Where the file goes.</param>

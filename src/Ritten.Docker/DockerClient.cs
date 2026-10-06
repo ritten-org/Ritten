@@ -90,6 +90,9 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
         return result.StandardError.Trim() is { Length: > 0 } error ? error : result.StandardOutput.Trim();
     }
 
+    private static string Objection(CommandResult result) =>
+        result.StandardError.Trim() is { Length: > 0 } error ? error : result.StandardOutput.Trim();
+
     public async Task ComposeDown(IDirectory project, CancellationToken ct = default) =>
         await commands.Run(
             Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "down").ThrowOnError(),
@@ -105,13 +108,20 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
             Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "start").ThrowOnError(),
             ct);
 
-    public async Task<ContainerState> Inspect(string container, CancellationToken ct = default)
+    public async Task<ContainerState?> Inspect(string container, CancellationToken ct = default)
     {
         // One template, two facts: an image reference never contains whitespace, so the pair
         // splits cleanly.
         var result = await commands.Run(
-            Command.Create("docker").WithArguments("inspect", "--format", "{{.Config.Image}} {{.State.Running}}", container).QuietOutput().ThrowOnError(),
+            Command.Create("docker").WithArguments("inspect", "--format", "{{.Config.Image}} {{.State.Running}}", container).QuietOutput(),
             ct);
+
+        if (!result.IsSuccess)
+        {
+            return result.StandardError.Contains("no such object", StringComparison.OrdinalIgnoreCase)
+                ? null
+                : throw new CommandFailedException($"docker inspect {container} failed: {Objection(result)}", result);
+        }
         var fields = result.StandardOutput.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (fields.Length != 2 || !bool.TryParse(fields[1], out var running))
         {

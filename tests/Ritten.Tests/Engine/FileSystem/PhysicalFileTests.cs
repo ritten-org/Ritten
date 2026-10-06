@@ -99,4 +99,17 @@ public class PhysicalFileTests
         // Assert
         file.Exists.ShouldBe(false);
     }
+
+    [Fact]
+    public void LastWriteTime_IsWhenItWasLastWritten()
+    {
+        var directory = Directory.CreateTempSubdirectory("ritten-file-");
+        var path = Path.Combine(directory.FullName, "written");
+        File.WriteAllText(path, "");
+        var written = new DateTime(2026, 10, 6, 12, 0, 0, DateTimeKind.Utc);
+        File.SetLastWriteTimeUtc(path, written);
+
+        new PhysicalFile(path).LastWriteTime.ShouldBe(new DateTimeOffset(written));
+        directory.Delete(recursive: true);
+    }
 }

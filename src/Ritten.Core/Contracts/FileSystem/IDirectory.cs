@@ -21,6 +21,11 @@ public interface IDirectory
     bool Exists { get; }
 
     /// <summary>
+    /// Gets when an entry was last added to, removed from or renamed in this directory, in UTC.
+    /// </summary>
+    DateTimeOffset LastWriteTime { get; }
+
+    /// <summary>
     /// Creates the current directory in the file system if it doesn't exist.
     /// </summary>
     void Create();
@@ -29,6 +34,12 @@ public interface IDirectory
     /// Deletes this directory and all its contents from the file system if it exists.
     /// </summary>
     void Delete();
+
+    /// <summary>
+    /// Moves this directory and all its contents to <paramref name="destination"/>.
+    /// </summary>
+    /// <param name="destination">Where the directory goes.</param>
+    void MoveTo(IDirectory destination);
 
     /// <summary>
     /// Gets the file with the specified name within this directory.
@@ -54,6 +65,7 @@ public interface IDirectory
     /// <summary>
     /// Gets the subdirectories contained in this directory.
     /// </summary>
+    /// <param name="recursive">Whether to include every directory beneath this one, not only its children.</param>
     /// <returns>The subdirectories in this directory.</returns>
-    IEnumerable<IDirectory> GetDirectories();
+    IEnumerable<IDirectory> GetDirectories(bool recursive = false);
 }

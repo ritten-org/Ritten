@@ -30,6 +30,28 @@ public class ProjectFileSystemTests
         Path.IsPathRooted(fileSystem.ProjectRoot.AbsolutePath).ShouldBeTrue();
     }
 
+    [Fact]
+    public void CreateTempDirectory_IsNewEmptyAndOutsideTheProject()
+    {
+        var fileSystem = new ProjectFileSystem(Project("."), Options.Create(new WorkflowOptions()));
+
+        var first = fileSystem.CreateTempDirectory("ritten-scratch-");
+        var second = fileSystem.CreateTempDirectory("ritten-scratch-");
+        try
+        {
+            first.Exists.ShouldBeTrue();
+            first.Name.ShouldStartWith("ritten-scratch-");
+            first.GetFiles("**/*").ShouldBeEmpty();
+            second.AbsolutePath.ShouldNotBe(first.AbsolutePath);
+            first.AbsolutePath.ShouldNotStartWith(fileSystem.ProjectRoot.AbsolutePath);
+        }
+        finally
+        {
+            first.Delete();
+            second.Delete();
+        }
+    }
+
     private static RittenProject Project(string directory) => new()
     {
         Directory = directory

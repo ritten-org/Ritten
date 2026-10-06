@@ -21,6 +21,9 @@ public class PhysicalDirectory(string path) : IDirectory
     public bool Exists => Directory.Exists(AbsolutePath);
 
     /// <inheritdoc />
+    public DateTimeOffset LastWriteTime => new(Directory.GetLastWriteTimeUtc(AbsolutePath), TimeSpan.Zero);
+
+    /// <inheritdoc />
     public void Create()
     {
         Directory.CreateDirectory(AbsolutePath);
@@ -32,6 +35,9 @@ public class PhysicalDirectory(string path) : IDirectory
         if (!Exists) { return; }
         Directory.Delete(AbsolutePath, true);
     }
+
+    /// <inheritdoc />
+    public void MoveTo(IDirectory destination) => Directory.Move(AbsolutePath, destination.AbsolutePath);
 
     /// <inheritdoc />
     public IFile GetFile(string name) => new PhysicalFile(Path.Combine(AbsolutePath, name));
@@ -50,10 +56,11 @@ public class PhysicalDirectory(string path) : IDirectory
     }
 
     /// <inheritdoc />
-    public IEnumerable<IDirectory> GetDirectories()
+    public IEnumerable<IDirectory> GetDirectories(bool recursive = false)
     {
+        var options = new EnumerationOptions { RecurseSubdirectories = recursive, AttributesToSkip = 0 };
         return Directory
-            .EnumerateDirectories(AbsolutePath)
+            .EnumerateDirectories(AbsolutePath, "*", options)
             .Select(path => new PhysicalDirectory(path));
     }
 

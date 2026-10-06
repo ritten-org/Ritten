@@ -21,4 +21,7 @@ internal class ProjectFileSystem : IFileSystem
 
     /// <inheritdoc />
     public IDirectory Temp { get; }
+
+    /// <inheritdoc />
+    public IDirectory CreateTempDirectory(string prefix) => new PhysicalDirectory(Directory.CreateTempSubdirectory(prefix).FullName);
 }

@@ -76,5 +76,14 @@ public interface IDocker
     /// </summary>
     /// <param name="container">The container's name or id.</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
-    Task<ContainerState> Inspect(string container, CancellationToken ct = default);
+    /// <returns>The container's state, or <c>null</c> when there is no such container.</returns>
+    Task<ContainerState?> Inspect(string container, CancellationToken ct = default);
+
+    /// <summary>
+    /// Runs a command in a running container.
+    /// </summary>
+    /// <param name="exec">What to run, and where.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    /// <returns>What the command printed. One that fails throws.</returns>
+    Task<CommandResult> Exec(ContainerExec exec, CancellationToken ct = default);
 }

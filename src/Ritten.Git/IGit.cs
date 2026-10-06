@@ -109,6 +109,23 @@ public interface IGit
     Task<bool> TagExists(string tag, CancellationToken ct = default);
 
     /// <summary>
+    /// Gets the local tags that match <paramref name="pattern"/>.
+    /// </summary>
+    Task<IReadOnlyList<string>> Tags(string pattern = "*", CancellationToken ct = default);
+
+    /// <summary>
+    /// Checks whether the clone is shallow (only holds part of its history).
+    /// </summary>
+    Task<bool> IsShallow(CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets the tracked files matching the given pathspecs.
+    /// </summary>
+    /// <param name="pathspecs">The path specs to match, or null for all files..</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    Task<IReadOnlyList<string>> TrackedFiles(IReadOnlyList<string>? pathspecs = null, CancellationToken ct = default);
+
+    /// <summary>
     /// Checks whether the given tag exists on the given remote.
     /// </summary>
     Task<bool> RemoteTagExists(string remote, string tag, CancellationToken ct = default);
