@@ -11,7 +11,8 @@ internal static class DefaultWorkflowRunnerHelpers
         object[]? steps = null,
         IWorkflowProgress[]? reporters = null,
         WorkflowJob? job = null,
-        IWorkflowLog? log = null
+        IWorkflowLog? log = null,
+        RunContext? context = null
     )
     {
         log ??= Substitute.For<IWorkflowLog>();
@@ -33,6 +34,7 @@ internal static class DefaultWorkflowRunnerHelpers
             reporters ?? [],
             methods,
             services.BuildServiceProvider(),
-            job);
+            job,
+            context ?? new RunContext());
     }
 }

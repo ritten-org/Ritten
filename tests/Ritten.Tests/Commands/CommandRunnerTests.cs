@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
 using Ritten.Reporting;
+using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Commands;
 
@@ -118,6 +120,38 @@ public class CommandRunnerTests
         var result = await Runner(root.Path).Run(Shell("pwd").InDirectory("sub"), TestContext.Current.CancellationToken);
 
         result.StandardOutput.TrimEnd('\n').ShouldEndWith(Path.Combine("sub"));
+    }
+
+    [Fact]
+    public async Task Run_TracesTheCommandUnderWhatRanIt_NamingOnlyItsExecutable()
+    {
+        using var traces = new TraceCollector();
+        using var step = new Activity("step").Start();
+
+        await Runner().Run(Shell("exit 3"), TestContext.Current.CancellationToken);
+
+        var span = traces.Trace(step.TraceId).ShouldHaveSingleItem();
+        span.ParentSpanId.ShouldBe(step.SpanId);
+        span.DisplayName.ShouldBe("sh");
+        span.GetTagItem("process.executable.name").ShouldBe("sh");
+        span.GetTagItem("process.exit.code").ShouldBe(3);
+        // An exit code is the caller's to judge: some commands answer a question with it.
+        span.Status.ShouldBe(ActivityStatusCode.Unset);
+        span.TagObjects.ShouldNotContain(tag => tag.Value is string && ((string)tag.Value).Contains("exit 3"));
+    }
+
+    [Fact]
+    public async Task Run_MarksTheSpanOfACommandThatFailedTheCaller()
+    {
+        using var traces = new TraceCollector();
+        using var step = new Activity("step").Start();
+
+        await Should.ThrowAsync<CommandFailedException>(() =>
+            Runner().Run(Shell("exit 4").ThrowOnError(), TestContext.Current.CancellationToken));
+
+        var span = traces.Trace(step.TraceId).ShouldHaveSingleItem();
+        span.GetTagItem("process.exit.code").ShouldBe(4);
+        span.Status.ShouldBe(ActivityStatusCode.Error);
     }
 
     private static CommandRunner Runner(string? currentDirectory = null) =>

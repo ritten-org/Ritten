@@ -28,6 +28,7 @@
     <ProjectReference Include="..\Ritten.NuGet\Ritten.NuGet.csproj" />
     <ProjectReference Include="..\Ritten.Forgejo\Ritten.Forgejo.csproj" />
     <ProjectReference Include="..\Ritten.GitHub\Ritten.GitHub.csproj" />
+    <ProjectReference Include="..\Ritten.OpenTelemetry\Ritten.OpenTelemetry.csproj" />
   </ItemGroup>
 
   <ItemGroup>

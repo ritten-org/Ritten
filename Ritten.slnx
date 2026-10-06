@@ -19,6 +19,7 @@
   <Project Path="src\Ritten.GitHub\Ritten.GitHub.csproj" />
   <Project Path="src\Ritten.NuGet\Ritten.NuGet.csproj" />
   <Project Path="src\Ritten.OnePassword\Ritten.OnePassword.csproj" />
+  <Project Path="src\Ritten.OpenTelemetry\Ritten.OpenTelemetry.csproj" />
   <Project Path="src\Ritten.OpenTofu\Ritten.OpenTofu.csproj" />
   <Project Path="src\Ritten\Ritten.csproj" />
   <Project Path="tests\Ritten.Tests\Ritten.Tests.csproj" />

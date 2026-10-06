@@ -16,6 +16,7 @@ public class ForgejoActionsRuntimeTests
         ["FORGEJO_SERVER_URL"] = "https://code.example.com",
         ["FORGEJO_REPOSITORY"] = "tom/lab",
         ["FORGEJO_RUN_NUMBER"] = "42",
+        ["FORGEJO_RUN_ID"] = "777",
         ["FORGEJO_WORKFLOW"] = "obsidian main"
     };
 
@@ -38,7 +39,10 @@ public class ForgejoActionsRuntimeTests
         using var services = builder.Services.BuildServiceProvider();
 
         services.GetRequiredService<IOptions<ForgejoActionsOptions>>().Value.RunUrl.ShouldBe("https://code.example.com/tom/lab/actions/runs/42");
-        services.GetRequiredService<RunContext>().Title.ShouldBe("obsidian main");
+        var run = services.GetRequiredService<RunContext>();
+        run.Title.ShouldBe("obsidian main");
+        run.Id.ShouldBe("777");
+        run.Url.ShouldBe("https://code.example.com/tom/lab/actions/runs/42");
         // Declared rather than resolved: the sinks share a constructor dependency on the run's
         // log, which only a run assembles.
         builder.Services.ShouldContain(d => d.ServiceType == typeof(IWorkflowResultSink) && d.ImplementationType == typeof(ForgejoJobSummaryResultSink));

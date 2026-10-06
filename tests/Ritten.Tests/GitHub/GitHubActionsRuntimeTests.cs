@@ -109,6 +109,22 @@ public class GitHubActionsRuntimeTests
     }
 
     [Fact]
+    public void ConfigureServices_IdentifiesTheRunAndWhereItIsShown()
+    {
+        var provider = Build(runtimeEnvironment: new Dictionary<string, string>
+        {
+            ["GITHUB_WORKFLOW"] = "CI",
+            ["GITHUB_RUN_ID"] = "1234",
+            ["GITHUB_SERVER_URL"] = "https://github.com",
+            ["GITHUB_REPOSITORY"] = "ritten-org/Ritten"
+        });
+
+        var run = provider.GetRequiredService<RunContext>();
+        run.Id.ShouldBe("1234");
+        run.Url.ShouldBe("https://github.com/ritten-org/Ritten/actions/runs/1234");
+    }
+
+    [Fact]
     public void ConfigureServices_LeavesTheRunTitleToTheEngineWithoutAWorkflow()
     {
         // Registering nothing lets the engine's default land; claiming the title with a fallback

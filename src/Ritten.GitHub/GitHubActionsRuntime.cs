@@ -49,13 +49,13 @@ public sealed class GitHubActionsRuntime : Runtime
         builder.Services.AddOptions<GitHubActionsOptions>()
             .Configure(options => GitHubActionsOptions.ConfigureFromEnvironment(options, environment));
 
-        if (environment(GitHubEnvironment.Workflow) is { } workflow)
-        {
-            builder.Services.TryAddSingleton(new RunContext { Title = workflow });
-        }
-
         var actions = new GitHubActionsOptions();
         GitHubActionsOptions.ConfigureFromEnvironment(actions, environment);
+
+        if (environment(GitHubEnvironment.Workflow) is { } workflow)
+        {
+            builder.Services.TryAddSingleton(new RunContext { Title = workflow, Id = environment(GitHubEnvironment.RunId), Url = actions.RunUrl });
+        }
         builder.Services.TryAddSingleton(new PullRequest { Number = actions.PullRequestNumber, BaseRef = actions.BaseRef });
 
         // The workflow's own token backs the GitHub client when no explicit GH_TOKEN is given.

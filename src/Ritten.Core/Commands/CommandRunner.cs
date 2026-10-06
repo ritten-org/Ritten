@@ -9,6 +9,30 @@ internal class CommandRunner(IWorkflowLog log, IFileSystem fileSystem) : IComman
 {
     public async Task<CommandResult> Run(Command command, CancellationToken cancellationToken = default)
     {
+        var executable = Path.GetFileName(command.Path);
+        using var activity = RittenTelemetry.Source.StartActivity(executable);
+        activity?.SetTag(RittenTelemetry.Executable, executable);
+        try
+        {
+            var result = await Execute(command, cancellationToken);
+            activity?.SetTag(RittenTelemetry.ProcessExitCode, result.ExitCode.Value);
+            return result;
+        }
+        catch (Exception ex) when (activity is not null)
+        {
+            if (ex is CommandFailedException failed)
+            {
+                activity.SetTag(RittenTelemetry.ProcessExitCode, failed.Result.ExitCode.Value);
+            }
+
+            activity.AddException(ex);
+            activity.SetStatus(ActivityStatusCode.Error, ex.Message);
+            throw;
+        }
+    }
+
+    private async Task<CommandResult> Execute(Command command, CancellationToken cancellationToken)
+    {
         using var process = new Process();
         process.EnableRaisingEvents = true;
         process.StartInfo = new ProcessStartInfo
