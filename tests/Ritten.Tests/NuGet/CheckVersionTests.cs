@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.DotNet;
-using Ritten.DotNet.Steps;
 using Ritten.NuGet;
 using Ritten.NuGet.Steps;
 using Ritten.Releases;
+using Ritten.Releases.Steps;
 using Ritten.Reporting;
 using Ritten.Tests.Support;
 
