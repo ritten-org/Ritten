@@ -108,6 +108,40 @@ internal class GitClient : IGit
         ];
     }
 
+    public async Task FetchMergeBase(string remote, string branch, CancellationToken ct = default)
+    {
+        string[] refspec = [remote, $"+refs/heads/{branch}:refs/remotes/{remote}/{branch}"];
+        if (!await IsShallow(ct))
+        {
+            await _commands.Run(Git(["fetch", "--quiet", "--no-tags", .. refspec]).QuietOutput().ThrowOnError(), ct);
+            return;
+        }
+
+        // Fetching the base alone is not enough: HEAD's own history ends at the shallow boundary,
+        // so the two never meet. Naming HEAD's commit deepens it alongside, and a few rounds find
+        // the merge base of any ordinary pull request without fetching the whole history.
+        var head = (await _commands.Run(Git("rev-parse", "HEAD").QuietOutput().ThrowOnError(), ct)).StandardOutput.Trim();
+        foreach (var depth in MergeBaseDepths)
+        {
+            // Not every server serves a commit by its id, so a refused fetch falls through to the last resort.
+            var fetched = await _commands.Run(Git(["fetch", "--quiet", "--no-tags", $"--depth={depth}", .. refspec, head]).QuietOutput(), ct);
+            if (fetched.IsSuccess && await HasMergeBase($"refs/remotes/{remote}/{branch}", ct))
+            {
+                return;
+            }
+        }
+
+        await _commands.Run(Git(["fetch", "--quiet", "--no-tags", "--unshallow", .. refspec]).QuietOutput().ThrowOnError(), ct);
+    }
+
+    /// <summary>
+    /// How deep <see cref="FetchMergeBase"/> looks before giving up and fetching everything.
+    /// </summary>
+    internal static readonly int[] MergeBaseDepths = [50, 1000];
+
+    private async Task<bool> HasMergeBase(string reference, CancellationToken ct) =>
+        (await _commands.Run(Git("merge-base", reference, "HEAD").QuietOutput(), ct)).IsSuccess;
+
     public async Task<IReadOnlyList<string>> ChangedFiles(string path, CancellationToken ct = default)
     {
         // --porcelain rather than `diff --quiet` so that untracked files are reported too.

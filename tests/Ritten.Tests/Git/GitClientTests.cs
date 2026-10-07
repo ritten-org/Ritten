@@ -395,4 +395,92 @@ public class GitClientTests : IAsyncLifetime
         // Empty would mean "nothing changed", which is what makes a caller skip its work.
         await Should.ThrowAsync<Exception>(
             _git.ChangedFilesSince("origin/never-fetched", ".", TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task FetchMergeBase_LetsAShallowCheckoutCompareWithItsBase()
+    {
+        // The shape of a CI checkout: one commit of the branch under review, no base, and a base
+        // that has moved on since the branch left it — with more history than the first round
+        // fetches, so a clone that stays shallow proves the merge base was found by deepening.
+        await CommitFile("base.txt");
+        for (var i = 0; i < GitClient.MergeBaseDepths[0]; i++)
+        {
+            await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "--allow-empty", "-m", $"history {i}");
+        }
+
+        await Git("checkout", "-b", "feature");
+        await CommitFile("mine.txt");
+        await CommitFile("mine-too.txt");
+        await Git("checkout", "main");
+        await CommitFile("theirs.txt");
+        await Git("push", "origin", "main", "feature");
+
+        await WithClone(["--depth", "1", "--branch", "feature"], async clone =>
+        {
+            await clone.FetchMergeBase("origin", "main", TestContext.Current.CancellationToken);
+
+            var changed = await clone.ChangedFilesSince("origin/main", ".", TestContext.Current.CancellationToken);
+            changed.ShouldBe(["mine.txt", "mine-too.txt"], ignoreOrder: true);
+            (await clone.IsShallow(TestContext.Current.CancellationToken)).ShouldBeTrue();
+        });
+    }
+
+    [Fact]
+    public async Task FetchMergeBase_FindsABaseFurtherBackThanTheFirstRound()
+    {
+        await Git("checkout", "-b", "feature");
+        for (var i = 0; i <= GitClient.MergeBaseDepths[0]; i++)
+        {
+            await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "--allow-empty", "-m", $"step {i}");
+        }
+
+        await CommitFile("mine.txt");
+        await Git("push", "origin", "main", "feature");
+
+        await WithClone(["--depth", "1", "--branch", "feature"], async clone =>
+        {
+            await clone.FetchMergeBase("origin", "main", TestContext.Current.CancellationToken);
+
+            (await clone.ChangedFilesSince("origin/main", ".", TestContext.Current.CancellationToken)).ShouldBe(["mine.txt"]);
+        });
+    }
+
+    [Fact]
+    public async Task FetchMergeBase_BringsAWholeCloneUpToDateWithoutMakingItShallow()
+    {
+        await Git("push", "origin", "main");
+        await WithClone([], async clone =>
+        {
+            // The base moves on after the clone was made; the fetch must see it.
+            await CommitFile("later.txt");
+            await Git("push", "origin", "main");
+
+            await clone.FetchMergeBase("origin", "main", TestContext.Current.CancellationToken);
+
+            (await clone.Show("origin/main", "later.txt", TestContext.Current.CancellationToken)).ShouldNotBeNull();
+            (await clone.IsShallow(TestContext.Current.CancellationToken)).ShouldBeFalse();
+        });
+    }
+
+    private async Task CommitFile(string name)
+    {
+        await File.WriteAllTextAsync(Path.Combine(_repository, name), name, TestContext.Current.CancellationToken);
+        await Git("add", name);
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", name);
+    }
+
+    private async Task WithClone(string[] options, Func<GitClient, Task> test)
+    {
+        var clone = Directory.CreateTempSubdirectory("ritten-git-clone-");
+        try
+        {
+            // file://, not a path: git ignores --depth for a local clone it can hard-link.
+            await Git(["clone", .. options, $"file://{_remote}", clone.FullName]);
+            await test(new GitClient(RunnerIn(clone.FullName)));
+        }
+        finally
+        {
+            clone.Delete(recursive: true);
+        }
+    }
 }

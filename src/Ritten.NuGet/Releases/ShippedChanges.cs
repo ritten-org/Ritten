@@ -1,4 +1,4 @@
-namespace Ritten.DotNet;
+namespace Ritten.Releases;
 
 /// <summary>
 /// What a pull request changed of the files that decide what the packages contain.
@@ -8,7 +8,7 @@ namespace Ritten.DotNet;
 public sealed record ShippedChanges(string? BaseRef, IReadOnlyList<string> Files)
 {
     /// <summary>
-    /// Nothing to compare against: the run isn't reviewing a pull request.
+    /// Not measured: the run isn't reviewing a pull request, or its release cadence doesn't judge what one changed.
     /// </summary>
     public static ShippedChanges Unreviewed { get; } = new(null, []);
 

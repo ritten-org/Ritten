@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.DotNet.Steps;
+using Ritten.Releases.Steps;
 using Ritten.Releases;
 using Ritten.Reporting;
 
@@ -20,7 +20,6 @@ namespace Ritten.NuGet.Steps;
 [Step("check version", StepKind.Check)]
 public class CheckVersion(IOptions<NuGetOptions> options, IWorkflowReport report)
 {
-
     // TODO: Split this up. Something else should produce the versions (NPM, NuGet, etc.) this step should do the actual enforcement.
 
     /// <summary>

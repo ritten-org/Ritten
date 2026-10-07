@@ -54,6 +54,10 @@ internal class DryRunGit(IWorkflowLog log, IGit inner) : IGit
         inner.ChangedFilesSince(reference, path, ct);
 
     /// <inheritdoc />
+    public Task FetchMergeBase(string remote, string branch, CancellationToken ct = default) =>
+        inner.FetchMergeBase(remote, branch, ct);
+
+    /// <inheritdoc />
     public Task Stage(string path, CancellationToken ct = default)
     {
         log.Skipped($"Would stage the changes under {path}.");
