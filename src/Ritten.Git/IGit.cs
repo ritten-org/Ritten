@@ -67,15 +67,24 @@ public interface IGit
     /// the given reference.
     /// </summary>
     /// <remarks>
-    /// The question a pull request asks: what did THIS work touch, ignoring whatever the base
-    /// has done meanwhile. Throws when the reference cannot be resolved — a shallow checkout
-    /// that has never fetched the base would otherwise answer "nothing changed", and a caller
-    /// skipping work on that answer would skip it silently.
+    /// If you call this in a PR, make sure to call <see cref="FetchMergeBase"/> first.
     /// </remarks>
     /// <param name="reference">The reference the branch diverged from, such as <c>origin/main</c>.</param>
     /// <param name="path">The path to limit the answer to.</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
     Task<IReadOnlyList<string>> ChangedFilesSince(string reference, string path, CancellationToken ct = default);
+
+    /// <summary>
+    /// Fetches the given branch into its remote-tracking reference, with enough history that it
+    /// and <c>HEAD</c> share a merge base.
+    /// </summary>
+    /// <remarks>
+    /// If you call <see cref="ChangedFilesSince"/> from CI, you should call this first..
+    /// </remarks>
+    /// <param name="remote">The remote to fetch from, such as <c>origin</c>.</param>
+    /// <param name="branch">The branch to fetch, such as <c>main</c>.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    Task FetchMergeBase(string remote, string branch, CancellationToken ct = default);
 
     /// <summary>
     /// Stages every change under the given path — modifications, additions and deletions alike.
