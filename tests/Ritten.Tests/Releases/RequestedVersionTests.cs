@@ -1,14 +1,16 @@
 using NuGet.Versioning;
 using Ritten.Engine;
+using Ritten.Engine.Workflows;
 using Ritten.Releases;
+using Ritten.Workflows.DotNetTool;
 
 namespace Ritten.Tests.Releases;
 
 /// <summary>
-/// A version is a type no command line can be expected to parse, so the declaration reads it —
+/// A version is a type no command line can be expected to parse, so the version's own type reads it —
 /// and a bad one is refused where it was given rather than by whichever step eventually needed it.
 /// </summary>
-public class ReleaseArgumentsTests
+public class RequestedVersionTests
 {
     [Fact]
     public void ReadsAVersion()
@@ -16,7 +18,7 @@ public class ReleaseArgumentsTests
         var read = Read("1.2.0-beta.1");
 
         read.IsSuccess.ShouldBeTrue();
-        read.Value.ShouldBe(NuGetVersion.Parse("1.2.0-beta.1"));
+        read.Value.ShouldBe(new RequestedVersion(NuGetVersion.Parse("1.2.0-beta.1")));
     }
 
     [Fact]
@@ -31,10 +33,10 @@ public class ReleaseArgumentsTests
     [Fact]
     public void IsOptional()
     {
-        // Prepare derives a version when nobody names one, so requiring it would defeat the point.
-        ReleaseArguments.Version.Required.ShouldBeFalse();
+        // Prepare derives a version when nobody names one, so it starts as none.
+        new PrepareDotNetToolArguments().Version.ShouldBe(RequestedVersion.None);
     }
 
-    private static Result<NuGetVersion> Read(string text) =>
-        ReleaseArguments.Version.Parse.ShouldNotBeNull()(text);
+    private static Result<object> Read(string text) =>
+        ArgumentsModel.For(typeof(PrepareDotNetToolArguments)).Options.Single(o => o.Name == RequestedVersion.OptionName).Read(text);
 }

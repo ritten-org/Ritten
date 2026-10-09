@@ -5,36 +5,27 @@ using Ritten.Changelogs;
 using Ritten.Commands;
 using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.Engine.Runs;
+using Ritten.Engine;
 using Ritten.Git;
 using Ritten.GitHub;
 using Ritten.NuGet;
-using Ritten.Releases;
 using Ritten.Reporting;
-using Ritten.Tests.Engine.Helpers;
+using Ritten.Tests.Support;
 using Ritten.Workflows;
 
 namespace Ritten.Tests.Extensions;
 
 public class WorkflowBuilderExtensionsTests
 {
-    private static readonly DotNetToolSettings Settings = new()
-    {
-        Repository = "https://example.com/thing",
-        Build = new DotNetBuildSettings { Project = "src/Thing/Thing.csproj", Configuration = "Debug" },
-        Changelog = new ChangelogSettings { File = "HISTORY.md" },
-        Release = new ReleaseSettings { TagPrefix = "release-", Feed = "https://example.com/index.json" }
-    };
-
     [Fact]
     public void Registrations_AreIdempotent()
     {
         var services = Builder()
             .AddCommandRunner().AddCommandRunner()
-            .AddChangelogs(Settings.Changelog).AddChangelogs(Settings.Changelog)
-            .AddDotNet(Settings.Build).AddDotNet(Settings.Build)
-            .AddGit(Settings.Release.TagPrefix).AddGit(Settings.Release.TagPrefix)
-            .AddNuGet(Settings.Release.Feed, ReleaseLine.Major).AddNuGet(Settings.Release.Feed, ReleaseLine.Major)
+            .AddChangelogs().AddChangelogs()
+            .AddDotNet().AddDotNet()
+            .AddGit().AddGit()
+            .AddNuGet().AddNuGet()
             .AddGitHubClient().AddGitHubClient()
             .AddBuildReporting().AddBuildReporting()
             .Services;
@@ -52,7 +43,7 @@ public class WorkflowBuilderExtensionsTests
     [Fact]
     public void AddGit_RegistersItsCommandRunnerDependency()
     {
-        var services = Builder().AddGit(Settings.Release.TagPrefix).Services;
+        var services = Builder().AddGit().Services;
 
         services.Count(d => d.ServiceType == typeof(ICommandRunner)).ShouldBe(1);
     }
@@ -60,7 +51,7 @@ public class WorkflowBuilderExtensionsTests
     [Fact]
     public void AddDotNet_RegistersItsCommandRunnerDependency()
     {
-        var services = Builder().AddDotNet(Settings.Build).Services;
+        var services = Builder().AddDotNet().Services;
 
         services.Count(d => d.ServiceType == typeof(ICommandRunner)).ShouldBe(1);
     }
@@ -103,38 +94,28 @@ public class WorkflowBuilderExtensionsTests
     }
 
     [Fact]
-    public void EachCapability_MapsOnlyItsOwnSliceOfTheSettings()
+    public void DotNetBuildSettings_TheFirstProjectIsTheReleasesFace()
     {
-        var provider = Builder()
-            .AddDotNet(Settings.Build, Settings.Repository)
-            .AddChangelogs(Settings.Changelog)
-            .AddGit(Settings.Release.TagPrefix)
-            .AddNuGet(Settings.Release.Feed, ReleaseLine.Major)
-            .Services.BuildServiceProvider();
-
-        provider.GetRequiredService<IOptions<DotNetOptions>>().Value.ProjectFile.ShouldBe("src/Thing/Thing.csproj");
-        provider.GetRequiredService<IOptions<DotNetOptions>>().Value.Configuration.ShouldBe("Debug");
-        provider.GetRequiredService<IOptions<DotNetOptions>>().Value.Repository.ShouldBe("https://example.com/thing");
-        provider.GetRequiredService<IOptions<ChangelogOptions>>().Value.File.ShouldBe("HISTORY.md");
-        provider.GetRequiredService<IOptions<GitOptions>>().Value.TagPrefix.ShouldBe("release-");
-        provider.GetRequiredService<IOptions<NuGetOptions>>().Value.Feed.ShouldBe("https://example.com/index.json");
+        new DotNetBuildSettings { Projects = ["src/A/A.csproj", "src/B/B.csproj"] }.ShippedProjects.ShouldBe(["src/A/A.csproj", "src/B/B.csproj"]);
+        new DotNetBuildSettings { Project = "src/A/A.csproj" }.ShippedProjects.ShouldBe(["src/A/A.csproj"]);
+        new DotNetBuildSettings().ShippedProjects.ShouldBeEmpty();
     }
 
     [Fact]
-    public void AddDotNet_TheFirstProjectIsTheReleasesFace()
+    public void AddDotNetWorkflows_RegistersEverythingTheirJobsUse()
     {
-        var provider = Builder()
-            .AddDotNet(new DotNetBuildSettings { Projects = ["src/A/A.csproj", "src/B/B.csproj"] })
-            .Services.BuildServiceProvider();
+        // Every step of every workflow is checked against the services when the application builds.
+        var builder = WorkflowApplication.CreateBuilder();
+        builder.AddDotNetWorkflows();
 
-        var options = provider.GetRequiredService<IOptions<DotNetOptions>>().Value;
-        options.ProjectFile.ShouldBe("src/A/A.csproj");
-        options.Projects.ShouldBe(["src/A/A.csproj", "src/B/B.csproj"]);
+        using var application = builder.Build(_ => null).Value.ShouldNotBeNull();
+
+        application.Workflows.Select(w => w.Name).ShouldBe(["dotnet-tool", "dotnet-package", "dotnet"]);
     }
 
-    private static WorkflowRunBuilder Builder(Dictionary<string, string>? environment = null)
+    private static TestWorkflowBuilder Builder(Dictionary<string, string>? environment = null)
     {
-        var builder = WorkflowRunBuilderHelpers.Create();
+        var builder = new TestWorkflowBuilder();
         builder.Services.AddSingleton(new WorkflowEnvironment((environment ?? []).GetValueOrDefault));
         return builder;
     }

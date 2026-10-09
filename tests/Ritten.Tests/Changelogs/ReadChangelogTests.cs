@@ -1,29 +1,26 @@
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
 using Ritten.Contracts.FileSystem;
 using Ritten.Reporting;
-using Ritten.Tests.Engine.Helpers;
 using Ritten.Tests.Support;
-using Ritten.Workflows;
 
 namespace Ritten.Tests.Changelogs;
 
 public class ReadChangelogTests
 {
     // The real client, so these tests exercise the actual parser.
-    private static readonly IChangelog Changelogs = WorkflowRunBuilderHelpers.Create()
-        .AddChangelogs(new ChangelogSettings())
+    private static readonly IChangelog Changelogs = new TestWorkflowBuilder()
+        .AddChangelogs()
         .Services.BuildServiceProvider()
         .GetRequiredService<IChangelog>();
 
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
     private readonly ReportSection _changelogSection = new(SectionName.Changelog);
-    private readonly ChangelogOptions _options = TestOptions.Changelog();
+    private readonly ChangelogSettings _options = TestOptions.Changelog();
 
     public ReadChangelogTests()
     {
@@ -44,7 +41,7 @@ public class ReadChangelogTests
             [1.2.0]: https://github.com/example/repo/releases/tag/v1.2.0
             """);
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(_options, TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeFalse();
         result.Value.ShouldNotBeNull()
@@ -59,7 +56,7 @@ public class ReadChangelogTests
         file.Exists.Returns(false);
         _fileSystem.ProjectRoot.GetFile(_options.File).Returns(file);
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(_options, TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain(_options.File);
@@ -75,5 +72,5 @@ public class ReadChangelogTests
     }
 
     private ReadChangelog Step() =>
-        new(Substitute.For<IWorkflowLog>(), Options.Create(_options), _fileSystem, _report, Changelogs);
+        new(Substitute.For<IWorkflowLog>(), _fileSystem, _report, Changelogs);
 }

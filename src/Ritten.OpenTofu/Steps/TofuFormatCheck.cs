@@ -14,9 +14,11 @@ public class TofuFormatCheck(IOpenTofu tofu, IWorkflowReport report)
     /// <summary>
     /// Checks the root module's formatting.
     /// </summary>
-    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
+    /// <param name="module">The root module.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    public async Task<StepResult> Run(TofuModule module, CancellationToken cancellationToken = default)
     {
-        if (await tofu.VerifyFormatting(cancellationToken) is not { } unformatted)
+        if (await tofu.VerifyFormatting(module, cancellationToken) is not { } unformatted)
         {
             report.Section(SectionName.Formatting).Success("Every file is formatted.");
             return StepResult.Successful;

@@ -59,6 +59,19 @@ public sealed class RittenProject
     };
 
     /// <summary>
+    /// A project rooted at the given directory, whatever project file it or its parents hold, for a job run with
+    /// arguments its caller gave rather than ones read from a file.
+    /// </summary>
+    /// <param name="directory">The project's root.</param>
+    /// <param name="fileName">The name a project file would have.</param>
+    internal static RittenProject At(string directory, string fileName) => new()
+    {
+        Directory = Path.GetFullPath(directory),
+        FileName = fileName,
+        Settings = JsonDocument.Parse("{}").RootElement
+    };
+
+    /// <summary>
     /// Reads which workflow the settings declare. s
     /// </summary>
     public Result<string> GetWorkflowName()

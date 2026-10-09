@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
@@ -27,7 +26,7 @@ public class DotnetTestTests
     {
         Respond(new TestResult { Succeeded = true, Passed = 5, Failed = 0, Skipped = 0 });
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(TestOptions.Build(), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         _section.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("**5** tests passed");
@@ -45,7 +44,7 @@ public class DotnetTestTests
             Failures = [new TestFailure("My.Tests.Boom", "Expected true but was false")]
         });
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(TestOptions.Build(), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().Select(e => e.Message).ShouldBe([
@@ -68,7 +67,7 @@ public class DotnetTestTests
             FailureOutput = ["error: unknown option: --report-trx"]
         });
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(TestOptions.Build(), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().Select(e => e.Message).ShouldBe([
@@ -84,7 +83,7 @@ public class DotnetTestTests
     {
         Respond(new TestResult { Succeeded = false, Passed = 0, Failed = 0, Skipped = 0 });
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(TestOptions.Build(), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("--verbose");
@@ -94,5 +93,5 @@ public class DotnetTestTests
         _dotnet.Test(Arg.Any<TestArgs>(), Arg.Any<CancellationToken>()).Returns(result);
 
     private DotnetTest Step() =>
-        new(_log, Options.Create(TestOptions.DotNet()), _fileSystem, _dotnet, _report);
+        new(_log, _fileSystem, _dotnet, _report);
 }

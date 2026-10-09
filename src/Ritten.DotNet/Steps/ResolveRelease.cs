@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Git;
 using Ritten.Reporting;
@@ -9,17 +8,17 @@ namespace Ritten.DotNet.Steps;
 /// Resolves the release's identity from the shipped projects.
 /// </summary>
 /// <param name="log">The workflow log.</param>
-/// <param name="options">The workflow's .NET options.</param>
 /// <param name="git">The git client.</param>
 [Step("resolve release", StepKind.Work)]
-public class ResolveRelease(IWorkflowLog log, IOptions<DotNetOptions> options, IGit git)
+public class ResolveRelease(IWorkflowLog log, IGit git)
 {
     /// <summary>
     /// Derives the release's identity from the already-read projects.
     /// </summary>
+    /// <param name="declared">The repository the project declares, when it declares one.</param>
     /// <param name="packages">The packages the repository ships (see <see cref="ReadProjects"/>).</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public async Task<StepResult<Project>> Run(PackageSet packages, CancellationToken cancellationToken = default)
+    public async Task<StepResult<Project>> Run(PackageRepository? declared, PackageSet packages, CancellationToken cancellationToken = default)
     {
         if (packages.Packages.Count == 0)
         {
@@ -30,7 +29,7 @@ public class ResolveRelease(IWorkflowLog log, IOptions<DotNetOptions> options, I
 
         // Resolved once, here, so no consumer coalesces sources again: the explicit setting
         // wins, then the project file's RepositoryUrl, then the origin remote.
-        var repository = options.Value.Repository
+        var repository = declared?.Url
             ?? release.Repository
             ?? RepositoryUrls.ToWebUrl(await git.GetRemoteUrl("origin", cancellationToken));
 

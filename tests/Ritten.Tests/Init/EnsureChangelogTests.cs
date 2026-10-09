@@ -3,21 +3,19 @@ using Ritten.Changelogs;
 using Ritten.Contracts.FileSystem;
 using Ritten.Init.Steps;
 using Ritten.Reporting;
-using Ritten.Tests.Engine.Helpers;
 using Ritten.Tests.Support;
-using Ritten.Workflows;
 
 namespace Ritten.Tests.Init;
 
 public class EnsureChangelogTests
 {
-    private static readonly IChangelog Changelogs = WorkflowRunBuilderHelpers.Create()
-        .AddChangelogs(new ChangelogSettings())
+    private static readonly IChangelog Changelogs = new TestWorkflowBuilder()
+        .AddChangelogs()
         .Services.BuildServiceProvider()
         .GetRequiredService<IChangelog>();
 
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
-    private readonly ChangelogOptions _options = TestOptions.Changelog();
+    private readonly ChangelogSettings _options = TestOptions.Changelog();
     private MemoryFile _changelog = MemoryFile.Missing("CHANGELOG.md");
 
     [Fact]
@@ -25,7 +23,7 @@ public class EnsureChangelogTests
     {
         SetChangelog(exists: false);
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(_options, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         var written = Written();
@@ -48,7 +46,7 @@ public class EnsureChangelogTests
             - **A thing.** It does something.
             """);
 
-        await Step().Run(TestContext.Current.CancellationToken);
+        await Step().Run(_options, TestContext.Current.CancellationToken);
 
         // The unreleased notes go above everything already shipped, and nobody's prose is touched.
         var written = Written();
@@ -61,14 +59,14 @@ public class EnsureChangelogTests
     {
         var file = SetChangelog(exists: true, content: "# Changelog\n\n## [Unreleased]\n");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(_options, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         file.Writes.ShouldBe(0);
     }
 
     private EnsureChangelog Step() =>
-        new(Substitute.For<IWorkflowLog>(), Microsoft.Extensions.Options.Options.Create(_options), _fileSystem, Changelogs);
+        new(Substitute.For<IWorkflowLog>(), _fileSystem, Changelogs);
 
     private string Written() => _changelog.Text.ShouldNotBeNull();
 

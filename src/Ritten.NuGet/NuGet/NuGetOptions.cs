@@ -1,10 +1,9 @@
 using Ritten.NuGet.Steps;
-using Ritten.Releases;
 
 namespace Ritten.NuGet;
 
 /// <summary>
-/// Settings for the NuGet feed the package is checked against and published to.
+/// Settings for publishing to a NuGet feed, read from the environment.
 /// </summary>
 public class NuGetOptions
 {
@@ -14,25 +13,10 @@ public class NuGetOptions
     public const string ApiKeyVariable = "RITTEN_NUGET_API_KEY";
 
     /// <summary>
-    /// The V3 index URL of the feed.
-    /// </summary>
-    public string Feed { get; set; } = "https://api.nuget.org/v3/index.json";
-
-    /// <summary>
     /// The API key used to push packages. Only needed when deploying;
     /// <see cref="NugetAuthenticate"/> asks at the terminal when it's missing.
     /// </summary>
     public string? ApiKey { get; set; }
-
-    /// <summary>
-    /// How published versions are grouped into release lines when validating the project's version.
-    /// </summary>
-    public ReleaseLine Lines { get; set; } = ReleaseLine.Major;
-
-    /// <summary>
-    /// When a merged change becomes a release.
-    /// </summary>
-    public ReleaseCadence Cadence { get; set; } = ReleaseCadence.Curated;
 
     /// <summary>
     /// Configures the given options based on the current environment.

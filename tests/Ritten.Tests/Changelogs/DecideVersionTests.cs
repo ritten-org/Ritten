@@ -21,7 +21,7 @@ public class DecideVersionTests
     [Fact]
     public async Task TakesTheVersionTheCallerNames()
     {
-        var result = await Step(version: "2.0.0").Run(Project("1.2.0"), Changelog(), Published(), TestContext.Current.CancellationToken);
+        var result = await Step().Run(new RequestedVersion(NuGetVersion.Parse("2.0.0")), Project("1.2.0"), Changelog(), Published(), TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().Version.ShouldBe(NuGetVersion.Parse("2.0.0"));
         result.Value.Bumped.ShouldBeTrue();
@@ -32,7 +32,7 @@ public class DecideVersionTests
     public async Task KeepsAVersionThatIsDeclaredButNotPublished()
     {
         // The project was bumped and never shipped; bumping again would skip a version.
-        var result = await Step().Run(Project("1.3.0"), Changelog(), Unpublished(), TestContext.Current.CancellationToken);
+        var result = await Step().Run(RequestedVersion.None, Project("1.3.0"), Changelog(), Unpublished(), TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().Version.ShouldBe(NuGetVersion.Parse("1.3.0"));
         result.Value.Bumped.ShouldBeFalse();
@@ -44,7 +44,7 @@ public class DecideVersionTests
     {
         // One package of 1.2.0 reached the feed and another didn't: the version is out in the
         // world, so what's left of it is deploy's to finish and prepare must move past it.
-        var result = await Step().Run(Project("1.2.0"), Changelog(new ChangelogEntry { Fixed = ["A thing."] }), PartlyPublished(), TestContext.Current.CancellationToken);
+        var result = await Step().Run(RequestedVersion.None, Project("1.2.0"), Changelog(new ChangelogEntry { Fixed = ["A thing."] }), PartlyPublished(), TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().Version.ShouldBe(NuGetVersion.Parse("1.2.1"));
         result.Value.Bumped.ShouldBeTrue();
@@ -53,7 +53,7 @@ public class DecideVersionTests
     [Fact]
     public async Task DerivesFromTheUnreleasedNotesAndConfirms()
     {
-        var result = await Step().Run(Project("1.2.0"), Changelog(new ChangelogEntry { Added = ["A thing."] }), Published(), TestContext.Current.CancellationToken);
+        var result = await Step().Run(RequestedVersion.None, Project("1.2.0"), Changelog(new ChangelogEntry { Added = ["A thing."] }), Published(), TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().Version.ShouldBe(NuGetVersion.Parse("1.3.0"));
         await _prompt.Received().Confirm(Arg.Is<string>(m => m.Contains("1.3.0")), Arg.Any<CancellationToken>());
@@ -64,7 +64,7 @@ public class DecideVersionTests
     {
         _prompt.Confirm(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
 
-        var result = await Step().Run(Project("1.2.0"), Changelog(new ChangelogEntry { Added = ["A thing."] }), Published(), TestContext.Current.CancellationToken);
+        var result = await Step().Run(RequestedVersion.None, Project("1.2.0"), Changelog(new ChangelogEntry { Added = ["A thing."] }), Published(), TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("--version");
@@ -75,7 +75,7 @@ public class DecideVersionTests
     {
         _prompt.IsInteractive.Returns(false);
 
-        var result = await Step().Run(Project("1.2.0"), Changelog(new ChangelogEntry { Added = ["A thing."] }), Published(), TestContext.Current.CancellationToken);
+        var result = await Step().Run(RequestedVersion.None, Project("1.2.0"), Changelog(new ChangelogEntry { Added = ["A thing."] }), Published(), TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("--auto-approve");
@@ -86,7 +86,7 @@ public class DecideVersionTests
     {
         _prompt.IsInteractive.Returns(false);
 
-        var result = await Step(autoApprove: true).Run(Project("1.2.0"), Changelog(new ChangelogEntry { Fixed = ["A thing."] }), Published(), TestContext.Current.CancellationToken);
+        var result = await Step(autoApprove: true).Run(RequestedVersion.None, Project("1.2.0"), Changelog(new ChangelogEntry { Fixed = ["A thing."] }), Published(), TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().Version.ShouldBe(NuGetVersion.Parse("1.2.1"));
     }
@@ -112,10 +112,9 @@ public class DecideVersionTests
     private static ReleaseState Unpublished() =>
         new(Published: false, LatestInLine: true, NuGetVersion.Parse("1.2.0"), NuGetVersion.Parse("1.2.0"));
 
-    private DecideVersion Step(string? version = null, bool autoApprove = false) =>
+    private DecideVersion Step(bool autoApprove = false) =>
         new(
             new WorkflowJob("dotnet tool", "prepare", AutoApprove: autoApprove),
-            version is null ? RequestedVersion.None : new RequestedVersion(NuGetVersion.Parse(version)),
             Substitute.For<IWorkflowLog>(),
             _prompt);
 }

@@ -32,6 +32,5 @@ internal sealed class TracerProviderLifetime : IWorkflowProgress, IDisposable
 
     public Task OnWorkflowCompleted(WorkflowResult result, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-    // The container disposes the provider after this, having built it first; shutting it down here bounds the wait.
-    public void Dispose() => _provider?.Shutdown((int)FlushTimeout.TotalMilliseconds);
+    public void Dispose() => _provider?.ForceFlush((int)FlushTimeout.TotalMilliseconds);
 }

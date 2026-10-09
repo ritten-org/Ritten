@@ -1,22 +1,20 @@
 using Ritten.Contracts;
-using Ritten.Engine;
 using Ritten.Engine.Workflows;
-using Ritten.Workflows;
+using Ritten.Workflows.DotNetTool;
 
 namespace Ritten.Tests.Support;
 
 /// <summary>
-/// A job declared inline: the steps and checks a test hands it, nothing more.
+/// A job declared inline, over the given arguments: the steps and checks a test hands it, nothing more.
 /// </summary>
-internal sealed class TestJob(
+internal class TestJob<TArguments>(
     string name = "verify",
     IReadOnlyList<Step>? steps = null,
-    Action<SettingsValidator<DotNetToolSettings>>? validate = null,
-    IReadOnlyList<JobArgument>? arguments = null,
+    Action<ArgumentsValidator<TArguments>>? validate = null,
     JobKind kind = JobKind.Work,
-    Action<IWorkflowBuilder, JobArguments>? configure = null,
-    bool requiresProject = true
-) : Job<DotNetToolSettings>
+    bool requiresProject = true,
+    bool reports = true
+) : Job<TArguments> where TArguments : class
 {
     public override string Name => name;
 
@@ -26,12 +24,21 @@ internal sealed class TestJob(
 
     public override IReadOnlyList<Step> Steps { get; } = steps ?? [];
 
-    public override IReadOnlyList<JobArgument> Arguments { get; } = arguments ?? [];
-
     public override bool RequiresProject => requiresProject;
 
-    protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => validate?.Invoke(settings);
+    public override bool Reports => reports;
 
-    protected override void Configure(IWorkflowBuilder builder, DotNetToolSettings settings, JobArguments args) =>
-        configure?.Invoke(builder, args);
+    protected override void Validate(ArgumentsValidator<TArguments> arguments) => validate?.Invoke(arguments);
 }
+
+/// <summary>
+/// A job declared inline, over the .NET tool workflow's arguments.
+/// </summary>
+internal sealed class TestJob(
+    string name = "verify",
+    IReadOnlyList<Step>? steps = null,
+    Action<ArgumentsValidator<DotNetToolArguments>>? validate = null,
+    JobKind kind = JobKind.Work,
+    bool requiresProject = true,
+    bool reports = true
+) : TestJob<DotNetToolArguments>(name, steps, validate, kind, requiresProject, reports);

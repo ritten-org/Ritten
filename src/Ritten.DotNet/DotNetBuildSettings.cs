@@ -1,7 +1,9 @@
-namespace Ritten.Workflows;
+using System.Text.Json.Serialization;
+
+namespace Ritten.DotNet;
 
 /// <summary>
-/// The <c>build</c> section of <c>ritten.json</c> for .NET projects.
+/// What to build, and how: the <c>build</c> section of <c>ritten.json</c> for .NET projects.
 /// </summary>
 public sealed record DotNetBuildSettings
 {
@@ -21,4 +23,11 @@ public sealed record DotNetBuildSettings
     /// The build configuration used to build, test, and pack.
     /// </summary>
     public string Configuration { get; init; } = "Release";
+
+    /// <summary>
+    /// Every project the repository ships, whichever of the two spellings declares them; the first is the metadata
+    /// source.
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<string> ShippedProjects => Projects is { Count: > 0 } ? Projects : Project != null ? [Project] : [];
 }

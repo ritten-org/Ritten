@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
 using Ritten.Docker;
@@ -52,7 +51,7 @@ public class DockerStepTests : IDisposable
     [Fact]
     public async Task BuildImages_DoesNothingWhenTheComponentDeclaresNone()
     {
-        var result = await BuildImages([]).Run(TestContext.Current.CancellationToken);
+        var result = await BuildImages().Run(new DockerImages([]), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         _commands.Executed.ShouldBeEmpty();
@@ -64,8 +63,8 @@ public class DockerStepTests : IDisposable
         Dockerfile("watcher");
         Dockerfile("sidecar");
 
-        var result = await BuildImages([new DockerImage("lab/watcher", "watcher"), new DockerImage("lab/sidecar", "sidecar")])
-            .Run(TestContext.Current.CancellationToken);
+        var result = await BuildImages()
+            .Run(new DockerImages([new DockerImage("lab/watcher", "watcher"), new DockerImage("lab/sidecar", "sidecar")]), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         _commands.Executed.Select(c => c.Arguments[2]).ShouldBe(["lab/watcher", "lab/sidecar"]);
@@ -74,7 +73,7 @@ public class DockerStepTests : IDisposable
     [Fact]
     public async Task BuildImages_SaysWhichContextHasNoDockerfileRatherThanLettingDockerSayIt()
     {
-        var result = await BuildImages([new DockerImage("lab/watcher", "watcher")]).Run(TestContext.Current.CancellationToken);
+        var result = await BuildImages().Run(new DockerImages([new DockerImage("lab/watcher", "watcher")]), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldHaveSingleItem().Message.ShouldContain(Path.Combine(_root, "watcher"));
@@ -83,8 +82,7 @@ public class DockerStepTests : IDisposable
 
     private DockerClient Docker() => new(_commands);
 
-    private BuildImages BuildImages(IReadOnlyList<DockerImage> images) =>
-        new(Options.Create(new DockerOptions { Images = images }), Docker(), _fileSystem, _log);
+    private BuildImages BuildImages() => new(Docker(), _fileSystem, _log);
 
     private void Dockerfile(string context)
     {

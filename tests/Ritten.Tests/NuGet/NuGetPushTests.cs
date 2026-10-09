@@ -16,7 +16,6 @@ public class NugetPushTests
     private readonly INuGet _nuget = Substitute.For<INuGet>();
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
     private readonly ReportSection _releaseSection = new(SectionName.Release);
-    private readonly NuGetOptions _options = TestOptions.NuGet();
     private readonly IFile _package = Substitute.For<IFile>();
 
     public NugetPushTests()
@@ -27,7 +26,7 @@ public class NugetPushTests
     [Fact]
     public async Task PushesThePackedPackagesToTheAuthenticatedFeed()
     {
-        var feed = new NuGetFeed(_options.Feed).WithApiKey("the-key");
+        var feed = new NuGetFeed(TestOptions.Release().Feed).WithApiKey("the-key");
         var packed = new PackResult { Packages = [_package] };
 
         var release = new ReleaseState(false, true, null, null) { Packages = [new("My.Package", false)] };
@@ -44,7 +43,7 @@ public class NugetPushTests
         // A half-failed deploy leaves some packages up; the rerun finishes the release rather
         // than tripping over what's already there. Matching is exact, so a published package
         // can't shadow another that shares its name as a prefix.
-        var feed = new NuGetFeed(_options.Feed).WithApiKey("the-key");
+        var feed = new NuGetFeed(TestOptions.Release().Feed).WithApiKey("the-key");
         var core = Substitute.For<IFile>();
         core.Name.Returns("My.Package.Core.1.2.0.nupkg");
         var tool = Substitute.For<IFile>();

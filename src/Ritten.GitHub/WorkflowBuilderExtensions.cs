@@ -29,14 +29,14 @@ public static class WorkflowBuilderExtensions
                 builder.Services.AddOptions<GitHubClientOptions>()
                     .Configure<WorkflowEnvironment>((options, environment) => options.Token = environment.Get(GitHubEnvironment.Token));
 
-                builder.Services.TryAddSingleton<ICredentialStore, AmbientCredentialStore>();
-                builder.Services.AddSingleton<IGitHubClient>(provider =>
+                builder.Services.TryAddScoped<ICredentialStore, AmbientCredentialStore>();
+                builder.Services.AddScoped<IGitHubClient>(provider =>
                 {
                     var options = provider.GetRequiredService<IOptions<GitHubClientOptions>>().Value;
                     return new GitHubClient(new ProductHeaderValue(options.ClientName), provider.GetRequiredService<ICredentialStore>());
                 });
 
-                builder.Services.TryAddSingleton<IGitHubReleaseService, GitHubReleaseService>();
+                builder.Services.TryAddScoped<IGitHubReleaseService, GitHubReleaseService>();
                 builder.Decorators.Replace<IGitHubReleaseService, GitHubDryRunReleaseService>();
             }
 
@@ -53,7 +53,7 @@ public static class WorkflowBuilderExtensions
         /// </summary>
         public IWorkflowBuilder AddGitHubActions()
         {
-            builder.Services.TryAddSingleton<IActionsWorkflows, ActionsWorkflowClient>();
+            builder.Services.TryAddScoped<IActionsWorkflows, ActionsWorkflowClient>();
             builder.Decorators.Decorate<IActionsWorkflows, DryRunActionsWorkflows>();
             return builder;
         }

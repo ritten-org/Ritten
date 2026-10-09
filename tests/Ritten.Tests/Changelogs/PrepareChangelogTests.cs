@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using NuGet.Versioning;
 using Ritten.Changelogs;
@@ -9,9 +8,7 @@ using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Releases;
 using Ritten.Reporting;
-using Ritten.Tests.Engine.Helpers;
 using Ritten.Tests.Support;
-using Ritten.Workflows;
 
 namespace Ritten.Tests.Changelogs;
 
@@ -21,8 +18,8 @@ namespace Ritten.Tests.Changelogs;
 /// </summary>
 public class PrepareChangelogTests
 {
-    private static readonly IChangelog Changelogs = WorkflowRunBuilderHelpers.Create()
-        .AddChangelogs(new ChangelogSettings())
+    private static readonly IChangelog Changelogs = new TestWorkflowBuilder()
+        .AddChangelogs()
         .Services.BuildServiceProvider()
         .GetRequiredService<IChangelog>();
 
@@ -49,7 +46,7 @@ public class PrepareChangelogTests
         """;
 
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
-    private readonly ChangelogOptions _options = TestOptions.Changelog();
+    private readonly ChangelogSettings _options = TestOptions.Changelog();
     private readonly FakeTimeProvider _time = new(new DateTimeOffset(2026, 8, 21, 9, 0, 0, TimeSpan.Zero));
     private MemoryFile _changelog = MemoryFile.Missing("CHANGELOG.md");
 
@@ -58,7 +55,7 @@ public class PrepareChangelogTests
     {
         var file = SetChangelog(Existing);
 
-        var result = await Step().Run(Changelog(Existing), Project(), Prepared("1.3.0"), TestContext.Current.CancellationToken);
+        var result = await Step().Run(_options, TestOptions.Release(), Changelog(Existing), Project(), Prepared("1.3.0"), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         var written = Written();
@@ -76,7 +73,7 @@ public class PrepareChangelogTests
     {
         SetChangelog(Existing);
 
-        await Step().Run(Changelog(Existing), Project(), Prepared("1.3.0"), TestContext.Current.CancellationToken);
+        await Step().Run(_options, TestOptions.Release(), Changelog(Existing), Project(), Prepared("1.3.0"), TestContext.Current.CancellationToken);
 
         var written = Written();
         written.ShouldContain("[1.3.0]: https://github.com/example/repo/compare/v1.2.0...v1.3.0");
@@ -95,7 +92,7 @@ public class PrepareChangelogTests
             .Replace("[Unreleased]: https://github.com/example/repo/compare/v1.2.0...HEAD", "[1.3.0]: https://github.com/example/repo/compare/v1.2.0...v1.3.0");
         var file = SetChangelog(prepared);
 
-        var result = await Step().Run(Changelog(prepared), Project(), Prepared("1.3.0", bumped: false), TestContext.Current.CancellationToken);
+        var result = await Step().Run(_options, TestOptions.Release(), Changelog(prepared), Project(), Prepared("1.3.0", bumped: false), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         file.Writes.ShouldBe(0);
@@ -108,7 +105,7 @@ public class PrepareChangelogTests
         // entry it already has: a second heading for the same version describes it twice.
         SetChangelog(Existing);
 
-        var result = await Step().Run(Changelog(Existing), Project(), Prepared("1.2.0", bumped: false), TestContext.Current.CancellationToken);
+        var result = await Step().Run(_options, TestOptions.Release(), Changelog(Existing), Project(), Prepared("1.2.0", bumped: false), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         var written = Written();
@@ -128,7 +125,7 @@ public class PrepareChangelogTests
             .Replace("[Unreleased]: https://github.com/example/repo/compare/v1.2.0...HEAD\n", "");
         SetChangelog(withoutUnreleased);
 
-        var result = await Step().Run(Changelog(withoutUnreleased), Project(), Prepared("1.2.0", bumped: false), TestContext.Current.CancellationToken);
+        var result = await Step().Run(_options, TestOptions.Release(), Changelog(withoutUnreleased), Project(), Prepared("1.2.0", bumped: false), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         Written().ShouldNotContain("1.3.0");
@@ -157,8 +154,6 @@ public class PrepareChangelogTests
 
     private PrepareChangelog Step() => new(
         Substitute.For<IWorkflowLog>(),
-        Options.Create(_options),
-        Options.Create(TestOptions.Git()),
         _fileSystem,
         Changelogs,
         _time);

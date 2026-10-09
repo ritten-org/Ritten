@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
+using Ritten.Releases;
 using Ritten.Reporting;
 
 namespace Ritten.Git.Steps;
@@ -10,7 +11,7 @@ namespace Ritten.Git.Steps;
 /// Creates and pushes the release tag, skipping whatever a previous run already did so failed deploys can be rerun.
 /// </summary>
 /// <param name="log">The workflow log.</param>
-/// <param name="options">The workflow's release options.</param>
+/// <param name="options">The commit to tag, from the environment.</param>
 /// <param name="git">The git client.</param>
 [Step("git tag", StepKind.Publish)]
 public class GitTag(IWorkflowLog log, IOptions<GitOptions> options, IGit git)
@@ -18,11 +19,12 @@ public class GitTag(IWorkflowLog log, IOptions<GitOptions> options, IGit git)
     /// <summary>
     /// Tags the release and pushes the tag.
     /// </summary>
+    /// <param name="release">How the project releases, including how its tags are named.</param>
     /// <param name="project">The project being released (see <see cref="ResolveRelease"/>).</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public async Task<StepResult> Run(Project project, CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(ReleaseSettings release, Project project, CancellationToken cancellationToken = default)
     {
-        var tag = $"{options.Value.TagPrefix}{project.Version}";
+        var tag = $"{release.TagPrefix}{project.Version}";
 
         // A failed deployment may have already pushed the tag; rerunning should carry on, not crash.
         if (await git.RemoteTagExists("origin", tag, cancellationToken))

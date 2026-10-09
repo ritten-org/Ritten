@@ -18,7 +18,7 @@ public class DotnetToolInstallTests
     {
         _dotnet.InstalledToolVersion("My.Tool", ToolScope.Global, Arg.Any<CancellationToken>()).Returns((NuGetVersion?)null);
 
-        var result = await Step().Run(Tool("1.2.0"), Packed("My.Tool.1.2.0.nupkg"), TestContext.Current.CancellationToken);
+        var result = await Step().Run(new ForceReinstall(false), Tool("1.2.0"), Packed("My.Tool.1.2.0.nupkg"), TestContext.Current.CancellationToken);
 
         result.ShouldBe(StepResult.Successful);
         await _dotnet.DidNotReceive().ToolUninstall(Arg.Any<string>(), ToolScope.Global, Arg.Any<CancellationToken>());
@@ -32,7 +32,7 @@ public class DotnetToolInstallTests
     {
         _dotnet.InstalledToolVersion("My.Tool", ToolScope.Global, Arg.Any<CancellationToken>()).Returns(NuGetVersion.Parse("1.2.0"));
 
-        var result = await Step().Run(Tool("1.2.0"), Packed("My.Tool.1.2.0.nupkg"), TestContext.Current.CancellationToken);
+        var result = await Step().Run(new ForceReinstall(false), Tool("1.2.0"), Packed("My.Tool.1.2.0.nupkg"), TestContext.Current.CancellationToken);
 
         // Nothing left to do — but the hint tells how to insist.
         result.ShouldBe(StepResult.NothingToDo);
@@ -45,7 +45,7 @@ public class DotnetToolInstallTests
     {
         _dotnet.InstalledToolVersion("My.Tool", ToolScope.Global, Arg.Any<CancellationToken>()).Returns(NuGetVersion.Parse("1.2.0"));
 
-        var result = await Step(force: true).Run(Tool("1.2.0"), Packed("My.Tool.1.2.0.nupkg"), TestContext.Current.CancellationToken);
+        var result = await Step().Run(new ForceReinstall(true), Tool("1.2.0"), Packed("My.Tool.1.2.0.nupkg"), TestContext.Current.CancellationToken);
 
         result.ShouldBe(StepResult.Successful);
         await _dotnet.Received().ToolUninstall("My.Tool", ToolScope.Global, Arg.Any<CancellationToken>());
@@ -59,7 +59,7 @@ public class DotnetToolInstallTests
         // repeating an install that already matches.
         _dotnet.InstalledToolVersion("My.Tool", ToolScope.Global, Arg.Any<CancellationToken>()).Returns(NuGetVersion.Parse("1.1.0"));
 
-        var result = await Step().Run(Tool("1.2.0"), Packed("My.Tool.1.2.0.nupkg"), TestContext.Current.CancellationToken);
+        var result = await Step().Run(new ForceReinstall(false), Tool("1.2.0"), Packed("My.Tool.1.2.0.nupkg"), TestContext.Current.CancellationToken);
 
         result.ShouldBe(StepResult.Successful);
         await _dotnet.Received().ToolUninstall("My.Tool", ToolScope.Global, Arg.Any<CancellationToken>());
@@ -76,7 +76,7 @@ public class DotnetToolInstallTests
             Packages = [new Project { Name = "My.Library", Version = NuGetVersion.Parse("1.2.0") }]
         };
 
-        var result = await Step().Run(packages, Packed("My.Library.1.2.0.nupkg"), TestContext.Current.CancellationToken);
+        var result = await Step().Run(new ForceReinstall(false), packages, Packed("My.Library.1.2.0.nupkg"), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("PackAsTool");
@@ -86,7 +86,7 @@ public class DotnetToolInstallTests
     [Fact]
     public async Task FailsWhenTheToolWasNotPacked()
     {
-        var result = await Step().Run(Tool("1.2.0"), Packed("Other.Package.1.2.0.nupkg"), TestContext.Current.CancellationToken);
+        var result = await Step().Run(new ForceReinstall(false), Tool("1.2.0"), Packed("Other.Package.1.2.0.nupkg"), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("My.Tool.1.2.0.nupkg");
@@ -111,6 +111,6 @@ public class DotnetToolInstallTests
         })]
     };
 
-    private DotnetToolInstall Step(bool force = false) =>
-        new(new WorkflowJob("dotnet tool", "install"), new ForceReinstall(force), _log, _fileSystem, _dotnet);
+    private DotnetToolInstall Step() =>
+        new(new WorkflowJob("dotnet tool", "install"), _log, _fileSystem, _dotnet);
 }

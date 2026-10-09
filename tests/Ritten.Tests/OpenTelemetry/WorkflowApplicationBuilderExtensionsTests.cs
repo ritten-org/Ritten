@@ -7,7 +7,6 @@ using Ritten.Contracts;
 using Ritten.Engine;
 using Ritten.OpenTelemetry;
 using Ritten.Reporting;
-using Ritten.Tests.Engine.Helpers;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.OpenTelemetry;
@@ -35,16 +34,18 @@ public class WorkflowApplicationBuilderExtensionsTests
     }
 
     [Fact]
-    public async Task AddOpenTelemetry_BuildsTheProviderWithinTheRun_SoADetectorReachesItsServices()
+    public async Task AddOpenTelemetry_BuildsTheProviderFromTheApplicationsServices_SoADetectorReachesThem()
     {
+        // The resource describes what the application is, so a detector reads what the host registered.
         var exporter = new CapturingExporter();
         var application = WorkflowApplication.CreateBuilder().AddOpenTelemetry(telemetry => telemetry
-            .ConfigureResource(resource => resource.AddDetector(services => new JobDetector(services.GetRequiredService<WorkflowJob>())))
+            .ConfigureResource(resource => resource.AddDetector(services => new ComponentDetector(services.GetRequiredService<Component>())))
             .WithTracing(tracing => tracing.AddProcessor(new SimpleActivityExportProcessor(exporter))));
+        application.Services.AddSingleton(new Component("grafana"));
 
         await Run(application, "detect", WithEndpoint);
 
-        exporter.Resource.ShouldNotBeNull().Attributes.ShouldContain(new KeyValuePair<string, object>("job", "detect"));
+        exporter.Resource.ShouldNotBeNull().Attributes.ShouldContain(new KeyValuePair<string, object>("component", "grafana"));
     }
 
     [Fact]
@@ -54,21 +55,20 @@ public class WorkflowApplicationBuilderExtensionsTests
         var application = WorkflowApplication.CreateBuilder().AddOpenTelemetry(telemetry => telemetry
             .WithTracing(tracing => tracing.AddProcessor(new SimpleActivityExportProcessor(exporter))));
 
-        await Run(application, "quiet", WorkflowRunBuilderHelpers.Empty);
+        await Run(application, "quiet", _ => null);
 
         exporter.Exported.ShouldNotContain(span => span.DisplayName == "Test quiet");
         exporter.Resource.ShouldBeNull();
     }
 
-    private static async Task Run(WorkflowApplicationBuilder application, string job, Func<string, string?> environment)
+    private static async Task Run(WorkflowApplicationBuilder builder, string job, Func<string, string?> environment)
     {
-        var builder = WorkflowRunBuilderHelpers.Create(environment: environment)
-            .WithServices(application.Services);
+        builder.Workflows.Add(new TestWorkflow(jobs: [new TestJob(job, steps: [Step.FromType<ProbeStep>()])]));
         builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
         builder.Services.AddSingleton(new StepProbe());
 
-        using var run = builder.Build(new TestJob(job, steps: [Step.FromType<ProbeStep>()])).Value.ShouldNotBeNull();
-        (await run.Run(TestContext.Current.CancellationToken)).ShouldBe(ExitCode.Success);
+        using var application = builder.Build(environment).Value.ShouldNotBeNull();
+        (await application.Run(job)).ShouldBe(ExitCode.Success);
     }
 
     /// <summary>
@@ -106,8 +106,10 @@ public class WorkflowApplicationBuilderExtensionsTests
         }
     }
 
-    private sealed class JobDetector(WorkflowJob job) : IResourceDetector
+    private sealed record Component(string Name);
+
+    private sealed class ComponentDetector(Component component) : IResourceDetector
     {
-        public Resource Detect() => new([new("job", job.Name)]);
+        public Resource Detect() => new([new("component", component.Name)]);
     }
 }

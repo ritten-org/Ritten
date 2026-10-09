@@ -1,4 +1,4 @@
-namespace Ritten.Workflows;
+namespace Ritten.CodeCoverage;
 
 /// <summary>
 /// The <c>coverage</c> section of <c>ritten.json</c>.

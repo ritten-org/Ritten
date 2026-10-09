@@ -32,7 +32,7 @@ public static class WorkflowApplicationBuilderExtensions
                     .AddOtlpExporter());
             configure?.Invoke(telemetry);
 
-            builder.Services.AddSingleton<IWorkflowProgress, TracerProviderLifetime>();
+            builder.Services.AddScoped<IWorkflowProgress, TracerProviderLifetime>();
             return builder;
         }
     }

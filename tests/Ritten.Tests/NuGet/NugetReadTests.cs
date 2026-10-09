@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.DotNet;
 using Ritten.NuGet;
@@ -17,7 +16,7 @@ public class NugetReadTests
 {
     private readonly IWorkflowLog _log = Substitute.For<IWorkflowLog>();
     private readonly INuGet _nuget = Substitute.For<INuGet>();
-    private readonly NuGetOptions _options = TestOptions.NuGet();
+    private ReleaseSettings _release = TestOptions.Release();
 
     public NugetReadTests()
     {
@@ -102,7 +101,7 @@ public class NugetReadTests
     public async Task AnOlderMinorIsReleasableWhenLinesAreScopedToMinor()
     {
         // For projects that treat the major as a product version, minors are the real lines.
-        _options.Lines = ReleaseLine.Minor;
+        _release = _release with { Lines = ReleaseLine.Minor };
         Published("1.2.5", "1.3.4");
 
         var state = await Classify("1.2.6");
@@ -166,7 +165,7 @@ public class NugetReadTests
         await Classify("1.2.0");
 
         await _nuget.Received().GetPublishedVersions(
-            Arg.Is<NuGetFeed>(f => f.Url == _options.Feed),
+            Arg.Is<NuGetFeed>(f => f.Url == _release.Feed),
             "My.Package",
             Arg.Any<CancellationToken>());
     }
@@ -181,7 +180,7 @@ public class NugetReadTests
         var project = new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") };
         var core = new Project { Name = "My.Package.Core", Version = NuGetVersion.Parse("1.2.0") };
 
-        var result = await Step().Run(project, new PackageSet { Packages = [core, project] }, TestContext.Current.CancellationToken);
+        var result = await Step().Run(_release, project, new PackageSet { Packages = [core, project] }, TestContext.Current.CancellationToken);
 
         var state = result.Value.ShouldNotBeNull();
         state.Published.ShouldBeFalse();
@@ -196,7 +195,7 @@ public class NugetReadTests
         var project = new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0") };
         var core = new Project { Name = "My.Package.Core", Version = NuGetVersion.Parse("1.2.0") };
 
-        var result = await Step().Run(project, new PackageSet { Packages = [core, project] }, TestContext.Current.CancellationToken);
+        var result = await Step().Run(_release, project, new PackageSet { Packages = [core, project] }, TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().Published.ShouldBeTrue();
     }
@@ -212,7 +211,7 @@ public class NugetReadTests
         var core = new Project { Name = "My.Package.Core", Version = NuGetVersion.Parse("1.1.0") };
         var tool = new Project { Name = "My.Package", Version = NuGetVersion.Parse("1.1.0") };
 
-        var result = await Step().Run(core, new PackageSet { Packages = [core, tool] }, TestContext.Current.CancellationToken);
+        var result = await Step().Run(_release, core, new PackageSet { Packages = [core, tool] }, TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().LatestInLine.ShouldBeFalse();
     }
@@ -220,7 +219,7 @@ public class NugetReadTests
     private async Task<ReleaseState> Classify(string version)
     {
         var project = new Project { Name = "My.Package", Version = NuGetVersion.Parse(version) };
-        var result = await Step().Run(project, new PackageSet { Packages = [project] }, TestContext.Current.CancellationToken);
+        var result = await Step().Run(_release, project, new PackageSet { Packages = [project] }, TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeFalse();
         return result.Value.ShouldNotBeNull();
@@ -235,5 +234,5 @@ public class NugetReadTests
             .Returns([.. versions.Select(NuGetVersion.Parse)]);
 
     private NugetRead Step() =>
-        new(_log, Options.Create(_options), _nuget);
+        new(_log, _nuget);
 }

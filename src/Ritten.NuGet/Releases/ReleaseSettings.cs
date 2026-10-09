@@ -1,6 +1,4 @@
-using Ritten.Releases;
-
-namespace Ritten.Workflows;
+namespace Ritten.Releases;
 
 /// <summary>
 /// The <c>release</c> section of <c>ritten.json</c> for .NET projects.

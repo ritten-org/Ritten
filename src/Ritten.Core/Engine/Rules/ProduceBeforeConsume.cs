@@ -11,7 +11,8 @@ public sealed class ProduceBeforeConsume : IJobRule
     /// <inheritdoc />
     public IEnumerable<Error> Check(IJob job)
     {
-        HashSet<Type> produced = [];
+        // The job's arguments are in the state before its first step.
+        HashSet<Type> produced = [.. job.Inputs];
         foreach (var step in job.Steps)
         {
             foreach (var parameter in step.Requires)

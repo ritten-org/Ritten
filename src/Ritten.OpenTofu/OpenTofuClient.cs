@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Ritten.Commands;
 using Ritten.Contracts;
 
@@ -9,20 +8,19 @@ namespace Ritten.OpenTofu;
 /// </summary>
 /// <param name="commands">The command runner.</param>
 /// <param name="secretProvider">The secrets store the host registered, for the references an env file names.</param>
-/// <param name="options">Where the root module is.</param>
-internal sealed class OpenTofuClient(ICommandRunner commands, ISecretProvider secretProvider, IOptions<OpenTofuOptions> options) : IOpenTofu
+internal sealed class OpenTofuClient(ICommandRunner commands, ISecretProvider secretProvider) : IOpenTofu
 {
     /// <inheritdoc />
-    public async Task Init(TofuEnvironment? environment = null, CancellationToken ct = default) =>
-        await commands.Run((await Tofu(environment, ct, "init", "-input=false")).AndArguments(VarFile(environment)).ThrowOnError(), ct);
+    public async Task Init(TofuModule module, TofuEnvironment? environment = null, CancellationToken ct = default) =>
+        await commands.Run((await Tofu(module, environment, ct, "init", "-input=false")).AndArguments(VarFile(environment)).ThrowOnError(), ct);
 
     /// <inheritdoc />
-    public async Task<TofuPlanResult> Plan(TofuEnvironment? environment = null, CancellationToken ct = default)
+    public async Task<TofuPlanResult> Plan(TofuModule module, TofuEnvironment? environment = null, CancellationToken ct = default)
     {
         // -detailed-exitcode splits the answer three ways: 0 nothing to do, 2 changes, anything
         // else broken. Without it a plan that cannot reach its backend and a plan with nothing
         // to do are the same exit code, and a drift check built on that reports quiet either way.
-        var command = await Tofu(environment, ct, "plan", "-input=false", "-lock=false", "-no-color", "-detailed-exitcode");
+        var command = await Tofu(module, environment, ct, "plan", "-input=false", "-lock=false", "-no-color", "-detailed-exitcode");
         var result = await commands.Run(command.AndArguments(VarFile(environment)), ct);
 
         return result.ExitCode.Value switch
@@ -34,17 +32,17 @@ internal sealed class OpenTofuClient(ICommandRunner commands, ISecretProvider se
     }
 
     /// <inheritdoc />
-    public async Task Apply(TofuEnvironment? environment = null, CancellationToken ct = default) =>
+    public async Task Apply(TofuModule module, TofuEnvironment? environment = null, CancellationToken ct = default) =>
         await commands.Run(
-            (await Tofu(environment, ct, "apply", "-input=false", "-auto-approve", "-no-color")).AndArguments(VarFile(environment)).ThrowOnError(),
+            (await Tofu(module, environment, ct, "apply", "-input=false", "-auto-approve", "-no-color")).AndArguments(VarFile(environment)).ThrowOnError(),
             ct);
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<string>?> VerifyFormatting(CancellationToken ct = default)
+    public async Task<IReadOnlyList<string>?> VerifyFormatting(TofuModule module, CancellationToken ct = default)
     {
         // `fmt -check -list` names the files rather than only failing, which is the difference
         // between a report a reader can act on and one that sends them back to a terminal.
-        var result = await commands.Run(Tofu("fmt", "-recursive", "-check", "-list=true", "-no-color").QuietOutput(), ct);
+        var result = await commands.Run(Tofu(module, "fmt", "-recursive", "-check", "-list=true", "-no-color").QuietOutput(), ct);
         if (result.IsSuccess)
         {
             return null;
@@ -63,9 +61,9 @@ internal sealed class OpenTofuClient(ICommandRunner commands, ISecretProvider se
 
     // The env files are read as each command starts and travel on the command, not the process,
     // so a value lives exactly as long as the call that needs it.
-    private async Task<Command> Tofu(TofuEnvironment? environment, CancellationToken ct, params string[] arguments)
+    private async Task<Command> Tofu(TofuModule module, TofuEnvironment? environment, CancellationToken ct, params string[] arguments)
     {
-        var command = Tofu(arguments);
+        var command = Tofu(module, arguments);
         if (environment is not { EnvFiles.Count: > 0 })
         {
             return command;
@@ -78,8 +76,8 @@ internal sealed class OpenTofuClient(ICommandRunner commands, ISecretProvider se
     }
 
     // -chdir comes before the subcommand, which is the one place OpenTofu cares about order.
-    private Command Tofu(params string[] arguments) =>
-        Command.Create("tofu").WithArguments(options.Value.Root is { Length: > 0 } root
+    private static Command Tofu(TofuModule module, params string[] arguments) =>
+        Command.Create("tofu").WithArguments(module.Root is { Length: > 0 } root
             ? [$"-chdir={root}", .. arguments]
             : arguments);
 }

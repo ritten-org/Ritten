@@ -98,10 +98,7 @@ public class WorkflowRecognitionTests : IDisposable
     }
 
     /// <summary>The registry as the tool registers it: most specific first.</summary>
-    private static WorkflowRegistry Registry() => new WorkflowRegistry()
-        .Add<DotNetToolWorkflow>()
-        .Add<DotNetPackageWorkflow>()
-        .Add<DotNetWorkflow>();
+    private static WorkflowSet Registry() => new([new DotNetToolWorkflow(), new DotNetPackageWorkflow(), new DotNetWorkflow()]);
 
     private void Project(string path, string content)
     {

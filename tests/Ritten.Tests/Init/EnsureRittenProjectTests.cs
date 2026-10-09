@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
@@ -6,7 +5,6 @@ using Ritten.Engine;
 using Ritten.Engine.Workflows;
 using Ritten.Init.Steps;
 using Ritten.Reporting;
-using Ritten.Tests.Engine.Helpers;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Init;
@@ -16,9 +14,7 @@ namespace Ritten.Tests.Init;
 /// </summary>
 public class EnsureRittenProjectTests
 {
-    private static readonly IProjectFiles Files = WorkflowRunBuilderHelpers.Create()
-        .Services.BuildServiceProvider()
-        .GetRequiredService<IProjectFiles>();
+    private static readonly IProjectFiles Files = new ProjectFileClient();
 
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly IWorkflowPrompt _prompt = Substitute.For<IWorkflowPrompt>();

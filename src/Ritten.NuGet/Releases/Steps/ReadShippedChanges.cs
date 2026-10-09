@@ -1,9 +1,7 @@
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.Git;
-using Ritten.NuGet;
 using Ritten.Reporting;
 
 namespace Ritten.Releases.Steps;
@@ -12,11 +10,10 @@ namespace Ritten.Releases.Steps;
 /// Reads which of the files that decide what the packages contain a pull request changed.
 /// </summary>
 /// <param name="pullRequest">The pull request under review, if any.</param>
-/// <param name="options">The workflow's NuGet options, which carry the release cadence.</param>
 /// <param name="git">The git client.</param>
 /// <param name="log">The workflow log.</param>
 [Step("read shipped changes", StepKind.Work)]
-public class ReadShippedChanges(PullRequest pullRequest, IOptions<NuGetOptions> options, IGit git, IWorkflowLog log)
+public class ReadShippedChanges(PullRequest pullRequest, IGit git, IWorkflowLog log)
 {
     /// <summary>
     /// The repository-wide files that change every project's output: its build properties and its package versions.
@@ -31,9 +28,10 @@ public class ReadShippedChanges(PullRequest pullRequest, IOptions<NuGetOptions> 
     /// <summary>
     /// Diffs each shipped project's directory, and the shared build inputs, against the pull request's base.
     /// </summary>
+    /// <param name="release">How the project releases: its feed, release lines and cadence.</param>
     /// <param name="packages">The packages the repository ships (see <see cref="ReadProjects"/>).</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public async Task<StepResult<ShippedChanges>> Run(PackageSet packages, CancellationToken cancellationToken = default)
+    public async Task<StepResult<ShippedChanges>> Run(ReleaseSettings release, PackageSet packages, CancellationToken cancellationToken = default)
     {
         if (pullRequest.BaseRef is not { Length: > 0 } baseRef)
         {
@@ -41,9 +39,9 @@ public class ReadShippedChanges(PullRequest pullRequest, IOptions<NuGetOptions> 
             return ShippedChanges.Unreviewed;
         }
 
-        if (options.Value.Cadence != ReleaseCadence.Continuous)
+        if (release.Cadence != ReleaseCadence.Continuous)
         {
-            log.Detail($"A {options.Value.Cadence.ToString().ToLowerInvariant()} release doesn't judge what a pull request changed; not measured.");
+            log.Detail($"A {release.Cadence.ToString().ToLowerInvariant()} release doesn't judge what a pull request changed; not measured.");
             return ShippedChanges.Unreviewed;
         }
 

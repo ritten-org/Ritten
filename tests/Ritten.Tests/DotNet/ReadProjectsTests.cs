@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
@@ -12,16 +11,16 @@ public class ReadProjectsTests
 {
     private readonly IDotNet _dotnet = Substitute.For<IDotNet>();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
-    private readonly DotNetOptions _options = TestOptions.DotNet();
+    private DotNetBuildSettings _build = TestOptions.Build();
 
     [Fact]
     public async Task ReadsEveryConfiguredPackage()
     {
-        _options.Projects = ["src/Core/Core.csproj", "src/Tool/Tool.csproj"];
+        _build = _build with { Projects = ["src/Core/Core.csproj", "src/Tool/Tool.csproj"] };
         Package("src/Core/Core.csproj", "My.Package.Core", "1.2.0");
         Package("src/Tool/Tool.csproj", "My.Package", "1.2.0");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(_build, TestContext.Current.CancellationToken);
 
         var packages = result.Value.ShouldNotBeNull().Packages;
         packages.Select(p => p.Name).ShouldBe(["My.Package.Core", "My.Package"]);
@@ -32,12 +31,12 @@ public class ReadProjectsTests
     [Fact]
     public async Task FailsWhenAPackageProjectIsMissing()
     {
-        _options.Projects = ["src/Gone/Gone.csproj"];
+        _build = _build with { Projects = ["src/Gone/Gone.csproj"] };
         var file = Substitute.For<IFile>();
         file.Exists.Returns(false);
         _fileSystem.ProjectRoot.GetFile("src/Gone/Gone.csproj").Returns(file);
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(_build, TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("src/Gone/Gone.csproj");
@@ -53,5 +52,5 @@ public class ReadProjectsTests
     }
 
     private ReadProjects Step() =>
-        new(Substitute.For<IWorkflowLog>(), Options.Create(_options), _fileSystem, _dotnet);
+        new(Substitute.For<IWorkflowLog>(), _fileSystem, _dotnet);
 }
