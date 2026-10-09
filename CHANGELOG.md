@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2026-10-09
+
+### Changed
+
+- **Every service is registered once at the start, and runs are scoped.** Workflows and jobs no longer register services: the host composes its clients in `Program.cs`.
+- **Jobs run with a typed arguments model.** `Job<TArguments>` replaces `Job<TSettings>`; each property reaches steps as a `Run` parameter of its type.
+- **Project values moved out of client options.** `DotNetBuildSettings`, `PackageRepository`, `ReleaseSettings`, `DockerImages` and `TofuModule` are arguments now; `GitOptions` and `NuGetOptions` keep only what the environment sets.
+- **Clients are scoped to the run.** Anything registered as a singleton that depends on one fails `Build`.
+- **A resource detector reads the application's services**, not the run's.
+
+### Added
+
+- **`WorkflowApplication.Run(workflow, job, arguments, directory, options)`**, for a host that chooses the job and its arguments itself, and `WorkflowApplication.Workflows`.
+- **`JobCommand.Create` and a public `WorkflowFlags`**, for a host building its own command line from Ritten's commands.
+- **`WorkflowRegistry.Add<T>()` builds the workflow from the application's services**, so it can take dependencies.
+
+### Removed
+
+- **`WorkflowSettings`, `SettingsValidator`, `JobArgument`, `JobArguments`, `WorkflowRunBuilder` and `WorkflowRun`.** Use an arguments model, `ArgumentsValidator`, and `WorkflowApplication.Run`.
+
 ## [0.22.0] - 2026-10-07
 
 ### Fixed
@@ -338,6 +358,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.23.0]: https://github.com/ritten-org/Ritten/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/ritten-org/Ritten/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/ritten-org/Ritten/compare/v0.20.1...v0.21.0
 [0.20.1]: https://github.com/ritten-org/Ritten/compare/v0.20.0...v0.20.1

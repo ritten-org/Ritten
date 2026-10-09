@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Ritten.CodeCoverage;
 using Ritten.CodeCoverage.Steps;
 using Ritten.Reporting;
@@ -16,7 +15,7 @@ public class CoverageCheckTests
 
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
     private readonly ReportSection _section = new(SectionName.Coverage);
-    private readonly CoverageOptions _options = new();
+    private CoverageSettings _thresholds = new();
 
     public CoverageCheckTests()
     {
@@ -26,7 +25,7 @@ public class CoverageCheckTests
     [Fact]
     public void ReportsWithoutJudgingWhenNoMinimumIsSet()
     {
-        var result = Step().Run(ThreeQuarters);
+        var result = Step().Run(_thresholds, ThreeQuarters);
 
         result.IsFailure.ShouldBeFalse();
         _section.Tone.ShouldBe(ReportTone.Success);
@@ -36,10 +35,9 @@ public class CoverageCheckTests
     [Fact]
     public void PassesWhenTheMinimumsAreMet()
     {
-        _options.MinimumLine = 70;
-        _options.MinimumBranch = 70;
+        _thresholds = new CoverageSettings { Line = 70, Branch = 70 };
 
-        var result = Step().Run(ThreeQuarters);
+        var result = Step().Run(_thresholds, ThreeQuarters);
 
         result.IsFailure.ShouldBeFalse();
         _section.Entries.ShouldHaveSingleItem().ToMarkdown().ShouldContain("minimum 70.0%");
@@ -48,9 +46,9 @@ public class CoverageCheckTests
     [Fact]
     public void FailsWhenLineCoverageIsBelowTheMinimum()
     {
-        _options.MinimumLine = 80;
+        _thresholds = new CoverageSettings { Line = 80 };
 
-        var result = Step().Run(ThreeQuarters);
+        var result = Step().Run(_thresholds, ThreeQuarters);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem()
@@ -61,13 +59,12 @@ public class CoverageCheckTests
     [Fact]
     public void ReportsEveryUnmetMinimumAtOnce()
     {
-        _options.MinimumLine = 80;
-        _options.MinimumBranch = 80;
+        _thresholds = new CoverageSettings { Line = 80, Branch = 80 };
 
-        var result = Step().Run(ThreeQuarters);
+        var result = Step().Run(_thresholds, ThreeQuarters);
 
         result.Errors.ShouldNotBeNull().Count.ShouldBe(2);
     }
 
-    private CoverageCheck Step() => new(Options.Create(_options), _report);
+    private CoverageCheck Step() => new(_report);
 }

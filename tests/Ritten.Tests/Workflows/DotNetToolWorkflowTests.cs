@@ -1,6 +1,5 @@
 using Ritten.Engine;
-using Ritten.Engine.Runs;
-using Ritten.Tests.Engine.Helpers;
+using Ritten.Tests.Support;
 using Ritten.Workflows.DotNetTool;
 
 namespace Ritten.Tests.Workflows;
@@ -33,7 +32,6 @@ public class DotNetToolWorkflowTests
         var result = Build(job, Complete);
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
     }
 
     [Theory]
@@ -44,7 +42,6 @@ public class DotNetToolWorkflowTests
         var result = Build(job, "{}");
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
     }
 
     [Theory]
@@ -72,7 +69,6 @@ public class DotNetToolWorkflowTests
         var result = Build(job, """{ "build": { "projects": ["src/Core/Core.csproj", "src/Thing/Thing.csproj"] } }""");
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
     }
 
     [Fact]
@@ -94,7 +90,6 @@ public class DotNetToolWorkflowTests
         var result = Build(job, Complete);
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
     }
 
     [Fact]
@@ -102,20 +97,15 @@ public class DotNetToolWorkflowTests
     {
         // Credentials are resolved by the steps that use them, after the gates — so an offline
         // deploy composes, and one that's at rest exits 0 without ever needing them.
-        var result = Build("deploy", Complete, environment: WorkflowRunBuilderHelpers.Empty);
+        var result = Build("deploy", Complete, environment: _ => null);
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
     }
 
-    private static Result<WorkflowRun> Build(
+    private static Result<object> Build(
         string job,
         string settings,
         Func<string, string?>? environment = null,
-        bool dryRun = false)
-    {
-        var workflow = new DotNetToolWorkflow();
-        var builder = WorkflowRunBuilderHelpers.Create(workflow.Label, environment, dryRun, settings: settings);
-        return builder.Build(workflow.Jobs.Single(j => j.Name == job));
-    }
+        bool dryRun = false) =>
+        ShippedWorkflow.ReadArguments("dotnet-tool", job, settings, environment, dryRun);
 }

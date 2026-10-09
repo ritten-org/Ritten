@@ -1,10 +1,8 @@
-using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.Git;
 using Ritten.Reporting;
-using Ritten.Tests.Support;
 
 namespace Ritten.Tests.DotNet;
 
@@ -15,12 +13,12 @@ namespace Ritten.Tests.DotNet;
 public class ResolveReleaseTests
 {
     private readonly IGit _git = Substitute.For<IGit>();
-    private readonly DotNetOptions _options = TestOptions.DotNet();
+    private PackageRepository? _declared;
 
     [Fact]
     public async Task AnExplicitSettingWinsOverEverySource()
     {
-        _options.Repository = "https://github.com/configured/repo";
+        _declared = new PackageRepository("https://github.com/configured/repo");
 
         var release = await Produce(Entry(repository: "https://github.com/csproj/repo"));
 
@@ -66,7 +64,7 @@ public class ResolveReleaseTests
     [Fact]
     public async Task FailsWhenNothingShips()
     {
-        var result = await Step().Run(new PackageSet { Packages = [] }, TestContext.Current.CancellationToken);
+        var result = await Step().Run(_declared, new PackageSet { Packages = [] }, TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeTrue();
     }
@@ -81,11 +79,11 @@ public class ResolveReleaseTests
 
     private async Task<Project> Produce(params Project[] entries)
     {
-        var result = await Step().Run(new PackageSet { Packages = entries }, TestContext.Current.CancellationToken);
+        var result = await Step().Run(_declared, new PackageSet { Packages = entries }, TestContext.Current.CancellationToken);
         result.Outcome.IsFailure.ShouldBeFalse();
         return result.Value.ShouldNotBeNull();
     }
 
     private ResolveRelease Step() =>
-        new(Substitute.For<IWorkflowLog>(), Options.Create(_options), _git);
+        new(Substitute.For<IWorkflowLog>(), _git);
 }

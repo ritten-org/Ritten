@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Engine;
 using Ritten.Reporting;
@@ -8,28 +7,28 @@ namespace Ritten.CodeCoverage.Steps;
 /// <summary>
 /// Judges the collected <see cref="Coverage"/> against the configured minimums.
 /// </summary>
-/// <param name="options">The workflow's coverage options.</param>
 /// <param name="report">The build report.</param>
 [Step("check coverage", StepKind.Check)]
-public class CoverageCheck(IOptions<CoverageOptions> options, IWorkflowReport report)
+public class CoverageCheck(IWorkflowReport report)
 {
     /// <summary>
     /// Judges the collected coverage.
     /// </summary>
+    /// <param name="thresholds">The coverage the project requires.</param>
     /// <param name="coverage">The combined coverage the tests produced (see <see cref="ReadCoverage"/>).</param>
-    public StepResult Run(Coverage coverage)
+    public StepResult Run(CoverageSettings thresholds, Coverage coverage)
     {
         var rows =
-            $"- Line coverage: **{coverage.LineRate:0.0}%**{Minimum(options.Value.MinimumLine)}\n" +
-            $"- Branch coverage: **{coverage.BranchRate:0.0}%**{Minimum(options.Value.MinimumBranch)}";
+            $"- Line coverage: **{coverage.LineRate:0.0}%**{Minimum(thresholds.Line)}\n" +
+            $"- Branch coverage: **{coverage.BranchRate:0.0}%**{Minimum(thresholds.Branch)}";
 
         List<Error> failures = [];
-        if (options.Value.MinimumLine is { } line && coverage.LineRate < line)
+        if (thresholds.Line is { } line && coverage.LineRate < line)
         {
             failures.Add($"Line coverage {coverage.LineRate:0.0}% is below the minimum {line:0.0}%.");
         }
 
-        if (options.Value.MinimumBranch is { } branch && coverage.BranchRate < branch)
+        if (thresholds.Branch is { } branch && coverage.BranchRate < branch)
         {
             failures.Add($"Branch coverage {coverage.BranchRate:0.0}% is below the minimum {branch:0.0}%.");
         }

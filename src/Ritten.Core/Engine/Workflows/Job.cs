@@ -4,10 +4,16 @@ using Ritten.Reporting;
 namespace Ritten.Engine.Workflows;
 
 /// <summary>
-/// The base for declaring a job.
+/// The base for declaring a job that runs with arguments.
 /// </summary>
-/// <typeparam name="TSettings">The settings type the job's requirements and services read.</typeparam>
-public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
+/// <remarks>
+/// A job is a declaration: it names its steps and the arguments they need, and never registers services.
+/// Each property of <typeparamref name="TArguments"/> is put into the run's state under its type before the first
+/// step, so steps receive them as <c>Run</c> parameters, exactly like a value an earlier step produced.
+/// </remarks>
+/// <typeparam name="TArguments">What the job needs to run: read from the project file and command line by the Ritten
+/// CLI, or constructed by whoever runs the job directly.</typeparam>
+public abstract class Job<TArguments> : IJob where TArguments : class
 {
     /// <inheritdoc />
     public abstract string Name { get; }
@@ -22,57 +28,32 @@ public abstract class Job<TSettings> : IJob where TSettings : WorkflowSettings
     public abstract IReadOnlyList<Step> Steps { get; }
 
     /// <inheritdoc />
-    public virtual IReadOnlyList<JobArgument> Arguments => [];
+    public Type ArgumentsType => typeof(TArguments);
 
     /// <inheritdoc />
     public virtual bool RequiresProject => true;
 
+    /// <inheritdoc />
+    public virtual bool Reports => true;
+
     /// <summary>
-    /// Registers the services the job's steps need.
+    /// Judges the arguments the run arrived with, e.g. <c>arguments.Require(a =&gt; a.Build.Project)</c>.
+    /// Runs before anything is assembled.
     /// </summary>
-    /// <param name="builder">The service collection the job is assembled into.</param>
-    /// <param name="settings">The project's parsed settings.</param>
-    protected virtual void Configure(IWorkflowBuilder builder, TSettings settings)
+    /// <param name="arguments">The validator, holding the arguments and the environment.</param>
+    protected virtual void Validate(ArgumentsValidator<TArguments> arguments)
     {
     }
 
-    /// <summary>
-    /// Registers the services the job's steps need, including whatever it makes of the values it was invoked with.
-    /// </summary>
-    /// <param name="builder">The service collection the job is assembled into.</param>
-    /// <param name="settings">The project's parsed settings.</param>
-    /// <param name="args">The values supplied for the inputs this job declared.</param>
-    protected virtual void Configure(IWorkflowBuilder builder, TSettings settings, JobArguments args) => Configure(builder, settings);
-
-    /// <summary>
-    /// Judges the inputs the run arrived with, e.g. <c>settings.Require(s =&gt; s.Build.Project)</c>.
-    /// Runs as part of the settings load, before anything is assembled.
-    /// </summary>
-    /// <param name="settings">The validator, holding the parsed settings and the environment.</param>
-    protected virtual void ValidateSettings(SettingsValidator<TSettings> settings)
+    IReadOnlyList<Error> IJob.Validate(object arguments, Func<string, string?> environment, bool dryRun, IWorkflowLog log, string source)
     {
+        var validator = new ArgumentsValidator<TArguments>((TArguments)arguments, environment, dryRun, log, source);
+        Validate(validator);
+        return validator.Errors;
     }
-
-    Result<WorkflowSettings> IJob.ReadSettings(RittenProject project, Func<string, string?> environment, bool dryRun, IWorkflowLog log)
-    {
-        var settings = WorkflowSettings.Read<TSettings>(project);
-        if (settings.IsError)
-        {
-            return new Result<WorkflowSettings>(settings.Errors);
-        }
-
-        // There is nothing to judge in settings nobody has written yet.
-        if (project.IsSynthetic)
-        {
-            return settings.Value;
-        }
-
-        var validator = new SettingsValidator<TSettings>(settings.Value, environment, dryRun, log, project.FileName);
-        ValidateSettings(validator);
-        return validator.Errors.Count > 0
-            ? new Result<WorkflowSettings>(validator.Errors)
-            : new Result<WorkflowSettings>(settings.Value);
-    }
-
-    void IJob.Configure(IWorkflowBuilder builder, WorkflowSettings settings, JobArguments args) => Configure(builder, (TSettings)settings, args);
 }
+
+/// <summary>
+/// The base for declaring a job that runs with no arguments.
+/// </summary>
+public abstract class Job : Job<NoArguments>;

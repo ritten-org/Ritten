@@ -14,23 +14,14 @@ public static class WorkflowBuilderExtensions
     extension(IWorkflowBuilder builder)
     {
         /// <summary>
-        /// Adds NuGet publishing, configured from the project's settings.
+        /// Adds the NuGet client, and the push API key from the environment.
         /// </summary>
-        /// <param name="feed">The V3 index URL of the feed versions are checked against and pushed to.</param>
-        /// <param name="lines">How published versions group into release lines.</param>
-        /// <param name="cadence">When a merged change becomes a release.</param>
-        public IWorkflowBuilder AddNuGet(string feed, ReleaseLine lines, ReleaseCadence cadence = ReleaseCadence.Curated)
+        public IWorkflowBuilder AddNuGet()
         {
             builder.AddCommandRunner();
-            builder.Services.TryAddSingleton<INuGet, NuGetClient>();
+            builder.Services.TryAddScoped<INuGet, NuGetClient>();
             builder.Decorators.Decorate<INuGet, DryRunNuGet>();
-            builder.Services.Configure<NuGetOptions>(o =>
-            {
-                o.Feed = feed;
-                o.Lines = lines;
-                o.Cadence = cadence;
-            });
-            builder.Services.Configure<NuGetOptions>(NuGetOptions.ConfigureFromEnvironment);
+            builder.Services.AddOptions<NuGetOptions>().Configure(NuGetOptions.ConfigureFromEnvironment);
             return builder;
         }
     }

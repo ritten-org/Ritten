@@ -26,7 +26,7 @@ public static class WorkflowBuilderExtensions
                 options.Configure(configure);
             }
 
-            builder.Services.TryAddSingleton<ISecretProvider, OnePasswordSecretProvider>();
+            builder.Services.TryAddScoped<ISecretProvider, OnePasswordSecretProvider>();
             return builder;
         }
     }

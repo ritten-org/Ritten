@@ -1,13 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Changelogs;
 using Ritten.Changelogs.Steps;
 using Ritten.DotNet;
 using Ritten.Reporting;
-using Ritten.Tests.Engine.Helpers;
 using Ritten.Tests.Support;
-using Ritten.Workflows;
 
 namespace Ritten.Tests.Changelogs;
 
@@ -18,14 +15,14 @@ namespace Ritten.Tests.Changelogs;
 public class CheckChangelogLinksTests
 {
     // The real client, so these tests exercise the actual link generator.
-    private static readonly IChangelog Changelogs = WorkflowRunBuilderHelpers.Create()
-        .AddChangelogs(new ChangelogSettings())
+    private static readonly IChangelog Changelogs = new TestWorkflowBuilder()
+        .AddChangelogs()
         .Services.BuildServiceProvider()
         .GetRequiredService<IChangelog>();
 
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
     private readonly ReportSection _changelogSection = new(SectionName.Changelog);
-    private readonly ChangelogOptions _options = TestOptions.Changelog();
+    private readonly ChangelogSettings _options = TestOptions.Changelog();
 
     public CheckChangelogLinksTests()
     {
@@ -46,7 +43,7 @@ public class CheckChangelogLinksTests
             [1.2.0]: https://github.com/example/repo/releases/tag/v1.2.0
             """);
 
-        var result = Step().Run(Project(), changelog);
+        var result = Step().Run(_options, TestOptions.Release(), Project(), changelog);
 
         result.IsFailure.ShouldBeFalse();
     }
@@ -65,7 +62,7 @@ public class CheckChangelogLinksTests
             [1.2.0]: https://github.com/example/repo/releases/tag/v1.0.0
             """);
 
-        var result = Step().Run(Project(), changelog);
+        var result = Step().Run(_options, TestOptions.Release(), Project(), changelog);
 
         result.IsFailure.ShouldBeTrue();
         _changelogSection.Tone.ShouldBe(ReportTone.Failure);
@@ -89,7 +86,7 @@ public class CheckChangelogLinksTests
             [1.2.0]: https://github.com/example/repo/releases/tag/v1.0.0
             """);
 
-        var result = Step().Run(Project(), changelog);
+        var result = Step().Run(_options, TestOptions.Release(), Project(), changelog);
 
         var error = result.Errors.ShouldNotBeNull().ShouldHaveSingleItem();
         var block = error.Verbatim.ShouldNotBeNull();
@@ -111,7 +108,7 @@ public class CheckChangelogLinksTests
             [1.2.0]: https://example.com/completely-wrong
             """);
 
-        var result = Step().Run(Project(repository: null), changelog);
+        var result = Step().Run(_options, TestOptions.Release(), Project(repository: null), changelog);
 
         result.IsFailure.ShouldBeFalse();
     }
@@ -120,5 +117,5 @@ public class CheckChangelogLinksTests
         new() { Name = "My.Package", Version = NuGetVersion.Parse("1.2.0"), Repository = repository };
 
     private CheckChangelogLinks Step() =>
-        new(Substitute.For<IWorkflowLog>(), Options.Create(_options), Options.Create(TestOptions.Git()), _report, Changelogs);
+        new(Substitute.For<IWorkflowLog>(), _report, Changelogs);
 }

@@ -12,7 +12,7 @@ namespace Ritten.Workflows.DotNetTool;
 /// <summary>
 /// Validates a pull request: formatting, version, changelog, compile, tests, and pack.
 /// </summary>
-internal sealed class CheckJob : DotNetToolJob
+internal sealed class CheckJob : Job<DotNetToolArguments>
 {
     /// <inheritdoc />
     public override string Name => "check";
@@ -24,9 +24,9 @@ internal sealed class CheckJob : DotNetToolJob
     public override JobKind Kind => JobKind.Check;
 
     /// <inheritdoc />
-    protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => settings
-        .Require(s => s.Build.Project is not null || s.Build.Projects is { Count: > 0 }, "Set 'build.project' (one package) or 'build.projects' (several).")
-        .Require(s => s.Build.Project is null || s.Build.Projects is null, "'build.project' and 'build.projects' are both set; use one.");
+    protected override void Validate(ArgumentsValidator<DotNetToolArguments> arguments) => arguments
+        .Require(a => a.Build.Project is not null || a.Build.Projects is { Count: > 0 }, "Set 'build.project' (one package) or 'build.projects' (several).")
+        .Require(a => a.Build.Project is null || a.Build.Projects is null, "'build.project' and 'build.projects' are both set; use one.");
 
     /// <inheritdoc />
     public override IReadOnlyList<Step> Steps { get; } =

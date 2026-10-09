@@ -24,10 +24,10 @@ public static class WorkflowBuilderExtensions
             }
 
             builder.Services.AddSingleton<BuildReportingMarker>();
-            builder.Services.AddSingleton<IWorkflowReport, WorkflowReportBuilder>();
+            builder.Services.AddScoped<IWorkflowReport, WorkflowReportBuilder>();
             builder.Services.AddSingleton<MarkdownReportRenderer>();
-            builder.Services.AddSingleton<IWorkflowProgress, WorkflowReportPublisher>();
-            builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkflowResultSink, FileResultSink>());
+            builder.Services.AddScoped<IWorkflowProgress, WorkflowReportPublisher>();
+            builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<IWorkflowResultSink, FileResultSink>());
             return builder;
         }
     }

@@ -1,6 +1,5 @@
 using Ritten.Engine;
-using Ritten.Engine.Runs;
-using Ritten.Tests.Engine.Helpers;
+using Ritten.Tests.Support;
 using Ritten.Workflows.DotNet;
 
 namespace Ritten.Tests.Workflows;
@@ -27,13 +26,7 @@ public class DotNetWorkflowTests
         var result = Build(job, "{}");
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
     }
 
-    private static Result<WorkflowRun> Build(string job, string settings)
-    {
-        var workflow = new DotNetWorkflow();
-        var builder = WorkflowRunBuilderHelpers.Create(workflow.Label, settings: settings);
-        return builder.Build(workflow.Jobs.Single(j => j.Name == job));
-    }
+    private static Result<object> Build(string job, string settings) => ShippedWorkflow.ReadArguments("dotnet", job, settings);
 }

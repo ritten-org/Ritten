@@ -3,6 +3,7 @@ using NuGet.Versioning;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.Git.Steps;
+using Ritten.Releases;
 using Ritten.Reporting;
 using Ritten.Tests.Support;
 
@@ -14,13 +15,14 @@ public class GitTagTests
 
     private readonly IGit _git = Substitute.For<IGit>();
     private readonly GitOptions _options = TestOptions.Git();
+    private ReleaseSettings _release = TestOptions.Release();
 
     [Fact]
     public async Task SkipsWhenTheTagAlreadyExistsOnOrigin()
     {
         _git.RemoteTagExists("origin", "v1.2.0", Arg.Any<CancellationToken>()).Returns(true);
 
-        await Step().Run(TheProject, TestContext.Current.CancellationToken);
+        await Step().Run(_release, TheProject, TestContext.Current.CancellationToken);
 
         await _git.DidNotReceiveWithAnyArgs().CreateTag(default!, default, TestContext.Current.CancellationToken);
         await _git.DidNotReceiveWithAnyArgs().PushTag(default!, default!, TestContext.Current.CancellationToken);
@@ -29,7 +31,7 @@ public class GitTagTests
     [Fact]
     public async Task CreatesAndPushesTheTagWhenItDoesNotExist()
     {
-        await Step().Run(TheProject, TestContext.Current.CancellationToken);
+        await Step().Run(_release, TheProject, TestContext.Current.CancellationToken);
 
         await _git.Received().CreateTag("v1.2.0", null, Arg.Any<CancellationToken>());
         await _git.Received().PushTag("origin", "v1.2.0", Arg.Any<CancellationToken>());
@@ -40,7 +42,7 @@ public class GitTagTests
     {
         _options.CommitSha = "abc123";
 
-        await Step().Run(TheProject, TestContext.Current.CancellationToken);
+        await Step().Run(_release, TheProject, TestContext.Current.CancellationToken);
 
         await _git.Received().CreateTag("v1.2.0", "abc123", Arg.Any<CancellationToken>());
     }
@@ -50,7 +52,7 @@ public class GitTagTests
     {
         _git.TagExists("v1.2.0", Arg.Any<CancellationToken>()).Returns(true);
 
-        await Step().Run(TheProject, TestContext.Current.CancellationToken);
+        await Step().Run(_release, TheProject, TestContext.Current.CancellationToken);
 
         await _git.DidNotReceiveWithAnyArgs().CreateTag(default!, default, TestContext.Current.CancellationToken);
         await _git.Received().PushTag("origin", "v1.2.0", Arg.Any<CancellationToken>());
@@ -59,9 +61,9 @@ public class GitTagTests
     [Fact]
     public async Task HonoursTheTagPrefix()
     {
-        _options.TagPrefix = "release/";
+        _release = _release with { TagPrefix = "release/" };
 
-        await Step().Run(TheProject, TestContext.Current.CancellationToken);
+        await Step().Run(_release, TheProject, TestContext.Current.CancellationToken);
 
         await _git.Received().CreateTag("release/1.2.0", null, Arg.Any<CancellationToken>());
     }

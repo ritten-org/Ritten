@@ -1,6 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
 using Ritten.Engine;
-using Ritten.Tests.Engine.Helpers;
 
 namespace Ritten.Tests.Engine;
 
@@ -11,9 +9,7 @@ namespace Ritten.Tests.Engine;
 /// </summary>
 public class ProjectFileTests
 {
-    private static readonly IProjectFiles Files = WorkflowRunBuilderHelpers.Create()
-        .Services.BuildServiceProvider()
-        .GetRequiredService<IProjectFiles>();
+    private static readonly IProjectFiles Files = new ProjectFileClient();
 
     [Fact]
     public void DeclaresTheWorkflowWhereAReaderLooksForIt()

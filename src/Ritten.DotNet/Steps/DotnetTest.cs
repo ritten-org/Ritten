@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Engine;
@@ -10,14 +9,12 @@ namespace Ritten.DotNet.Steps;
 /// Runs the tests, reporting the aggregated counts on success and the individual failures otherwise.
 /// </summary>
 /// <param name="log">The workflow log.</param>
-/// <param name="options">The workflow's .NET options.</param>
 /// <param name="fileSystem">The file system.</param>
 /// <param name="dotnet">The dotnet client.</param>
 /// <param name="report">The build report.</param>
 [Step("dotnet test", StepKind.Work)]
 public class DotnetTest(
     IWorkflowLog log,
-    IOptions<DotNetOptions> options,
     IFileSystem fileSystem,
     IDotNet dotnet,
     IWorkflowReport report
@@ -28,14 +25,16 @@ public class DotnetTest(
     /// <summary>
     /// Runs the solution's tests.
     /// </summary>
-    public async Task<StepResult> Run(CancellationToken cancellationToken = default)
+    /// <param name="build">What to build, and how.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    public async Task<StepResult> Run(DotNetBuildSettings build, CancellationToken cancellationToken = default)
     {
         var resultsDirectory = fileSystem.Temp.GetDirectory("test-results");
 
         var result = await dotnet.Test(
             new TestArgs
             {
-                Configuration = options.Value.Configuration,
+                Configuration = build.Configuration,
                 NoBuild = true,
                 ResultsDirectory = resultsDirectory,
                 CollectCoverage = true

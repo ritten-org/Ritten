@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
+using Ritten.Engine.Workflows;
 using Ritten.Reporting;
 
 namespace Ritten.Engine.Runs;
@@ -11,7 +12,8 @@ internal class DefaultWorkflowRunner(
     IReadOnlyList<Step> steps,
     IServiceProvider services,
     WorkflowJob job,
-    RunContext context
+    RunContext context,
+    RunState run
 ) : IWorkflowRunner
 {
 
@@ -40,6 +42,7 @@ internal class DefaultWorkflowRunner(
     {
         // The values steps produce, living exactly as long as the run that produced them.
         Dictionary<Type, object> state = [];
+        ArgumentsModel.For(run.Current.Job.ArgumentsType).Seed(run.Current.Arguments, state);
         List<StepOutcome> results = [];
         foreach (var step in steps)
         {
@@ -72,7 +75,8 @@ internal class DefaultWorkflowRunner(
     {
         try
         {
-            var instance = services.GetRequiredService(step.StepType);
+            // A step is built for the run that reaches it, unless the host registered one of its own.
+            var instance = services.GetService(step.StepType) ?? ActivatorUtilities.CreateInstance(services, step.StepType);
             return await step.Invoke(instance, state, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

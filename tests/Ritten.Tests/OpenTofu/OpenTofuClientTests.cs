@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Ritten.Commands;
 using Ritten.Contracts;
 using Ritten.Engine.FileSystem;
@@ -12,7 +11,7 @@ public class OpenTofuClientTests : IDisposable
     private readonly string _root = Directory.CreateTempSubdirectory("ritten-tofu-").FullName;
     private readonly FakeCommandRunner _commands = new();
     private readonly ISecretProvider _secretProvider = Substitute.For<ISecretProvider>();
-    private readonly OpenTofuOptions _options = new();
+    private TofuModule _module = TofuModule.Project;
 
     public OpenTofuClientTests()
     {
@@ -25,7 +24,7 @@ public class OpenTofuClientTests : IDisposable
     [Fact]
     public async Task Init_PreparesTheRootWithoutPrompting()
     {
-        await Tofu().Init(ct: TestContext.Current.CancellationToken);
+        await Tofu().Init(_module, ct: TestContext.Current.CancellationToken);
 
         var command = _commands.Executed.ShouldHaveSingleItem();
         command.Path.ShouldBe("tofu");
@@ -36,9 +35,9 @@ public class OpenTofuClientTests : IDisposable
     public async Task ChdirComesBeforeTheSubcommand()
     {
         // The one place OpenTofu cares about argument order.
-        _options.Root = "infra";
+        _module = new TofuModule("infra");
 
-        await Tofu().Init(ct: TestContext.Current.CancellationToken);
+        await Tofu().Init(_module, ct: TestContext.Current.CancellationToken);
 
         _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(["-chdir=infra", "init", "-input=false"]);
     }
@@ -50,9 +49,9 @@ public class OpenTofuClientTests : IDisposable
         var lab = new TofuEnvironment { VarFile = Write("lab.tfvars", "") };
         var prod = new TofuEnvironment { VarFile = Write("prod.tfvars", "") };
 
-        await Tofu().Init(lab, TestContext.Current.CancellationToken);
-        await Tofu().Plan(lab, TestContext.Current.CancellationToken);
-        await Tofu().Apply(prod, TestContext.Current.CancellationToken);
+        await Tofu().Init(_module, lab, TestContext.Current.CancellationToken);
+        await Tofu().Plan(_module, lab, TestContext.Current.CancellationToken);
+        await Tofu().Apply(_module, prod, TestContext.Current.CancellationToken);
 
         _commands.Executed.Count.ShouldBe(3);
         _commands.Executed[0].Arguments.ShouldContain($"-var-file={lab.VarFile!.AbsolutePath}");
@@ -72,9 +71,9 @@ public class OpenTofuClientTests : IDisposable
             ]
         };
 
-        await Tofu().Init(environment, TestContext.Current.CancellationToken);
-        await Tofu().Plan(environment, TestContext.Current.CancellationToken);
-        await Tofu().Apply(environment, TestContext.Current.CancellationToken);
+        await Tofu().Init(_module, environment, TestContext.Current.CancellationToken);
+        await Tofu().Plan(_module, environment, TestContext.Current.CancellationToken);
+        await Tofu().Apply(_module, environment, TestContext.Current.CancellationToken);
 
         _commands.Executed.Count.ShouldBe(3);
         _commands.Executed.ShouldAllBe(c =>
@@ -86,7 +85,7 @@ public class OpenTofuClientTests : IDisposable
     [Fact]
     public async Task NoEnvironmentMeansTheProcessesOwn()
     {
-        await Tofu().Plan(ct: TestContext.Current.CancellationToken);
+        await Tofu().Plan(_module, ct: TestContext.Current.CancellationToken);
 
         var command = _commands.Executed.ShouldHaveSingleItem();
         command.EnvironmentVariables.ShouldBeEmpty();
@@ -99,7 +98,7 @@ public class OpenTofuClientTests : IDisposable
         var environment = new TofuEnvironment { EnvFiles = [Write("broken.env", "not an assignment\n")] };
 
         var failure = await Should.ThrowAsync<InvalidOperationException>(
-            () => Tofu().Init(environment, TestContext.Current.CancellationToken));
+            () => Tofu().Init(_module, environment, TestContext.Current.CancellationToken));
 
         failure.Message.ShouldContain("broken.env:1");
         _commands.Executed.ShouldBeEmpty();
@@ -108,7 +107,7 @@ public class OpenTofuClientTests : IDisposable
     [Fact]
     public async Task Plan_ReportsNothingToDoOnAClean_Exit()
     {
-        var plan = await Tofu().Plan(ct: TestContext.Current.CancellationToken);
+        var plan = await Tofu().Plan(_module, ct: TestContext.Current.CancellationToken);
 
         plan.HasChanges.ShouldBeFalse();
     }
@@ -118,7 +117,7 @@ public class OpenTofuClientTests : IDisposable
     {
         _commands.Respond(c => c.Arguments.Contains("plan"), new CommandResult(2, "~ resource \"a\"", ""));
 
-        var plan = await Tofu().Plan(ct: TestContext.Current.CancellationToken);
+        var plan = await Tofu().Plan(_module, ct: TestContext.Current.CancellationToken);
 
         plan.HasChanges.ShouldBeTrue();
         plan.Output.ShouldBe("~ resource \"a\"");
@@ -129,7 +128,7 @@ public class OpenTofuClientTests : IDisposable
     {
         // Without -detailed-exitcode a plan with changes and a plan that could not run are the
         // same code, so the command must not throw on a non-zero exit of its own accord.
-        await Tofu().Plan(ct: TestContext.Current.CancellationToken);
+        await Tofu().Plan(_module, ct: TestContext.Current.CancellationToken);
 
         var command = _commands.Executed.ShouldHaveSingleItem();
         command.Arguments.ShouldContain("-detailed-exitcode");
@@ -142,13 +141,13 @@ public class OpenTofuClientTests : IDisposable
         _commands.Respond(c => c.Arguments.Contains("plan"), new CommandResult(1, "", "no valid credential sources"));
 
         await Should.ThrowAsync<CommandFailedException>(
-            async () => await Tofu().Plan(ct: TestContext.Current.CancellationToken));
+            async () => await Tofu().Plan(_module, ct: TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task VerifyFormatting_SaysNothingWhenEveryFileIsFormatted()
     {
-        (await Tofu().VerifyFormatting(TestContext.Current.CancellationToken)).ShouldBeNull();
+        (await Tofu().VerifyFormatting(_module, TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
     [Fact]
@@ -156,7 +155,7 @@ public class OpenTofuClientTests : IDisposable
     {
         _commands.Respond(c => c.Arguments.Contains("fmt"), new CommandResult(3, "main.tf\ndns.tf\n", ""));
 
-        var unformatted = await Tofu().VerifyFormatting(TestContext.Current.CancellationToken);
+        var unformatted = await Tofu().VerifyFormatting(_module, TestContext.Current.CancellationToken);
 
         unformatted.ShouldBe(["main.tf", "dns.tf"]);
     }
@@ -169,10 +168,10 @@ public class OpenTofuClientTests : IDisposable
         _commands.Respond(c => c.Arguments.Contains("fmt"), new CommandResult(1, "", "Failed to read module directory"));
 
         await Should.ThrowAsync<CommandFailedException>(
-            async () => await Tofu().VerifyFormatting(TestContext.Current.CancellationToken));
+            async () => await Tofu().VerifyFormatting(_module, TestContext.Current.CancellationToken));
     }
 
-    private OpenTofuClient Tofu() => new(_commands, _secretProvider, Options.Create(_options));
+    private OpenTofuClient Tofu() => new(_commands, _secretProvider);
 
     private PhysicalFile Write(string name, string contents)
     {

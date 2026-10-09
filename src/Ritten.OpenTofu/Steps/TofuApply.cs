@@ -14,11 +14,12 @@ public class TofuApply(IOpenTofu tofu, IWorkflowReport report)
     /// <summary>
     /// Applies the root module.
     /// </summary>
+    /// <param name="module">The root module.</param>
     /// <param name="environment">The environment an earlier step resolved, when one did.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public async Task<StepResult> Run(TofuEnvironment? environment, CancellationToken cancellationToken = default)
+    public async Task<StepResult> Run(TofuModule module, TofuEnvironment? environment, CancellationToken cancellationToken = default)
     {
-        await tofu.Apply(environment, cancellationToken);
+        await tofu.Apply(module, environment, cancellationToken);
         report.Section(SectionName.Infrastructure).Success("Applied.");
         return StepResult.Successful;
     }

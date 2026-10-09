@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Ritten.Changelogs.Steps;
 using Ritten.Contracts;
 using Ritten.DotNet;
@@ -10,18 +9,18 @@ namespace Ritten.Releases.Steps;
 /// Writes the prepared version into whichever files declare it.
 /// </summary>
 /// <param name="log">The workflow log.</param>
-/// <param name="options">The workflow's .NET options.</param>
 /// <param name="dotnet">The dotnet client.</param>
 [Step("prepare version", StepKind.Work)]
-public class PrepareVersion(IWorkflowLog log, IOptions<DotNetOptions> options, IDotNet dotnet)
+public class PrepareVersion(IWorkflowLog log, IDotNet dotnet)
 {
     /// <summary>
     /// Sets the version every shipped project evaluates to.
     /// </summary>
+    /// <param name="build">What the project builds.</param>
     /// <param name="project">The project being released (see <see cref="DotNet.Steps.ResolveRelease"/>).</param>
     /// <param name="release">The version being prepared (see <see cref="DecideVersion"/>).</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
-    public async Task<StepResult> Run(Project project, PreparedRelease release, CancellationToken ct = default)
+    public async Task<StepResult> Run(DotNetBuildSettings build, Project project, PreparedRelease release, CancellationToken ct = default)
     {
         if (!release.Bumped)
         {
@@ -30,7 +29,7 @@ public class PrepareVersion(IWorkflowLog log, IOptions<DotNetOptions> options, I
         }
 
         var written = await dotnet.SetVersion(
-            new SetVersionArgs { Projects = options.Value.Projects, Current = project.Version, Version = release.Version },
+            new SetVersionArgs { Projects = build.ShippedProjects, Current = project.Version, Version = release.Version },
             ct);
 
         if (written.IsError)

@@ -25,7 +25,12 @@ public sealed record RunJobArgs(string Job)
     public bool AutoApprove { get; init; }
 
     /// <summary>
-    /// The arguments supplied to the job.
+    /// The values given for the job's options.
     /// </summary>
-    public JobArguments Arguments { get; init; } = JobArguments.None;
+    public IReadOnlyDictionary<JobOption, object?> Options { get; init; } = new Dictionary<JobOption, object?>();
+
+    /// <summary>
+    /// The run's controls, common to every job.
+    /// </summary>
+    internal RunOptions RunOptions => new() { LogLevel = LogLevel, DryRun = DryRun, AutoApprove = AutoApprove };
 }

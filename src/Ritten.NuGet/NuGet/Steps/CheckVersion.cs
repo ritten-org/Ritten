@@ -1,8 +1,7 @@
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.DotNet;
-using Ritten.Releases.Steps;
 using Ritten.Releases;
+using Ritten.Releases.Steps;
 using Ritten.Reporting;
 
 namespace Ritten.NuGet.Steps;
@@ -15,23 +14,23 @@ namespace Ritten.NuGet.Steps;
 /// changed: a pull request that changes what ships must move the version, because its merge is the release.
 /// That needs <see cref="ShippedChanges"/> from <see cref="ReadShippedChanges"/> earlier in the job.
 /// </remarks>
-/// <param name="options">The workflow's NuGet options.</param>
 /// <param name="report">The build report.</param>
 [Step("check version", StepKind.Check)]
-public class CheckVersion(IOptions<NuGetOptions> options, IWorkflowReport report)
+public class CheckVersion(IWorkflowReport report)
 {
     // TODO: Split this up. Something else should produce the versions (NPM, NuGet, etc.) this step should do the actual enforcement.
 
     /// <summary>
     /// Judges the release state of the given project's version.
     /// </summary>
+    /// <param name="release">How the project releases: its feed, release lines and cadence.</param>
     /// <param name="project">The project being validated.</param>
     /// <param name="releaseState">The release state determined against the feed.</param>
     /// <param name="shipped">What the pull request changed of what ships; required under a continuous cadence.</param>
-    public StepResult Run(Project project, ReleaseState releaseState, ShippedChanges? shipped)
+    public StepResult Run(ReleaseSettings release, Project project, ReleaseState releaseState, ShippedChanges? shipped)
     {
         // Name the line only when it isn't the whole story; single-line projects stay unqualified.
-        var line = releaseState.OnLatestLine ? "" : $" on the {options.Value.Lines.Label(project.Version)} line";
+        var line = releaseState.OnLatestLine ? "" : $" on the {release.Lines.Label(project.Version)} line";
 
         if (!releaseState.LatestInLine)
         {
@@ -49,7 +48,7 @@ public class CheckVersion(IOptions<NuGetOptions> options, IWorkflowReport report
 
         // Any package, not every: a version partly on the feed — a new package joining a lockstep release — would
         // otherwise ship the changed code under a number the other packages already hold with the old code.
-        if (releaseState.AnyPublished && options.Value.Cadence == ReleaseCadence.Continuous)
+        if (releaseState.AnyPublished && release.Cadence == ReleaseCadence.Continuous)
         {
             if (shipped is null)
             {
@@ -74,7 +73,7 @@ public class CheckVersion(IOptions<NuGetOptions> options, IWorkflowReport report
             report.Section(SectionName.Version)
                 .Success(releaseState.OnLatestLine
                     ? $"Version **{project.Version}** is the latest published version; nothing new to release."
-                    : $"Version **{project.Version}** is the latest on the {options.Value.Lines.Label(project.Version)} line; nothing new to release (latest overall: **{releaseState.LatestVersion}**).");
+                    : $"Version **{project.Version}** is the latest on the {release.Lines.Label(project.Version)} line; nothing new to release (latest overall: **{releaseState.LatestVersion}**).");
             return StepResult.Successful;
         }
 
@@ -82,7 +81,7 @@ public class CheckVersion(IOptions<NuGetOptions> options, IWorkflowReport report
             .Success(releaseState.LatestVersion == null
                 ? $"Version **{project.Version}** will be the first published version of {project.Name}."
                 : project.Version < releaseState.LatestVersion
-                    ? $"Version **{project.Version}** is a backport to the {options.Value.Lines.Label(project.Version)} line (latest overall: **{releaseState.LatestVersion}**)."
+                    ? $"Version **{project.Version}** is a backport to the {release.Lines.Label(project.Version)} line (latest overall: **{releaseState.LatestVersion}**)."
                     : $"Version **{project.Version}** is valid (latest published: **{releaseState.LatestVersion}**).");
         return StepResult.Successful;
     }

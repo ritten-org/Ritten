@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.DotNet;
@@ -12,20 +11,20 @@ namespace Ritten.NuGet.Steps;
 /// Classifies where the project's version stands against the feed.
 /// </summary>
 /// <param name="log">The workflow log.</param>
-/// <param name="options">The workflow's NuGet options.</param>
 /// <param name="nuget">The NuGet client.</param>
 [Step("nuget read", StepKind.Work)]
-public class NugetRead(IWorkflowLog log, IOptions<NuGetOptions> options, INuGet nuget)
+public class NugetRead(IWorkflowLog log, INuGet nuget)
 {
     /// <summary>
     /// Reads the feed and classifies the given project's version.
     /// </summary>
+    /// <param name="release">How the project releases: its feed, release lines and cadence.</param>
     /// <param name="project">The project being classified (see <see cref="ResolveRelease"/>).</param>
     /// <param name="packages">The packages the repository ships (see <see cref="ReadProjects"/>).</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public async Task<StepResult<ReleaseState>> Run(Project project, PackageSet packages, CancellationToken cancellationToken = default)
+    public async Task<StepResult<ReleaseState>> Run(ReleaseSettings release, Project project, PackageSet packages, CancellationToken cancellationToken = default)
     {
-        var feed = new NuGetFeed(options.Value.Feed);
+        var feed = new NuGetFeed(release.Feed);
 
         // The repository's release history is the union of its packages' histories, so a
         // brand-new package can't blind the version check by having none of its own.
@@ -40,7 +39,7 @@ public class NugetRead(IWorkflowLog log, IOptions<NuGetOptions> options, INuGet 
 
         var latestPublished = history.DefaultIfEmpty().Max();
         var lineTip = history
-            .Where(v => options.Value.Lines.SameLine(v, project.Version))
+            .Where(v => release.Lines.SameLine(v, project.Version))
             .DefaultIfEmpty()
             .Max();
 
@@ -55,7 +54,7 @@ public class NugetRead(IWorkflowLog log, IOptions<NuGetOptions> options, INuGet 
         var published = publications.Count > 0 && publications.All(p => p.Published);
 
         var state = new ReleaseState(published, latestInLine, lineTip, latestPublished) { Packages = publications };
-        log.Detail(Describe(project, state));
+        log.Detail(Describe(release.Lines, project, state));
         if (!published && publications.Any(p => p.Published))
         {
             log.Detail($"Already published: {string.Join(", ", publications.Where(p => p.Published).Select(p => p.Name))}; still to push: {string.Join(", ", publications.Where(p => !p.Published).Select(p => p.Name))}.");
@@ -64,17 +63,17 @@ public class NugetRead(IWorkflowLog log, IOptions<NuGetOptions> options, INuGet 
         return state;
     }
 
-    private string Describe(Project project, ReleaseState state) => (state.Published, state.LatestInLine) switch
+    private static string Describe(ReleaseLine lines, Project project, ReleaseState state) => (state.Published, state.LatestInLine) switch
     {
         (true, true) => state.OnLatestLine
             ? $"Version {project.Version} is the latest published version."
-            : $"Version {project.Version} is the latest on the {options.Value.Lines.Label(project.Version)} line (latest overall: {state.LatestVersion}).",
+            : $"Version {project.Version} is the latest on the {lines.Label(project.Version)} line (latest overall: {state.LatestVersion}).",
         (true, false) => $"Version {project.Version} is published, and {state.LatestVersionInLine} is newer on its line.",
         (false, false) => $"Version {project.Version} is unpublished, and its line has moved on to {state.LatestVersionInLine}.",
         _ => state.LatestVersion == null
             ? $"Version {project.Version} would be the first published version of {project.Name}."
             : project.Version < state.LatestVersion
-                ? $"Version {project.Version} is a backport to the {options.Value.Lines.Label(project.Version)} line (latest overall: {state.LatestVersion})."
+                ? $"Version {project.Version} is a backport to the {lines.Label(project.Version)} line (latest overall: {state.LatestVersion})."
                 : $"Version {project.Version} is unpublished (latest published: {state.LatestVersion})."
     };
 }

@@ -1,11 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
-using Ritten.Engine.Runs;
 using Ritten.GitHub;
 using Ritten.Reporting;
 using Ritten.Reporting.Sinks;
-using Ritten.Tests.Engine.Helpers;
+using Ritten.Tests.Support;
 
 namespace Ritten.Tests.GitHub;
 
@@ -174,9 +173,9 @@ public class GitHubActionsRuntimeTests
         return builder.Services.BuildServiceProvider();
     }
 
-    private static WorkflowRunBuilder Builder(Dictionary<string, string> filteredEnvironment)
+    private static TestWorkflowBuilder Builder(Dictionary<string, string> filteredEnvironment)
     {
-        var builder = WorkflowRunBuilderHelpers.Create();
+        var builder = new TestWorkflowBuilder();
         builder.Services.AddSingleton(new WorkflowEnvironment(filteredEnvironment.GetValueOrDefault));
         builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
         return builder;

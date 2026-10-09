@@ -1,6 +1,7 @@
 using Ritten.CodeCoverage;
 using Ritten.Contracts;
 using Ritten.DotNet.Steps;
+using Ritten.Engine.Workflows;
 using Ritten.Workflows.Steps;
 
 namespace Ritten.Workflows.DotNet;
@@ -8,7 +9,7 @@ namespace Ritten.Workflows.DotNet;
 /// <summary>
 /// Validates a pull request for a project with no release to prepare.
 /// </summary>
-internal sealed class CheckJob : DotNetJob
+internal sealed class CheckJob : Job<DotNetArguments>
 {
     /// <inheritdoc />
     public override string Name => "check";

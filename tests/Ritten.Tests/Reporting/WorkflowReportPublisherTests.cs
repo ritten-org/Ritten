@@ -61,6 +61,19 @@ public class WorkflowReportPublisherTests
         await _second.Received().Publish(Arg.Any<WorkflowReport>(), Arg.Any<CancellationToken>());
     }
 
-    private WorkflowReportPublisher Publisher(IWorkflowReport? report = null) =>
-        new(Substitute.For<IWorkflowLog>(), new RunContext { Title = "Test" }, report ?? new WorkflowReportBuilder(), [_first, _second]);
+    private WorkflowReportPublisher Publisher(IWorkflowReport? report = null, bool reports = true) =>
+        new(new TestJob(reports: reports), Substitute.For<IWorkflowLog>(), new RunContext { Title = "Test" }, report ?? new WorkflowReportBuilder(), [_first, _second]);
+
+    [Fact]
+    public async Task PublishesNothingForAJobThatDoesNotReport()
+    {
+        // Setting a repository up has nothing to report, so no sink hears of it.
+        var publisher = Publisher(reports: false);
+
+        await publisher.OnWorkflowStarted(Job, TestContext.Current.CancellationToken);
+        await publisher.OnWorkflowCompleted(new WorkflowResult(ExitCode.Success, []), TestContext.Current.CancellationToken);
+
+        await _first.DidNotReceive().Started(Arg.Any<WorkflowJob>(), Arg.Any<CancellationToken>());
+        await _first.DidNotReceive().Publish(Arg.Any<WorkflowReport>(), Arg.Any<CancellationToken>());
+    }
 }

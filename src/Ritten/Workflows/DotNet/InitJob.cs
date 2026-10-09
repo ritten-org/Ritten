@@ -1,11 +1,6 @@
-using Ritten.Changelogs;
 using Ritten.Contracts;
 using Ritten.DotNet.Steps;
-using Ritten.Engine;
 using Ritten.Engine.Workflows;
-using Ritten.Git;
-using Ritten.GitHub;
-using Ritten.Init;
 using Ritten.Init.Steps;
 
 namespace Ritten.Workflows.DotNet;
@@ -13,7 +8,7 @@ namespace Ritten.Workflows.DotNet;
 /// <summary>
 /// Sets a repository up to run this workflow, and brings one already set up back up to date.
 /// </summary>
-internal sealed class InitJob : Job<DotNetSettings>
+internal sealed class InitJob : Job<DotNetInitArguments>
 {
     /// <inheritdoc />
     public override string Name => "init";
@@ -28,12 +23,7 @@ internal sealed class InitJob : Job<DotNetSettings>
     public override bool RequiresProject => false;
 
     /// <inheritdoc />
-    protected override void Configure(IWorkflowBuilder builder, DotNetSettings settings) => builder
-        .AddChangelogs(new ChangelogSettings())
-        .AddDotNet(settings.Build)
-        .AddGit()
-        .AddGitHubActions()
-        .AddInit(RittenTool.Pin);
+    public override bool Reports => false;
 
     /// <inheritdoc />
     public override IReadOnlyList<Step> Steps { get; } =

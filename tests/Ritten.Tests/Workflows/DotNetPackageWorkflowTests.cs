@@ -1,7 +1,5 @@
 using Ritten.Engine;
-using Ritten.Engine.Runs;
-using Ritten.Tests.Engine.Helpers;
-using Ritten.Workflows.DotNetPackage;
+using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Workflows;
 
@@ -26,7 +24,6 @@ public class DotNetPackageWorkflowTests
         var result = Build(job, Complete);
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
     }
 
     [Theory]
@@ -37,7 +34,6 @@ public class DotNetPackageWorkflowTests
         var result = Build(job, "{}");
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
     }
 
     [Theory]
@@ -50,7 +46,6 @@ public class DotNetPackageWorkflowTests
         var result = Build(job, """{ "build": { "projects": ["src/Core/Core.csproj", "src/Thing/Thing.csproj"] } }""");
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
     }
 
     [Fact]
@@ -76,10 +71,5 @@ public class DotNetPackageWorkflowTests
         result.Errors.ShouldHaveSingleItem().Message.ShouldContain("'build.project'");
     }
 
-    private static Result<WorkflowRun> Build(string job, string settings)
-    {
-        var workflow = new DotNetPackageWorkflow();
-        var builder = WorkflowRunBuilderHelpers.Create(workflow.Label, settings: settings);
-        return builder.Build(workflow.Jobs.Single(j => j.Name == job));
-    }
+    private static Result<object> Build(string job, string settings) => ShippedWorkflow.ReadArguments("dotnet-package", job, settings);
 }

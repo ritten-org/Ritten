@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Ritten.Contracts;
+using Ritten.Releases;
 using Ritten.Reporting;
 
 namespace Ritten.NuGet.Steps;
@@ -17,10 +18,11 @@ public class NugetAuthenticate(WorkflowJob job, IWorkflowLog log, IOptions<NuGet
     /// <summary>
     /// Produces the authenticated feed that <see cref="NugetPush"/> publishes to.
     /// </summary>
+    /// <param name="release">How the project releases, including the feed it publishes to.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public async Task<StepResult<NuGetFeed>> Run(CancellationToken cancellationToken = default)
+    public async Task<StepResult<NuGetFeed>> Run(ReleaseSettings release, CancellationToken cancellationToken = default)
     {
-        var feed = new NuGetFeed(options.Value.Feed);
+        var feed = new NuGetFeed(release.Feed);
 
         if (options.Value.ApiKey is { } configured)
         {
@@ -37,10 +39,10 @@ public class NugetAuthenticate(WorkflowJob job, IWorkflowLog log, IOptions<NuGet
         if (!prompt.IsInteractive)
         {
             // Hanging on a build agent waiting for a person is worse than refusing to start.
-            return StepResult.Failed($"Pushing to {options.Value.Feed} needs an API key, and there's no terminal to ask at. Set {NuGetOptions.ApiKeyVariable}.");
+            return StepResult.Failed($"Pushing to {release.Feed} needs an API key, and there's no terminal to ask at. Set {NuGetOptions.ApiKeyVariable}.");
         }
 
-        if (await prompt.Secret($"Enter the NuGet API key for {options.Value.Feed}:", cancellationToken) is not { } key)
+        if (await prompt.Secret($"Enter the NuGet API key for {release.Feed}:", cancellationToken) is not { } key)
         {
             return StepResult.Failed("No API key was provided.");
         }

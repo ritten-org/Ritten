@@ -67,11 +67,11 @@ public sealed class GitHubActionsRuntime : Runtime
             builder.Services.PostConfigure<GitHubClientOptions>(options => options.Token ??= token);
         }
 
-        builder.Services.TryAddSingleton<IPullRequestLabels, GitHubPullRequestLabels>();
+        builder.Services.TryAddScoped<IPullRequestLabels, GitHubPullRequestLabels>();
 
-        builder.Services.TryAddSingleton<IGitHubCommentService, GitHubGitHubCommentService>();
+        builder.Services.TryAddScoped<IGitHubCommentService, GitHubGitHubCommentService>();
         builder.Decorators.Replace<IGitHubCommentService, GitHubDryRunCommentService>();
-        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkflowResultSink, GitHubJobSummaryResultSink>());
-        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkflowResultSink, GitHubCommentResultSink>());
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<IWorkflowResultSink, GitHubJobSummaryResultSink>());
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<IWorkflowResultSink, GitHubCommentResultSink>());
     }
 }

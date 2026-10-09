@@ -15,7 +15,7 @@ public static class WorkflowBuilderExtensions
         /// </summary>
         public IWorkflowBuilder AddCommandRunner()
         {
-            builder.Services.TryAddSingleton<ICommandRunner, CommandRunner>();
+            builder.Services.TryAddScoped<ICommandRunner, CommandRunner>();
             return builder;
         }
     }

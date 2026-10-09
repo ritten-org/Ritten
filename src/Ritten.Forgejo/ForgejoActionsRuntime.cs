@@ -95,9 +95,9 @@ public class ForgejoActionsRuntime : Runtime
             }
         });
 
-        builder.Services.TryAddSingleton<IForgejoCommentService, ForgejoCommentService>();
+        builder.Services.TryAddScoped<IForgejoCommentService, ForgejoCommentService>();
         builder.Decorators.Replace<IForgejoCommentService, ForgejoDryRunCommentService>();
-        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkflowResultSink, ForgejoJobSummaryResultSink>());
-        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkflowResultSink, ForgejoCommentResultSink>());
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<IWorkflowResultSink, ForgejoJobSummaryResultSink>());
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<IWorkflowResultSink, ForgejoCommentResultSink>());
     }
 }

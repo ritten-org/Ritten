@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
@@ -16,7 +15,6 @@ namespace Ritten.Init.Steps;
 /// <param name="actions">The GitHub Actions workflow client.</param>
 /// <param name="git">The git client, for the root GitHub reads workflows from.</param>
 /// <param name="fileSystem">The file system.</param>
-/// <param name="options">The workflow's .NET options, for the project the repository ships.</param>
 /// <param name="workflow">The workflow being set up, whose jobs the file runs.</param>
 /// <param name="tool">The tool the jobs run.</param>
 [Step("ensure actions workflow", StepKind.Work)]
@@ -25,7 +23,6 @@ public class EnsureActionsWorkflow(
     IActionsWorkflows actions,
     IGit git,
     IFileSystem fileSystem,
-    IOptions<DotNetOptions> options,
     SelectedWorkflow workflow,
     ToolPin tool
 )
@@ -33,9 +30,10 @@ public class EnsureActionsWorkflow(
     /// <summary>
     /// Writes the workflow's automated jobs into the repository's Actions workflow.
     /// </summary>
+    /// <param name="build">What the project file declares it builds, for the project the repository ships.</param>
     /// <param name="found">What the repository builds (see <see cref="DotNet.Steps.FindProjects"/>).</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
-    public async Task<StepResult> Run(DiscoveredProjects found, CancellationToken ct = default)
+    public async Task<StepResult> Run(DotNetBuildSettings build, DiscoveredProjects found, CancellationToken ct = default)
     {
         if (await git.RepositoryRoot(ct) is not { } root)
         {
@@ -54,7 +52,7 @@ public class EnsureActionsWorkflow(
         // one workflow file each: same jobs, different working directory, and the project's own
         // name on each.
         var directory = Directory(root);
-        var name = Named(found);
+        var name = Named(build, found);
         var file = await Ours(root, directory, ct) ?? await Free(root, directory, name, ct);
 
         var read = file.Exists ? await actions.Read(file, ct) : actions.Parse(ActionsWorkflowTemplate.Document(name));
@@ -152,12 +150,12 @@ public class EnsureActionsWorkflow(
     /// a repository of several projects — and the name is what keeps each project's runs, and
     /// each project's pull request comment, its own.
     /// </summary>
-    private string Named(DiscoveredProjects found)
+    private string Named(DotNetBuildSettings build, DiscoveredProjects found)
     {
         // What the project file declares, when it declares one: the first project is the face of
         // whatever the repository ships. A repository that declares nothing yet is read off disk,
         // and one with no projects at all is named for where it is.
-        var shipped = options.Value.ProjectFile is { Length: > 0 } declared ? declared : found.Shipped.FirstOrDefault();
+        var shipped = build.ShippedProjects.FirstOrDefault() ?? found.Shipped.FirstOrDefault();
         return Path.GetFileNameWithoutExtension(shipped) is { Length: > 0 } project ? project : fileSystem.ProjectRoot.Name;
     }
 

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Ritten.Contracts;
 
 namespace Ritten.Engine.DryRun;
 
@@ -16,7 +17,7 @@ public class DecoratorRegistry
     /// <typeparam name="TReplacement">The service to replace it with.</typeparam>
     public DecoratorRegistry Replace<TService, TReplacement>() where TService : class where TReplacement : class, TService
     {
-        _list.Add(new Decorator(typeof(TService), Replace<TService, TReplacement>));
+        _list.Add(new Decorator(typeof(TService), (provider, _) => ActivatorUtilities.CreateInstance<TReplacement>(provider)));
         return this;
     }
 
@@ -28,7 +29,7 @@ public class DecoratorRegistry
     /// <typeparam name="TDecorator">The type to decorate it with.</typeparam>
     public DecoratorRegistry Decorate<TService, TDecorator>() where TService : class where TDecorator : class, TService
     {
-        _list.Add(new Decorator(typeof(TService), Decorate<TService, TDecorator>));
+        _list.Add(new Decorator(typeof(TService), (provider, inner) => ActivatorUtilities.CreateInstance<TDecorator>(provider, inner)));
         return this;
     }
 
@@ -47,44 +48,36 @@ public class DecoratorRegistry
     internal IReadOnlyCollection<Decorator> GetAll() => _list.AsReadOnly();
 
     /// <summary>
-    /// Replaces a registered service with a decorator that wraps it. Does nothing when the
-    /// service isn't registered, since a workflow only registers the capabilities it uses.
+    /// Makes each paired client choose its form as it is resolved: the rehearsal one in a dry run, the real one
+    /// otherwise. The last pairing declared for a client wins; one for a client nobody registered does nothing.
     /// </summary>
-    private static void Decorate<TService, TDecorator>(IServiceCollection services) where TService : class where TDecorator : class, TService
+    /// <param name="services">Every registration the application makes.</param>
+    internal void Apply(IServiceCollection services)
     {
-        if (services.LastOrDefault(d => d.ServiceType == typeof(TService)) is not { } registration)
+        foreach (var decorator in _list.GroupBy(d => d.ServiceType).Select(g => g.Last()))
         {
-            return;
-        }
+            if (services.LastOrDefault(d => d.ServiceType == decorator.ServiceType && !d.IsKeyedService) is not { } registration)
+            {
+                continue;
+            }
 
-        services.Remove(registration);
-        services.AddSingleton<TService>(provider =>
-        {
-            var inner = Resolve<TService>(provider, registration);
-            return ActivatorUtilities.CreateInstance<TDecorator>(provider, inner);
-        });
+            // The real client moves under a key of its own, keeping its lifetime, and the pairing takes its place.
+            var key = new object();
+            services.Remove(registration);
+            services.Add(Keyed(registration, key));
+            services.AddScoped(decorator.ServiceType, provider =>
+            {
+                var inner = provider.GetRequiredKeyedService(decorator.ServiceType, key);
+                return provider.GetRequiredService<WorkflowJob>().DryRun ? decorator.Create(provider, inner) : inner;
+            });
+        }
     }
 
-    /// <summary>
-    /// Replaces a registered service outright, for a stand-in that has no need of the real one.
-    /// Does nothing when the service isn't registered.
-    /// </summary>
-    private static void Replace<TService, TReplacement>(IServiceCollection services) where TService : class where TReplacement : class, TService
+    private static ServiceDescriptor Keyed(ServiceDescriptor registration, object key) => registration switch
     {
-        if (services.LastOrDefault(d => d.ServiceType == typeof(TService)) is not { } registration)
-        {
-            return;
-        }
-
-        services.Remove(registration);
-        services.AddSingleton<TService, TReplacement>();
-    }
-
-    private static TService Resolve<TService>(IServiceProvider provider, ServiceDescriptor registration) where TService : class => registration switch
-    {
-        { ImplementationInstance: TService instance } => instance,
-        { ImplementationFactory: { } factory } => (TService)factory(provider),
-        { ImplementationType: { } type } => (TService)ActivatorUtilities.CreateInstance(provider, type),
-        _ => throw new InvalidOperationException($"Cannot decorate {typeof(TService).Name}: it has no implementation.")
+        { ImplementationInstance: { } instance } => new ServiceDescriptor(registration.ServiceType, key, instance),
+        { ImplementationFactory: { } factory } => new ServiceDescriptor(registration.ServiceType, key, (provider, _) => factory(provider), registration.Lifetime),
+        { ImplementationType: { } type } => new ServiceDescriptor(registration.ServiceType, key, type, registration.Lifetime),
+        _ => throw new InvalidOperationException($"Cannot decorate {registration.ServiceType.Name}: it has no implementation.")
     };
 }

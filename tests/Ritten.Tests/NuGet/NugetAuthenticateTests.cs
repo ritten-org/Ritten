@@ -21,7 +21,7 @@ public class NugetAuthenticateTests
     {
         _options.ApiKey = "env-key";
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(TestOptions.Release(), TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().ApiKey.ShouldBe("env-key");
         await _prompt.DidNotReceiveWithAnyArgs().Secret(default!, TestContext.Current.CancellationToken);
@@ -32,7 +32,7 @@ public class NugetAuthenticateTests
     {
         _options.ApiKey = null;
 
-        var result = await Step(dryRun: true).Run(TestContext.Current.CancellationToken);
+        var result = await Step(dryRun: true).Run(TestOptions.Release(), TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().ApiKey.ShouldBeNull();
         await _prompt.DidNotReceiveWithAnyArgs().Secret(default!, TestContext.Current.CancellationToken);
@@ -44,7 +44,7 @@ public class NugetAuthenticateTests
         _options.ApiKey = null;
         _prompt.IsInteractive.Returns(false);
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(TestOptions.Release(), TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("RITTEN_NUGET_API_KEY");
@@ -57,7 +57,7 @@ public class NugetAuthenticateTests
         _prompt.IsInteractive.Returns(true);
         _prompt.Secret(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns("typed-key");
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(TestOptions.Release(), TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().ApiKey.ShouldBe("typed-key");
     }
@@ -69,7 +69,7 @@ public class NugetAuthenticateTests
         _prompt.IsInteractive.Returns(true);
         _prompt.Secret(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((string?)null);
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(TestOptions.Release(), TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeTrue();
     }

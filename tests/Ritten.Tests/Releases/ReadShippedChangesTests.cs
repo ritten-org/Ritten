@@ -1,9 +1,7 @@
-using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Git;
-using Ritten.NuGet;
 using Ritten.Releases;
 using Ritten.Releases.Steps;
 using Ritten.Reporting;
@@ -111,8 +109,8 @@ public class ReadShippedChangesTests
             Packages = [.. projectFiles.Select(file => new Project { Name = Path.GetFileNameWithoutExtension(file), Version = NuGetVersion.Parse("1.0.0"), ProjectFile = file })]
         };
 
-        var options = Options.Create(new NuGetOptions { Cadence = cadence });
-        var result = await new ReadShippedChanges(pullRequest, options, _git, Substitute.For<IWorkflowLog>()).Run(packages, TestContext.Current.CancellationToken);
+        var release = new ReleaseSettings { Cadence = cadence };
+        var result = await new ReadShippedChanges(pullRequest, _git, Substitute.For<IWorkflowLog>()).Run(release, packages, TestContext.Current.CancellationToken);
         return result.Value.ShouldNotBeNull();
     }
 }

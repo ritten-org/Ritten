@@ -1,104 +1,73 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Contracts;
 using Ritten.Engine;
-using Ritten.Engine.Runs;
 using Ritten.Engine.Runtimes;
-using Ritten.Engine.Workflows;
-using Ritten.Reporting;
-using Ritten.Tests.Engine.Helpers;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Engine.Runs;
 
 public class WorkflowRunTests
 {
+    private readonly StepProbe _probe = new();
+    private readonly TestRuntime _runtime = new();
+
     [Fact]
     public async Task Run_WithPassingStep_ReturnsZero()
     {
-        // Arrange
-        var (host, probe) = BuildHost<ProbeStep>();
-        using var _ = host;
+        var application = Application(new TestJob(steps: [Step.FromType<ProbeStep>()]));
 
-        // Act
-        var exitCode = await host.Run(TestContext.Current.CancellationToken);
+        var exitCode = await application.Run();
 
-        // Assert
         exitCode.ShouldBe(ExitCode.Success);
-        probe.Ran.ShouldHaveSingleItem();
+        _probe.Ran.ShouldHaveSingleItem();
     }
 
     [Fact]
     public async Task Run_WithFailingStep_ReturnsFailure()
     {
-        // Arrange
-        var (host, _) = BuildHost<FailingStep>();
-        using var _1 = host;
+        var application = Application(new TestJob(steps: [Step.FromType<FailingStep>()]));
 
-        // Act
-        var exitCode = await host.Run(TestContext.Current.CancellationToken);
+        var exitCode = await application.Run();
 
-        // Assert
         exitCode.ShouldBe(ExitCode.Failed);
     }
 
     [Fact]
-    public void Build_ReportsEveryUnmetRequirementAtOnce()
+    public async Task Run_ReportsEveryUnmetRequirementAtOnce()
     {
-        // Arrange — being told about all of them beats fixing them one run at a time. The keys are
-        // derived from the property chains, so they can't drift from the settings they describe.
-        var job = new TestJob("deploy", validate: s => s.Require(x => x.Build.Project).Require(x => x.Repository));
-        var builder = WorkflowRunBuilderHelpers.Create();
+        // Being told about all of them beats fixing them one run at a time. The keys are derived
+        // from the property chains, so they can't drift from the arguments they describe.
+        var application = Application(new TestJob("deploy", validate: a => a.Require(x => x.Build.Project).Require(x => x.Build.Configuration)));
 
-        // Act
-        var result = builder.Build(job);
+        var exitCode = await application.Run("deploy", settings: """{ "build": { "configuration": "" } }""");
 
-        // Assert
-        result.IsError.ShouldBeTrue();
-        result.Errors.Select(e => e.Message).ShouldBe([
+        exitCode.ShouldBe(ExitCode.ConfigurationError);
+        _runtime.Console.Errors.ShouldBe([
             "'build.project' not set in ritten.json.",
-            "'repository' not set in ritten.json."
+            "'build.configuration' not set in ritten.json."
         ]);
     }
 
     [Fact]
-    public void Build_NamesTheHostsProjectFileInSettingsErrors()
+    public async Task Run_NamesTheHostsProjectFileInArgumentErrors()
     {
         // The error points at the file the reader actually has, whatever the host called it.
-        var job = new TestJob("deploy", validate: s => s.Require(x => x.Build.Project));
-        var builder = WorkflowRunBuilderHelpers.Create(fileName: "build.json");
+        var application = Application(new TestJob("deploy", validate: a => a.Require(x => x.Build.Project)), fileName: "build.json");
 
-        var result = builder.Build(job);
+        await application.Run("deploy", fileName: "build.json");
 
-        result.Errors.ShouldHaveSingleItem().Message.ShouldBe("'build.project' not set in build.json.");
-    }
-
-    [Fact]
-    public void Build_RunsRulesTheWorkflowRegisters()
-    {
-        var rule = Substitute.For<IJobRule>();
-        rule.Check(Arg.Any<IJob>()).Returns([new Error("House rule broken.")]);
-        var job = new TestJob(steps: [Step.FromType<FirstStep>()]);
-        var builder = WorkflowRunBuilderHelpers.Create();
-        builder.Services.AddSingleton(rule);
-        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
-
-        var result = builder.Build(job);
-
-        result.IsError.ShouldBeTrue();
-        result.Errors.ShouldHaveSingleItem().Message.ShouldBe("House rule broken.");
+        _runtime.Console.Errors.ShouldHaveSingleItem().ShouldBe("'build.project' not set in build.json.");
     }
 
     [Fact]
     public void Build_ConfiguresTheServicesOfTheDetectedRuntime()
     {
         var runtime = new StubRuntime();
-        var builder = WorkflowRunBuilderHelpers.Create(runtimes: new RuntimeRegistry().Add(runtime));
-        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
 
-        var result = builder.Build(new TestJob());
+        var application = TestApplication.Build([new TestJob()], runtime: runtime, environment: _ => "set");
 
-        result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
+        application.IsSuccess.ShouldBeTrue();
+        application.Value.Dispose();
         // The runtime reads its claimed variables from the unfiltered environment: they're its own.
         runtime.SeenSecret.ShouldBe("set");
     }
@@ -109,19 +78,12 @@ public class WorkflowRunTests
         // The engine's defaults keep ValidateOnBuild happy on runtimes that know nothing about
         // these facts: steps see "not a pull request" and "no labels", never a missing
         // registration.
-        var builder = WorkflowRunBuilderHelpers.Create();
-        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
+        using var application = Application(new TestJob());
+        using var scope = application.Services.CreateScope();
 
-        var result = builder.Build(new TestJob());
-
-        result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
-        builder.Services.Single(d => d.ServiceType == typeof(RunContext)).ImplementationInstance
-            .ShouldBeOfType<RunContext>().Title.ShouldBe("Workflow");
-        builder.Services.Single(d => d.ServiceType == typeof(PullRequest)).ImplementationInstance
-            .ShouldBeOfType<PullRequest>().IsPullRequest.ShouldBeFalse();
-        builder.Services.ShouldContain(d =>
-            d.ServiceType == typeof(IPullRequestLabels) && d.ImplementationType == typeof(NoPullRequestLabels));
+        scope.ServiceProvider.GetRequiredService<RunContext>().Title.ShouldBe("Workflow");
+        scope.ServiceProvider.GetRequiredService<PullRequest>().IsPullRequest.ShouldBeFalse();
+        scope.ServiceProvider.GetRequiredService<IPullRequestLabels>().ShouldBeOfType<NoPullRequestLabels>();
     }
 
     [Fact]
@@ -130,42 +92,52 @@ public class WorkflowRunTests
         // The default is only for runs where nobody knows better; anything the host or a runtime
         // declared wins over it.
         var own = Substitute.For<IPullRequestLabels>();
-        var builder = WorkflowRunBuilderHelpers.Create();
-        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
-        builder.Services.AddSingleton(own);
+        using var application = Application(new TestJob(), services => services.AddSingleton(own));
+        using var scope = application.Services.CreateScope();
 
-        var result = builder.Build(new TestJob());
-
-        result.IsSuccess.ShouldBeTrue();
-        result.Value.Dispose();
-        builder.Services.Where(d => d.ServiceType == typeof(IPullRequestLabels))
-            .ShouldHaveSingleItem().ImplementationInstance.ShouldBeSameAs(own);
+        scope.ServiceProvider.GetRequiredService<IPullRequestLabels>().ShouldBeSameAs(own);
     }
 
     [Fact]
-    public void Build_HidesClaimedVariablesFromSettingsValidation()
+    public void Build_ReportsAServiceAStepNeedsThatNothingRegisters()
+    {
+        // Steps are built as a run reaches them, so the application checks what they ask for up front.
+        var application = TestApplication.Build([new TestJob(steps: [Step.FromType<ProbeStep>()])]);
+
+        application.IsError.ShouldBeTrue();
+        application.Errors.ShouldHaveSingleItem().Message.ShouldBe("'probe' needs a StepProbe, which no service registers.");
+    }
+
+    [Fact]
+    public async Task Run_HidesClaimedVariablesFromArgumentValidation()
     {
         // The variable exists in the process environment, but the runtime consumed it — so a job
         // requiring it fails loudly instead of running with a value that belongs to the runtime.
-        var job = new TestJob(validate: s => s.RequireEnvironment("STUB_SECRET"));
-        var builder = WorkflowRunBuilderHelpers.Create(runtimes: new RuntimeRegistry().Add(new StubRuntime()));
+        var runtime = new StubRuntime();
+        var application = TestApplication.Create([new TestJob(validate: a => a.RequireEnvironment("STUB_SECRET"))], runtime: runtime, environment: _ => "set");
 
-        var result = builder.Build(job);
+        var exitCode = await application.Run();
 
-        result.IsError.ShouldBeTrue();
-        result.Errors.ShouldHaveSingleItem().Message.ShouldBe("STUB_SECRET is not set.");
+        exitCode.ShouldBe(ExitCode.ConfigurationError);
+        runtime.Console.Errors.ShouldHaveSingleItem().ShouldBe("STUB_SECRET is not set.");
     }
 
-    private static (WorkflowRun Host, StepProbe Probe) BuildHost<TStep>() where TStep : class
+    [Fact]
+    public async Task Run_RunsEachJobInAScopeOfItsOwn()
     {
-        var probe = new StepProbe();
-        var job = new TestJob(steps: [Step.FromType<TStep>()]);
-        var builder = WorkflowRunBuilderHelpers.Create();
-        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
-        builder.Services.AddSingleton(probe);
+        // What one run produced or registered is gone before the next starts: the application outlives its runs.
+        var application = Application(new TestJob(steps: [Step.FromType<ProbeStep>()]));
 
-        var result = builder.Build(job);
-        result.IsSuccess.ShouldBeTrue();
-        return (result.Value, probe);
+        await application.Run();
+        await application.Run();
+
+        _probe.Ran.Count.ShouldBe(2);
     }
+
+    private WorkflowApplication Application(TestJob job, Action<IServiceCollection>? services = null, string fileName = RittenProject.DefaultFileName) =>
+        TestApplication.Create([job], builder =>
+        {
+            builder.Services.AddSingleton(_probe);
+            services?.Invoke(builder.Services);
+        }, _runtime, fileName: fileName);
 }

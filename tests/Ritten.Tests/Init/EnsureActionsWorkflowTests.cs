@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
@@ -61,7 +60,7 @@ public class EnsureActionsWorkflowTests
     {
         // Not after the tool that wrote it: that would be the same name in every repository, and
         // the same name twice in a repository of several projects.
-        var result = await Step().Run(Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
+        var result = await Step().Run(new DotNetBuildSettings(), Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         _created.ShouldBe("my-tool");
@@ -78,8 +77,8 @@ public class EnsureActionsWorkflowTests
     {
         // The first declared project is the face of whatever the repository ships; what's on disk
         // only answers for a repository that hasn't declared anything yet.
-        await Step(declared: "src/My.Package/My.Package.csproj")
-            .Run(Found("src/Another/Another.csproj"), TestContext.Current.CancellationToken);
+        await Step()
+            .Run(new DotNetBuildSettings { Project = "src/My.Package/My.Package.csproj" }, Found("src/Another/Another.csproj"), TestContext.Current.CancellationToken);
 
         _written.ShouldContain("name: My.Package");
     }
@@ -89,7 +88,7 @@ public class EnsureActionsWorkflowTests
     {
         _fileSystem.ProjectRoot.Returns(_nested);
 
-        await Step().Run(Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
+        await Step().Run(new DotNetBuildSettings(), Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
 
         _created.ShouldBe("my-tool");
         _written.ShouldContain("name: My.Tool");
@@ -113,7 +112,7 @@ public class EnsureActionsWorkflowTests
                     working-directory: legacy/api
             """);
 
-        await Step().Run(Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
+        await Step().Run(new DotNetBuildSettings(), Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
 
         _created.ShouldBe("my-tool-services-api");
     }
@@ -137,7 +136,7 @@ public class EnsureActionsWorkflowTests
                   - run: dotnet ritten check
             """);
 
-        await Step().Run(Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
+        await Step().Run(new DotNetBuildSettings(), Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
 
         // Found by what it runs, so the rename is followed rather than duplicated.
         _created.ShouldBeNull();
@@ -166,7 +165,7 @@ public class EnsureActionsWorkflowTests
             """);
         _fileSystem.ProjectRoot.Returns(_nested);
 
-        await Step().Run(Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
+        await Step().Run(new DotNetBuildSettings(), Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
 
         _created.ShouldBe("my-tool");
         await _actions.DidNotReceive().Write(web, Arg.Any<ActionsWorkflow>(), Arg.Any<CancellationToken>());
@@ -175,12 +174,12 @@ public class EnsureActionsWorkflowTests
     [Fact]
     public async Task WritesNothingWhenTheWorkflowAlreadyRunsTheJobs()
     {
-        await Step().Run(Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
+        await Step().Run(new DotNetBuildSettings(), Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
         var first = _written;
         SetWorkflow("my-tool.yml", first);
         _actions.ClearReceivedCalls();
 
-        var result = await Step().Run(Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
+        var result = await Step().Run(new DotNetBuildSettings(), Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         await _actions.DidNotReceive().Write(Arg.Any<IFile>(), Arg.Any<ActionsWorkflow>(), Arg.Any<CancellationToken>());
@@ -189,10 +188,10 @@ public class EnsureActionsWorkflowTests
     [Fact]
     public async Task RestoresTheJobItOwnsWhenItHasBeenEditedAway()
     {
-        await Step().Run(Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
+        await Step().Run(new DotNetBuildSettings(), Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
         SetWorkflow("my-tool.yml", _written.Replace("      pull-requests: write\n", ""));
 
-        await Step().Run(Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
+        await Step().Run(new DotNetBuildSettings(), Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
 
         _written.ShouldContain("pull-requests: write");
     }
@@ -202,7 +201,7 @@ public class EnsureActionsWorkflowTests
     {
         _git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns((IDirectory?)null);
 
-        var result = await Step().Run(Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
+        var result = await Step().Run(new DotNetBuildSettings(), Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         await _actions.DidNotReceive().Write(Arg.Any<IFile>(), Arg.Any<ActionsWorkflow>(), Arg.Any<CancellationToken>());
@@ -210,12 +209,11 @@ public class EnsureActionsWorkflowTests
 
     private static DiscoveredProjects Found(params string[] projects) => new(projects, []);
 
-    private EnsureActionsWorkflow Step(string declared = "") => new(
+    private EnsureActionsWorkflow Step() => new(
         Substitute.For<IWorkflowLog>(),
         _actions,
         _git,
         _fileSystem,
-        Options.Create(new DotNetOptions { ProjectFile = declared }),
         new SelectedWorkflow(
             new TestWorkflow("dotnet-tool", [
                 new TestJob(name: "build"),

@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace Ritten.Engine.DryRun;
 
 /// <summary>
@@ -7,10 +5,10 @@ namespace Ritten.Engine.DryRun;
 /// </summary>
 public sealed class Decorator
 {
-    internal Decorator(Type serviceType, Action<IServiceCollection> decorate)
+    internal Decorator(Type serviceType, Func<IServiceProvider, object, object> create)
     {
         ServiceType = serviceType;
-        Decorate = decorate;
+        Create = create;
     }
 
     /// <summary>
@@ -19,7 +17,7 @@ public sealed class Decorator
     internal Type ServiceType { get; }
 
     /// <summary>
-    /// Rewrites the client's registration into its rehearsal form.
+    /// Creates the rehearsal form of the client, given the real one.
     /// </summary>
-    internal Action<IServiceCollection> Decorate { get; }
+    internal Func<IServiceProvider, object, object> Create { get; }
 }

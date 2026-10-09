@@ -45,37 +45,10 @@ public static class CommandExtensions
     /// </summary>
     private static Command JobCommand(IJob job, WorkflowFlags flags, WorkflowApplication application)
     {
-        var command = new Command(job.Name, job.Description);
-        List<JobArgumentOption> arguments = [.. job.Arguments.Select(argument => argument.Convert(JobArgumentConverter.Instance))];
-        foreach (var argument in arguments)
-        {
-            command.Options.Add(argument.Option);
-        }
-
         // A job that runs without a project has no predetermined workflow.
         var workflow = job.RequiresProject ? null : WorkflowOption();
-        if (workflow is not null)
+        var command = CommandLine.JobCommand.Create(job, flags, async (args, parseResult, ct) =>
         {
-            command.Options.Add(workflow);
-        }
-
-        command.SetAction(async (parseResult, ct) =>
-        {
-            var builder = new JobArgumentsBuilder(parseResult);
-            foreach (var argument in arguments)
-            {
-                builder.Add(argument);
-            }
-            var jobArgs = builder.Build();
-
-            var args = new RunJobArgs(job.Name)
-            {
-                LogLevel = flags.LogLevel(parseResult),
-                DryRun = parseResult.GetValue(flags.DryRun),
-                AutoApprove = parseResult.GetValue(flags.AutoApprove),
-                Arguments = jobArgs
-            };
-
             var selection = await application.SelectWorkflow(
                 Environment.CurrentDirectory,
                 workflow is null ? null : parseResult.GetValue(workflow),
@@ -84,6 +57,11 @@ public static class CommandExtensions
 
             return await application.Run(selection, args, ct);
         });
+
+        if (workflow is not null)
+        {
+            command.Options.Add(workflow);
+        }
 
         return command;
     }

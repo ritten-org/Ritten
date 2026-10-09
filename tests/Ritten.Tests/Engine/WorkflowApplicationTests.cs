@@ -1,10 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
+using NuGet.Versioning;
 using Ritten.Contracts;
 using Ritten.Engine;
 using Ritten.Engine.Workflows;
 using Ritten.GitHub;
+using Ritten.Releases;
 using Ritten.Reporting;
 using Ritten.Tests.Support;
+using Ritten.Workflows;
 using Ritten.Workflows.DotNetTool;
 
 namespace Ritten.Tests.Engine;
@@ -26,10 +29,22 @@ public class WorkflowApplicationTests : IDisposable
     public void CreateBuilder_RegistersByType()
     {
         var builder = WorkflowApplication.CreateBuilder();
-        builder.Workflows.Add<DotNetToolWorkflow>();
+        builder.AddDotNetWorkflows();
         builder.Runtimes.Add<GitHubActionsRuntime>();
 
         builder.Build().IsSuccess.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Build_NamesEveryServiceAStepNeedsThatNothingRegisters()
+    {
+        // A workflow added without the clients its steps use is refused before any job can start.
+        var builder = WorkflowApplication.CreateBuilder();
+        builder.Workflows.Add<DotNetToolWorkflow>();
+
+        var application = builder.Build();
+
+        application.Errors.ShouldNotBeNull().ShouldContain(e => e.Message == "'read projects' needs a IDotNet, which no service registers.");
     }
 
     [Fact]
@@ -67,66 +82,100 @@ public class WorkflowApplicationTests : IDisposable
     [Fact]
     public async Task Run_ReadsTheValuesTheJobDeclares()
     {
-        // The engine never learns what a release is: the job names the argument and alone sees
-        // the value, which arrives already read into the type the declaration chose.
+        // The engine never learns what a release is: the arguments name the option, and the value
+        // arrives already read into the type they chose.
         WriteRittenJson("""{ "workflow": "test" }""");
-        JobArguments? received = null;
-        var exitCode = await Run(
-            new TestJob(arguments: [Release], configure: (_, args) => received = args),
-            Given(Release, new Uri("https://releases.example/1.2.0")));
+        var probe = new StepProbe();
+        var job = new TestJob<VersionArguments>(steps: [Step.FromType<RecordsVersion>()]);
+        var application = Application(new TestWorkflow(jobs: [job]), probe);
+        var version = ((IJob)job).Options.ShouldHaveSingleItem();
+
+        var exitCode = await Run(application, "verify", options: new Dictionary<JobOption, object?> { [version] = version.Read("1.2.0").Value });
 
         exitCode.ShouldBe(ExitCode.Success);
-        received.ShouldNotBeNull().Get(Release).ShouldBe(new Uri("https://releases.example/1.2.0"));
+        probe.Ran.ShouldBe(["1.2.0"]);
     }
 
     [Fact]
-    public async Task Run_LeavesAnOmittedValueUnread()
+    public async Task Run_LeavesAnOmittedValueAtItsDefault()
     {
         WriteRittenJson("""{ "workflow": "test" }""");
-        JobArguments? received = null;
-        var exitCode = await Run(new TestJob(arguments: [Release], configure: (_, args) => received = args), JobArguments.None);
+        var probe = new StepProbe();
+        var application = Application(new TestWorkflow(jobs: [new TestJob<VersionArguments>(steps: [Step.FromType<RecordsVersion>()])]), probe);
+
+        var exitCode = await Run(application, "verify");
 
         exitCode.ShouldBe(ExitCode.Success);
-        received.ShouldNotBeNull().Get(Release).ShouldBeNull();
+        probe.Ran.ShouldBe(["none"]);
     }
 
     [Fact]
-    public async Task Run_RefusesAMissingRequiredValue()
+    public void Build_RefusesACommandLineValueThatIsRequired()
     {
-        WriteRittenJson("""{ "workflow": "test" }""");
+        // A value the command line may leave out can't also be one the job can't run without.
+        var builder = WorkflowApplication.CreateBuilder();
+        builder.Workflows.Add(new TestWorkflow(jobs: [new TestJob<RequiredVersionArguments>()]));
 
-        var exitCode = await Run(new TestJob(arguments: [RequiredRelease]), JobArguments.None);
+        var application = builder.Build();
+
+        application.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("can't be required");
+    }
+
+    [Fact]
+    public async Task Run_RunsAJobWithTheArgumentsItsCallerGives()
+    {
+        // A host that knows what to run hands the job its arguments directly: no project file, no command line.
+        var probe = new StepProbe();
+        var job = new TestJob<VersionArguments>(steps: [Step.FromType<RecordsVersion>()], requiresProject: true);
+        var workflow = new TestWorkflow(jobs: [job]);
+        var application = Application(workflow, probe);
+
+        var exitCode = await application.Run(
+            workflow,
+            job,
+            new VersionArguments { Version = new RequestedVersion(NuGetVersion.Parse("2.0.0")) },
+            _root,
+            new RunOptions(),
+            TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCode.Success);
+        probe.Ran.ShouldBe(["2.0.0"]);
+    }
+
+    [Fact]
+    public async Task Run_RefusesArgumentsOfAnotherType()
+    {
+        var job = new TestJob<VersionArguments>();
+        var workflow = new TestWorkflow(jobs: [job]);
+        var application = Application(workflow);
+
+        var exitCode = await application.Run(workflow, job, NoArguments.Instance, _root, new RunOptions(), TestContext.Current.CancellationToken);
 
         exitCode.ShouldBe(ExitCode.ConfigurationError);
     }
 
-    /// <summary>An argument whose text only the domain that declared it knows how to read.</summary>
-    private static JobArgument<Uri> Release { get; } = JobArgument.Value(
-        "release",
-        "Which release.",
-        text => Uri.TryCreate($"https://releases.example/{text}", UriKind.Absolute, out var uri) && !text.Contains(' ')
-            ? new Result<Uri>(uri)
-            : Result.Error($"'{text}' is not a release."));
-
-    private static JobArgument<Uri> RequiredRelease { get; } = JobArgument.Value(
-        "release",
-        "Which release.",
-        text => new Result<Uri>(new Uri($"https://releases.example/{text}")),
-        required: true);
-
-    /// <summary>The values a front end would have read, as the job will be handed them.</summary>
-    private static JobArguments Given<T>(JobArgument<T> argument, T value) =>
-        new(new Dictionary<JobArgument, object?> { [argument] = value });
-
-    private async Task<ExitCode> Run(TestJob job, JobArguments arguments, StepProbe? probe = null)
+    [Fact]
+    public async Task Run_RefusesAJobOfAnotherWorkflow()
     {
-        var builder = WorkflowApplication.CreateBuilder();
-        builder.Workflows.Add(new TestWorkflow(jobs: [job]));
-        builder.Services.AddSingleton(probe ?? new StepProbe());
-        builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
-        var application = builder.Build().Value.ShouldNotBeNull();
+        var workflow = new TestWorkflow();
+        var application = Application(workflow);
 
-        return await Run(application, job.Name, arguments: arguments);
+        var exitCode = await application.Run(workflow, new TestJob(), new DotNetToolArguments(), _root, new RunOptions(), TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCode.ConfigurationError);
+    }
+
+    [Fact]
+    public void Build_ResolvesAWorkflowRegisteredByTypeFromTheServices()
+    {
+        // A workflow added by type is built by the application's services, so it can take what they hold.
+        var builder = WorkflowApplication.CreateBuilder();
+        builder.Workflows.Add<NamedByService>();
+        builder.Services.AddSingleton(new WorkflowName("from-services"));
+
+        using var application = builder.Build().Value.ShouldNotBeNull();
+
+        application.Workflows.ShouldHaveSingleItem().Name.ShouldBe("from-services");
     }
 
     [Fact]
@@ -241,20 +290,20 @@ public class WorkflowApplicationTests : IDisposable
     {
         // Registration order is precedence: the first workflow to recognise the repository wins,
         // and what it recognised is handed to the run so the job can say why it's doing this.
-        SelectedWorkflow? selected = null;
+        var probe = new StepProbe();
         var builder = WorkflowApplication.CreateBuilder();
         builder.Workflows.Add(new TestWorkflow("indifferent", [new TestJob(name: "init", requiresProject: false)]));
         builder.Workflows.Add(new TestWorkflow("specific", [
-            new TestJob(name: "init", requiresProject: false, configure: (b, _) => selected = Selected(b))
+            new TestJob(name: "init", requiresProject: false, steps: [Step.FromType<RecordsSelection>()])
         ], recognises: "it packs as a tool"));
+        builder.Services.AddSingleton(probe);
         builder.Services.AddSingleton(Substitute.For<IWorkflowLog>());
         var application = builder.Build().Value.ShouldNotBeNull();
 
         var exitCode = await Run(application, "init");
 
         exitCode.ShouldBe(ExitCode.Success);
-        selected.ShouldNotBeNull().Workflow.Name.ShouldBe("specific");
-        selected.Recognised.ShouldBe("it packs as a tool");
+        probe.Ran.ShouldBe(["specific: it packs as a tool"]);
     }
 
     [Fact]
@@ -298,24 +347,22 @@ public class WorkflowApplicationTests : IDisposable
         exitCode.ShouldBe(ExitCode.ConfigurationError);
     }
 
-    /// <summary>What the run was assembled for, read back out of the registrations it made.</summary>
-    private static SelectedWorkflow? Selected(IWorkflowBuilder builder) => builder.Services
-        .FirstOrDefault(service => service.ServiceType == typeof(SelectedWorkflow))?.ImplementationInstance as SelectedWorkflow;
-
     /// <summary>
     /// The whole path a command line takes: resolve what the directory asks for, then run the job
     /// against it.
     /// </summary>
-    private async Task<ExitCode> Run(WorkflowApplication application, string job, string? workflow = null, JobArguments? arguments = null)
+    private async Task<ExitCode> Run(
+        WorkflowApplication application,
+        string job,
+        string? workflow = null,
+        IReadOnlyDictionary<JobOption, object?>? options = null)
     {
         var ct = TestContext.Current.CancellationToken;
         var selection = await application.SelectWorkflow(_root, workflow, ct);
-        return await application.Run(selection, new RunJobArgs(job) { Arguments = arguments ?? JobArguments.None }, Empty, ct);
+        return await application.Run(selection, new RunJobArgs(job) { Options = options ?? new Dictionary<JobOption, object?>() }, ct);
     }
 
-    private static Func<string, string?> Empty { get; } = _ => null;
-
-    private static WorkflowApplication Application(TestWorkflow workflow, StepProbe? probe = null)
+    private static WorkflowApplication Application(IWorkflow workflow, StepProbe? probe = null)
     {
         var builder = WorkflowApplication.CreateBuilder();
         builder.Workflows.Add(workflow);
@@ -328,5 +375,48 @@ public class WorkflowApplicationTests : IDisposable
     {
         Directory.CreateDirectory(_root);
         File.WriteAllText(Path.Combine(_root, "ritten.json"), content);
+    }
+
+    private sealed record VersionArguments
+    {
+        [CommandLineOption("version", "Which version.")]
+        public RequestedVersion Version { get; init; } = RequestedVersion.None;
+    }
+
+    private sealed record RequiredVersionArguments
+    {
+        [CommandLineOption("version", "Which version.")]
+        public required RequestedVersion Version { get; init; }
+    }
+
+    private sealed record WorkflowName(string Value);
+
+    private sealed class NamedByService(WorkflowName name) : IWorkflow
+    {
+        public string Name => name.Value;
+
+        public string Label => name.Value;
+
+        public IReadOnlyList<IJob> Jobs => [];
+    }
+
+    [Step("records version", StepKind.Work)]
+    private sealed class RecordsVersion(StepProbe probe)
+    {
+        public StepResult Run(RequestedVersion version)
+        {
+            probe.Ran.Add(version.Version?.ToString() ?? "none");
+            return StepResult.Successful;
+        }
+    }
+
+    [Step("records selection", StepKind.Work)]
+    private sealed class RecordsSelection(StepProbe probe, SelectedWorkflow selected)
+    {
+        public StepResult Run()
+        {
+            probe.Ran.Add($"{selected.Workflow.Name}: {selected.Recognised}");
+            return StepResult.Successful;
+        }
     }
 }

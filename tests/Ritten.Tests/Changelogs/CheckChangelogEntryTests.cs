@@ -5,16 +5,15 @@ using Ritten.Changelogs.Steps;
 using Ritten.DotNet;
 using Ritten.Releases;
 using Ritten.Reporting;
-using Ritten.Tests.Engine.Helpers;
-using Ritten.Workflows;
+using Ritten.Tests.Support;
 
 namespace Ritten.Tests.Changelogs;
 
 public class CheckChangelogEntryTests
 {
     // The real client, so these tests exercise the actual parser.
-    private static readonly IChangelog Changelogs = WorkflowRunBuilderHelpers.Create()
-        .AddChangelogs(new ChangelogSettings())
+    private static readonly IChangelog Changelogs = new TestWorkflowBuilder()
+        .AddChangelogs()
         .Services.BuildServiceProvider()
         .GetRequiredService<IChangelog>();
 
