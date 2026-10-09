@@ -29,22 +29,32 @@ public interface IJob
     IReadOnlyList<Step> Steps { get; }
 
     /// <summary>
-    /// The values the job takes from whoever invokes it.
+    /// The type of the values the job runs with.
     /// </summary>
-    IReadOnlyList<JobArgument> Arguments => [];
+    Type ArgumentsType { get; }
 
     /// <summary>
-    /// Whether the job needs a project file to run.
+    /// The types the job's arguments always put into the run's state, ahead of its first step.
+    /// </summary>
+    IReadOnlyCollection<Type> Inputs => [.. ArgumentsModel.For(ArgumentsType).Inputs.Where(i => !i.Optional).Select(i => i.Type)];
+
+    /// <summary>
+    /// The values the job takes from the command line rather than the project file.
+    /// </summary>
+    IReadOnlyList<JobOption> Options => ArgumentsModel.For(ArgumentsType).Options;
+
+    /// <summary>
+    /// Whether the job needs a project file to run from the command line.
     /// </summary>
     bool RequiresProject => true;
 
     /// <summary>
-    /// Reads the given project's settings as this job's settings type.
+    /// Whether the run publishes a build report, when the application reports at all.
     /// </summary>
-    internal Result<WorkflowSettings> ReadSettings(RittenProject project, Func<string, string?> environment, bool dryRun, IWorkflowLog log);
+    bool Reports => true;
 
     /// <summary>
-    /// Configures the run with the given settings.
+    /// Judges the arguments the job is about to run with.
     /// </summary>
-    internal void Configure(IWorkflowBuilder builder, WorkflowSettings settings, JobArguments args);
+    internal IReadOnlyList<Error> Validate(object arguments, Func<string, string?> environment, bool dryRun, IWorkflowLog log, string source);
 }

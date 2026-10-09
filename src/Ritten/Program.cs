@@ -5,18 +5,13 @@ using Ritten.Engine;
 using Ritten.Forgejo;
 using Ritten.GitHub;
 using Ritten.OpenTelemetry;
-using Ritten.Workflows.DotNet;
-using Ritten.Workflows.DotNetPackage;
-using Ritten.Workflows.DotNetTool;
+using Ritten.Workflows;
 using Wolfe.CommandLine;
 using Wolfe.CommandLine.Completions;
 
 var builder = WorkflowApplication.CreateBuilder();
 
-builder.Workflows
-    .Add<DotNetToolWorkflow>()
-    .Add<DotNetPackageWorkflow>()
-    .Add<DotNetWorkflow>();
+builder.AddDotNetWorkflows();
 
 builder.Runtimes
     .Add<ForgejoActionsRuntime>()
@@ -30,9 +25,11 @@ if (built.IsError)
     return ExitCode.ConfigurationError;
 }
 
+await using var application = built.Value;
+
 var root = new RootCommand("The Ritten build workflow.")
     .AddCompletions("ritten");
-await root.InstallRitten(built.Value);
+await root.InstallRitten(application);
 await CompletionAutoInstall.Run("ritten", args);
 
 return await root.Parse(args).InvokeAsync();

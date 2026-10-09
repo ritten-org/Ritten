@@ -10,7 +10,7 @@ namespace Ritten.Workflows.DotNetPackage;
 /// <summary>
 /// Reports where the project stands: version, release state, and changelog.
 /// </summary>
-internal sealed class StatusJob : DotNetPackageJob
+internal sealed class StatusJob : Job<DotNetPackageArguments>
 {
     /// <inheritdoc />
     public override string Name => "status";
@@ -22,9 +22,9 @@ internal sealed class StatusJob : DotNetPackageJob
     public override JobKind Kind => JobKind.Work;
 
     /// <inheritdoc />
-    protected override void ValidateSettings(SettingsValidator<DotNetPackageSettings> settings) => settings
-        .Require(s => s.Build.Project is not null || s.Build.Projects is { Count: > 0 }, "Set 'build.project' (one package) or 'build.projects' (several).")
-        .Require(s => s.Build.Project is null || s.Build.Projects is null, "'build.project' and 'build.projects' are both set; use one.");
+    protected override void Validate(ArgumentsValidator<DotNetPackageArguments> arguments) => arguments
+        .Require(a => a.Build.Project is not null || a.Build.Projects is { Count: > 0 }, "Set 'build.project' (one package) or 'build.projects' (several).")
+        .Require(a => a.Build.Project is null || a.Build.Projects is null, "'build.project' and 'build.projects' are both set; use one.");
 
     /// <inheritdoc />
     public override IReadOnlyList<Step> Steps { get; } =

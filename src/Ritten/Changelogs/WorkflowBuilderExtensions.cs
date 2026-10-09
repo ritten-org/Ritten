@@ -1,7 +1,5 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Engine;
-using Ritten.Workflows;
 
 namespace Ritten.Changelogs;
 
@@ -13,13 +11,12 @@ public static class WorkflowBuilderExtensions
     extension(IWorkflowBuilder builder)
     {
         /// <summary>
-        /// Adds changelog checks.
+        /// Adds the changelog client.
         /// </summary>
-        public IWorkflowBuilder AddChangelogs(ChangelogSettings settings)
+        public IWorkflowBuilder AddChangelogs()
         {
-            builder.Services.TryAddSingleton<IChangelog, ChangelogClient>();
+            builder.Services.TryAddScoped<IChangelog, ChangelogClient>();
             builder.Decorators.Decorate<IChangelog, DryRunChangelog>();
-            builder.Services.Configure<ChangelogOptions>(o => o.File = settings.File);
             return builder;
         }
     }

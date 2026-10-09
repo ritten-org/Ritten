@@ -1,6 +1,7 @@
 using Ritten.CodeCoverage;
 using Ritten.Contracts;
 using Ritten.DotNet.Steps;
+using Ritten.Engine.Workflows;
 using Ritten.Workflows.Steps;
 
 namespace Ritten.Workflows.DotNetPackage;
@@ -8,7 +9,7 @@ namespace Ritten.Workflows.DotNetPackage;
 /// <summary>
 /// Compiles and tests, without any release checks.
 /// </summary>
-internal sealed class BuildJob : DotNetPackageJob
+internal sealed class BuildJob : Job<DotNetPackageArguments>
 {
     /// <inheritdoc />
     public override string Name => "build";

@@ -10,20 +10,20 @@ namespace Ritten.Changelogs.Steps;
 /// Decides which version the next release will be for.
 /// </summary>
 /// <param name="job">The job being run.</param>
-/// <param name="requested">The version the caller named, when they named one.</param>
 /// <param name="log">The workflow log.</param>
 /// <param name="prompt">The prompt used to confirm a derived version.</param>
 [Step("decide version", StepKind.Work)]
-public class DecideVersion(WorkflowJob job, RequestedVersion requested, IWorkflowLog log, IWorkflowPrompt prompt)
+public class DecideVersion(WorkflowJob job, IWorkflowLog log, IWorkflowPrompt prompt)
 {
     /// <summary>
     /// Determines the version to prepare.
     /// </summary>
+    /// <param name="requested">The version the caller named, when they named one.</param>
     /// <param name="project">The project being released (see <see cref="DotNet.Steps.ResolveRelease"/>).</param>
     /// <param name="changelog">The changelog (see <see cref="ReadChangelog"/>).</param>
     /// <param name="release">The release state determined against the feed.</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
-    public async Task<StepResult<PreparedRelease>> Run(Project project, Changelog changelog, ReleaseState release, CancellationToken ct = default)
+    public async Task<StepResult<PreparedRelease>> Run(RequestedVersion requested, Project project, Changelog changelog, ReleaseState release, CancellationToken ct = default)
     {
         // A version the caller names is taken as given: they know something the changelog doesn't.
         if (requested.Version is { } named)
@@ -32,7 +32,7 @@ public class DecideVersion(WorkflowJob job, RequestedVersion requested, IWorkflo
             log.Detail(bumped
                 ? $"Preparing {named}, as asked (currently {project.Version})."
                 : $"Preparing {named}, as asked — the version the project already declares.");
-            return new PreparedRelease(named, bumped, $"named with --{ReleaseArguments.Version.Name}");
+            return new PreparedRelease(named, bumped, $"named with --{RequestedVersion.OptionName}");
         }
 
         // An unpublished version is already the next one: the project was bumped and never shipped,
@@ -58,12 +58,12 @@ public class DecideVersion(WorkflowJob job, RequestedVersion requested, IWorkflo
             // The same bargain the approval gate strikes: never guess a release number unwatched.
             return StepResult.Failed(
                 $"{project.Version} is published, so {job.Name} would move to {nextVersion} ({because}). " +
-                $"Pass --{ReleaseArguments.Version.Name} to name the version, or --{WorkflowArguments.AutoApprove} to take the derived one.");
+                $"Pass --{RequestedVersion.OptionName} to name the version, or --{WorkflowArguments.AutoApprove} to take the derived one.");
         }
 
         if (!await prompt.Confirm($"Prepare {nextVersion}? ({because}, currently {project.Version})", ct))
         {
-            return StepResult.Failed($"Nothing prepared. Pass --{ReleaseArguments.Version.Name} to name the version yourself.");
+            return StepResult.Failed($"Nothing prepared. Pass --{RequestedVersion.OptionName} to name the version yourself.");
         }
 
         return new PreparedRelease(nextVersion, true, because);
