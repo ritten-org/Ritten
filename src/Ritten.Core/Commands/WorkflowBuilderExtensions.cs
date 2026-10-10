@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Engine;
 
 namespace Ritten.Commands;
@@ -15,7 +14,7 @@ public static class WorkflowBuilderExtensions
         /// </summary>
         public IWorkflowBuilder AddCommandRunner()
         {
-            builder.Services.TryAddScoped<ICommandRunner, CommandRunner>();
+            builder.Services.AddCommandRunner();
             return builder;
         }
     }

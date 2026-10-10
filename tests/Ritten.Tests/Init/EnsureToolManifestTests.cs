@@ -26,7 +26,7 @@ public class EnsureToolManifestTests
     public EnsureToolManifestTests()
     {
         _fileSystem.ProjectRoot.Returns(_project);
-        _git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns(_repository);
+        _git.RepositoryRoot(Arg.Any<IDirectory>(), Arg.Any<CancellationToken>()).Returns(_repository);
         SetManifest(exists: false);
     }
 
@@ -93,7 +93,7 @@ public class EnsureToolManifestTests
     [Fact]
     public async Task FallsBackToTheProjectWhenThereIsNoRepository()
     {
-        _git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns((IDirectory?)null);
+        _git.RepositoryRoot(Arg.Any<IDirectory>(), Arg.Any<CancellationToken>()).Returns((IDirectory?)null);
         var missing = Missing();
         _project.GetFile(Arg.Any<string>()).Returns(missing);
 

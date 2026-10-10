@@ -6,6 +6,7 @@ using Ritten.Commands;
 using Ritten.Contracts;
 using Ritten.DotNet;
 using Ritten.Engine;
+using Ritten.Engine.FileSystem;
 using Ritten.Git;
 using Ritten.GitHub;
 using Ritten.NuGet;
@@ -38,6 +39,25 @@ public class WorkflowBuilderExtensionsTests
         services.Count(d => d.ServiceType == typeof(IGitHubClient)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IGitHubReleaseService)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IWorkflowReport)).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task AddGit_ServesAHostWithNoWorkflowRun()
+    {
+        // A background service or any other host gets the same client, asking about whichever repository it names.
+        var services = new ServiceCollection().AddGit().BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        using var scope = services.CreateScope();
+        var outside = Directory.CreateTempSubdirectory("ritten-not-a-repo-");
+        try
+        {
+            var git = scope.ServiceProvider.GetRequiredService<IGit>();
+
+            (await git.IsRepository(new PhysicalDirectory(outside.FullName), TestContext.Current.CancellationToken)).ShouldBeFalse();
+        }
+        finally
+        {
+            outside.Delete(recursive: true);
+        }
     }
 
     [Fact]

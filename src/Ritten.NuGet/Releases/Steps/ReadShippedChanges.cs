@@ -1,4 +1,5 @@
 using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.Git;
@@ -11,9 +12,10 @@ namespace Ritten.Releases.Steps;
 /// </summary>
 /// <param name="pullRequest">The pull request under review, if any.</param>
 /// <param name="git">The git client.</param>
+/// <param name="fileSystem">The file system, whose project root is the repository asked.</param>
 /// <param name="log">The workflow log.</param>
 [Step("read shipped changes", StepKind.Work)]
-public class ReadShippedChanges(PullRequest pullRequest, IGit git, IWorkflowLog log)
+public class ReadShippedChanges(PullRequest pullRequest, IGit git, IFileSystem fileSystem, IWorkflowLog log)
 {
     /// <summary>
     /// The repository-wide files that change every project's output: its build properties and its package versions.
@@ -47,7 +49,7 @@ public class ReadShippedChanges(PullRequest pullRequest, IGit git, IWorkflowLog 
 
         // A CI checkout is shallow and holds only the commit under test, so the base is fetched
         // first — with history enough to find where this branch left it.
-        await git.FetchMergeBase(Remote, baseRef, cancellationToken);
+        await git.FetchMergeBase(fileSystem.ProjectRoot, Remote, baseRef, cancellationToken);
 
         // A project's directory is the honest unit: its sources, its embedded resources and the
         // project file itself all ship. A project it references without packing is not covered —
@@ -60,7 +62,7 @@ public class ReadShippedChanges(PullRequest pullRequest, IGit git, IWorkflowLog 
         List<string> files = [];
         foreach (var path in paths)
         {
-            files.AddRange(await git.ChangedFilesSince($"{Remote}/{baseRef}", path, cancellationToken));
+            files.AddRange(await git.ChangedFilesSince(fileSystem.ProjectRoot, $"{Remote}/{baseRef}", path, cancellationToken));
         }
 
         var changes = new ShippedChanges(baseRef, [.. files.Distinct()]);

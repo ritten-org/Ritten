@@ -1,6 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Ritten.Commands;
 using Ritten.Engine;
 
 namespace Ritten.Git;
@@ -17,8 +15,7 @@ public static class WorkflowBuilderExtensions
         /// </summary>
         public IWorkflowBuilder AddGit()
         {
-            builder.AddCommandRunner();
-            builder.Services.TryAddScoped<IGit, GitClient>();
+            builder.Services.AddGit();
             builder.Services.AddOptions<GitOptions>().Configure(GitOptions.ConfigureFromEnvironment);
             builder.Decorators.Decorate<IGit, DryRunGit>();
             return builder;

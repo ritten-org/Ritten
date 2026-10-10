@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
 using Ritten.Engine.FileSystem;
@@ -22,21 +23,22 @@ public class GitClientTests : IAsyncLifetime
     {
         var fileSystem = Substitute.For<IFileSystem>();
         fileSystem.ProjectRoot.AbsolutePath.Returns(_repository);
-        _commands = new CommandRunner(Substitute.For<IWorkflowLog>(), fileSystem);
+        _commands = new CommandRunner(Substitute.For<IWorkflowLog>(), NullLogger<CommandRunner>.Instance, fileSystem);
         _git = new GitClient(_commands);
 
         await Git("init", "--initial-branch=main", ".");
-        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "--allow-empty", "-m", "init");
+
+        // A signing agent would stop to ask partway through a test.
+        await Git("config", "commit.gpgsign", "false");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "-c", "commit.gpgsign=false", "commit", "--allow-empty", "-m", "init");
         await Git("init", "--bare", _remote);
         await Git("remote", "add", "origin", _remote);
     }
 
-    private ICommandRunner RunnerIn(string directory)
-    {
-        var fileSystem = Substitute.For<IFileSystem>();
-        fileSystem.ProjectRoot.AbsolutePath.Returns(directory);
-        return new CommandRunner(Substitute.For<IWorkflowLog>(), fileSystem);
-    }
+    /// <summary>
+    /// The repository the tests set up.
+    /// </summary>
+    private IDirectory Repository => new PhysicalDirectory(_repository);
 
     public ValueTask DisposeAsync()
     {
@@ -50,9 +52,9 @@ public class GitClientTests : IAsyncLifetime
     {
         // The command runs in a subdirectory, so this proves git answered rather than the path.
         var nested = Directory.CreateDirectory(Path.Combine(_repository, "src", "Thing"));
-        var git = new GitClient(RunnerIn(nested.FullName));
+        var at = new PhysicalDirectory(nested.FullName);
 
-        var root = await git.RepositoryRoot(TestContext.Current.CancellationToken);
+        var root = await _git.RepositoryRoot(at, TestContext.Current.CancellationToken);
 
         // Asserted by what the directory is rather than by its path, which the platform is free
         // to resolve differently — macOS reaches the temp directory through a symlink.
@@ -67,11 +69,11 @@ public class GitClientTests : IAsyncLifetime
         var outside = Directory.CreateTempSubdirectory("ritten-not-a-repo-");
         try
         {
-            (await _git.IsRepository(TestContext.Current.CancellationToken)).ShouldBeTrue();
-            (await _git.InRepository(new PhysicalDirectory(nested.FullName)).IsRepository(TestContext.Current.CancellationToken)).ShouldBeTrue();
-            (await _git.InRepository(new PhysicalDirectory(outside.FullName)).IsRepository(TestContext.Current.CancellationToken)).ShouldBeFalse();
+            (await _git.IsRepository(Repository, TestContext.Current.CancellationToken)).ShouldBeTrue();
+            (await _git.IsRepository(new PhysicalDirectory(nested.FullName), TestContext.Current.CancellationToken)).ShouldBeTrue();
+            (await _git.IsRepository(new PhysicalDirectory(outside.FullName), TestContext.Current.CancellationToken)).ShouldBeFalse();
             // A bare repository is git's, but there is no working tree to commit in.
-            (await _git.InRepository(new PhysicalDirectory(_remote)).IsRepository(TestContext.Current.CancellationToken)).ShouldBeFalse();
+            (await _git.IsRepository(new PhysicalDirectory(_remote), TestContext.Current.CancellationToken)).ShouldBeFalse();
         }
         finally
         {
@@ -85,9 +87,9 @@ public class GitClientTests : IAsyncLifetime
         var outside = Directory.CreateTempSubdirectory("ritten-not-a-repo-");
         try
         {
-            var git = new GitClient(RunnerIn(outside.FullName));
+            var at = new PhysicalDirectory(outside.FullName);
 
-            (await git.RepositoryRoot(TestContext.Current.CancellationToken)).ShouldBeNull();
+            (await _git.RepositoryRoot(at, TestContext.Current.CancellationToken)).ShouldBeNull();
         }
         finally
         {
@@ -98,7 +100,7 @@ public class GitClientTests : IAsyncLifetime
     [Fact]
     public async Task GetRemoteUrl_ReturnsTheRemotesUrl()
     {
-        var url = await _git.GetRemoteUrl("origin", TestContext.Current.CancellationToken);
+        var url = await _git.GetRemoteUrl(Repository, "origin", TestContext.Current.CancellationToken);
 
         url.ShouldBe(_remote);
     }
@@ -106,7 +108,7 @@ public class GitClientTests : IAsyncLifetime
     [Fact]
     public async Task GetRemoteUrl_IsNullWhenTheRemoteDoesNotExist()
     {
-        var url = await _git.GetRemoteUrl("nowhere", TestContext.Current.CancellationToken);
+        var url = await _git.GetRemoteUrl(Repository, "nowhere", TestContext.Current.CancellationToken);
 
         url.ShouldBeNull();
     }
@@ -116,10 +118,10 @@ public class GitClientTests : IAsyncLifetime
     {
         await File.WriteAllTextAsync(Path.Combine(_repository, "a.txt"), "committed", TestContext.Current.CancellationToken);
         await Git("add", "a.txt");
-        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", "add a.txt");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "-c", "commit.gpgsign=false", "commit", "-m", "add a.txt");
         await File.WriteAllTextAsync(Path.Combine(_repository, "a.txt"), "changed", TestContext.Current.CancellationToken);
 
-        var content = await _git.Show("HEAD", "a.txt", TestContext.Current.CancellationToken);
+        var content = await _git.Show(Repository, "HEAD", "a.txt", TestContext.Current.CancellationToken);
 
         content.ShouldNotBeNull().Trim().ShouldBe("committed");
     }
@@ -127,7 +129,7 @@ public class GitClientTests : IAsyncLifetime
     [Fact]
     public async Task Show_IsNullWhenTheFileDoesNotExistAtTheReference()
     {
-        (await _git.Show("HEAD", "missing.txt", TestContext.Current.CancellationToken)).ShouldBeNull();
+        (await _git.Show(Repository, "HEAD", "missing.txt", TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
     [Fact]
@@ -135,11 +137,11 @@ public class GitClientTests : IAsyncLifetime
     {
         await File.WriteAllTextAsync(Path.Combine(_repository, "tracked.txt"), "committed", TestContext.Current.CancellationToken);
         await Git("add", "tracked.txt");
-        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", "add tracked.txt");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "-c", "commit.gpgsign=false", "commit", "-m", "add tracked.txt");
         await File.WriteAllTextAsync(Path.Combine(_repository, "tracked.txt"), "changed", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(Path.Combine(_repository, "untracked.txt"), "new", TestContext.Current.CancellationToken);
 
-        var changes = await _git.ChangedFiles(".", TestContext.Current.CancellationToken);
+        var changes = await _git.ChangedFiles(Repository, ".", TestContext.Current.CancellationToken);
 
         changes.ShouldBe(["tracked.txt", "untracked.txt"], ignoreOrder: true);
     }
@@ -147,46 +149,46 @@ public class GitClientTests : IAsyncLifetime
     [Fact]
     public async Task ChangedFiles_IsEmptyForACleanPath()
     {
-        (await _git.ChangedFiles(".", TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        (await _git.ChangedFiles(Repository, ".", TestContext.Current.CancellationToken)).ShouldBeEmpty();
     }
 
     [Fact]
     public async Task TagExists_IsFalseForAMissingTag()
     {
-        (await _git.TagExists("v9.9.9", TestContext.Current.CancellationToken)).ShouldBeFalse();
+        (await _git.TagExists(Repository, "v9.9.9", TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
     [Fact]
     public async Task CreateTag_MakesTheTagVisibleLocally()
     {
-        await _git.CreateTag("v1.0.0", ct: TestContext.Current.CancellationToken);
+        await _git.CreateTag(Repository, "v1.0.0", ct: TestContext.Current.CancellationToken);
 
-        (await _git.TagExists("v1.0.0", TestContext.Current.CancellationToken)).ShouldBeTrue();
-        (await _git.RemoteTagExists("origin", "v1.0.0", TestContext.Current.CancellationToken)).ShouldBeFalse();
+        (await _git.TagExists(Repository, "v1.0.0", TestContext.Current.CancellationToken)).ShouldBeTrue();
+        (await _git.RemoteTagExists(Repository, "origin", "v1.0.0", TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
     [Fact]
     public async Task PushTag_MakesTheTagVisibleOnTheRemote()
     {
-        await _git.CreateTag("v1.1.0", ct: TestContext.Current.CancellationToken);
-        await _git.PushTag("origin", "v1.1.0", TestContext.Current.CancellationToken);
+        await _git.CreateTag(Repository, "v1.1.0", ct: TestContext.Current.CancellationToken);
+        await _git.PushTag(Repository, "origin", "v1.1.0", TestContext.Current.CancellationToken);
 
-        (await _git.RemoteTagExists("origin", "v1.1.0", TestContext.Current.CancellationToken)).ShouldBeTrue();
+        (await _git.RemoteTagExists(Repository, "origin", "v1.1.0", TestContext.Current.CancellationToken)).ShouldBeTrue();
     }
 
     [Fact]
-    public async Task InRepository_AddressesThatRepositoryInsteadOfTheWorkingDirectory()
+    public async Task EachCall_AddressesTheRepositoryItNames()
     {
         var other = Directory.CreateTempSubdirectory("ritten-git-other-");
         try
         {
             await Git("init", "--initial-branch=trunk", other.FullName);
 
-            var git = _git.InRepository(new PhysicalDirectory(other.FullName));
+            var at = new PhysicalDirectory(other.FullName);
 
-            (await git.CurrentBranch(TestContext.Current.CancellationToken)).ShouldBe("trunk");
-            (await git.GetRemoteUrl("origin", TestContext.Current.CancellationToken)).ShouldBeNull();
-            (await _git.CurrentBranch(TestContext.Current.CancellationToken)).ShouldBe("main");
+            (await _git.CurrentBranch(at, TestContext.Current.CancellationToken)).ShouldBe("trunk");
+            (await _git.GetRemoteUrl(at, "origin", TestContext.Current.CancellationToken)).ShouldBeNull();
+            (await _git.CurrentBranch(Repository, TestContext.Current.CancellationToken)).ShouldBe("main");
         }
         finally
         {
@@ -197,15 +199,15 @@ public class GitClientTests : IAsyncLifetime
     [Fact]
     public async Task Upstream_IsNullUntilTheBranchHasOne()
     {
-        (await _git.Upstream(TestContext.Current.CancellationToken)).ShouldBeNull();
+        (await _git.Upstream(Repository, TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
     [Fact]
     public async Task AddRemote_MakesTheRemoteAnswerToItsName()
     {
-        await _git.AddRemote("mirror", "https://example.com/mirror.git", TestContext.Current.CancellationToken);
+        await _git.AddRemote(Repository, "mirror", "https://example.com/mirror.git", TestContext.Current.CancellationToken);
 
-        (await _git.GetRemoteUrl("mirror", TestContext.Current.CancellationToken)).ShouldBe("https://example.com/mirror.git");
+        (await _git.GetRemoteUrl(Repository, "mirror", TestContext.Current.CancellationToken)).ShouldBe("https://example.com/mirror.git");
     }
 
     [Fact]
@@ -215,14 +217,14 @@ public class GitClientTests : IAsyncLifetime
         await Git("config", "user.email", "tests@example.com");
         await File.WriteAllTextAsync(Path.Combine(_repository, "note.md"), "hello", TestContext.Current.CancellationToken);
 
-        await _git.Stage(".", TestContext.Current.CancellationToken);
-        await _git.Commit("Add a note", TestContext.Current.CancellationToken);
-        await _git.Push("origin", "main", setUpstream: true, ct: TestContext.Current.CancellationToken);
+        await _git.Stage(Repository, ".", TestContext.Current.CancellationToken);
+        await _git.Commit(Repository, "Add a note", TestContext.Current.CancellationToken);
+        await _git.Push(Repository, "origin", "main", setUpstream: true, ct: TestContext.Current.CancellationToken);
 
-        (await _git.ChangedFiles(".", TestContext.Current.CancellationToken)).ShouldBeEmpty();
-        (await _git.Upstream(TestContext.Current.CancellationToken)).ShouldBe("origin/main");
-        (await _git.CommitsAhead("origin/main", TestContext.Current.CancellationToken)).ShouldBe(0);
-        (await _git.InRepository(new PhysicalDirectory(_remote)).Show("main", "note.md", TestContext.Current.CancellationToken))
+        (await _git.ChangedFiles(Repository, ".", TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        (await _git.Upstream(Repository, TestContext.Current.CancellationToken)).ShouldBe("origin/main");
+        (await _git.CommitsAhead(Repository, "origin/main", TestContext.Current.CancellationToken)).ShouldBe(0);
+        (await _git.Show(new PhysicalDirectory(_remote), "main", "note.md", TestContext.Current.CancellationToken))
             .ShouldNotBeNull().Trim().ShouldBe("hello");
     }
 
@@ -231,11 +233,11 @@ public class GitClientTests : IAsyncLifetime
     {
         await Git("config", "user.name", "Tests");
         await Git("config", "user.email", "tests@example.com");
-        await _git.Push("origin", "main", setUpstream: true, ct: TestContext.Current.CancellationToken);
+        await _git.Push(Repository, "origin", "main", setUpstream: true, ct: TestContext.Current.CancellationToken);
         await Git("commit", "--allow-empty", "-m", "one");
         await Git("commit", "--allow-empty", "-m", "two");
 
-        (await _git.CommitsAhead("origin/main", TestContext.Current.CancellationToken)).ShouldBe(2);
+        (await _git.CommitsAhead(Repository, "origin/main", TestContext.Current.CancellationToken)).ShouldBe(2);
     }
 
     [Fact]
@@ -244,15 +246,15 @@ public class GitClientTests : IAsyncLifetime
         await Git("config", "user.name", "Tests");
         await Git("config", "user.email", "tests@example.com");
         await File.WriteAllTextAsync(Path.Combine(_repository, "gone.md"), "soon", TestContext.Current.CancellationToken);
-        await _git.Stage(".", TestContext.Current.CancellationToken);
-        await _git.Commit("Add", TestContext.Current.CancellationToken);
+        await _git.Stage(Repository, ".", TestContext.Current.CancellationToken);
+        await _git.Commit(Repository, "Add", TestContext.Current.CancellationToken);
         File.Delete(Path.Combine(_repository, "gone.md"));
 
-        await _git.Stage(".", TestContext.Current.CancellationToken);
-        await _git.Commit("Remove", TestContext.Current.CancellationToken);
+        await _git.Stage(Repository, ".", TestContext.Current.CancellationToken);
+        await _git.Commit(Repository, "Remove", TestContext.Current.CancellationToken);
 
-        (await _git.ChangedFiles(".", TestContext.Current.CancellationToken)).ShouldBeEmpty();
-        (await _git.Show("HEAD", "gone.md", TestContext.Current.CancellationToken)).ShouldBeNull();
+        (await _git.ChangedFiles(Repository, ".", TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        (await _git.Show(Repository, "HEAD", "gone.md", TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
     [Fact]
@@ -261,7 +263,7 @@ public class GitClientTests : IAsyncLifetime
         var commands = new FakeCommandRunner();
         var git = new GitClient(commands);
 
-        await git.Push("origin", "main", new GitCredential("tom", "s3cret"), ct: TestContext.Current.CancellationToken);
+        await git.Push(Repository, "origin", "main", new GitCredential("tom", "s3cret"), ct: TestContext.Current.CancellationToken);
 
         var push = commands.Executed.ShouldHaveSingleItem();
         push.Arguments.ShouldNotContain(a => a.Contains("s3cret") || a.Contains("tom"));
@@ -277,7 +279,7 @@ public class GitClientTests : IAsyncLifetime
         var commands = new FakeCommandRunner();
         var git = new GitClient(commands);
 
-        await git.Push("origin", "main", ct: TestContext.Current.CancellationToken);
+        await git.Push(Repository, "origin", "main", ct: TestContext.Current.CancellationToken);
 
         commands.Executed.ShouldHaveSingleItem().EnvironmentVariables.ShouldBeEmpty();
     }
@@ -289,7 +291,7 @@ public class GitClientTests : IAsyncLifetime
         await Git("tag", "v1.0.1");
         await Git("tag", "nightly");
 
-        var tags = await _git.Tags("v*", TestContext.Current.CancellationToken);
+        var tags = await _git.Tags(Repository, "v*", TestContext.Current.CancellationToken);
 
         tags.ShouldBe(["v1.0.0", "v1.0.1"]);
     }
@@ -297,20 +299,20 @@ public class GitClientTests : IAsyncLifetime
     [Fact]
     public async Task IsShallow_IsFalseForAWholeClone()
     {
-        (await _git.IsShallow(TestContext.Current.CancellationToken)).ShouldBeFalse();
+        (await _git.IsShallow(Repository, TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
     [Fact]
     public async Task IsShallow_IsTrueForAClonePartOfTheHistory()
     {
-        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "--allow-empty", "-m", "second");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "-c", "commit.gpgsign=false", "commit", "--allow-empty", "-m", "second");
         var clone = Directory.CreateTempSubdirectory("ritten-git-shallow-");
         try
         {
             // file://, not a path: git ignores --depth for a local clone it can hard-link.
             await Git("clone", "--depth", "1", $"file://{_repository}", clone.FullName);
 
-            (await new GitClient(RunnerIn(clone.FullName)).IsShallow(TestContext.Current.CancellationToken)).ShouldBeTrue();
+            (await _git.IsShallow(new PhysicalDirectory(clone.FullName), TestContext.Current.CancellationToken)).ShouldBeTrue();
         }
         finally
         {
@@ -329,10 +331,10 @@ public class GitClientTests : IAsyncLifetime
         await File.WriteAllTextAsync(Path.Combine(component.FullName, "scratch.yaml"), "", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(Path.Combine(_repository, "elsewhere.yaml"), "", TestContext.Current.CancellationToken);
         await Git("add", "monitoring/grafana/compose.yaml", "monitoring/grafana/config", "monitoring/grafana/notes.md", "elsewhere.yaml");
-        var git = new GitClient(RunnerIn(component.FullName));
+        var at = new PhysicalDirectory(component.FullName);
 
-        var all = await git.TrackedFiles(ct: TestContext.Current.CancellationToken);
-        var yaml = await git.TrackedFiles(["*.yaml"], TestContext.Current.CancellationToken);
+        var all = await _git.TrackedFiles(at, ct: TestContext.Current.CancellationToken);
+        var yaml = await _git.TrackedFiles(at, ["*.yaml"], TestContext.Current.CancellationToken);
 
         // The untracked scratch.yaml is not listed, nor is what lies outside the directory.
         all.ShouldBe(["compose.yaml", "config/rules file.yaml", "notes.md"]);
@@ -348,9 +350,9 @@ public class GitClientTests : IAsyncLifetime
         await Git("checkout", "-b", "feature");
         await File.WriteAllTextAsync(Path.Combine(_repository, "touched.txt"), "x", TestContext.Current.CancellationToken);
         await Git("add", "touched.txt");
-        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", "touch");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "-c", "commit.gpgsign=false", "commit", "-m", "touch");
 
-        var changed = await _git.ChangedFilesSince("main", ".", TestContext.Current.CancellationToken);
+        var changed = await _git.ChangedFilesSince(Repository, "main", ".", TestContext.Current.CancellationToken);
 
         changed.ShouldBe(["touched.txt"]);
     }
@@ -361,16 +363,16 @@ public class GitClientTests : IAsyncLifetime
         await Git("checkout", "-b", "feature");
         await File.WriteAllTextAsync(Path.Combine(_repository, "mine.txt"), "x", TestContext.Current.CancellationToken);
         await Git("add", "mine.txt");
-        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", "mine");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "-c", "commit.gpgsign=false", "commit", "-m", "mine");
 
         await Git("checkout", "main");
         await File.WriteAllTextAsync(Path.Combine(_repository, "theirs.txt"), "x", TestContext.Current.CancellationToken);
         await Git("add", "theirs.txt");
-        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", "theirs");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "-c", "commit.gpgsign=false", "commit", "-m", "theirs");
         await Git("checkout", "feature");
 
         // Two dots would call theirs.txt a change of this branch's; three dots ask the merge base.
-        var changed = await _git.ChangedFilesSince("main", ".", TestContext.Current.CancellationToken);
+        var changed = await _git.ChangedFilesSince(Repository, "main", ".", TestContext.Current.CancellationToken);
 
         changed.ShouldBe(["mine.txt"]);
     }
@@ -383,9 +385,9 @@ public class GitClientTests : IAsyncLifetime
         await File.WriteAllTextAsync(Path.Combine(_repository, "inside", "a.txt"), "x", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(Path.Combine(_repository, "outside.txt"), "x", TestContext.Current.CancellationToken);
         await Git("add", ".");
-        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", "both");
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "-c", "commit.gpgsign=false", "commit", "-m", "both");
 
-        var changed = await _git.ChangedFilesSince("main", "inside", TestContext.Current.CancellationToken);
+        var changed = await _git.ChangedFilesSince(Repository, "main", "inside", TestContext.Current.CancellationToken);
 
         changed.ShouldBe(["inside/a.txt"]);
     }
@@ -394,7 +396,7 @@ public class GitClientTests : IAsyncLifetime
     public async Task ChangedFilesSince_RefusesAReferenceItCannotResolve() =>
         // Empty would mean "nothing changed", which is what makes a caller skip its work.
         await Should.ThrowAsync<Exception>(
-            _git.ChangedFilesSince("origin/never-fetched", ".", TestContext.Current.CancellationToken));
+            _git.ChangedFilesSince(Repository, "origin/never-fetched", ".", TestContext.Current.CancellationToken));
 
     [Fact]
     public async Task FetchMergeBase_LetsAShallowCheckoutCompareWithItsBase()
@@ -405,7 +407,7 @@ public class GitClientTests : IAsyncLifetime
         await CommitFile("base.txt");
         for (var i = 0; i < GitClient.MergeBaseDepths[0]; i++)
         {
-            await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "--allow-empty", "-m", $"history {i}");
+            await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "-c", "commit.gpgsign=false", "commit", "--allow-empty", "-m", $"history {i}");
         }
 
         await Git("checkout", "-b", "feature");
@@ -417,11 +419,11 @@ public class GitClientTests : IAsyncLifetime
 
         await WithClone(["--depth", "1", "--branch", "feature"], async clone =>
         {
-            await clone.FetchMergeBase("origin", "main", TestContext.Current.CancellationToken);
+            await _git.FetchMergeBase(clone, "origin", "main", TestContext.Current.CancellationToken);
 
-            var changed = await clone.ChangedFilesSince("origin/main", ".", TestContext.Current.CancellationToken);
+            var changed = await _git.ChangedFilesSince(clone, "origin/main", ".", TestContext.Current.CancellationToken);
             changed.ShouldBe(["mine.txt", "mine-too.txt"], ignoreOrder: true);
-            (await clone.IsShallow(TestContext.Current.CancellationToken)).ShouldBeTrue();
+            (await _git.IsShallow(clone, TestContext.Current.CancellationToken)).ShouldBeTrue();
         });
     }
 
@@ -431,7 +433,7 @@ public class GitClientTests : IAsyncLifetime
         await Git("checkout", "-b", "feature");
         for (var i = 0; i <= GitClient.MergeBaseDepths[0]; i++)
         {
-            await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "--allow-empty", "-m", $"step {i}");
+            await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "-c", "commit.gpgsign=false", "commit", "--allow-empty", "-m", $"step {i}");
         }
 
         await CommitFile("mine.txt");
@@ -439,9 +441,9 @@ public class GitClientTests : IAsyncLifetime
 
         await WithClone(["--depth", "1", "--branch", "feature"], async clone =>
         {
-            await clone.FetchMergeBase("origin", "main", TestContext.Current.CancellationToken);
+            await _git.FetchMergeBase(clone, "origin", "main", TestContext.Current.CancellationToken);
 
-            (await clone.ChangedFilesSince("origin/main", ".", TestContext.Current.CancellationToken)).ShouldBe(["mine.txt"]);
+            (await _git.ChangedFilesSince(clone, "origin/main", ".", TestContext.Current.CancellationToken)).ShouldBe(["mine.txt"]);
         });
     }
 
@@ -455,10 +457,10 @@ public class GitClientTests : IAsyncLifetime
             await CommitFile("later.txt");
             await Git("push", "origin", "main");
 
-            await clone.FetchMergeBase("origin", "main", TestContext.Current.CancellationToken);
+            await _git.FetchMergeBase(clone, "origin", "main", TestContext.Current.CancellationToken);
 
-            (await clone.Show("origin/main", "later.txt", TestContext.Current.CancellationToken)).ShouldNotBeNull();
-            (await clone.IsShallow(TestContext.Current.CancellationToken)).ShouldBeFalse();
+            (await _git.Show(clone, "origin/main", "later.txt", TestContext.Current.CancellationToken)).ShouldNotBeNull();
+            (await _git.IsShallow(clone, TestContext.Current.CancellationToken)).ShouldBeFalse();
         });
     }
 
@@ -466,17 +468,17 @@ public class GitClientTests : IAsyncLifetime
     {
         await File.WriteAllTextAsync(Path.Combine(_repository, name), name, TestContext.Current.CancellationToken);
         await Git("add", name);
-        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "commit", "-m", name);
+        await Git("-c", "user.name=Tests", "-c", "user.email=tests@example.com", "-c", "commit.gpgsign=false", "commit", "-m", name);
     }
 
-    private async Task WithClone(string[] options, Func<GitClient, Task> test)
+    private async Task WithClone(string[] options, Func<IDirectory, Task> test)
     {
         var clone = Directory.CreateTempSubdirectory("ritten-git-clone-");
         try
         {
             // file://, not a path: git ignores --depth for a local clone it can hard-link.
             await Git(["clone", .. options, $"file://{_remote}", clone.FullName]);
-            await test(new GitClient(RunnerIn(clone.FullName)));
+            await test(new PhysicalDirectory(clone.FullName));
         }
         finally
         {

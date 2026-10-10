@@ -24,7 +24,7 @@ public class EnsureToolManifest(IWorkflowLog log, IDotNet dotnet, IGit git, IFil
     public async Task<StepResult> Run(CancellationToken ct = default)
     {
         // One manifest at the repository's root serves every project in it.
-        var root = await git.RepositoryRoot(ct) ?? fileSystem.ProjectRoot;
+        var root = await git.RepositoryRoot(fileSystem.ProjectRoot, ct) ?? fileSystem.ProjectRoot;
         var scope = ToolScope.Local(root);
         var pinned = await dotnet.InstalledToolVersion(tool.PackageId, scope, ct);
         if (pinned == tool.Version)

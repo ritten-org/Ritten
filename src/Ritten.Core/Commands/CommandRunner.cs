@@ -1,11 +1,19 @@
 using System.Diagnostics;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Ritten.Contracts.FileSystem;
 using Ritten.Reporting;
 
 namespace Ritten.Commands;
 
-internal class CommandRunner(IWorkflowLog log, IFileSystem fileSystem) : ICommandRunner
+/// <summary>
+/// Runs commands, narrating them to the run's log and recording them as diagnostics.
+/// </summary>
+/// <param name="log">The run's narrative; silent outside a run.</param>
+/// <param name="logger">Where diagnostics go, whatever the host does with them.</param>
+/// <param name="fileSystem">The run's file system, whose project root a command runs in unless it names its own
+/// directory; outside a run there is none, and commands run in the process's directory.</param>
+internal class CommandRunner(IWorkflowLog log, ILogger<CommandRunner> logger, IFileSystem? fileSystem = null) : ICommandRunner
 {
     public async Task<CommandResult> Run(Command command, CancellationToken cancellationToken = default)
     {
@@ -33,12 +41,13 @@ internal class CommandRunner(IWorkflowLog log, IFileSystem fileSystem) : IComman
 
     private async Task<CommandResult> Execute(Command command, CancellationToken cancellationToken)
     {
+        var directory = Path.Combine(fileSystem?.ProjectRoot.AbsolutePath ?? Environment.CurrentDirectory, command.WorkingDirectory ?? string.Empty);
         using var process = new Process();
         process.EnableRaisingEvents = true;
         process.StartInfo = new ProcessStartInfo
         {
             FileName = command.Path,
-            WorkingDirectory = Path.Combine(fileSystem.ProjectRoot.AbsolutePath, command.WorkingDirectory ?? string.Empty),
+            WorkingDirectory = directory,
             RedirectStandardInput = command.StandardInput is not null,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -75,6 +84,8 @@ internal class CommandRunner(IWorkflowLog log, IFileSystem fileSystem) : IComman
             log.Verbose($"Running `{command.Path} {string.Join(" ", command.Arguments)}`");
         }
 
+        // The executable and where it ran, never the arguments: they can carry secrets.
+        logger.LogDebug("Running {Executable} in {Directory}.", Path.GetFileName(command.Path), directory);
         process.Start();
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
@@ -109,10 +120,12 @@ internal class CommandRunner(IWorkflowLog log, IFileSystem fileSystem) : IComman
 
         var exitLogLevel = process.ExitCode == 0 ? WorkflowLogLevel.Verbose : WorkflowLogLevel.Detail;
         log.Log(exitLogLevel, $"Exit code: {process.ExitCode}");
+        logger.LogDebug("{Executable} exited with code {ExitCode}.", Path.GetFileName(command.Path), process.ExitCode);
 
         var result = new CommandResult(process.ExitCode, stdOut.ToString(), stdErr.ToString());
         if (command.ThrowsOnError && result.IsError)
         {
+            logger.LogWarning("{Executable} failed with exit code {ExitCode}.", Path.GetFileName(command.Path), result.ExitCode.Value);
             throw new CommandFailedException(FailureMessage(command, result), result);
         }
 

@@ -35,7 +35,7 @@ public class EnsureActionsWorkflow(
     /// <param name="ct">A token to monitor for cancellation requests.</param>
     public async Task<StepResult> Run(DotNetBuildSettings build, DiscoveredProjects found, CancellationToken ct = default)
     {
-        if (await git.RepositoryRoot(ct) is not { } root)
+        if (await git.RepositoryRoot(fileSystem.ProjectRoot, ct) is not { } root)
         {
             log.Warning("This isn't a git repository, so there's nowhere GitHub Actions would read a workflow from.");
             return StepResult.Successful;
