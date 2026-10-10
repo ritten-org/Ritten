@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] - 2026-10-10
+
+### Added
+
+- **`JobOption.Set` is public**, so a host that builds a job's arguments itself can apply what the command line gave.
+
+### Changed
+
+- **An enum option given a value it doesn't take names the ones it does**, e.g. `'--kind' takes host or docker, not 'nope'.`
+
 ## [0.23.0] - 2026-10-09
 
 ### Changed
@@ -362,6 +372,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.24.0]: https://github.com/ritten-org/Ritten/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/ritten-org/Ritten/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/ritten-org/Ritten/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/ritten-org/Ritten/compare/v0.20.1...v0.21.0

@@ -127,17 +127,7 @@ internal sealed class ArgumentsModel
         List<Error> errors = [];
         foreach (var (option, given) in options)
         {
-            var value = option.IsFlag
-                ? given is true ? option.ReadFlag() : null
-                : given is null ? null : new Result<object>(given);
-            if (value is { IsError: true })
-            {
-                errors.AddRange(value.Errors);
-            }
-            else if (value?.Value is { } set)
-            {
-                option.Set(arguments, set);
-            }
+            errors.AddRange(option.Set(arguments, given));
         }
 
         return errors.Count > 0 ? errors : new Result<object>(arguments);
