@@ -51,14 +51,31 @@ public sealed class JobOption
     public Result<object> Read(string text) => Read(JsonValue.Create(text));
 
     /// <summary>
-    /// Reads a given flag into the arguments property's type.
+    /// Sets what the command line gave for the option on a job's arguments.
     /// </summary>
-    internal Result<object> ReadFlag() => Read(JsonValue.Create(true));
+    /// <remarks>
+    /// A flag that wasn't given, or a value option left out, leaves the property as it was.
+    /// </remarks>
+    /// <param name="arguments">The arguments to set the value on, of the job's arguments type.</param>
+    /// <param name="given">What the command line gave: whether a flag was given, or the value an option read.</param>
+    /// <returns>Why the value couldn't be set; empty once it is.</returns>
+    public IReadOnlyList<Error> Set(object arguments, object? given)
+    {
+        var value = IsFlag
+            ? given is true ? Read(JsonValue.Create(true)) : null
+            : given is null ? null : new Result<object>(given);
+        if (value is { IsError: true })
+        {
+            return value.Errors;
+        }
 
-    /// <summary>
-    /// Sets the value on a freshly read arguments model.
-    /// </summary>
-    internal void Set(object arguments, object value) => Property.SetValue(arguments, value);
+        if (value?.Value is { } set)
+        {
+            Property.SetValue(arguments, set);
+        }
+
+        return [];
+    }
 
     private Result<object> Read(JsonNode value)
     {
@@ -70,7 +87,17 @@ public sealed class JobOption
         }
         catch (JsonException exception)
         {
-            return Result.Error(exception.Message, exception);
+            // The serializer names the type, which means nothing to whoever typed the value.
+            var type = Nullable.GetUnderlyingType(Property.PropertyType) ?? Property.PropertyType;
+            return type.IsEnum
+                ? Result.Error($"'--{Name}' takes {Choices(type)}, not '{value}'.", exception)
+                : Result.Error(exception.Message, exception);
         }
+    }
+
+    private static string Choices(Type type)
+    {
+        var names = Enum.GetNames(type).Select(JsonNamingPolicy.CamelCase.ConvertName).ToList();
+        return names.Count == 1 ? names[0] : $"{string.Join(", ", names[..^1])} or {names[^1]}";
     }
 }
