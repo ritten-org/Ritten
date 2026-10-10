@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
 using Ritten.Reporting;
@@ -154,6 +157,54 @@ public class CommandRunnerTests
         span.Status.ShouldBe(ActivityStatusCode.Error);
     }
 
+    [Fact]
+    public async Task Run_WithoutARun_RunsInTheProcessDirectory()
+    {
+        // Outside a workflow run there is no project, so a command that names no directory runs where the host does.
+        var runner = new CommandRunner(Substitute.For<IWorkflowLog>(), NullLogger<CommandRunner>.Instance);
+
+        var result = await runner.Run(Shell("pwd").QuietOutput(), TestContext.Current.CancellationToken);
+
+        result.StandardOutput.Trim().ShouldEndWith(Path.GetFileName(Environment.CurrentDirectory.TrimEnd('/')));
+    }
+
+    [Fact]
+    public async Task Run_RecordsTheCommandAsADiagnostic_WithoutItsArguments()
+    {
+        // The host's logging hears what ran and how it ended; arguments can carry secrets, so they never reach it.
+        var logger = new ListLogger();
+        var runner = new CommandRunner(Substitute.For<IWorkflowLog>(), logger);
+
+        await runner.Run(Shell("exit 3").QuietOutput(), TestContext.Current.CancellationToken);
+
+        logger.Messages.ShouldBe(["Running sh in " + Environment.CurrentDirectory + ".", "sh exited with code 3."]);
+        logger.Messages.ShouldAllBe(message => !message.Contains("exit 3"));
+    }
+
+    [Fact]
+    public async Task AddCommandRunner_RunsCommandsForAHostWithNoWorkflowRun()
+    {
+        // Registered on any host's services, the runner narrates nothing and needs nothing a run provides.
+        var services = new ServiceCollection().AddCommandRunner().BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        using var scope = services.CreateScope();
+
+        var result = await scope.ServiceProvider.GetRequiredService<ICommandRunner>().Run(Shell("echo hi").QuietOutput(), TestContext.Current.CancellationToken);
+
+        result.StandardOutput.Trim().ShouldBe("hi");
+    }
+
+    private sealed class ListLogger : ILogger<CommandRunner>
+    {
+        public List<string> Messages { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+            Messages.Add(formatter(state, exception));
+    }
+
     private static CommandRunner Runner(string? currentDirectory = null) =>
         Runner(Substitute.For<IWorkflowLog>(), currentDirectory);
 
@@ -161,7 +212,7 @@ public class CommandRunnerTests
     {
         var fileSystem = Substitute.For<IFileSystem>();
         fileSystem.ProjectRoot.AbsolutePath.Returns(currentDirectory ?? Path.GetTempPath());
-        return new CommandRunner(log, fileSystem);
+        return new CommandRunner(log, NullLogger<CommandRunner>.Instance, fileSystem);
     }
 
     private static Command Shell(string script) => Command.Create("/bin/sh").WithArguments("-c", script);

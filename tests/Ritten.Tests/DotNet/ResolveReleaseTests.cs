@@ -1,4 +1,5 @@
 using NuGet.Versioning;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.Git;
@@ -23,7 +24,7 @@ public class ResolveReleaseTests
         var release = await Produce(Entry(repository: "https://github.com/csproj/repo"));
 
         release.Repository.ShouldBe("https://github.com/configured/repo");
-        await _git.DidNotReceiveWithAnyArgs().GetRemoteUrl(default!, TestContext.Current.CancellationToken);
+        await _git.DidNotReceiveWithAnyArgs().GetRemoteUrl(Arg.Any<IDirectory>(), default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -32,13 +33,13 @@ public class ResolveReleaseTests
         var release = await Produce(Entry(repository: "https://github.com/csproj/repo"));
 
         release.Repository.ShouldBe("https://github.com/csproj/repo");
-        await _git.DidNotReceiveWithAnyArgs().GetRemoteUrl(default!, TestContext.Current.CancellationToken);
+        await _git.DidNotReceiveWithAnyArgs().GetRemoteUrl(Arg.Any<IDirectory>(), default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]
     public async Task FallsBackToTheOriginRemoteNormalised()
     {
-        _git.GetRemoteUrl("origin", Arg.Any<CancellationToken>()).Returns("git@github.com:remote/repo.git");
+        _git.GetRemoteUrl(Arg.Any<IDirectory>(), "origin", Arg.Any<CancellationToken>()).Returns("git@github.com:remote/repo.git");
 
         var release = await Produce(Entry());
 
@@ -85,5 +86,5 @@ public class ResolveReleaseTests
     }
 
     private ResolveRelease Step() =>
-        new(Substitute.For<IWorkflowLog>(), _git);
+        new(Substitute.For<IWorkflowLog>(), _git, Substitute.For<IFileSystem>());
 }

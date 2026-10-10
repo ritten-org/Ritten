@@ -35,7 +35,7 @@ public class EnsureActionsWorkflowTests
 
     public EnsureActionsWorkflowTests()
     {
-        _git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns(_repository);
+        _git.RepositoryRoot(Arg.Any<IDirectory>(), Arg.Any<CancellationToken>()).Returns(_repository);
         _fileSystem.ProjectRoot.Returns(_root);
         _repository.GetFile(Arg.Any<string>()).Returns(_globalJson);
 
@@ -199,7 +199,7 @@ public class EnsureActionsWorkflowTests
     [Fact]
     public async Task SaysSoWhenThereIsNoRepositoryToWriteInto()
     {
-        _git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns((IDirectory?)null);
+        _git.RepositoryRoot(Arg.Any<IDirectory>(), Arg.Any<CancellationToken>()).Returns((IDirectory?)null);
 
         var result = await Step().Run(new DotNetBuildSettings(), Found("src/My.Tool/My.Tool.csproj"), TestContext.Current.CancellationToken);
 

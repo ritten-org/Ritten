@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
+using Ritten.Contracts.FileSystem;
 using Ritten.DotNet;
 using Ritten.Git;
 using Ritten.Git.Steps;
@@ -20,12 +21,12 @@ public class GitTagTests
     [Fact]
     public async Task SkipsWhenTheTagAlreadyExistsOnOrigin()
     {
-        _git.RemoteTagExists("origin", "v1.2.0", Arg.Any<CancellationToken>()).Returns(true);
+        _git.RemoteTagExists(Arg.Any<IDirectory>(), "origin", "v1.2.0", Arg.Any<CancellationToken>()).Returns(true);
 
         await Step().Run(_release, TheProject, TestContext.Current.CancellationToken);
 
-        await _git.DidNotReceiveWithAnyArgs().CreateTag(default!, default, TestContext.Current.CancellationToken);
-        await _git.DidNotReceiveWithAnyArgs().PushTag(default!, default!, TestContext.Current.CancellationToken);
+        await _git.DidNotReceiveWithAnyArgs().CreateTag(Arg.Any<IDirectory>(), default!, default, TestContext.Current.CancellationToken);
+        await _git.DidNotReceiveWithAnyArgs().PushTag(Arg.Any<IDirectory>(), default!, default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -33,8 +34,8 @@ public class GitTagTests
     {
         await Step().Run(_release, TheProject, TestContext.Current.CancellationToken);
 
-        await _git.Received().CreateTag("v1.2.0", null, Arg.Any<CancellationToken>());
-        await _git.Received().PushTag("origin", "v1.2.0", Arg.Any<CancellationToken>());
+        await _git.Received().CreateTag(Arg.Any<IDirectory>(), "v1.2.0", null, Arg.Any<CancellationToken>());
+        await _git.Received().PushTag(Arg.Any<IDirectory>(), "origin", "v1.2.0", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -44,18 +45,18 @@ public class GitTagTests
 
         await Step().Run(_release, TheProject, TestContext.Current.CancellationToken);
 
-        await _git.Received().CreateTag("v1.2.0", "abc123", Arg.Any<CancellationToken>());
+        await _git.Received().CreateTag(Arg.Any<IDirectory>(), "v1.2.0", "abc123", Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task PushesAnExistingLocalTagWithoutRecreatingIt()
     {
-        _git.TagExists("v1.2.0", Arg.Any<CancellationToken>()).Returns(true);
+        _git.TagExists(Arg.Any<IDirectory>(), "v1.2.0", Arg.Any<CancellationToken>()).Returns(true);
 
         await Step().Run(_release, TheProject, TestContext.Current.CancellationToken);
 
-        await _git.DidNotReceiveWithAnyArgs().CreateTag(default!, default, TestContext.Current.CancellationToken);
-        await _git.Received().PushTag("origin", "v1.2.0", Arg.Any<CancellationToken>());
+        await _git.DidNotReceiveWithAnyArgs().CreateTag(Arg.Any<IDirectory>(), default!, default, TestContext.Current.CancellationToken);
+        await _git.Received().PushTag(Arg.Any<IDirectory>(), "origin", "v1.2.0", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -65,9 +66,9 @@ public class GitTagTests
 
         await Step().Run(_release, TheProject, TestContext.Current.CancellationToken);
 
-        await _git.Received().CreateTag("release/1.2.0", null, Arg.Any<CancellationToken>());
+        await _git.Received().CreateTag(Arg.Any<IDirectory>(), "release/1.2.0", null, Arg.Any<CancellationToken>());
     }
 
     private GitTag Step() =>
-        new(Substitute.For<IWorkflowLog>(), Options.Create(_options), _git);
+        new(Substitute.For<IWorkflowLog>(), Options.Create(_options), _git, Substitute.For<IFileSystem>());
 }

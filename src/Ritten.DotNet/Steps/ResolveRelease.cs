@@ -1,4 +1,5 @@
 using Ritten.Contracts;
+using Ritten.Contracts.FileSystem;
 using Ritten.Git;
 using Ritten.Reporting;
 
@@ -9,8 +10,9 @@ namespace Ritten.DotNet.Steps;
 /// </summary>
 /// <param name="log">The workflow log.</param>
 /// <param name="git">The git client.</param>
+/// <param name="fileSystem">The file system, whose project root is the repository asked.</param>
 [Step("resolve release", StepKind.Work)]
-public class ResolveRelease(IWorkflowLog log, IGit git)
+public class ResolveRelease(IWorkflowLog log, IGit git, IFileSystem fileSystem)
 {
     /// <summary>
     /// Derives the release's identity from the already-read projects.
@@ -31,7 +33,7 @@ public class ResolveRelease(IWorkflowLog log, IGit git)
         // wins, then the project file's RepositoryUrl, then the origin remote.
         var repository = declared?.Url
             ?? release.Repository
-            ?? RepositoryUrls.ToWebUrl(await git.GetRemoteUrl("origin", cancellationToken));
+            ?? RepositoryUrls.ToWebUrl(await git.GetRemoteUrl(fileSystem.ProjectRoot, "origin", cancellationToken));
 
         log.Detail($"Releasing as {release.Name} (v{release.Version}).");
         log.Verbose($"Repository: {repository ?? "unknown"}.");

@@ -13,12 +13,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Project values moved out of client options.** `DotNetBuildSettings`, `PackageRepository`, `ReleaseSettings`, `DockerImages` and `TofuModule` are arguments now; `GitOptions` and `NuGetOptions` keep only what the environment sets.
 - **Clients are scoped to the run.** Anything registered as a singleton that depends on one fails `Build`.
 - **A resource detector reads the application's services**, not the run's.
+- **`IGit` acts on the repository each call names.** Every method takes the repository first, and `InRepository` is gone.
+- **A command with no directory of its own runs in the project root inside a run, and in the process's directory outside one.**
 
 ### Added
 
 - **`WorkflowApplication.Run(workflow, job, arguments, directory, options)`**, for a host that chooses the job and its arguments itself, and `WorkflowApplication.Workflows`.
 - **`JobCommand.Create` and a public `WorkflowFlags`**, for a host building its own command line from Ritten's commands.
 - **`WorkflowRegistry.Add<T>()` builds the workflow from the application's services**, so it can take dependencies.
+- **`services.AddGit()` and `services.AddCommandRunner()`** register the clients with any host's services, such as a background service's. Outside a run nothing is narrated.
+- **The command runner logs what it runs through `ILogger`**: the executable, its directory and its exit code, never its arguments.
 
 ### Removed
 

@@ -68,7 +68,8 @@ public sealed class WorkflowApplicationBuilder : IWorkflowBuilder
         var services = new ServiceCollection();
         var decorators = new DecoratorRegistry().Decorate<IProjectFiles, DryRunProjectFiles>();
         AddRunFacts(services, runtime.Value);
-        foreach (var service in Services)
+        // A client registered for any host brings a silent narrative for when there's no run; here there always is.
+        foreach (var service in Services.Where(s => s.ImplementationType != typeof(SilentWorkflowLog)))
         {
             services.Add(service);
         }
@@ -118,6 +119,7 @@ public sealed class WorkflowApplicationBuilder : IWorkflowBuilder
     private static void AddRunFacts(IServiceCollection services, DetectRuntimeResult runtime)
     {
         services.AddOptions();
+        services.AddLogging();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton(new WorkflowEnvironment(runtime.Environment));
         services.AddScoped<RunState>();
@@ -127,6 +129,10 @@ public sealed class WorkflowApplicationBuilder : IWorkflowBuilder
         services.AddScoped(provider => Current(provider).Job.Steps);
         services.AddScoped(provider => Current(provider).Console);
         services.AddScoped<IWorkflowProgress>(provider => provider.GetRequiredService<IWorkflowConsole>());
+
+        // Ahead of the host's services, so a client registered for any host finds the run's narrative already
+        // there; a host that registers its own still wins.
+        services.AddScoped<IWorkflowLog>(provider => provider.GetRequiredService<IWorkflowConsole>());
         services.AddScoped(provider =>
         {
             var run = Current(provider);
@@ -139,7 +145,6 @@ public sealed class WorkflowApplicationBuilder : IWorkflowBuilder
     /// </summary>
     private static void AddDefaults(IServiceCollection services)
     {
-        services.TryAddScoped<IWorkflowLog>(provider => provider.GetRequiredService<IWorkflowConsole>());
         services.TryAddScoped<IWorkflowRunner, DefaultWorkflowRunner>();
         services.TryAddScoped<IFileSystem, ProjectFileSystem>();
         services.TryAddScoped<IProjectFiles, ProjectFileClient>();
