@@ -10,6 +10,7 @@ namespace Ritten.Reporting;
 /// </summary>
 internal class WorkflowReportPublisher(
     IJob running,
+    WorkflowJob current,
     IWorkflowLog log,
     RunContext context,
     IWorkflowReport report,
@@ -51,7 +52,7 @@ internal class WorkflowReportPublisher(
             return;
         }
 
-        var finished = new WorkflowReport(context.Title, result.IsSuccess, report.Sections, result.FailedStep, result.StoppedAt);
+        var finished = new WorkflowReport(context.TitleOf(current), result.IsSuccess, report.Sections, result.FailedStep, result.StoppedAt);
         foreach (var sink in sinks)
         {
             try

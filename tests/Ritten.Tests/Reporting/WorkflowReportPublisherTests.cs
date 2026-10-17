@@ -61,8 +61,17 @@ public class WorkflowReportPublisherTests
         await _second.Received().Publish(Arg.Any<WorkflowReport>(), Arg.Any<CancellationToken>());
     }
 
-    private WorkflowReportPublisher Publisher(IWorkflowReport? report = null, bool reports = true) =>
-        new(new TestJob(reports: reports), Substitute.For<IWorkflowLog>(), new RunContext { Title = "Test" }, report ?? new WorkflowReportBuilder(), [_first, _second]);
+    [Fact]
+    public async Task OnWorkflowCompleted_TitlesTheReportWithTheRunsSubject()
+    {
+        await Publisher(job: Job with { Subject = "caddy/infrastructure" })
+            .OnWorkflowCompleted(new WorkflowResult(ExitCode.Success, []), TestContext.Current.CancellationToken);
+
+        await _first.Received().Publish(Arg.Is<WorkflowReport>(r => r.Title == "Test · caddy/infrastructure"), TestContext.Current.CancellationToken);
+    }
+
+    private WorkflowReportPublisher Publisher(IWorkflowReport? report = null, bool reports = true, WorkflowJob? job = null) =>
+        new(new TestJob(reports: reports), job ?? Job, Substitute.For<IWorkflowLog>(), new RunContext { Title = "Test" }, report ?? new WorkflowReportBuilder(), [_first, _second]);
 
     [Fact]
     public async Task PublishesNothingForAJobThatDoesNotReport()

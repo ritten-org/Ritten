@@ -23,6 +23,14 @@ public class ForgejoCommentResultSinkTests
     }
 
     [Fact]
+    public async Task Started_TitlesThePendingCommentWithTheRunsSubject()
+    {
+        await Sink().Started(new WorkflowJob("Ritten", "check", Subject: "caddy/infrastructure"), TestContext.Current.CancellationToken);
+
+        await _comments.Received().CreateOrUpdate("## ⏳ Ritten · caddy/infrastructure\n\ncheck job in progress…", TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task Started_LinksToTheRunLogsWhileThereIsNothingElseToShow()
     {
         _options.RunUrl = "https://code.example.com/tom/lab/actions/runs/42";

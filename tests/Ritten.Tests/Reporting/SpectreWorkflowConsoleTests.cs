@@ -23,6 +23,17 @@ public class SpectreWorkflowConsoleTests
     }
 
     [Fact]
+    public async Task TheOpeningRuleNamesTheRunsSubject()
+    {
+        var console = new TestConsole();
+        var sut = new SpectreWorkflowConsole(console, WorkflowLogLevel.Detail);
+
+        await sut.OnWorkflowStarted(new WorkflowJob("tofu", "check", Subject: "caddy/infrastructure"), TestContext.Current.CancellationToken);
+
+        console.Output.ShouldContain("caddy/infrastructure");
+    }
+
+    [Fact]
     public void QuietSilencesWhatStepsSay()
     {
         var console = new TestConsole();
