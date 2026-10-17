@@ -22,7 +22,7 @@ internal sealed class ForgejoCommentResultSink(
             return Task.CompletedTask;
         }
 
-        return comments.CreateOrUpdate(WithRunLogs($"## ⏳ {context.Title}\n\n{job.Name} job in progress…"), cancellationToken);
+        return comments.CreateOrUpdate(WithRunLogs($"## ⏳ {context.TitleOf(job)}\n\n{job.Name} job in progress…"), cancellationToken);
     }
 
     public Task Publish(WorkflowReport report, CancellationToken cancellationToken = default)

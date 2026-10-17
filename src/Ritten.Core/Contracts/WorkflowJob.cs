@@ -7,4 +7,5 @@ namespace Ritten.Contracts;
 /// <param name="Name">The name of the job, as given on the command line.</param>
 /// <param name="DryRun">Whether this run is a rehearsal. Nothing that reaches outside the working directory happens.</param>
 /// <param name="AutoApprove">Whether a job that would otherwise stop and ask has been approved up front.</param>
-public sealed record WorkflowJob(string Workflow, string Name, bool DryRun = false, bool AutoApprove = false);
+/// <param name="Subject">What the run is about, when specified.</param>
+public sealed record WorkflowJob(string Workflow, string Name, bool DryRun = false, bool AutoApprove = false, string? Subject = null);

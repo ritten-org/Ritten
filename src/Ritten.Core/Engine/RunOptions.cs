@@ -21,4 +21,9 @@ public sealed record RunOptions
     /// Approves a job that would otherwise stop and ask.
     /// </summary>
     public bool AutoApprove { get; init; }
+
+    /// <summary>
+    /// What the run is about, when specified.
+    /// </summary>
+    public string? Subject { get; init; }
 }

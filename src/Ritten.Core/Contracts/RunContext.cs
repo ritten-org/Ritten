@@ -19,4 +19,9 @@ public sealed record RunContext
     /// Where the CI system shows the run, when there is one.
     /// </summary>
     public string? Url { get; init; }
+
+    /// <summary>
+    /// The name a job's run is reported under: the title, then the job's subject when it has one.
+    /// </summary>
+    public string TitleOf(WorkflowJob job) => job.Subject is { } subject ? $"{Title} · {subject}" : Title;
 }

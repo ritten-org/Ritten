@@ -19,7 +19,8 @@ internal sealed class SpectreWorkflowConsole(IAnsiConsole console, WorkflowLogLe
     {
         // Said out loud, because the whole point is that nothing durable happened.
         var dryRun = job.DryRun ? " [grey]·[/] [yellow]dry run[/]" : "";
-        console.Write(new Rule($"[bold]{Markup.Escape(job.Workflow)}[/] [grey]·[/] [bold]{Markup.Escape(job.Name)}[/]{dryRun}").LeftJustified());
+        var subject = job.Subject is { } about ? $" [grey]·[/] {Markup.Escape(about)}" : "";
+        console.Write(new Rule($"[bold]{Markup.Escape(job.Workflow)}[/] [grey]·[/] [bold]{Markup.Escape(job.Name)}[/]{subject}{dryRun}").LeftJustified());
         _workflowTimer.Restart();
         return Task.CompletedTask;
     }

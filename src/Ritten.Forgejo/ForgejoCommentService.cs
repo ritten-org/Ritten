@@ -13,6 +13,7 @@ internal sealed class ForgejoCommentService(
     IWorkflowLog log,
     IOptions<ForgejoActionsOptions> options,
     RunContext context,
+    WorkflowJob job,
     IHttpClientFactory clients
 ) : IForgejoCommentService
 {
@@ -114,8 +115,11 @@ internal sealed class ForgejoCommentService(
         return null;
     }
 
-    // One comment per workflow, found again on later runs by this invisible prefix.
-    private string Marker => $"<!-- ritten:{Slug(context.Title)} -->";
+    private string Marker => MarkerOf(context, job);
+
+    // One comment per workflow, or per subject of it, found again on later runs by this invisible prefix.
+    internal static string MarkerOf(RunContext context, WorkflowJob job) =>
+        job.Subject is { } subject ? $"<!-- ritten:{Slug(context.Title)}:{Slug(subject)} -->" : $"<!-- ritten:{Slug(context.Title)} -->";
 
     private const int MaxPages = 20;
 

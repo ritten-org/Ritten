@@ -136,7 +136,7 @@ public sealed class WorkflowApplicationBuilder : IWorkflowBuilder
         services.AddScoped(provider =>
         {
             var run = Current(provider);
-            return new WorkflowJob(run.Workflow.Workflow.Label, run.Job.Name, run.Options.DryRun, run.Options.AutoApprove);
+            return new WorkflowJob(run.Workflow.Workflow.Label, run.Job.Name, run.Options.DryRun, run.Options.AutoApprove, run.Options.Subject);
         });
     }
 

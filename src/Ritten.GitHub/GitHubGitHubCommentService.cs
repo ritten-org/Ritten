@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Octokit;
 using Ritten.Contracts;
 using Ritten.Reporting;
+using WorkflowJob = Ritten.Contracts.WorkflowJob;
 
 namespace Ritten.GitHub;
 
@@ -9,6 +10,7 @@ internal class GitHubGitHubCommentService(
     IWorkflowLog log,
     IOptions<GitHubActionsOptions> options,
     RunContext context,
+    WorkflowJob job,
     IGitHubClient client
 ) : IGitHubCommentService
 {
@@ -60,8 +62,11 @@ internal class GitHubGitHubCommentService(
         await client.Issue.Comment.Delete(repositoryId, existing.Id);
     }
 
-    // One comment per workflow, found again on later runs by this invisible prefix.
-    private string Marker => $"<!-- ritten:{Slug(context.Title)} -->";
+    private string Marker => MarkerOf(context, job);
+
+    // One comment per workflow, or per subject of it, found again on later runs by this invisible prefix.
+    internal static string MarkerOf(RunContext context, WorkflowJob job) =>
+        job.Subject is { } subject ? $"<!-- ritten:{Slug(context.Title)}:{Slug(subject)} -->" : $"<!-- ritten:{Slug(context.Title)} -->";
 
     private static string Slug(string value) =>
         string.Concat(value.ToLowerInvariant().Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-'));
