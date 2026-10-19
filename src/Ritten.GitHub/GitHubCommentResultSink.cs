@@ -11,6 +11,7 @@ namespace Ritten.GitHub;
 internal class GitHubCommentResultSink(
     MarkdownReportRenderer renderer,
     RunContext context,
+    WorkflowJob current,
     IOptions<GitHubActionsOptions> options,
     IGitHubCommentService comments
 ) : IWorkflowResultSink
@@ -22,7 +23,7 @@ internal class GitHubCommentResultSink(
             return Task.CompletedTask;
         }
 
-        return comments.CreateOrUpdate(WithRunLogs($"## ⏳ {context.TitleOf(job)}\n\n{job.Name} job in progress…"), cancellationToken);
+        return comments.CreateOrUpdate(ReportKey.Of(context, job), WithRunLogs($"## ⏳ {context.TitleOf(job)}\n\n{job.Name} job in progress…"), cancellationToken);
     }
 
     public Task Publish(WorkflowReport report, CancellationToken cancellationToken = default)
@@ -34,10 +35,10 @@ internal class GitHubCommentResultSink(
 
         if (report.IsSilent)
         {
-            return comments.Delete(cancellationToken);
+            return comments.Delete(ReportKey.Of(context, current), cancellationToken);
         }
 
-        return comments.CreateOrUpdate(WithRunLogs(renderer.Render(report)), cancellationToken);
+        return comments.CreateOrUpdate(ReportKey.Of(context, current), WithRunLogs(renderer.Render(report)), cancellationToken);
     }
 
     /// <summary>

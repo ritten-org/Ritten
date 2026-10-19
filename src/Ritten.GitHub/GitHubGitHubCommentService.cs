@@ -1,20 +1,19 @@
 using Microsoft.Extensions.Options;
 using Octokit;
-using Ritten.Contracts;
 using Ritten.Reporting;
-using WorkflowJob = Ritten.Contracts.WorkflowJob;
 
 namespace Ritten.GitHub;
 
 internal class GitHubGitHubCommentService(
     IWorkflowLog log,
     IOptions<GitHubActionsOptions> options,
-    RunContext context,
-    WorkflowJob job,
     IGitHubClient client
 ) : IGitHubCommentService
 {
-    public async Task CreateOrUpdate(string body, CancellationToken cancellationToken = default)
+    private const string MarkerPrefix = "<!-- ritten:";
+    private const string MarkerSuffix = " -->";
+
+    public async Task CreateOrUpdate(ReportKey key, string body, CancellationToken cancellationToken = default)
     {
         if (options.Value.RepositoryId is not { } repositoryId)
         {
@@ -28,10 +27,10 @@ internal class GitHubGitHubCommentService(
         }
 
         var pullRequestNumber = options.Value.PullRequestNumber.Value;
-        var fullBody = $"{Marker}\n{body}";
+        var fullBody = $"{MarkerOf(key)}\n{body}";
 
         var comments = await client.Issue.Comment.GetAllForIssue(repositoryId, pullRequestNumber);
-        var existing = comments.FirstOrDefault(c => c.Body.StartsWith(Marker, StringComparison.Ordinal));
+        var existing = comments.FirstOrDefault(c => KeyOf(c.Body) == key);
         if (existing == null)
         {
             log.Detail($"Creating comment on PR #{pullRequestNumber}.");
@@ -44,7 +43,7 @@ internal class GitHubGitHubCommentService(
         }
     }
 
-    public async Task Delete(CancellationToken cancellationToken = default)
+    public async Task Delete(ReportKey key, CancellationToken cancellationToken = default)
     {
         if (options.Value.RepositoryId is not { } repositoryId || !options.Value.IsPullRequest)
         {
@@ -53,7 +52,7 @@ internal class GitHubGitHubCommentService(
 
         var pullRequestNumber = options.Value.PullRequestNumber.Value;
         var comments = await client.Issue.Comment.GetAllForIssue(repositoryId, pullRequestNumber);
-        if (comments.FirstOrDefault(c => c.Body.StartsWith(Marker, StringComparison.Ordinal)) is not { } existing)
+        if (comments.FirstOrDefault(c => KeyOf(c.Body) == key) is not { } existing)
         {
             return;
         }
@@ -62,12 +61,30 @@ internal class GitHubGitHubCommentService(
         await client.Issue.Comment.Delete(repositoryId, existing.Id);
     }
 
-    private string Marker => MarkerOf(context, job);
+    public async Task<IReadOnlyList<ReportKey>> List(CancellationToken cancellationToken = default)
+    {
+        if (options.Value.RepositoryId is not { } repositoryId || !options.Value.IsPullRequest)
+        {
+            return [];
+        }
 
-    // One comment per workflow, or per subject of it, found again on later runs by this invisible prefix.
-    internal static string MarkerOf(RunContext context, WorkflowJob job) =>
-        job.Subject is { } subject ? $"<!-- ritten:{Slug(context.Title)}:{Slug(subject)} -->" : $"<!-- ritten:{Slug(context.Title)} -->";
+        var comments = await client.Issue.Comment.GetAllForIssue(repositoryId, options.Value.PullRequestNumber.Value);
+        return [.. comments.Select(c => KeyOf(c.Body)).OfType<ReportKey>()];
+    }
 
-    private static string Slug(string value) =>
-        string.Concat(value.ToLowerInvariant().Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-'));
+    /// <summary>
+    /// The invisible prefix a report's comment is found again by on later runs.
+    /// </summary>
+    internal static string MarkerOf(ReportKey key) => $"{MarkerPrefix}{key}{MarkerSuffix}";
+
+    private static ReportKey? KeyOf(string? body)
+    {
+        if (body is null || !body.StartsWith(MarkerPrefix, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var end = body.IndexOf(MarkerSuffix, MarkerPrefix.Length, StringComparison.Ordinal);
+        return end < 0 ? null : ReportKey.Parse(body[MarkerPrefix.Length..end]);
+    }
 }

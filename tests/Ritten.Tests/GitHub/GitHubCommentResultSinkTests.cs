@@ -9,6 +9,9 @@ namespace Ritten.Tests.GitHub;
 
 public class GitHubCommentResultSinkTests
 {
+    private static readonly ReportKey Key = new("Ritten");
+    private static readonly WorkflowJob Job = new("Ritten", "check");
+
     private readonly IGitHubCommentService _gitHubComments = Substitute.For<IGitHubCommentService>();
     private readonly GitHubActionsOptions _options = new() { PullRequestNumber = 42 };
 
@@ -19,7 +22,7 @@ public class GitHubCommentResultSinkTests
         // result exists, in the same comment the finished report will replace.
         await Sink().Started(new WorkflowJob("Ritten", "check", DryRun: false), TestContext.Current.CancellationToken);
 
-        await _gitHubComments.Received().CreateOrUpdate("## ⏳ Ritten\n\ncheck job in progress…", TestContext.Current.CancellationToken);
+        await _gitHubComments.Received().CreateOrUpdate(Key, "## ⏳ Ritten\n\ncheck job in progress…", TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -32,6 +35,7 @@ public class GitHubCommentResultSinkTests
         await Sink().Started(new WorkflowJob("Ritten", "check", DryRun: false), TestContext.Current.CancellationToken);
 
         await _gitHubComments.Received().CreateOrUpdate(
+            Key,
             "## ⏳ Ritten\n\ncheck job in progress…\n[View the run logs](https://github.com/example/repo/actions/runs/987654)\n",
             TestContext.Current.CancellationToken);
     }
@@ -43,7 +47,7 @@ public class GitHubCommentResultSinkTests
 
         await Sink().Started(new WorkflowJob("Ritten", "check", DryRun: false), TestContext.Current.CancellationToken);
 
-        await _gitHubComments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, TestContext.Current.CancellationToken);
+        await _gitHubComments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -54,6 +58,7 @@ public class GitHubCommentResultSinkTests
         await Sink().Publish(Success, TestContext.Current.CancellationToken);
 
         await _gitHubComments.Received().CreateOrUpdate(
+            Key,
             "## ✅ Ritten\n\n[View the run logs](https://github.com/example/repo/actions/runs/987654)\n",
             TestContext.Current.CancellationToken);
     }
@@ -63,7 +68,7 @@ public class GitHubCommentResultSinkTests
     {
         await Sink().Publish(Success, TestContext.Current.CancellationToken);
 
-        await _gitHubComments.Received().CreateOrUpdate("## ✅ Ritten\n", TestContext.Current.CancellationToken);
+        await _gitHubComments.Received().CreateOrUpdate(Key, "## ✅ Ritten\n", TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -73,7 +78,7 @@ public class GitHubCommentResultSinkTests
 
         await Sink().Publish(Success, TestContext.Current.CancellationToken);
 
-        await _gitHubComments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, TestContext.Current.CancellationToken);
+        await _gitHubComments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -83,8 +88,8 @@ public class GitHubCommentResultSinkTests
         // empty report; left as a comment, every check would comment on every pull request.
         await Sink().Publish(Silent, TestContext.Current.CancellationToken);
 
-        await _gitHubComments.Received().Delete(TestContext.Current.CancellationToken);
-        await _gitHubComments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, TestContext.Current.CancellationToken);
+        await _gitHubComments.Received().Delete(Key, TestContext.Current.CancellationToken);
+        await _gitHubComments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -97,8 +102,8 @@ public class GitHubCommentResultSinkTests
 
         await Sink().Publish(Silent with { Sections = [section] }, TestContext.Current.CancellationToken);
 
-        await _gitHubComments.Received().CreateOrUpdate(Arg.Any<string>(), TestContext.Current.CancellationToken);
-        await _gitHubComments.DidNotReceive().Delete(TestContext.Current.CancellationToken);
+        await _gitHubComments.Received().CreateOrUpdate(Arg.Any<ReportKey>(), Arg.Any<string>(), TestContext.Current.CancellationToken);
+        await _gitHubComments.DidNotReceive().Delete(Key, TestContext.Current.CancellationToken);
     }
 
     private static WorkflowReport Success => new("Ritten", Succeeded: true, []);
@@ -107,5 +112,5 @@ public class GitHubCommentResultSinkTests
         new("Ritten", Succeeded: true, [], StoppedAt: new StepOutcome(Step.FromType<FirstStep>(), StepResult.NothingToDo));
 
     private GitHubCommentResultSink Sink() =>
-        new(new MarkdownReportRenderer(), new RunContext { Title = "Ritten" }, Options.Create(_options), _gitHubComments);
+        new(new MarkdownReportRenderer(), new RunContext { Title = "Ritten" }, Job, Options.Create(_options), _gitHubComments);
 }

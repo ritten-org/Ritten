@@ -11,8 +11,10 @@ namespace Ritten.Forgejo;
 internal sealed class ForgejoCommentResultSink(
     MarkdownReportRenderer renderer,
     RunContext context,
+    WorkflowJob current,
     IOptions<ForgejoActionsOptions> options,
-    IForgejoCommentService comments
+    IForgejoCommentService comments,
+    IWorkflowLog log
 ) : IWorkflowResultSink
 {
     public Task Started(WorkflowJob job, CancellationToken cancellationToken = default)
@@ -22,12 +24,18 @@ internal sealed class ForgejoCommentResultSink(
             return Task.CompletedTask;
         }
 
-        return comments.CreateOrUpdate(WithRunLogs($"## ⏳ {context.TitleOf(job)}\n\n{job.Name} job in progress…"), cancellationToken);
+        if (comments.Unavailable is { } reason)
+        {
+            log.Detail(reason);
+            return Task.CompletedTask;
+        }
+
+        return comments.CreateOrUpdate(ReportKey.Of(context, job), WithRunLogs($"## ⏳ {context.TitleOf(job)}\n\n{job.Name} job in progress…"), cancellationToken);
     }
 
     public Task Publish(WorkflowReport report, CancellationToken cancellationToken = default)
     {
-        if (!options.Value.IsPullRequest)
+        if (!options.Value.IsPullRequest || comments.Unavailable is not null)
         {
             return Task.CompletedTask;
         }
@@ -37,10 +45,10 @@ internal sealed class ForgejoCommentResultSink(
         // an empty report; otherwise every check comments on every pull request.
         if (report.IsSilent)
         {
-            return comments.Delete(cancellationToken);
+            return comments.Delete(ReportKey.Of(context, current), cancellationToken);
         }
 
-        return comments.CreateOrUpdate(WithRunLogs(renderer.Render(report)), cancellationToken);
+        return comments.CreateOrUpdate(ReportKey.Of(context, current), WithRunLogs(renderer.Render(report)), cancellationToken);
     }
 
     /// <summary>

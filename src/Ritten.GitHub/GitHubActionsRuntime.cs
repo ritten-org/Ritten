@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Contracts;
 using Ritten.Engine;
 using Ritten.Engine.Runtimes;
+using Ritten.Reporting;
 using Ritten.Reporting.Sinks;
 
 namespace Ritten.GitHub;
@@ -70,7 +71,8 @@ public sealed class GitHubActionsRuntime : Runtime
         builder.Services.TryAddScoped<IPullRequestLabels, GitHubPullRequestLabels>();
 
         builder.Services.TryAddScoped<IGitHubCommentService, GitHubGitHubCommentService>();
-        builder.Decorators.Replace<IGitHubCommentService, GitHubDryRunCommentService>();
+        builder.Decorators.Decorate<IGitHubCommentService, GitHubDryRunCommentService>();
+        builder.Services.AddScoped<IPublishedReports>(provider => provider.GetRequiredService<IGitHubCommentService>());
         builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<IWorkflowResultSink, GitHubJobSummaryResultSink>());
         builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<IWorkflowResultSink, GitHubCommentResultSink>());
     }
