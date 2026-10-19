@@ -9,8 +9,27 @@ namespace Ritten.Tests.Forgejo;
 
 public class ForgejoCommentResultSinkTests
 {
+    private static readonly ReportKey Key = new("Ritten");
+    private static readonly WorkflowJob Job = new("Ritten", "check");
+
     private readonly IForgejoCommentService _comments = Substitute.For<IForgejoCommentService>();
+    private readonly IWorkflowLog _log = Substitute.For<IWorkflowLog>();
     private readonly ForgejoActionsOptions _options = new() { PullRequestNumber = 42 };
+
+    public ForgejoCommentResultSinkTests() => _comments.Unavailable.Returns((string?)null);
+
+    [Fact]
+    public async Task SaysWhyItCantCommentAndPostsNothing()
+    {
+        _comments.Unavailable.Returns("No API token in the environment.");
+        var sink = Sink();
+
+        await sink.Started(Job, TestContext.Current.CancellationToken);
+        await sink.Publish(Success, TestContext.Current.CancellationToken);
+
+        _log.Received().Log(WorkflowLogLevel.Detail, "No API token in the environment.");
+        await _comments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, default!, TestContext.Current.CancellationToken);
+    }
 
     [Fact]
     public async Task Started_PostsThePendingComment()
@@ -19,7 +38,7 @@ public class ForgejoCommentResultSinkTests
         // result exists, in the same comment the finished report will replace.
         await Sink().Started(new WorkflowJob("Ritten", "check", DryRun: false), TestContext.Current.CancellationToken);
 
-        await _comments.Received().CreateOrUpdate("## ⏳ Ritten\n\ncheck job in progress…", TestContext.Current.CancellationToken);
+        await _comments.Received().CreateOrUpdate(Key, "## ⏳ Ritten\n\ncheck job in progress…", TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -27,7 +46,7 @@ public class ForgejoCommentResultSinkTests
     {
         await Sink().Started(new WorkflowJob("Ritten", "check", Subject: "caddy/infrastructure"), TestContext.Current.CancellationToken);
 
-        await _comments.Received().CreateOrUpdate("## ⏳ Ritten · caddy/infrastructure\n\ncheck job in progress…", TestContext.Current.CancellationToken);
+        await _comments.Received().CreateOrUpdate(new ReportKey("Ritten", "caddy/infrastructure"), "## ⏳ Ritten · caddy/infrastructure\n\ncheck job in progress…", TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -38,6 +57,7 @@ public class ForgejoCommentResultSinkTests
         await Sink().Started(new WorkflowJob("Ritten", "check", DryRun: false), TestContext.Current.CancellationToken);
 
         await _comments.Received().CreateOrUpdate(
+            Key,
             "## ⏳ Ritten\n\ncheck job in progress…\n[View the run logs](https://code.example.com/tom/lab/actions/runs/42)\n",
             TestContext.Current.CancellationToken);
     }
@@ -49,7 +69,7 @@ public class ForgejoCommentResultSinkTests
 
         await Sink().Started(new WorkflowJob("Ritten", "check", DryRun: false), TestContext.Current.CancellationToken);
 
-        await _comments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, TestContext.Current.CancellationToken);
+        await _comments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -60,6 +80,7 @@ public class ForgejoCommentResultSinkTests
         await Sink().Publish(Success, TestContext.Current.CancellationToken);
 
         await _comments.Received().CreateOrUpdate(
+            Key,
             "## ✅ Ritten\n\n[View the run logs](https://code.example.com/tom/lab/actions/runs/42)\n",
             TestContext.Current.CancellationToken);
     }
@@ -69,7 +90,7 @@ public class ForgejoCommentResultSinkTests
     {
         await Sink().Publish(Success, TestContext.Current.CancellationToken);
 
-        await _comments.Received().CreateOrUpdate("## ✅ Ritten\n", TestContext.Current.CancellationToken);
+        await _comments.Received().CreateOrUpdate(Key, "## ✅ Ritten\n", TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -79,7 +100,7 @@ public class ForgejoCommentResultSinkTests
 
         await Sink().Publish(Success, TestContext.Current.CancellationToken);
 
-        await _comments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, TestContext.Current.CancellationToken);
+        await _comments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -89,8 +110,8 @@ public class ForgejoCommentResultSinkTests
         // empty report; left as a comment, every check would comment on every pull request.
         await Sink().Publish(Silent, TestContext.Current.CancellationToken);
 
-        await _comments.Received().Delete(TestContext.Current.CancellationToken);
-        await _comments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, TestContext.Current.CancellationToken);
+        await _comments.Received().Delete(Key, TestContext.Current.CancellationToken);
+        await _comments.DidNotReceiveWithAnyArgs().CreateOrUpdate(default!, default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -103,8 +124,8 @@ public class ForgejoCommentResultSinkTests
 
         await Sink().Publish(Silent with { Sections = [section] }, TestContext.Current.CancellationToken);
 
-        await _comments.Received().CreateOrUpdate(Arg.Any<string>(), TestContext.Current.CancellationToken);
-        await _comments.DidNotReceive().Delete(TestContext.Current.CancellationToken);
+        await _comments.Received().CreateOrUpdate(Arg.Any<ReportKey>(), Arg.Any<string>(), TestContext.Current.CancellationToken);
+        await _comments.DidNotReceive().Delete(Key, TestContext.Current.CancellationToken);
     }
 
     private static WorkflowReport Success => new("Ritten", Succeeded: true, []);
@@ -113,5 +134,5 @@ public class ForgejoCommentResultSinkTests
         new("Ritten", Succeeded: true, [], StoppedAt: new StepOutcome(Step.FromType<FirstStep>(), StepResult.NothingToDo));
 
     private ForgejoCommentResultSink Sink() =>
-        new(new MarkdownReportRenderer(), new RunContext { Title = "Ritten" }, Options.Create(_options), _comments);
+        new(new MarkdownReportRenderer(), new RunContext { Title = "Ritten" }, Job, Options.Create(_options), _comments, _log);
 }

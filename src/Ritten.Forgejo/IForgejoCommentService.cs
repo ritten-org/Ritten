@@ -1,18 +1,22 @@
+using Ritten.Reporting;
+
 namespace Ritten.Forgejo;
 
 /// <summary>
-/// Maintains a single, updatable comment on the pull request that triggered the current run.
+/// Maintains updatable report comments on the pull request that triggered the current run, one per report key.
 /// </summary>
-public interface IForgejoCommentService
+public interface IForgejoCommentService : IPublishedReports
 {
     /// <summary>
-    /// Creates the workflow's comment on the current pull request, or updates it in place.
+    /// Why comments can't be posted in this environment, or <c>null</c> when they can.
     /// </summary>
-    Task CreateOrUpdate(string body, CancellationToken cancellationToken = default);
+    string? Unavailable { get; }
 
     /// <summary>
-    /// Removes this workflow's comment from the pull request, if there is one.
+    /// Creates the report's comment on the current pull request, or updates it in place.
     /// </summary>
+    /// <param name="key">The report's key.</param>
+    /// <param name="body">The comment's markdown.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    Task Delete(CancellationToken cancellationToken = default);
+    Task CreateOrUpdate(ReportKey key, string body, CancellationToken cancellationToken = default);
 }
