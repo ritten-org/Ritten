@@ -194,6 +194,34 @@ public class DotNetClientTests
         _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(["tool", "install", "ritten", "--global"]);
     }
 
+    [Fact]
+    public async Task ToolInstall_InstallsIntoAToolPathFromAnyDirectory()
+    {
+        await _client.ToolInstall(
+            new ToolInstallArgs
+            {
+                PackageId = "Wolfe.Lab.Ups",
+                Scope = ToolScope.Path(In("/lab/packages/ups-monitor")),
+                Version = NuGetVersion.Parse("1.0.1"),
+                Feed = new Uri("https://code.example.com/nuget/index.json")
+            },
+            TestContext.Current.CancellationToken);
+
+        // A tool path is where the tool goes, not where the SDK resolves anything from.
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["tool", "install", "Wolfe.Lab.Ups", "--tool-path", "/lab/packages/ups-monitor", "--version", "1.0.1",
+            "--add-source", "https://code.example.com/nuget/index.json"]);
+        command.WorkingDirectory.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task InstalledToolVersion_ListsTheToolsInAToolPath()
+    {
+        await _client.InstalledToolVersion("Wolfe.Lab.Ups", ToolScope.Path(In("/lab/packages/ups-monitor")), TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().Arguments.ShouldBe(["tool", "list", "--tool-path", "/lab/packages/ups-monitor"]);
+    }
+
     private static ToolInstallArgs Pin(string directory) =>
         new() { PackageId = "ritten", Scope = ToolScope.Local(In(directory)), Version = NuGetVersion.Parse("1.2.3") };
 

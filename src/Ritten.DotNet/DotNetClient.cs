@@ -86,7 +86,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
     {
         // A probe whose output the caller consumes, not part of the step's story. A directory no
         // manifest governs is a question, not a failure: the answer is that nothing carries it.
-        var command = Tool(scope).WithArguments("tool", "list", scope.Flag).QuietOutput();
+        var command = Tool(scope).WithArguments(["tool", "list", .. scope.Flags]).QuietOutput();
         var result = await commands.Run(command, cancellationToken);
         if (!result.IsSuccess)
         {
@@ -114,7 +114,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
 
     public async Task ToolUninstall(string packageId, ToolScope scope, CancellationToken cancellationToken = default)
     {
-        var command = Tool(scope).WithArguments("tool", "uninstall", packageId, scope.Flag).ThrowOnError();
+        var command = Tool(scope).WithArguments(["tool", "uninstall", packageId, .. scope.Flags]).ThrowOnError();
         await commands.Run(command, cancellationToken);
     }
 
@@ -136,7 +136,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
     /// </summary>
     private async Task RunTool(string verb, ToolInstallArgs args, CancellationToken cancellationToken)
     {
-        var command = Tool(args.Scope).WithArguments("tool", verb, args.PackageId, args.Scope.Flag);
+        var command = Tool(args.Scope).WithArguments(["tool", verb, args.PackageId, .. args.Scope.Flags]);
         if (args.Version is { } version)
         {
             command = command.AndArguments("--version", version.ToString());
@@ -149,14 +149,19 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
             command = command.AndArguments("--source", source.AbsolutePath);
         }
 
+        if (args.Feed is { } feed)
+        {
+            command = command.AndArguments("--add-source", feed.AbsoluteUri);
+        }
+
         await commands.Run(command.QuietOutput().ThrowOnError(), cancellationToken);
     }
 
     /// <summary>
-    /// A tool command runs where its scope resolves the manifest from; a global one runs wherever
-    /// the workflow is.
+    /// A tool command runs where its scope resolves the manifest from; any other runs wherever the
+    /// workflow is.
     /// </summary>
-    private static Command Tool(ToolScope scope) => scope.Directory is { } directory
+    private static Command Tool(ToolScope scope) => scope.WorkingDirectory is { } directory
         ? Command.Create("dotnet").InDirectory(directory.AbsolutePath)
         : Command.Create("dotnet");
 

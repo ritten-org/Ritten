@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0] - 2026-10-21
+
+### Added
+
+- **`ToolScope.Path` installs a tool into a directory of its own.** `--tool-path`: the tool's command at the directory's top, run by its full path from anywhere, shared with neither the user's tools nor a manifest.
+- **`ToolInstallArgs.Feed` asks a feed beside the configured ones** (`--add-source`), for a tool the machine's own sources may not name.
+
 ## [0.26.0] - 2026-10-19
 
 ### Added
@@ -389,6 +396,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.27.0]: https://github.com/ritten-org/Ritten/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/ritten-org/Ritten/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/ritten-org/Ritten/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/ritten-org/Ritten/compare/v0.23.0...v0.24.0

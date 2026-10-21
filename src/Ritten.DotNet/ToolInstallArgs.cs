@@ -27,4 +27,9 @@ public record ToolInstallArgs
     /// The directory holding the packed tool, if it shouldn't be installed from the feed.
     /// </summary>
     public IDirectory? Source { get; init; }
+
+    /// <summary>
+    /// An additional feed to check beside the configured ones.
+    /// </summary>
+    public Uri? Feed { get; init; }
 }

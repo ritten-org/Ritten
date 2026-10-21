@@ -86,5 +86,10 @@ internal class DryRunDotNet(IWorkflowLog log, IDotNet inner) : IDotNet
     private static string Named(ToolInstallArgs args) =>
         args.Version is { } version ? $"{args.PackageId} {version}" : args.PackageId;
 
-    private static string Where(ToolScope scope) => scope.IsGlobal ? "globally" : "in the tool manifest";
+    private static string Where(ToolScope scope) => scope switch
+    {
+        { IsGlobal: true } => "globally",
+        { IsPath: true, Directory: { } directory } => $"into {directory.AbsolutePath}",
+        _ => "in the tool manifest"
+    };
 }
