@@ -134,6 +134,50 @@ public class DockerClientTests
     }
 
     [Fact]
+    public async Task ComposeImages_ReadsEachImageOnce()
+    {
+        _commands.Respond(c => c.Arguments.Contains("images"), new CommandResult(0, "70739f85ad2e\n1a08d8dfc2b5\n70739f85ad2e\n", ""));
+
+        var images = await _docker.ComposeImages(new PhysicalDirectory("/src/stack"), ct: TestContext.Current.CancellationToken);
+
+        images.ShouldBe(["70739f85ad2e", "1a08d8dfc2b5"]);
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["compose", "--project-directory", Path.GetFullPath("/src/stack"), "images", "--quiet"]);
+        command.ThrowsOnError.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ComposeImages_ReadsNoneForAStackWithNoContainers()
+    {
+        var images = await _docker.ComposeImages(new PhysicalDirectory("/src/stack"), ct: TestContext.Current.CancellationToken);
+
+        images.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task RemoveImage_NeverForcesTheRemoval()
+    {
+        var kept = await _docker.RemoveImage("1a08d8dfc2b5", TestContext.Current.CancellationToken);
+
+        kept.ShouldBeNull();
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe(["image", "rm", "1a08d8dfc2b5"]);
+        // The daemon refusing an image something still needs is what keeps it, so the refusal must come back rather than throw.
+        command.ThrowsOnError.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task RemoveImage_HandsBackWhyTheDaemonKeptIt()
+    {
+        _commands.Respond(c => c.Arguments.Contains("rm"),
+            new CommandResult(1, "", "Error response from daemon: conflict: unable to delete 1a08d8dfc2b5 (must be forced) - image is being used by stopped container ff06041e0c59\n"));
+
+        var kept = await _docker.RemoveImage("1a08d8dfc2b5", TestContext.Current.CancellationToken);
+
+        kept.ShouldBe("Error response from daemon: conflict: unable to delete 1a08d8dfc2b5 (must be forced) - image is being used by stopped container ff06041e0c59");
+    }
+
+    [Fact]
     public async Task Inspect_ReadsTheImageAndWhetherItRuns()
     {
         _commands.Respond(c => c.Arguments.Contains("inspect"), new CommandResult(0, "jellyfin/jellyfin:12.0 false\n", ""));

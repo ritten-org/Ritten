@@ -70,6 +70,18 @@ internal sealed class DryRunDocker(IWorkflowLog log, IDocker inner) : IDocker
     }
 
     /// <inheritdoc />
+    public Task<IReadOnlyList<string>> ComposeImages(IDirectory project, IReadOnlyDictionary<string, string>? environment = null,
+        CancellationToken ct = default) =>
+        inner.ComposeImages(project, environment, ct);
+
+    /// <inheritdoc />
+    public Task<string?> RemoveImage(string image, CancellationToken ct = default)
+    {
+        log.Skipped($"Would remove image {image}.");
+        return Task.FromResult<string?>(null);
+    }
+
+    /// <inheritdoc />
     public Task<ContainerState?> Inspect(string container, CancellationToken ct = default) =>
         inner.Inspect(container, ct);
 
