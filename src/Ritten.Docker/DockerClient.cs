@@ -125,6 +125,30 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
             Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "start").ThrowOnError(),
             ct);
 
+    public async Task<IReadOnlyList<string>> ComposeImages(IDirectory project, IReadOnlyDictionary<string, string>? environment = null,
+        CancellationToken ct = default)
+    {
+        var command = Command.Create("docker")
+            .WithArguments("compose", "--project-directory", project.AbsolutePath, "images", "--quiet")
+            .QuietOutput()
+            .ThrowOnError();
+        if (environment is not null)
+        {
+            command = command.WithEnvironmentVariables(environment);
+        }
+
+        var result = await commands.Run(command, ct);
+        return [.. result.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct(StringComparer.Ordinal)];
+    }
+
+    public async Task<string?> RemoveImage(string image, CancellationToken ct = default)
+    {
+        // Deliberately neither forced nor ThrowOnError: the daemon refusing an image something still
+        // needs is the safety this relies on, and its refusal is the answer.
+        var result = await commands.Run(Command.Create("docker").WithArguments("image", "rm", image).QuietOutput(), ct);
+        return result.IsSuccess ? null : Objection(result);
+    }
+
     public async Task<ContainerState?> Inspect(string container, CancellationToken ct = default)
     {
         // One template, two facts: an image reference never contains whitespace, so the pair

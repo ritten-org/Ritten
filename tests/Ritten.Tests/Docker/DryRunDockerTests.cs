@@ -1,4 +1,5 @@
 using Ritten.Commands;
+using Ritten.Contracts.FileSystem;
 using Ritten.Docker;
 using Ritten.Reporting;
 
@@ -27,5 +28,23 @@ public class DryRunDockerTests
 
         result.IsSuccess.ShouldBeTrue();
         await _inner.DidNotReceive().Exec(Arg.Any<ContainerExec>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ComposeImages_ReadsInARehearsal()
+    {
+        var project = Substitute.For<IDirectory>();
+        _inner.ComposeImages(project, null, Arg.Any<CancellationToken>()).Returns(["70739f85ad2e"]);
+
+        (await _docker.ComposeImages(project, ct: TestContext.Current.CancellationToken)).ShouldBe(["70739f85ad2e"]);
+    }
+
+    [Fact]
+    public async Task RemoveImage_RemovesNothingInARehearsal()
+    {
+        var kept = await _docker.RemoveImage("1a08d8dfc2b5", TestContext.Current.CancellationToken);
+
+        kept.ShouldBeNull();
+        await _inner.DidNotReceive().RemoveImage(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

@@ -83,6 +83,23 @@ public interface IDocker
     Task ComposeStart(IDirectory project, CancellationToken ct = default);
 
     /// <summary>
+    /// Gets the images the compose stack's containers were created from.
+    /// </summary>
+    /// <param name="project">The directory holding the compose file.</param>
+    /// <param name="environment">Values the compose file interpolates.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    /// <returns>Each image's id, once; none for a stack with no containers.</returns>
+    Task<IReadOnlyList<string>> ComposeImages(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Removes an image (without forcing).
+    /// </summary>
+    /// <param name="image">The image's id or name.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    /// <returns><c>null</c> when the image was removed, otherwise why the daemon kept it.</returns>
+    Task<string?> RemoveImage(string image, CancellationToken ct = default);
+
+    /// <summary>
     /// What the daemon knows of a container: the image it was created from and whether it is running.
     /// </summary>
     /// <param name="container">The container's name or id.</param>
