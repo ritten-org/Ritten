@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0] - 2026-11-14
+
+### Added
+
+- **`Ritten.NSchema`.** `INSchema` client for automating the `nschema` CLI. Call `AddNSchema()` to register it on the workflow builder.
+- **`SectionName.Database`**, for changes to a database's schema.
+
 ## [0.28.0] - 2026-11-01
 
 ### Added
@@ -403,6 +410,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.29.0]: https://github.com/ritten-org/Ritten/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/ritten-org/Ritten/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/ritten-org/Ritten/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/ritten-org/Ritten/compare/v0.25.0...v0.26.0

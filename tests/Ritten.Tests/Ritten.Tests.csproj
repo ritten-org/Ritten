@@ -39,6 +39,7 @@
     <ProjectReference Include="..\..\src\Ritten.OnePassword\Ritten.OnePassword.csproj" />
     <ProjectReference Include="..\..\src\Ritten.OpenTelemetry\Ritten.OpenTelemetry.csproj" />
     <ProjectReference Include="..\..\src\Ritten.OpenTofu\Ritten.OpenTofu.csproj" />
+    <ProjectReference Include="..\..\src\Ritten.NSchema\Ritten.NSchema.csproj" />
     <ProjectReference Include="..\..\src\Ritten\Ritten.csproj" />
     <ProjectReference Include="..\..\src\Ritten.Docker\Ritten.Docker.csproj" />
     <ProjectReference Include="..\..\src\Ritten.Forgejo\Ritten.Forgejo.csproj" />

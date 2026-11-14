@@ -10,7 +10,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <Authors>Tom Wolfe</Authors>
     <Copyright>Copyright © 2026 Tom Wolfe</Copyright>
-    <Version>0.28.0</Version>
+    <Version>0.29.0</Version>
     <AssemblyVersion>$(Version.Split('-')[0])</AssemblyVersion>
     <FileVersion>$(Version.Split('-')[0])</FileVersion>
     <PackageIcon>icon.png</PackageIcon>
