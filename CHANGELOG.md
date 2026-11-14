@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.0] - 2026-11-14
+
+### Added
+
+- **`Ritten.Npm`.** `INpmClient` runs `npm ci` and a project's scripts in its directory, with the steps `NpmInstall`, `NpmLint`, `NpmBuild` and `NpmTest` (the `lint`, `build` and `test` scripts), each reporting the end of a failing script's output. Call `AddNpm()` to register it on the workflow builder or any host.
+- **`SectionName.Linting`**, for what a linter found.
+
 ## [0.29.0] - 2026-11-14
 
 ### Added
@@ -410,6 +417,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.30.0]: https://github.com/ritten-org/Ritten/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/ritten-org/Ritten/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/ritten-org/Ritten/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/ritten-org/Ritten/compare/v0.26.0...v0.27.0
