@@ -60,6 +60,11 @@ public sealed class SectionName
     public static SectionName Infrastructure { get; } = Named("Infrastructure");
 
     /// <summary>
+    /// Changes to a database's schema.
+    /// </summary>
+    public static SectionName Database { get; } = Named("Database");
+
+    /// <summary>
     /// The section's title, as it appears in the report.
     /// </summary>
     public string Title { get; }
