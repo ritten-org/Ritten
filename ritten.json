@@ -13,6 +13,7 @@
       "src/Ritten.Forgejo/Ritten.Forgejo.csproj",
       "src/Ritten.OpenTofu/Ritten.OpenTofu.csproj",
       "src/Ritten.NSchema/Ritten.NSchema.csproj",
+      "src/Ritten.Npm/Ritten.Npm.csproj",
       "src/Ritten.OnePassword/Ritten.OnePassword.csproj",
       "src/Ritten.OpenTelemetry/Ritten.OpenTelemetry.csproj"
     ]

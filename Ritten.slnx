@@ -22,6 +22,7 @@
   <Project Path="src\Ritten.OpenTelemetry\Ritten.OpenTelemetry.csproj" />
   <Project Path="src\Ritten.OpenTofu\Ritten.OpenTofu.csproj" />
   <Project Path="src\Ritten.NSchema\Ritten.NSchema.csproj" />
+  <Project Path="src\Ritten.Npm\Ritten.Npm.csproj" />
   <Project Path="src\Ritten\Ritten.csproj" />
   <Project Path="tests\Ritten.Tests\Ritten.Tests.csproj" />
 </Solution>

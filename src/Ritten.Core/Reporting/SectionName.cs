@@ -25,6 +25,11 @@ public sealed class SectionName
     public static SectionName Formatting { get; } = Named("Formatting");
 
     /// <summary>
+    /// What a linter found.
+    /// </summary>
+    public static SectionName Linting { get; } = Named("Linting");
+
+    /// <summary>
     /// The outcome of the test run.
     /// </summary>
     public static SectionName Tests { get; } = Named("Tests");
