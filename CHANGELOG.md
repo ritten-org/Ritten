@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0] - 2026-11-18
+
+### Added
+
+- **`Ritten.Bitwarden`.** Secret client that reads `bw://collection/item/field` references from a Bitwarden or Vaultwarden server through the `bw` CLI.
+  A machine logs in as its own user from `BW_CLIENTID`, `BW_CLIENTSECRET` and `BW_PASSWORD`.
+
 ## [0.30.0] - 2026-11-14
 
 ### Added
@@ -417,6 +424,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.31.0]: https://github.com/ritten-org/Ritten/compare/v0.30.0...v0.31.0
 [0.30.0]: https://github.com/ritten-org/Ritten/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/ritten-org/Ritten/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/ritten-org/Ritten/compare/v0.27.0...v0.28.0

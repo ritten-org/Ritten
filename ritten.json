@@ -15,6 +15,7 @@
       "src/Ritten.NSchema/Ritten.NSchema.csproj",
       "src/Ritten.Npm/Ritten.Npm.csproj",
       "src/Ritten.OnePassword/Ritten.OnePassword.csproj",
+      "src/Ritten.Bitwarden/Ritten.Bitwarden.csproj",
       "src/Ritten.OpenTelemetry/Ritten.OpenTelemetry.csproj"
     ]
   }
