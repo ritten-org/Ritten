@@ -8,7 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- **`Ritten.Bitwarden`.** Reads `bw://collection/item/field` references from a Bitwarden or Vaultwarden server through the `bw` CLI. The vault is read once per run, logged in, unlocked, synced and listed, and every reference is answered from that by exact name, so items whose names contain one another (`beszel`, `beszel-agent`) are told apart and two items of one name are refused. A machine logs in as its own user from `BW_CLIENTID`, `BW_CLIENTSECRET` and `BW_PASSWORD`, in its environment or an env file read literally; with none, a session someone unlocked is used as it is. A failed sync reads the copy from the last one, with a warning. Runs sharing the CLI's directory take turns. Call `AddBitwarden()` to register it on the workflow builder.
+- **`Ritten.Bitwarden`.** Secret client that reads `bw://collection/item/field` references from a Bitwarden or Vaultwarden server through the `bw` CLI.
+  A machine logs in as its own user from `BW_CLIENTID`, `BW_CLIENTSECRET` and `BW_PASSWORD`.
 
 ## [0.30.0] - 2026-11-14
 
