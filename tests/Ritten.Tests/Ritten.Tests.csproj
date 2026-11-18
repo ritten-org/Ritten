@@ -37,6 +37,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Ritten.OnePassword\Ritten.OnePassword.csproj" />
+    <ProjectReference Include="..\..\src\Ritten.Bitwarden\Ritten.Bitwarden.csproj" />
     <ProjectReference Include="..\..\src\Ritten.OpenTelemetry\Ritten.OpenTelemetry.csproj" />
     <ProjectReference Include="..\..\src\Ritten.OpenTofu\Ritten.OpenTofu.csproj" />
     <ProjectReference Include="..\..\src\Ritten.NSchema\Ritten.NSchema.csproj" />

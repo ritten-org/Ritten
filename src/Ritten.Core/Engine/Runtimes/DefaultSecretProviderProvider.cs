@@ -14,6 +14,6 @@ internal sealed class DefaultSecretProviderProvider : ISecretProvider
         Schemes.Any(scheme => value.StartsWith(scheme, StringComparison.Ordinal))
             ? throw new InvalidOperationException(
                 $"'{value}' is a secret reference, and no secrets provider is registered to read it. " +
-                "Register one on the application builder — Ritten.OnePassword's AddOnePassword(), for instance.")
+                "Register one on the application builder — Ritten.OnePassword's AddOnePassword() or Ritten.Bitwarden's AddBitwarden(), for instance.")
             : Task.FromResult(value);
 }
