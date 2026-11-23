@@ -18,7 +18,7 @@ public record Command
     /// <summary>
     /// Any environment variables to pass to the command.
     /// </summary>
-    public IReadOnlyDictionary<string, string> EnvironmentVariables { get; init; } = new Dictionary<string, string>();
+    public EnvironmentVariables EnvironmentVariables { get; init; } = EnvironmentVariables.Empty;
 
     /// <summary>
     /// The text to pipe to standard input.
@@ -51,6 +51,16 @@ public record Command
     public bool ThrowsOnError { get; init; }
 
     /// <summary>
+    /// The effect running this command would have on its environment.
+    /// </summary>
+    public CommandEffect Effect { get; init; } = CommandEffect.Change;
+
+    /// <summary>
+    /// What the command does, in words (<c>push main to origin</c>).
+    /// </summary>
+    public string? Description { get; init; }
+
+    /// <summary>
     /// Creates a new command for the executable at the given path.
     /// </summary>
     public static Command Create(string path) => new() { Path = path };
@@ -68,7 +78,17 @@ public record Command
     /// <summary>
     /// Returns a copy of the command with its environment variables replaced by the given values.
     /// </summary>
-    public Command WithEnvironmentVariables(IReadOnlyDictionary<string, string> envVars) => this with { EnvironmentVariables = envVars };
+    public Command WithEnvironmentVariables(EnvironmentVariables envVars) => this with { EnvironmentVariables = envVars };
+
+    /// <summary>
+    /// Returns a copy of the command with the given variables merged into its own, a given value replacing one it had.
+    /// </summary>
+    public Command AndEnvironmentVariables(EnvironmentVariables envVars) => this with { EnvironmentVariables = EnvironmentVariables.Merge(envVars) };
+
+    /// <summary>
+    /// Returns a copy of the command with <paramref name="name"/> set to <paramref name="value"/>, replacing any value it had.
+    /// </summary>
+    public Command AndEnvironmentVariable(EnvironmentVariableName name, string value) => this with { EnvironmentVariables = EnvironmentVariables.With(name, value) };
 
     /// <summary>
     /// Returns a copy of the command that pipes the given text to standard input.
@@ -106,4 +126,13 @@ public record Command
     /// </summary>
     public Command ThrowOnError() => this with { ThrowsOnError = true };
 
+    /// <summary>
+    /// Returns a copy of the command with the given effect.
+    /// </summary>
+    public Command WithEffect(CommandEffect effect) => this with { Effect = effect };
+
+    /// <summary>
+    /// Returns a copy of the command with a custom description..
+    /// </summary>
+    public Command Describe(string description) => this with { Description = description };
 }

@@ -1,4 +1,5 @@
 using NuGet.Versioning;
+using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
 using Ritten.Engine;
 
@@ -7,7 +8,7 @@ namespace Ritten.DotNet;
 /// <summary>
 /// Exposes functionality for interacting with .NET projects.
 /// </summary>
-public interface IDotNet
+public interface IDotNet : ICommandClient
 {
     /// <summary>
     /// Reads the package information from the given project file.

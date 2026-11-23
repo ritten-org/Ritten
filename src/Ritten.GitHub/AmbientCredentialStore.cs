@@ -26,7 +26,7 @@ internal class AmbientCredentialStore(IWorkflowLog log, IOptions<GitHubClientOpt
 
         try
         {
-            var result = await commands.Run(Command.Create("gh").WithArguments("auth", "token").RedactOutput());
+            var result = await commands.Run(Command.Create("gh").WithArguments("auth", "token").WithEffect(CommandEffect.None).RedactOutput());
             if (result.IsSuccess && result.StandardOutput.Trim() is { Length: > 0 } ambient)
             {
                 log.Verbose("Using the gh CLI's stored login for the GitHub API.");

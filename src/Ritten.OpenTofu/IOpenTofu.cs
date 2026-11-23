@@ -1,9 +1,11 @@
+using Ritten.Commands;
+
 namespace Ritten.OpenTofu;
 
 /// <summary>
 /// Runs OpenTofu against a root module.
 /// </summary>
-public interface IOpenTofu
+public interface IOpenTofu : ICommandClient
 {
     /// <summary>
     /// Prepares the root module: downloads its providers and configures its backend.

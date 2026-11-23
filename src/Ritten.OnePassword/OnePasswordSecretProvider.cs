@@ -33,11 +33,12 @@ internal sealed class OnePasswordSecretProvider(ICommandRunner commands, IOption
         // The reference is safe to log; the value never is, so both streams are redacted.
         var command = Command.Create("op")
             .WithArguments("read", "--no-newline", value)
+            .WithEffect(CommandEffect.None)
             .RedactOutput()
             .QuietOutput();
         if (ServiceAccountToken() is { } token)
         {
-            command = command.WithEnvironmentVariables(new Dictionary<string, string> { [TokenVariable] = token });
+            command = command.AndEnvironmentVariable(EnvironmentVariableName.From(TokenVariable), token);
         }
 
         var result = await commands.Run(command, ct);

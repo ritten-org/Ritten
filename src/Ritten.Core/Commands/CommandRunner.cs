@@ -62,7 +62,7 @@ internal class CommandRunner(IWorkflowLog log, ILogger<CommandRunner> logger, IF
 
         foreach (var (key, value) in command.EnvironmentVariables)
         {
-            process.StartInfo.Environment[key] = value;
+            process.StartInfo.Environment[key.Value] = value;
         }
 
         // The tool's output is the step's story by default; probes quiet theirs down to --verbose.

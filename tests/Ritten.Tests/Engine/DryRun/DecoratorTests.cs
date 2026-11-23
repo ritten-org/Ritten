@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Ritten.Commands;
 using Ritten.Contracts;
 using Ritten.Engine;
 using Ritten.Reporting;
@@ -115,6 +116,23 @@ public class DecoratorTests : IDisposable
         client.Pushes.ShouldBe(0, "an application-level decorator must reach the run");
     }
 
+    [Fact]
+    public async Task DryRun_StopsACommandThatChangesSomething_WhateverClientRunsIt()
+    {
+        // The command runner is paired by the engine itself, so a command that changes something stops there even
+        // when no client of Ritten's ran it.
+        var commands = new FakeCommandRunner();
+        using var application = Build(builder => builder.Services.AddSingleton<ICommandRunner>(commands), Step.FromType<CommandStep>());
+
+        await application.Run(dryRun: true);
+        await application.Run(dryRun: false);
+
+        commands.Executed.Select(command => command.Arguments[0]).ShouldBe(["status", "status", "push"]);
+    }
+
+    private static WorkflowApplication Build(Action<WorkflowApplicationBuilder> configure, Step step) =>
+        TestApplication.Create([new TestJob(steps: [step])], configure);
+
     private static WorkflowApplication Build(Action<WorkflowApplicationBuilder> configure) =>
         TestApplication.Create([new TestJob(steps: [Step.FromType<PushStep>()])], configure);
 
@@ -141,6 +159,17 @@ public class DecoratorTests : IDisposable
     {
         public void Push()
         {
+        }
+    }
+
+    [Step("run commands", StepKind.Work)]
+    private sealed class CommandStep(ICommandRunner commands)
+    {
+        public async Task<StepResult> Run(CancellationToken ct)
+        {
+            await commands.Run(Command.Create("git").WithArguments("status").WithEffect(CommandEffect.None), ct);
+            await commands.Run(Command.Create("git").WithArguments("push"), ct);
+            return StepResult.Successful;
         }
     }
 

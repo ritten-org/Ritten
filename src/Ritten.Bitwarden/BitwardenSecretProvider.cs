@@ -214,11 +214,13 @@ internal sealed class BitwardenSecretProvider(
     }
 
     // Every call's output is redacted: a list holds every secret, an unlock the session that opens them. And
-    // none asks anything: a run has nobody to answer.
+    // none asks anything: a run has nobody to answer. Signing in, unlocking and syncing change only the CLI's own
+    // state, which reading needs, so a dry run runs every one.
     private static Command BwCommand(IReadOnlyDictionary<string, string> environment, params string[] arguments) =>
         Command.Create(Executable)
             .WithArguments([.. arguments, "--nointeraction"])
-            .WithEnvironmentVariables(environment)
+            .WithEffect(CommandEffect.None)
+            .WithEnvironmentVariables(EnvironmentVariables.From(environment))
             .RedactOutput()
             .QuietOutput();
 }

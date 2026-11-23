@@ -12,13 +12,12 @@ public static class WorkflowBuilderExtensions
     extension(IWorkflowBuilder builder)
     {
         /// <summary>
-        /// Adds the OpenTofu client and its rehearsal.
+        /// Adds the OpenTofu client.
         /// </summary>
         public IWorkflowBuilder AddOpenTofu()
         {
             builder.AddCommandRunner();
             builder.Services.TryAddScoped<IOpenTofu, OpenTofuClient>();
-            builder.Decorators.Decorate<IOpenTofu, DryRunOpenTofu>();
             return builder;
         }
     }

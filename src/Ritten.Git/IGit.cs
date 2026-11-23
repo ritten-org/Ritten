@@ -1,3 +1,4 @@
+using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
 
 namespace Ritten.Git;
@@ -9,7 +10,7 @@ namespace Ritten.Git;
 /// Holds no repository of its own: every operation names the one it acts on, so one client serves every repository
 /// a host works with.
 /// </remarks>
-public interface IGit
+public interface IGit : ICommandClient
 {
     /// <summary>
     /// Checks whether the directory is a git working tree, or inside one.

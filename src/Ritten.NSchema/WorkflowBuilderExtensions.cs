@@ -10,12 +10,11 @@ public static class WorkflowBuilderExtensions
     extension(IWorkflowBuilder builder)
     {
         /// <summary>
-        /// Adds the NSchema client and its rehearsal.
+        /// Adds the NSchema client.
         /// </summary>
         public IWorkflowBuilder AddNSchema(Action<NSchemaOptions>? configure = null)
         {
             builder.Services.AddNSchema(configure);
-            builder.Decorators.Decorate<INSchema, DryRunNSchema>();
             return builder;
         }
     }

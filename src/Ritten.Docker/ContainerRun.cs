@@ -1,3 +1,5 @@
+using Ritten.Commands;
+
 namespace Ritten.Docker;
 
 /// <summary>
@@ -16,7 +18,7 @@ public sealed record ContainerRun(string Image, IReadOnlyList<string> Arguments)
     /// <summary>
     /// Variables set inside the container.
     /// </summary>
-    public IReadOnlyDictionary<string, string> Environment { get; init; } = new Dictionary<string, string>();
+    public EnvironmentVariables Environment { get; init; } = EnvironmentVariables.Empty;
 
     /// <summary>
     /// A network to join, when the container must reach others by name.

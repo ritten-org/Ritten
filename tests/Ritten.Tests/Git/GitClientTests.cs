@@ -267,10 +267,10 @@ public class GitClientTests : IAsyncLifetime
 
         var push = commands.Executed.ShouldHaveSingleItem();
         push.Arguments.ShouldNotContain(a => a.Contains("s3cret") || a.Contains("tom"));
-        push.EnvironmentVariables["RITTEN_GIT_USERNAME"].ShouldBe("tom");
-        push.EnvironmentVariables["RITTEN_GIT_PASSWORD"].ShouldBe("s3cret");
-        push.EnvironmentVariables["GIT_CONFIG_KEY_1"].ShouldBe("credential.helper");
-        push.EnvironmentVariables["GIT_CONFIG_VALUE_0"].ShouldBe("");
+        push.EnvironmentVariables[EnvironmentVariableName.From("RITTEN_GIT_USERNAME")].ShouldBe("tom");
+        push.EnvironmentVariables[EnvironmentVariableName.From("RITTEN_GIT_PASSWORD")].ShouldBe("s3cret");
+        push.EnvironmentVariables[EnvironmentVariableName.From("GIT_CONFIG_KEY_1")].ShouldBe("credential.helper");
+        push.EnvironmentVariables[EnvironmentVariableName.From("GIT_CONFIG_VALUE_0")].ShouldBe("");
     }
 
     [Fact]

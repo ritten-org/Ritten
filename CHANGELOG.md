@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.0] - 2026-11-23
+
+### Added
+
+- **Commands hold their own effect.** When `Command.Effect` is `CommandEffect.Change` (the default), those commands get skipped during a dry run.
+  **Extensible command clients.** `IGit`, `IDocker`, `IDotNet`, `INpm`, `INSchema` and `IOpenTofu` now expose `RunCommand(configure)` for running
+  custom commands.
+- **`EnvironmentVariableName` and `EnvironmentVariables`.** Dedicated value types for environment variables.
+- **`TofuEnvironment.Variables`.** Variables every `tofu` command runs under besides its env files'.
+
+### Changed
+
+- **Environment variables are `EnvironmentVariables`, not string dictionaries** (breaking): `Command.EnvironmentVariables` and `WithEnvironmentVariables`, `EnvironmentFile.Parse` and `Load`, `ContainerRun.Environment`, `NSchemaEnvironment.Variables` and `IDocker`'s compose `environment`.
+- **Commands are skipped by default.** (breaking): `Command` objects now default to `CommandEffect.Change`. Use `WithEffect(CommandEffect.None)` to
+  mark them as safe to run during a dry run.
+
+### Removed
+
+- **The rehearsals of `IGit`, `IDocker`, `INSchema`, `IOpenTofu` and `INuGet`**, whose every skip is now the command runner's. `IDotNet`'s keeps only what stopping commands cannot do: formatting by verifying, and writing no version.
+
 ## [0.31.0] - 2026-11-18
 
 ### Added
@@ -424,6 +444,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.32.0]: https://github.com/ritten-org/Ritten/compare/v0.31.0...v0.32.0
 [0.31.0]: https://github.com/ritten-org/Ritten/compare/v0.30.0...v0.31.0
 [0.30.0]: https://github.com/ritten-org/Ritten/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/ritten-org/Ritten/compare/v0.28.0...v0.29.0

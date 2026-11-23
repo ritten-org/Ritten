@@ -1,9 +1,11 @@
+using Ritten.Commands;
+
 namespace Ritten.NSchema;
 
 /// <summary>
 /// Provides an interface for running the NSchema CLI.
 /// </summary>
-public interface INSchema
+public interface INSchema : ICommandClient
 {
     /// <summary>
     /// Makes sure the files are formatted correctly, and returns any that are formatted badly.

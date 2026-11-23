@@ -32,7 +32,8 @@ internal class NuGetClient(IWorkflowLog log, ICommandRunner commands) : INuGet
             .Create("dotnet")
             .WithArguments("nuget", "push", package.AbsolutePath)
             .AndArguments("--source", feed.Url)
-            .AndArguments("--skip-duplicate");
+            .AndArguments("--skip-duplicate")
+            .Describe($"push {package.Name} to {feed.Url}");
 
         if (feed.ApiKey is not null)
         {

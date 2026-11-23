@@ -1,3 +1,4 @@
+using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
 
 namespace Ritten.OpenTofu;
@@ -16,4 +17,9 @@ public sealed record TofuEnvironment
     /// The env files every command runs under, in order; a later file's entry replaces an earlier one's.
     /// </summary>
     public IReadOnlyList<IFile> EnvFiles { get; init; } = [];
+
+    /// <summary>
+    /// Additional variables every command runs under, taking priority over <see cref="EnvFiles"/>.
+    /// </summary>
+    public EnvironmentVariables Variables { get; init; } = EnvironmentVariables.Empty;
 }

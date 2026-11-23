@@ -1,7 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Ritten.Commands;
 using Ritten.NSchema;
 using Ritten.NSchema.Steps;
 using Ritten.Reporting;
+using Ritten.Tests.Support;
 
 namespace Ritten.Tests.NSchema;
 
@@ -62,16 +65,17 @@ public class NSchemaStepTests
     }
 
     [Fact]
-    public async Task TheDryRun_SkipsTheApply_AndPassesThePlanThrough()
+    public async Task InADryRun_TheClientPlans_ButAppliesNothing()
     {
-        _nschema.Plan(Project, null, Arg.Any<CancellationToken>()).Returns(new NSchemaPlanResult(true, "plan"));
-        var dryRun = new DryRunNSchema(_log, _nschema);
+        var commands = new FakeCommandRunner();
+        commands.Respond(command => command.Arguments.Contains("plan"), new CommandResult(2, "plan", ""));
+        var client = new NSchemaClient(new DryRunCommandRunner(_log, commands), Options.Create(new NSchemaOptions { Executable = "nschema" }));
 
-        (await dryRun.Plan(Project, ct: Ct)).Output.ShouldBe("plan");
-        await dryRun.Apply(Project, ct: Ct);
+        (await client.Plan(Project, ct: Ct)).Output.ShouldBe("plan");
+        await client.Apply(Project, ct: Ct);
 
-        await _nschema.DidNotReceive().Apply(Arg.Any<NSchemaProject>(), Arg.Any<NSchemaEnvironment?>(), Arg.Any<NSchemaApplySettings?>(), Arg.Any<CancellationToken>());
-        _log.Received().Log(WorkflowLogLevel.Skipped, Arg.Any<string?>(), Arg.Any<Exception?>());
+        commands.Executed.ShouldHaveSingleItem().Arguments[0].ShouldBe("plan");
+        _log.Received().Log(WorkflowLogLevel.Skipped, "Would apply the schema.");
     }
 
     [Fact]

@@ -86,14 +86,14 @@ public class BitwardenSecretProviderTests
         await Resolve("bw://Lab/beszel/password");
 
         var login = Sent("login");
-        login.EnvironmentVariables["BW_CLIENTID"].ShouldBe("user.u1");
-        login.EnvironmentVariables["BW_CLIENTSECRET"].ShouldBe("client-secret");
-        login.EnvironmentVariables.ShouldNotContainKey("BW_PASSWORD");
+        login.EnvironmentVariables[EnvironmentVariableName.From("BW_CLIENTID")].ShouldBe("user.u1");
+        login.EnvironmentVariables[EnvironmentVariableName.From("BW_CLIENTSECRET")].ShouldBe("client-secret");
+        login.EnvironmentVariables.ShouldNotContainKey(EnvironmentVariableName.From("BW_PASSWORD"));
         var unlock = Sent("unlock");
-        unlock.EnvironmentVariables["BW_PASSWORD"].ShouldBe("pa$$word");
-        unlock.EnvironmentVariables.ShouldNotContainKey("BW_CLIENTSECRET");
-        Sent("list").EnvironmentVariables["BW_SESSION"].ShouldBe("session-key");
-        Sent("list").EnvironmentVariables.ShouldNotContainKey("BW_PASSWORD");
+        unlock.EnvironmentVariables[EnvironmentVariableName.From("BW_PASSWORD")].ShouldBe("pa$$word");
+        unlock.EnvironmentVariables.ShouldNotContainKey(EnvironmentVariableName.From("BW_CLIENTSECRET"));
+        Sent("list").EnvironmentVariables[EnvironmentVariableName.From("BW_SESSION")].ShouldBe("session-key");
+        Sent("list").EnvironmentVariables.ShouldNotContainKey(EnvironmentVariableName.From("BW_PASSWORD"));
     }
 
     [Fact]
@@ -232,7 +232,7 @@ public class BitwardenSecretProviderTests
 
             await Resolve("bw://Lab/beszel/password");
 
-            Sent("unlock").EnvironmentVariables["BW_PASSWORD"].ShouldBe("pa$HOME\\word");
+            Sent("unlock").EnvironmentVariables[EnvironmentVariableName.From("BW_PASSWORD")].ShouldBe("pa$HOME\\word");
         }
         finally
         {
@@ -270,7 +270,7 @@ public class BitwardenSecretProviderTests
         (await Resolve("bw://Lab/beszel/password")).ShouldBe("hub-password");
 
         Sent().Select(command => command.Arguments[0]).ShouldBe(["status", "sync", "list", "list"]);
-        Sent().ShouldAllBe(command => !command.EnvironmentVariables.ContainsKey("BW_SESSION"));
+        Sent().ShouldAllBe(command => !command.EnvironmentVariables.ContainsKey(EnvironmentVariableName.From("BW_SESSION")));
     }
 
     [Fact]
@@ -306,7 +306,7 @@ public class BitwardenSecretProviderTests
 
             await Resolve("bw://Lab/beszel/password");
 
-            Sent().ShouldAllBe(command => command.EnvironmentVariables["BITWARDENCLI_APPDATA_DIR"] == directory);
+            Sent().ShouldAllBe(command => command.EnvironmentVariables[EnvironmentVariableName.From("BITWARDENCLI_APPDATA_DIR")] == directory);
             Directory.Exists(directory).ShouldBeTrue();
             if (!OperatingSystem.IsWindows())
             {

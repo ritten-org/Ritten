@@ -107,7 +107,7 @@ public class CommandRunnerTests
     public async Task Run_PassesEnvironmentVariables()
     {
         var command = Shell("printf '%s\n' \"$WOLFE_HAMELIN_TEST\"")
-            .WithEnvironmentVariables(new Dictionary<string, string> { ["WOLFE_HAMELIN_TEST"] = "abc" });
+            .WithEnvironmentVariables(EnvironmentVariables.From(new Dictionary<string, string> { ["WOLFE_HAMELIN_TEST"] = "abc" }));
 
         var result = await Runner().Run(command, TestContext.Current.CancellationToken);
 
