@@ -79,7 +79,7 @@ public class DockerClientTests
         var run = new ContainerRun("org/tool:1.0", ["upload", "/takeout"])
         {
             Mounts = [new BindMount(new PhysicalDirectory("/data/takeout"), "/takeout", ReadOnly: true)],
-            Environment = new Dictionary<string, string> { ["API_KEY"] = "s3cret" },
+            Environment = EnvironmentVariables.From(new Dictionary<string, string> { ["API_KEY"] = "s3cret" }),
             Network = "lab"
         };
 
@@ -92,17 +92,17 @@ public class DockerClientTests
             "--env", "API_KEY",
             "org/tool:1.0", "upload", "/takeout"
         ]);
-        command.EnvironmentVariables["API_KEY"].ShouldBe("s3cret");
+        command.EnvironmentVariables[EnvironmentVariableName.From("API_KEY")].ShouldBe("s3cret");
     }
 
     [Fact]
     public async Task ComposeUp_ConvergesFromTheProjectWithTheEnvironmentGiven()
     {
-        await _docker.ComposeUp(new PhysicalDirectory("/srv/stack"), new Dictionary<string, string> { ["DB_PASSWORD"] = "pg" }, TestContext.Current.CancellationToken);
+        await _docker.ComposeUp(new PhysicalDirectory("/srv/stack"), EnvironmentVariables.From(new Dictionary<string, string> { ["DB_PASSWORD"] = "pg" }), TestContext.Current.CancellationToken);
 
         var command = _commands.Executed.ShouldHaveSingleItem();
         command.Arguments.ShouldBe(["compose", "--project-directory", Path.GetFullPath("/srv/stack"), "up", "-d", "--remove-orphans"]);
-        command.EnvironmentVariables["DB_PASSWORD"].ShouldBe("pg");
+        command.EnvironmentVariables[EnvironmentVariableName.From("DB_PASSWORD")].ShouldBe("pg");
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public class DockerClientTests
             """;
         _commands.Respond(c => c.Arguments.Contains("config"), new CommandResult(0, json, ""));
 
-        var project = await _docker.ComposeConfig(new PhysicalDirectory("/srv/stack"), new Dictionary<string, string> { ["TOKEN"] = "x" },
+        var project = await _docker.ComposeConfig(new PhysicalDirectory("/srv/stack"), EnvironmentVariables.From(new Dictionary<string, string> { ["TOKEN"] = "x" }),
             TestContext.Current.CancellationToken);
 
         var services = project.Value.ShouldNotBeNull().Services;
@@ -254,7 +254,7 @@ public class DockerClientTests
 
         var command = _commands.Executed.ShouldHaveSingleItem();
         command.Arguments.ShouldBe(["compose", "--project-directory", Path.GetFullPath("/srv/stack"), "config", "--format", "json"]);
-        command.EnvironmentVariables["TOKEN"].ShouldBe("x");
+        command.EnvironmentVariables[EnvironmentVariableName.From("TOKEN")].ShouldBe("x");
     }
 
     [Fact]

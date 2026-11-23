@@ -17,7 +17,6 @@ public static class WorkflowBuilderExtensions
         {
             builder.Services.AddGit();
             builder.Services.AddOptions<GitOptions>().Configure(GitOptions.ConfigureFromEnvironment);
-            builder.Decorators.Decorate<IGit, DryRunGit>();
             return builder;
         }
     }

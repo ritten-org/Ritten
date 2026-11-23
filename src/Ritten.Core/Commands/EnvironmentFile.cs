@@ -17,13 +17,14 @@ namespace Ritten.Commands;
 public static class EnvironmentFile
 {
     /// <summary>
-    /// Reads the file's entries as written, keyed by variable name.
+    /// Reads the file's entries as written, a name given twice its later value; a name that is no variable's is an
+    /// error at its line.
     /// </summary>
     /// <param name="text">The file's contents.</param>
     /// <param name="fileName">The file, for the error.</param>
-    public static Result<IReadOnlyDictionary<string, string>> Parse(string text, string fileName)
+    public static Result<EnvironmentVariables> Parse(string text, string fileName)
     {
-        var entries = new Dictionary<string, string>();
+        var entries = EnvironmentVariables.Empty;
         var errors = new List<Error>();
         foreach (var (line, number) in text.Split('\n').Select((line, index) => (line.Trim(), index + 1)))
         {
@@ -40,7 +41,14 @@ public static class EnvironmentFile
                 continue;
             }
 
-            entries[assignment[..separator].Trim()] = Unquote(assignment[(separator + 1)..].Trim());
+            var name = EnvironmentVariableName.Parse(assignment[..separator].Trim());
+            if (name.IsError)
+            {
+                errors.AddRange(name.Errors.Select(error => new Error($"{fileName}:{number}: {error.Message}")));
+                continue;
+            }
+
+            entries = entries.With(name.Value, Unquote(assignment[(separator + 1)..].Trim()));
         }
 
         return errors.Count > 0 ? errors : entries;
@@ -52,7 +60,7 @@ public static class EnvironmentFile
     /// <param name="file">The env file.</param>
     /// <param name="secretProvider">The secrets store the host registered.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public static async Task<Result<IReadOnlyDictionary<string, string>>> Load(IFile file, ISecretProvider secretProvider, CancellationToken cancellationToken = default)
+    public static async Task<Result<EnvironmentVariables>> Load(IFile file, ISecretProvider secretProvider, CancellationToken cancellationToken = default)
     {
         if (!file.Exists)
         {
@@ -66,10 +74,10 @@ public static class EnvironmentFile
             return entries.Errors;
         }
 
-        var variables = new Dictionary<string, string>();
+        var variables = EnvironmentVariables.Empty;
         foreach (var (name, value) in entries.Value)
         {
-            variables[name] = await secretProvider.Resolve(value, cancellationToken);
+            variables = variables.With(name, await secretProvider.Resolve(value, cancellationToken));
         }
 
         return variables;
@@ -81,9 +89,9 @@ public static class EnvironmentFile
     /// <param name="files">The env files.</param>
     /// <param name="secretProvider">The secrets store the host registered.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    public static async Task<Result<IReadOnlyDictionary<string, string>>> Load(IEnumerable<IFile> files, ISecretProvider secretProvider, CancellationToken cancellationToken = default)
+    public static async Task<Result<EnvironmentVariables>> Load(IEnumerable<IFile> files, ISecretProvider secretProvider, CancellationToken cancellationToken = default)
     {
-        var variables = new Dictionary<string, string>();
+        var variables = EnvironmentVariables.Empty;
         foreach (var file in files)
         {
             var loaded = await Load(file, secretProvider, cancellationToken);
@@ -92,10 +100,7 @@ public static class EnvironmentFile
                 return loaded.Errors;
             }
 
-            foreach (var (name, value) in loaded.Value)
-            {
-                variables[name] = value;
-            }
+            variables = variables.Merge(loaded.Value);
         }
 
         return variables;

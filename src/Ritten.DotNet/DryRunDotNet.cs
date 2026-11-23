@@ -1,4 +1,5 @@
 using NuGet.Versioning;
+using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
 using Ritten.Engine;
 using Ritten.Reporting;
@@ -6,10 +7,13 @@ using Ritten.Reporting;
 namespace Ritten.DotNet;
 
 /// <summary>
-/// Reports what would be installed instead of installing it.
+/// Reports <c>dotnet</c> commands that would affect the environment instead of running them.
 /// </summary>
 internal class DryRunDotNet(IWorkflowLog log, IDotNet inner) : IDotNet
 {
+    public Task<CommandResult> RunCommand(Func<Command, Command> configure, CancellationToken ct = default) =>
+        inner.RunCommand(configure, ct);
+
     /// <inheritdoc />
     public Task<Result<Project>> ReadProject(IFile file, CancellationToken cancellationToken = default) =>
         inner.ReadProject(file, cancellationToken);
@@ -56,40 +60,15 @@ internal class DryRunDotNet(IWorkflowLog log, IDotNet inner) : IDotNet
         inner.InstalledToolVersion(packageId, scope, cancellationToken);
 
     /// <inheritdoc />
-    public Task ToolInstall(ToolInstallArgs args, CancellationToken cancellationToken = default)
-    {
-        log.Skipped($"Would install {Named(args)} {Where(args.Scope)}.");
-        return Task.CompletedTask;
-    }
+    public Task ToolInstall(ToolInstallArgs args, CancellationToken cancellationToken = default) =>
+        inner.ToolInstall(args, cancellationToken);
 
-    /// <inheritdoc />
-    public Task ToolUpdate(ToolInstallArgs args, CancellationToken cancellationToken = default)
-    {
-        log.Skipped($"Would update {Named(args)} {Where(args.Scope)}.");
-        return Task.CompletedTask;
-    }
+    public Task ToolUpdate(ToolInstallArgs args, CancellationToken cancellationToken = default) =>
+        inner.ToolUpdate(args, cancellationToken);
 
-    /// <inheritdoc />
-    public Task ToolUninstall(string packageId, ToolScope scope, CancellationToken cancellationToken = default)
-    {
-        log.Skipped($"Would uninstall {packageId} {Where(scope)}.");
-        return Task.CompletedTask;
-    }
+    public Task ToolUninstall(string packageId, ToolScope scope, CancellationToken cancellationToken = default) =>
+        inner.ToolUninstall(packageId, scope, cancellationToken);
 
-    /// <inheritdoc />
-    public Task CreateToolManifest(IDirectory directory, CancellationToken cancellationToken = default)
-    {
-        log.Skipped($"Would create a tool manifest in {directory.Name}.");
-        return Task.CompletedTask;
-    }
-
-    private static string Named(ToolInstallArgs args) =>
-        args.Version is { } version ? $"{args.PackageId} {version}" : args.PackageId;
-
-    private static string Where(ToolScope scope) => scope switch
-    {
-        { IsGlobal: true } => "globally",
-        { IsPath: true, Directory: { } directory } => $"into {directory.AbsolutePath}",
-        _ => "in the tool manifest"
-    };
+    public Task CreateToolManifest(IDirectory directory, CancellationToken cancellationToken = default) =>
+        inner.CreateToolManifest(directory, cancellationToken);
 }

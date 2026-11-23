@@ -18,6 +18,19 @@ public class CommandTests
     }
 
     [Fact]
+    public void EnvironmentVariables_AreReplacedByWith_AndMergedByAnd()
+    {
+        var home = EnvironmentVariableName.From("HOME");
+        var token = EnvironmentVariableName.From("TOKEN");
+        var command = Command.Create("git").AndEnvironmentVariable(home, "/home/tom").AndEnvironmentVariable(token, "old");
+
+        command.AndEnvironmentVariables(EnvironmentVariables.Empty.With(token, "new")).EnvironmentVariables
+            .ShouldBe(EnvironmentVariables.Empty.With(home, "/home/tom").With(token, "new"));
+        command.WithEnvironmentVariables(EnvironmentVariables.Empty.With(token, "new")).EnvironmentVariables
+            .ShouldBe(EnvironmentVariables.Empty.With(token, "new"));
+    }
+
+    [Fact]
     public void WithArguments_ReplacesTheArguments()
     {
         var command = Command.Create("git").WithArguments("tag", "v1").WithArguments("push");

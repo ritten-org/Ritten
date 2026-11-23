@@ -47,9 +47,9 @@ internal sealed record BitwardenCredentials(string ClientId, string ClientSecret
             throw new InvalidOperationException(string.Join(' ', parsed.Errors.Select(error => error.Message)));
         }
 
-        var missing = Variables.Where(name => parsed.Value.GetValueOrDefault(name) is not { Length: > 0 }).ToList();
+        var missing = Variables.Where(name => parsed.Value.GetValueOrDefault(EnvironmentVariableName.From(name)) is not { Length: > 0 }).ToList();
         return missing.Count == 0
-            ? From(name => parsed.Value.GetValueOrDefault(name))
+            ? From(name => parsed.Value.GetValueOrDefault(EnvironmentVariableName.From(name)))
             : throw new InvalidOperationException($"{path} has no {string.Join(", ", missing)}.");
     }
 

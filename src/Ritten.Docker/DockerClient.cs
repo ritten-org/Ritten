@@ -6,9 +6,13 @@ namespace Ritten.Docker;
 
 internal sealed class DockerClient(ICommandRunner commands) : IDocker
 {
+    /// <inheritdoc />
+    public Task<CommandResult> RunCommand(Func<Command, Command> configure, CancellationToken ct = default) =>
+        commands.Run(configure(Command.Create("docker")), ct);
+
     public async Task Build(IDirectory context, string tag, string? platform = null, CancellationToken ct = default)
     {
-        var command = Command.Create("docker").WithArguments("build", "--tag", tag);
+        var command = Command.Create("docker").WithArguments("build", "--tag", tag).WithEffect(CommandEffect.None);
         if (platform is not null)
         {
             command = command.AndArguments("--platform", platform);
@@ -18,16 +22,17 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
     }
 
     public async Task Tag(string source, string target, CancellationToken ct = default) =>
-        await commands.Run(Command.Create("docker").WithArguments("tag", source, target).ThrowOnError(), ct);
+        await commands.Run(Command.Create("docker").WithArguments("tag", source, target).WithEffect(CommandEffect.None).ThrowOnError(), ct);
 
     public async Task Push(string image, CancellationToken ct = default) =>
-        await commands.Run(Command.Create("docker").WithArguments("push", image).ThrowOnError(), ct);
+        await commands.Run(Command.Create("docker").WithArguments("push", image).Describe($"push {image}").ThrowOnError(), ct);
 
     public async Task Login(string registry, string username, string password, CancellationToken ct = default) =>
         await commands.Run(
             Command.Create("docker")
                 .WithArguments("login", "--username", username, "--password-stdin", registry)
                 .WithInput(password)
+                .WithEffect(CommandEffect.None)
                 .ThrowOnError(),
             ct);
 
@@ -48,21 +53,23 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
         // WithEnvironmentVariables puts it.
         foreach (var name in run.Environment.Keys)
         {
-            arguments.AddRange(["--env", name]);
+            arguments.AddRange(["--env", name.Value]);
         }
 
         arguments.Add(run.Image);
         arguments.AddRange(run.Arguments);
 
         await commands.Run(
-            Command.Create("docker").WithArguments([.. arguments]).WithEnvironmentVariables(run.Environment).ThrowOnError(),
+            Command.Create("docker").WithArguments([.. arguments]).WithEnvironmentVariables(run.Environment)
+                .Describe($"run {run.Image} {string.Join(' ', run.Arguments)}").ThrowOnError(),
             ct);
     }
 
-    public async Task ComposeUp(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default)
+    public async Task ComposeUp(IDirectory project, EnvironmentVariables? environment = null, CancellationToken ct = default)
     {
         var command = Command.Create("docker")
-            .WithArguments("compose", "--project-directory", project.AbsolutePath, "up", "-d", "--remove-orphans");
+            .WithArguments("compose", "--project-directory", project.AbsolutePath, "up", "-d", "--remove-orphans")
+            .Describe($"converge the stack in {project.AbsolutePath}");
         if (environment is not null)
         {
             command = command.WithEnvironmentVariables(environment);
@@ -71,10 +78,11 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
         await commands.Run(command.ThrowOnError(), ct);
     }
 
-    public async Task<string?> ComposeValidate(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default)
+    public async Task<string?> ComposeValidate(IDirectory project, EnvironmentVariables? environment = null, CancellationToken ct = default)
     {
         var command = Command.Create("docker")
             .WithArguments("compose", "--project-directory", project.AbsolutePath, "config", "--quiet")
+            .WithEffect(CommandEffect.None)
             .QuietOutput();
         if (environment is not null)
         {
@@ -86,11 +94,12 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
         return result.IsSuccess ? null : Objection(result);
     }
 
-    public async Task<Result<ComposeProject>> ComposeConfig(IDirectory project, IReadOnlyDictionary<string, string>? environment = null,
+    public async Task<Result<ComposeProject>> ComposeConfig(IDirectory project, EnvironmentVariables? environment = null,
         CancellationToken ct = default)
     {
         var command = Command.Create("docker")
             .WithArguments("compose", "--project-directory", project.AbsolutePath, "config", "--format", "json")
+            .WithEffect(CommandEffect.None)
             .QuietOutput();
         if (environment is not null)
         {
@@ -112,24 +121,28 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
 
     public async Task ComposeDown(IDirectory project, CancellationToken ct = default) =>
         await commands.Run(
-            Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "down").ThrowOnError(),
+            Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "down")
+                .Describe($"take down the stack in {project.AbsolutePath}").ThrowOnError(),
             ct);
 
     public async Task ComposeStop(IDirectory project, CancellationToken ct = default) =>
         await commands.Run(
-            Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "stop").ThrowOnError(),
+            Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "stop")
+                .Describe($"stop the stack in {project.AbsolutePath}").ThrowOnError(),
             ct);
 
     public async Task ComposeStart(IDirectory project, CancellationToken ct = default) =>
         await commands.Run(
-            Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "start").ThrowOnError(),
+            Command.Create("docker").WithArguments("compose", "--project-directory", project.AbsolutePath, "start")
+                .Describe($"start the stack in {project.AbsolutePath}").ThrowOnError(),
             ct);
 
-    public async Task<IReadOnlyList<string>> ComposeImages(IDirectory project, IReadOnlyDictionary<string, string>? environment = null,
+    public async Task<IReadOnlyList<string>> ComposeImages(IDirectory project, EnvironmentVariables? environment = null,
         CancellationToken ct = default)
     {
         var command = Command.Create("docker")
             .WithArguments("compose", "--project-directory", project.AbsolutePath, "images", "--quiet")
+            .WithEffect(CommandEffect.None)
             .QuietOutput()
             .ThrowOnError();
         if (environment is not null)
@@ -145,7 +158,7 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
     {
         // Deliberately neither forced nor ThrowOnError: the daemon refusing an image something still
         // needs is the safety this relies on, and its refusal is the answer.
-        var result = await commands.Run(Command.Create("docker").WithArguments("image", "rm", image).QuietOutput(), ct);
+        var result = await commands.Run(Command.Create("docker").WithArguments("image", "rm", image).Describe($"remove image {image}").QuietOutput(), ct);
         return result.IsSuccess ? null : Objection(result);
     }
 
@@ -154,7 +167,7 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
         // One template, two facts: an image reference never contains whitespace, so the pair
         // splits cleanly.
         var result = await commands.Run(
-            Command.Create("docker").WithArguments("inspect", "--format", "{{.Config.Image}} {{.State.Running}}", container).QuietOutput(),
+            Command.Create("docker").WithArguments("inspect", "--format", "{{.Config.Image}} {{.State.Running}}", container).WithEffect(CommandEffect.None).QuietOutput(),
             ct);
 
         if (!result.IsSuccess)
@@ -183,7 +196,9 @@ internal sealed class DockerClient(ICommandRunner commands) : IDocker
             command = command.WithInput(text);
         }
 
-        // A read is a probe: its output is the caller's to use, not the step's story.
-        return await commands.Run(exec.IsReadOnly ? command.QuietOutput() : command, ct);
+        // A read is a probe: its output is the caller's to use, not the step's story, and a dry run runs it.
+        return await commands.Run(exec.IsReadOnly
+            ? command.WithEffect(CommandEffect.None).QuietOutput()
+            : command.Describe($"run `{string.Join(' ', exec.Arguments)}` in {exec.Container}"), ct);
     }
 }

@@ -9,6 +9,10 @@ namespace Ritten.DotNet;
 
 internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : IDotNet
 {
+    /// <inheritdoc />
+    public Task<CommandResult> RunCommand(Func<Command, Command> configure, CancellationToken ct = default) =>
+        commands.Run(configure(Command.Create("dotnet")), ct);
+
     /// <summary>The name the coverage report is written under; the coverage step globs for it.</summary>
     private const string CoverageFileName = "coverage.cobertura.xml";
 
@@ -32,6 +36,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
                 "-getProperty:PackageIcon", "-getProperty:PackageIconUrl",
                 "-getProperty:PackageProjectUrl", "-getProperty:PackageTags"
             )
+            .WithEffect(CommandEffect.None)
             .ThrowOnError();
         var result = await commands.Run(command, cancellationToken);
 
@@ -86,7 +91,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
     {
         // A probe whose output the caller consumes, not part of the step's story. A directory no
         // manifest governs is a question, not a failure: the answer is that nothing carries it.
-        var command = Tool(scope).WithArguments(["tool", "list", .. scope.Flags]).QuietOutput();
+        var command = Tool(scope).WithArguments(["tool", "list", .. scope.Flags]).WithEffect(CommandEffect.None).QuietOutput();
         var result = await commands.Run(command, cancellationToken);
         if (!result.IsSuccess)
         {
@@ -114,7 +119,8 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
 
     public async Task ToolUninstall(string packageId, ToolScope scope, CancellationToken cancellationToken = default)
     {
-        var command = Tool(scope).WithArguments(["tool", "uninstall", packageId, .. scope.Flags]).ThrowOnError();
+        var command = Tool(scope).WithArguments(["tool", "uninstall", packageId, .. scope.Flags])
+            .Describe($"uninstall {packageId} {Where(scope)}").ThrowOnError();
         await commands.Run(command, cancellationToken);
     }
 
@@ -126,6 +132,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         var command = Command.Create("dotnet")
             .WithArguments("new", "tool-manifest", "--output", DotNetProjects.ToolManifestDirectory)
             .InDirectory(directory.AbsolutePath)
+            .Describe($"create a tool manifest in {directory.Name}")
             .QuietOutput()
             .ThrowOnError();
         await commands.Run(command, cancellationToken);
@@ -136,7 +143,8 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
     /// </summary>
     private async Task RunTool(string verb, ToolInstallArgs args, CancellationToken cancellationToken)
     {
-        var command = Tool(args.Scope).WithArguments(["tool", verb, args.PackageId, .. args.Scope.Flags]);
+        var command = Tool(args.Scope).WithArguments(["tool", verb, args.PackageId, .. args.Scope.Flags])
+            .Describe($"{verb} {Named(args)} {Where(args.Scope)}");
         if (args.Version is { } version)
         {
             command = command.AndArguments("--version", version.ToString());
@@ -165,12 +173,22 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         ? Command.Create("dotnet").InDirectory(directory.AbsolutePath)
         : Command.Create("dotnet");
 
+    private static string Named(ToolInstallArgs args) =>
+        args.Version is { } version ? $"{args.PackageId} {version}" : args.PackageId;
+
+    private static string Where(ToolScope scope) => scope switch
+    {
+        { IsGlobal: true } => "globally",
+        { IsPath: true, Directory: { } directory } => $"into {directory.AbsolutePath}",
+        _ => "in the tool manifest"
+    };
+
     private static string? Property(JsonElement properties, string name) =>
         properties.TryGetProperty(name, out var value) && value.GetString() is { Length: > 0 } text ? text : null;
 
     public async Task<RestoreResult> Restore(RestoreArgs args, CancellationToken cancellationToken = default)
     {
-        var command = Command.Create("dotnet").WithArguments("restore");
+        var command = Command.Create("dotnet").WithArguments("restore").WithEffect(CommandEffect.None);
         if (args.Project is not null)
         {
             command = command.AndArguments(args.Project);
@@ -189,7 +207,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
     {
         args.Output.Create();
 
-        var command = Command.Create("dotnet").WithArguments("pack");
+        var command = Command.Create("dotnet").WithArguments("pack").WithEffect(CommandEffect.None);
         if (args.Project is not null)
         {
             command = command.AndArguments(args.Project);
@@ -213,7 +231,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
 
     public async Task<BuildResult> Build(BuildArgs args, CancellationToken cancellationToken = default)
     {
-        var command = Command.Create("dotnet").WithArguments("build");
+        var command = Command.Create("dotnet").WithArguments("build").WithEffect(CommandEffect.None);
         if (args.Project is not null)
         {
             command = command.AndArguments(args.Project);
@@ -241,7 +259,7 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
     {
         args.ResultsDirectory.Create();
 
-        var command = Command.Create("dotnet").WithArguments("test");
+        var command = Command.Create("dotnet").WithArguments("test").WithEffect(CommandEffect.None);
         if (args.Project is not null)
         {
             // The MTP mode of `dotnet test` rejects a bare positional; the project must be named.
@@ -297,10 +315,10 @@ internal class DotNetClient(ICommandRunner commands, IFileSystem fileSystem) : I
         try
         {
             var command = Command.Create("dotnet").WithArguments("format", "whitespace");
-            if (args.VerifyNoChanges)
-            {
-                command = command.AndArguments("--verify-no-changes");
-            }
+            // Verifying changes nothing; formatting rewrites the repository's files.
+            command = args.VerifyNoChanges
+                ? command.AndArguments("--verify-no-changes").WithEffect(CommandEffect.None)
+                : command.Describe("format the code");
 
             command = command.AndArguments("--report", reportDirectory.AbsolutePath);
             if (args.NoRestore)

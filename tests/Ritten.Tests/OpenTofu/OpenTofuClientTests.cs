@@ -77,9 +77,36 @@ public class OpenTofuClientTests : IDisposable
 
         _commands.Executed.Count.ShouldBe(3);
         _commands.Executed.ShouldAllBe(c =>
-            c.EnvironmentVariables["AWS_ACCESS_KEY_ID"] == "value-of-op://Vault/state/key"
-            && c.EnvironmentVariables["TF_VAR_token"] == "value-of-op://Vault/provider/token"
-            && c.EnvironmentVariables["TF_VAR_region"] == "literal");
+            c.EnvironmentVariables[EnvironmentVariableName.From("AWS_ACCESS_KEY_ID")] == "value-of-op://Vault/state/key"
+            && c.EnvironmentVariables[EnvironmentVariableName.From("TF_VAR_token")] == "value-of-op://Vault/provider/token"
+            && c.EnvironmentVariables[EnvironmentVariableName.From("TF_VAR_region")] == "literal");
+    }
+
+    [Fact]
+    public async Task TheEnvironmentsOwnVariables_ReplaceTheEnvFilesEntries()
+    {
+        var environment = new TofuEnvironment
+        {
+            EnvFiles = [Write("state.env", "TF_VAR_region=from-file\nTF_VAR_token=\"op://Vault/provider/token\"\n")],
+            Variables = EnvironmentVariables.Empty.With(EnvironmentVariableName.From("TF_VAR_region"), "given").With(EnvironmentVariableName.From("TF_CLI_CONFIG_FILE"), "/repo/tofu.tfrc")
+        };
+
+        await Tofu().Init(_module, environment, TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().EnvironmentVariables.ShouldBe(EnvironmentVariables.Empty
+            .With(EnvironmentVariableName.From("TF_VAR_region"), "given")
+            .With(EnvironmentVariableName.From("TF_VAR_token"), "value-of-op://Vault/provider/token")
+            .With(EnvironmentVariableName.From("TF_CLI_CONFIG_FILE"), "/repo/tofu.tfrc"));
+    }
+
+    [Fact]
+    public async Task VariablesAlone_NeedNoEnvFile()
+    {
+        var variable = EnvironmentVariableName.From("TF_CLI_CONFIG_FILE");
+
+        await Tofu().Init(_module, new TofuEnvironment { Variables = EnvironmentVariables.Empty.With(variable, "/repo/tofu.tfrc") }, TestContext.Current.CancellationToken);
+
+        _commands.Executed.ShouldHaveSingleItem().EnvironmentVariables.ShouldBe(EnvironmentVariables.Empty.With(variable, "/repo/tofu.tfrc"));
     }
 
     [Fact]

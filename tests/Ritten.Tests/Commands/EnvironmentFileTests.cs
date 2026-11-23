@@ -23,12 +23,12 @@ public class EnvironmentFileTests : IDisposable
         var entries = EnvironmentFile.Parse("# the repository\n\nRESTIC_REPOSITORY=/Volumes/Data2/restic\nexport TZ=\"Europe/London\"\nNAME='quoted'\n", "restic.env");
 
         var values = entries.Value.ShouldNotBeNull();
-        values.ShouldBe(new Dictionary<string, string>
+        values.ShouldBe(EnvironmentVariables.From(new Dictionary<string, string>
         {
             ["RESTIC_REPOSITORY"] = "/Volumes/Data2/restic",
             ["TZ"] = "Europe/London",
             ["NAME"] = "quoted"
-        });
+        }));
     }
 
     [Fact]
@@ -41,17 +41,26 @@ public class EnvironmentFileTests : IDisposable
     }
 
     [Fact]
+    public void Parse_NamesTheLineWhoseNameIsNoVariables()
+    {
+        var entries = EnvironmentFile.Parse("A=1\nMY-VAR=2\n", "x.env");
+
+        entries.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldBe(
+            "x.env:2: 'MY-VAR' is not an environment variable name: a letter or underscore, then letters, digits and underscores.");
+    }
+
+    [Fact]
     public async Task Load_ReadsReferencesThroughTheStoreAndPassesLiteralsThrough()
     {
         var file = Write("secrets.env", "A=literal\nB=\"op://Vault/item/field\"\n");
 
         var variables = await EnvironmentFile.Load(file, _secretProvider, TestContext.Current.CancellationToken);
 
-        variables.Value.ShouldNotBeNull().ShouldBe(new Dictionary<string, string>
+        variables.Value.ShouldNotBeNull().ShouldBe(EnvironmentVariables.From(new Dictionary<string, string>
         {
             ["A"] = "literal",
             ["B"] = "value-of-op://Vault/item/field"
-        });
+        }));
     }
 
     [Fact]
@@ -62,11 +71,11 @@ public class EnvironmentFileTests : IDisposable
 
         var variables = await EnvironmentFile.Load([shared, own], _secretProvider, TestContext.Current.CancellationToken);
 
-        variables.Value.ShouldNotBeNull().ShouldBe(new Dictionary<string, string>
+        variables.Value.ShouldNotBeNull().ShouldBe(EnvironmentVariables.From(new Dictionary<string, string>
         {
             ["AWS_ACCESS_KEY_ID"] = "own",
             ["REGION"] = "garage"
-        });
+        }));
     }
 
     [Fact]

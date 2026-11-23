@@ -12,13 +12,12 @@ public static class WorkflowBuilderExtensions
     extension(IWorkflowBuilder builder)
     {
         /// <summary>
-        /// Adds the docker client and its rehearsal.
+        /// Adds the docker client.
         /// </summary>
         public IWorkflowBuilder AddDocker()
         {
             builder.AddCommandRunner();
             builder.Services.TryAddScoped<IDocker, DockerClient>();
-            builder.Decorators.Decorate<IDocker, DryRunDocker>();
             return builder;
         }
     }

@@ -110,14 +110,14 @@ public class NSchemaClientTests : IDisposable
         var environment = new NSchemaEnvironment
         {
             EnvFiles = [Write("state.env", "AWS_ACCESS_KEY_ID=\"op://Vault/state/key\"\nNSCHEMA_STATE_PATH=from-file\n")],
-            Variables = new Dictionary<string, string> { ["NSCHEMA_STATE_PATH"] = "/state/config.nschema.json" }
+            Variables = EnvironmentVariables.From(new Dictionary<string, string> { ["NSCHEMA_STATE_PATH"] = "/state/config.nschema.json" })
         };
 
         await NSchema().Apply(Project, environment, ct: Ct);
 
         var variables = Ran("apply").EnvironmentVariables;
-        variables["AWS_ACCESS_KEY_ID"].ShouldBe("value-of-op://Vault/state/key");
-        variables["NSCHEMA_STATE_PATH"].ShouldBe("/state/config.nschema.json");
+        variables[EnvironmentVariableName.From("AWS_ACCESS_KEY_ID")].ShouldBe("value-of-op://Vault/state/key");
+        variables[EnvironmentVariableName.From("NSCHEMA_STATE_PATH")].ShouldBe("/state/config.nschema.json");
     }
 
     [Fact]

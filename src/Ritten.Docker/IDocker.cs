@@ -8,7 +8,7 @@ namespace Ritten.Docker;
 /// Exposes functionality for the Docker daemon the workflow can reach: images, one-shot
 /// containers, and compose stacks.
 /// </summary>
-public interface IDocker
+public interface IDocker : ICommandClient
 {
     /// <summary>
     /// Builds the Dockerfile in the given directory into an image with the given tag.
@@ -47,7 +47,7 @@ public interface IDocker
     /// <param name="project">The directory holding the compose file.</param>
     /// <param name="environment">Values the compose file interpolates, secrets included; they reach compose through its environment.</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
-    Task ComposeUp(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default);
+    Task ComposeUp(IDirectory project, EnvironmentVariables? environment = null, CancellationToken ct = default);
 
     /// <summary>
     /// Checks that the compose file in the given project directory is one compose can read.
@@ -56,7 +56,7 @@ public interface IDocker
     /// <param name="environment">Values the compose file interpolates.</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
     /// <returns><c>null</c> when the file is valid, otherwise what compose objected to.</returns>
-    Task<string?> ComposeValidate(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default);
+    Task<string?> ComposeValidate(IDirectory project, EnvironmentVariables? environment = null, CancellationToken ct = default);
 
     /// <summary>
     /// Gets the compose project with its files merged and the environment interpolated.
@@ -65,7 +65,7 @@ public interface IDocker
     /// <param name="environment">Values the compose file interpolates.</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
     /// <returns>The resolved project, or what compose objected to.</returns>
-    Task<Result<ComposeProject>> ComposeConfig(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default);
+    Task<Result<ComposeProject>> ComposeConfig(IDirectory project, EnvironmentVariables? environment = null, CancellationToken ct = default);
 
     /// <summary>
     /// Stops and removes the compose stack in the given project directory. Volumes stay.
@@ -89,7 +89,7 @@ public interface IDocker
     /// <param name="environment">Values the compose file interpolates.</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
     /// <returns>Each image's id, once; none for a stack with no containers.</returns>
-    Task<IReadOnlyList<string>> ComposeImages(IDirectory project, IReadOnlyDictionary<string, string>? environment = null, CancellationToken ct = default);
+    Task<IReadOnlyList<string>> ComposeImages(IDirectory project, EnvironmentVariables? environment = null, CancellationToken ct = default);
 
     /// <summary>
     /// Removes an image (without forcing).

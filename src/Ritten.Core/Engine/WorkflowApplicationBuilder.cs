@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Ritten.Commands;
 using Ritten.Contracts;
 using Ritten.Contracts.FileSystem;
 using Ritten.Engine.DryRun;
@@ -66,7 +67,9 @@ public sealed class WorkflowApplicationBuilder : IWorkflowBuilder
         }
 
         var services = new ServiceCollection();
-        var decorators = new DecoratorRegistry().Decorate<IProjectFiles, DryRunProjectFiles>();
+        var decorators = new DecoratorRegistry()
+            .Decorate<IProjectFiles, DryRunProjectFiles>()
+            .Decorate<ICommandRunner, DryRunCommandRunner>();
         AddRunFacts(services, runtime.Value);
         // A client registered for any host brings a silent narrative for when there's no run; here there always is.
         foreach (var service in Services.Where(s => s.ImplementationType != typeof(SilentWorkflowLog)))

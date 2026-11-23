@@ -20,7 +20,7 @@ internal sealed class NSchemaClient(ICommandRunner commands, IOptions<NSchemaOpt
     {
         // `format` takes its path as an argument and ignores --directory, so it runs in the
         // project and is handed ".".
-        var format = await commands.Run((await NSchema(project, null, ct, "format", "--check", ".", "--no-color")).QuietOutput(), ct);
+        var format = await commands.Run((await NSchema(project, null, ct, "format", "--check", ".", "--no-color")).WithEffect(CommandEffect.None).QuietOutput(), ct);
         IReadOnlyList<string>? unformatted = format.ExitCode.Value switch
         {
             0 => null,
@@ -30,7 +30,7 @@ internal sealed class NSchemaClient(ICommandRunner commands, IOptions<NSchemaOpt
 
         // `format --check` passes over a file it cannot parse, so an invalid one would read as
         // formatted: validate says what is wrong with it.
-        await commands.Run((await NSchema(project, null, ct, "validate", "--no-color")).AndArguments(NoInit()).ThrowOnError(), ct);
+        await commands.Run((await NSchema(project, null, ct, "validate", "--no-color")).AndArguments(NoInit()).WithEffect(CommandEffect.None).ThrowOnError(), ct);
         return unformatted;
     }
 
@@ -40,7 +40,7 @@ internal sealed class NSchemaClient(ICommandRunner commands, IOptions<NSchemaOpt
         // --detailed-exitcode splits the answer three ways: 0 nothing to do, 2 changes, anything
         // else broken; without it a plan with changes and one with none both exit 0.
         var command = await NSchema(project, environment, ct, "plan", "--detailed-exitcode", "--format", "markdown", "--no-color");
-        var result = await commands.Run(command.AndArguments([.. Environment(environment), .. NoInit()]), ct);
+        var result = await commands.Run(command.AndArguments([.. Environment(environment), .. NoInit()]).WithEffect(CommandEffect.None), ct);
         return result.ExitCode.Value switch
         {
             0 => new NSchemaPlanResult(false, result.StandardOutput),
@@ -54,7 +54,7 @@ internal sealed class NSchemaClient(ICommandRunner commands, IOptions<NSchemaOpt
         CancellationToken ct = default)
     {
         var command = await NSchema(project, environment, ct, "apply", "--auto-approve", "--no-color");
-        var result = await commands.Run(command.AndArguments([.. Environment(environment), .. NoInit(), .. Settings(settings)]).ThrowOnError(), ct);
+        var result = await commands.Run(command.AndArguments([.. Environment(environment), .. NoInit(), .. Settings(settings)]).Describe("apply the schema").ThrowOnError(), ct);
         return new NSchemaApplyResult(result.StandardOutput);
     }
 
@@ -98,18 +98,19 @@ internal sealed class NSchemaClient(ICommandRunner commands, IOptions<NSchemaOpt
             return;
         }
 
-        var restore = Command.Create("dotnet").WithArguments("tool", "restore").QuietOutput().ThrowOnError();
+        var restore = Command.Create("dotnet").WithArguments("tool", "restore").WithEffect(CommandEffect.None).QuietOutput().ThrowOnError();
         await commands.Run(project.Directory is { Length: > 0 } directory ? restore.InDirectory(directory) : restore, ct);
     }
 
-    private async Task<IReadOnlyDictionary<string, string>> Variables(NSchemaEnvironment? environment, CancellationToken ct)
+    // The environment's own variables come after its files', so one replaces an entry of theirs.
+    private async Task<EnvironmentVariables> Variables(NSchemaEnvironment? environment, CancellationToken ct)
     {
         if (environment is null)
         {
-            return new Dictionary<string, string>();
+            return EnvironmentVariables.Empty;
         }
 
-        var variables = new Dictionary<string, string>();
+        var variables = EnvironmentVariables.Empty;
         if (environment.EnvFiles.Count > 0)
         {
             var provider = secretProvider ?? throw new InvalidOperationException("An env file needs a secrets store, and this host registered none.");
@@ -119,17 +120,19 @@ internal sealed class NSchemaClient(ICommandRunner commands, IOptions<NSchemaOpt
                 throw new InvalidOperationException(string.Join(' ', loaded.Errors.Select(e => e.Message)));
             }
 
-            foreach (var (name, value) in loaded.Value)
-            {
-                variables[name] = value;
-            }
+            variables = loaded.Value;
         }
 
-        foreach (var (name, value) in environment.Variables)
-        {
-            variables[name] = value;
-        }
-
-        return variables;
+        return variables.Merge(environment.Variables);
     }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The configured executable, or <c>dotnet nschema</c>, whose own argument is already given: arguments are added
+    /// to it (<see cref="Command.AndArguments"/>). Nothing restores the local tool, which a project's commands do.
+    /// </remarks>
+    public Task<CommandResult> RunCommand(Func<Command, Command> configure, CancellationToken ct = default) =>
+        commands.Run(configure(options.Value.Executable is { Length: > 0 } executable
+            ? Command.Create(executable)
+            : Command.Create("dotnet").WithArguments("nschema")), ct);
 }

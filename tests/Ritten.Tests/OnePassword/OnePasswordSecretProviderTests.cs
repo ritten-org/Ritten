@@ -83,7 +83,7 @@ public class OnePasswordSecretProviderTests
             var command = (Command)_commands.ReceivedCalls().Single().GetArguments()[0]!;
             if (Environment.GetEnvironmentVariable("OP_SERVICE_ACCOUNT_TOKEN") is not { Length: > 0 })
             {
-                command.EnvironmentVariables["OP_SERVICE_ACCOUNT_TOKEN"].ShouldBe("token-from-file");
+                command.EnvironmentVariables[EnvironmentVariableName.From("OP_SERVICE_ACCOUNT_TOKEN")].ShouldBe("token-from-file");
             }
         }
         finally

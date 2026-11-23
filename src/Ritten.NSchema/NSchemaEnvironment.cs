@@ -1,3 +1,4 @@
+using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
 
 namespace Ritten.NSchema;
@@ -26,5 +27,5 @@ public sealed record NSchemaEnvironment
     /// <summary>
     /// Variables every command runs under, over the env files'.
     /// </summary>
-    public IReadOnlyDictionary<string, string> Variables { get; init; } = new Dictionary<string, string>();
+    public EnvironmentVariables Variables { get; init; } = EnvironmentVariables.Empty;
 }

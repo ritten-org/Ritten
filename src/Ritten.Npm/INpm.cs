@@ -1,9 +1,11 @@
+using Ritten.Commands;
+
 namespace Ritten.Npm;
 
 /// <summary>
 /// npm, in a project's directory.
 /// </summary>
-public interface INpm
+public interface INpm : ICommandClient
 {
     /// <summary>
     /// Installs exactly what the project's lock file says, with <c>npm ci</c>; throws when it cannot.
