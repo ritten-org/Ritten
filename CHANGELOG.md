@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Ritten now targets .NET 11.** (breaking)
 - **`INuGet.GetPublishedVersions` uses the .NET CLI** (`dotnet package search --exact-match`), so it behaves like regular NuGet.
 
 ### Removed
