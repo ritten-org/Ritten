@@ -1,29 +1,55 @@
-using NuGet.Configuration;
-using NuGet.Protocol;
-using NuGet.Protocol.Core.Types;
+using System.Text.Json;
 using NuGet.Versioning;
 using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
-using Ritten.Reporting;
 
 namespace Ritten.NuGet;
 
-internal class NuGetClient(IWorkflowLog log, ICommandRunner commands) : INuGet
+internal class NuGetClient(ICommandRunner commands, IFileSystem fileSystem) : INuGet
 {
+    // NuGet's own HTTP cache answers for a feed it read within the half hour, and a release decides from this answer
+    // whether to push: each read starts from a cache of its own, empty.
+    private static readonly EnvironmentVariableName HttpCache = EnvironmentVariableName.From("NUGET_HTTP_CACHE_PATH");
+
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
     public async Task<IReadOnlyList<NuGetVersion>> GetPublishedVersions(NuGetFeed feed, string packageId, CancellationToken cancellationToken = default)
     {
-        var source = new PackageSource(feed.Url)
+        var cache = fileSystem.CreateTempDirectory("ritten-nuget-cache-");
+        try
         {
-            Credentials = new PackageSourceCredential(feed.Url, feed.Username ?? "dummy", feed.Password ?? "", isPasswordClearText: true, validAuthenticationTypesText: null)
-        };
+            var result = await commands.Run(Command.Create("dotnet")
+                .WithArguments("package", "search", packageId, "--exact-match", "--prerelease", "--format", "json", "--source", feed.Url)
+                .WithEnvironmentVariables(EnvironmentVariables.Empty.With(HttpCache, cache.AbsolutePath))
+                .WithEffect(CommandEffect.None)
+                .QuietOutput()
+                .Describe($"read {packageId}'s versions on {feed.Url}")
+                .ThrowOnError(), cancellationToken);
 
-        var repository = Repository.Factory.GetCoreV3(source);
-        var resource = await repository.GetResourceAsync<FindPackageByIdResource>(cancellationToken)
-            ?? throw new InvalidOperationException($"The feed '{feed.Url}' does not support package lookup.");
+            return Versions(result.StandardOutput, packageId);
+        }
+        finally
+        {
+            cache.Delete();
+        }
+    }
 
-        using var cache = new SourceCacheContext { NoCache = true };
-        var versions = await resource.GetAllVersionsAsync(packageId, cache, log.ForNuGet(), cancellationToken);
-        return [.. versions.OrderBy(v => v)];
+    // `dotnet package search --format json`: each source's packages, each version of an exact match its own entry.
+    internal static IReadOnlyList<NuGetVersion> Versions(string json, string packageId)
+    {
+        var found = JsonSerializer.Deserialize<SearchOutput>(json, Json)
+            ?? throw new InvalidOperationException("dotnet package search wrote no result.");
+        if (found.Problems is { Count: > 0 } problems)
+        {
+            throw new InvalidOperationException($"dotnet package search could not read every source: {string.Join(" ", problems.Select(problem => problem.GetRawText()))}");
+        }
+
+        return [.. found.SearchResult
+            .SelectMany(source => source.Packages)
+            .Where(package => string.Equals(package.Id, packageId, StringComparison.OrdinalIgnoreCase) && package.Version is { Length: > 0 })
+            .Select(package => NuGetVersion.Parse(package.Version ?? ""))
+            .Distinct()
+            .Order()];
     }
 
     public async Task Push(NuGetFeed feed, IFile package, CancellationToken cancellationToken = default)

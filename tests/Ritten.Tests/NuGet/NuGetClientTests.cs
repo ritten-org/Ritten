@@ -1,8 +1,6 @@
-using NuGet.Packaging;
-using NuGet.Versioning;
+using Ritten.Commands;
 using Ritten.Contracts.FileSystem;
 using Ritten.NuGet;
-using Ritten.Reporting;
 using Ritten.Tests.Support;
 
 namespace Ritten.Tests.NuGet;
@@ -10,12 +8,22 @@ namespace Ritten.Tests.NuGet;
 public class NuGetClientTests
 {
     private readonly FakeCommandRunner _commands = new();
+    private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
+    private readonly IDirectory _cache = Substitute.For<IDirectory>();
     private readonly NuGetClient _client;
 
     public NuGetClientTests()
     {
-        _client = new NuGetClient(Substitute.For<IWorkflowLog>(), _commands);
+        _cache.AbsolutePath.Returns("/tmp/ritten-nuget-cache-1");
+        _fileSystem.CreateTempDirectory(Arg.Any<string>()).Returns(_cache);
+        _client = new NuGetClient(_commands, _fileSystem);
     }
+
+    // What `dotnet package search --exact-match --format json` writes: one entry for each version.
+    private static string Search(params (string Id, string Version)[] packages) =>
+        $$"""
+        { "version": 2, "problems": [], "searchResult": [ { "sourceName": "feed", "packages": [ {{string.Join(", ", packages.Select(p => $$"""{ "id": "{{p.Id}}", "version": "{{p.Version}}" }"""))}} ] } ] }
+        """;
 
     [Fact]
     public async Task Push_ComposesARedactedIdempotentCommand()
@@ -51,15 +59,29 @@ public class NuGetClientTests
     }
 
     [Fact]
-    public async Task GetPublishedVersions_ReturnsVersionsInAscendingOrder()
+    public async Task GetPublishedVersions_AsksTheCliAsAReadWithACacheOfItsOwn()
     {
-        using var feed = LocalFeed.Create();
-        feed.AddPackage("Test.Package", "1.0.0");
-        feed.AddPackage("Test.Package", "0.9.0");
-        feed.AddPackage("Test.Package", "1.1.0-beta.1");
-        feed.AddPackage("Other.Package", "5.0.0");
+        _commands.Respond(_ => true, new CommandResult(0, Search(), ""));
 
-        var versions = await _client.GetPublishedVersions(new NuGetFeed(feed.Root), "Test.Package", TestContext.Current.CancellationToken);
+        await _client.GetPublishedVersions(new NuGetFeed("https://feed.example/index.json"), "Test.Package", TestContext.Current.CancellationToken);
+
+        var command = _commands.Executed.ShouldHaveSingleItem();
+        command.Arguments.ShouldBe([
+            "package", "search", "Test.Package", "--exact-match", "--prerelease", "--format", "json", "--source", "https://feed.example/index.json"
+        ]);
+        command.EnvironmentVariables[EnvironmentVariableName.From("NUGET_HTTP_CACHE_PATH")].ShouldBe("/tmp/ritten-nuget-cache-1");
+        command.Effect.ShouldBe(CommandEffect.None);
+        command.ThrowsOnError.ShouldBeTrue();
+        _cache.Received().Delete();
+    }
+
+    [Fact]
+    public async Task GetPublishedVersions_ReturnsTheExactPackagesVersionsInAscendingOrder()
+    {
+        _commands.Respond(_ => true, new CommandResult(0,
+            Search(("Test.Package", "1.0.0"), ("Test.Package", "0.9.0"), ("test.package", "1.1.0-beta.1"), ("Other.Package", "5.0.0")), ""));
+
+        var versions = await _client.GetPublishedVersions(new NuGetFeed("https://feed.example/index.json"), "Test.Package", TestContext.Current.CancellationToken);
 
         versions.Select(v => v.ToString()).ShouldBe(["0.9.0", "1.0.0", "1.1.0-beta.1"]);
     }
@@ -67,51 +89,25 @@ public class NuGetClientTests
     [Fact]
     public async Task GetPublishedVersions_ReturnsEmptyForAnUnpublishedPackage()
     {
-        using var feed = LocalFeed.Create();
-        feed.AddPackage("Other.Package", "5.0.0");
+        _commands.Respond(_ => true, new CommandResult(0, Search(), ""));
 
-        var versions = await _client.GetPublishedVersions(new NuGetFeed(feed.Root), "Test.Package", TestContext.Current.CancellationToken);
-
-        versions.ShouldBeEmpty();
+        (await _client.GetPublishedVersions(new NuGetFeed("https://feed.example/index.json"), "Test.Package", TestContext.Current.CancellationToken))
+            .ShouldBeEmpty();
     }
 
     [Fact]
-    public void WithCredentials_SetsTheUsernameAndPassword()
+    public async Task GetPublishedVersions_FailsWhenTheFeedCannotBeRead()
     {
-        var feed = new NuGetFeed("https://example.com/index.json").WithCredentials("user", "token");
+        _commands.Respond(_ => true, new CommandResult(1, "error: Response status code does not indicate success: 401 (Unauthorized).", ""));
 
-        feed.Username.ShouldBe("user");
-        feed.Password.ShouldBe("token");
+        await Should.ThrowAsync<CommandFailedException>(() =>
+            _client.GetPublishedVersions(new NuGetFeed("https://feed.example/index.json"), "Test.Package", TestContext.Current.CancellationToken));
+        _cache.Received().Delete();
     }
 
-    /// <summary>
-    /// A temporary directory of real .nupkg files, readable as a NuGet local folder feed.
-    /// </summary>
-    private sealed class LocalFeed : IDisposable
-    {
-        public required string Root { get; init; }
-
-        public static LocalFeed Create() =>
-            new() { Root = Directory.CreateTempSubdirectory("ritten-feed-").FullName };
-
-        public void AddPackage(string id, string version)
-        {
-            var contentFile = Path.Combine(Root, "dummy.txt");
-            File.WriteAllText(contentFile, "dummy");
-
-            var builder = new PackageBuilder
-            {
-                Id = id,
-                Version = NuGetVersion.Parse(version),
-                Description = "A test package."
-            };
-            builder.Authors.Add("Ritten.Tests");
-            builder.Files.Add(new PhysicalPackageFile { SourcePath = contentFile, TargetPath = "content/dummy.txt" });
-
-            using var stream = File.Create(Path.Combine(Root, $"{id}.{version}.nupkg"));
-            builder.Save(stream);
-        }
-
-        public void Dispose() => Directory.Delete(Root, recursive: true);
-    }
+    [Fact]
+    public void Versions_RefusesAnAnswerWithProblems() =>
+        Should.Throw<InvalidOperationException>(() => NuGetClient.Versions(
+            """{ "version": 2, "problems": [ { "text": "unreachable" } ], "searchResult": [] }""", "Test.Package"))
+            .Message.ShouldContain("unreachable");
 }
