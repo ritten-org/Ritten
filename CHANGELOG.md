@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.0] - 2026-11-26
+
+### Changed
+
+- **`INuGet.GetPublishedVersions` uses the .NET CLI** (`dotnet package search --exact-match`), so it behaves like regular NuGet.
+
+### Removed
+
+- **`NuGetFeed.Username`, `NuGetFeed.Password` and `WithCredentials`** (breaking), which are no-longer needed.
+- **`LoggerExtensions.ForNuGet`** (breaking), and with it the `NuGet.Protocol` and `NuGet.Common` dependencies, and `System.Security.Cryptography.Pkcs`.
+
 ## [0.32.0] - 2026-11-23
 
 ### Added
@@ -444,6 +455,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Initial release.
 
+[0.33.0]: https://github.com/ritten-org/Ritten/compare/v0.32.0...v0.33.0
 [0.32.0]: https://github.com/ritten-org/Ritten/compare/v0.31.0...v0.32.0
 [0.31.0]: https://github.com/ritten-org/Ritten/compare/v0.30.0...v0.31.0
 [0.30.0]: https://github.com/ritten-org/Ritten/compare/v0.29.0...v0.30.0
